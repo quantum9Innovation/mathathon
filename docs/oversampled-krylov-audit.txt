@@ -1,0 +1,230 @@
+Audit of fast rectangular multiplication and oversampled block Krylov
+2026-11-14
+
+Conclusion
+----------
+The checked published guarantees in Kacham--Woodruff (2024), arXiv:2407.11959,
+do not establish a faster general spectral rank-one product algorithm in the
+candidate's parameter regime. Their improved block algorithm targets finite
+Schatten-p norms. Its small-block iteration parameter is always at least
+sqrt(p). Translating even its stronger pth-power error guarantee to a uniform
+relative spectral guarantee either retains Omega(theta^{-1/2}) passes or
+requires a block comparable to the full inner rank m.
+
+This is a statement about what the checked theorem and proof certify. It is
+not a computational lower bound for arbitrary large-block Krylov algorithms,
+and it does not rule out a better spectral analysis of the same bases.
+Scalar matvec lower bounds alone do not exclude faster arithmetic through
+batching; the argument below does not make that inference.
+
+Primary sources read
+--------------------
+P. Kacham, D. P. Woodruff, Faster Algorithms for Schatten-p Low Rank
+Approximation (2024).
+https://arxiv.org/abs/2407.11959
+https://arxiv.org/html/2407.11959v1
+https://arxiv.org/pdf/2407.11959
+Full PDF/text cached transiently at /tmp/mathathon-faster-schatten.*.
+
+C. Musco, C. Musco, Randomized Block Krylov Methods for Stronger and Faster
+Approximate Singular Value Decomposition (2015).
+https://arxiv.org/abs/1504.05477
+The Kacham--Woodruff theorem explicitly invokes its Theorems 1 and 11.
+
+1. Exact block algorithm and guarantees
+--------------------------------------
+Use p here for the Schatten exponent; output dimensions are denoted N.
+For an explicit square matrix D, Kacham--Woodruff Algorithm 1 forms
+
+  [D Omega, (DD^T)D Omega, ..., (DD^T)^q D Omega],
+
+where Omega has b Gaussian columns, orthogonalizes the range, and extracts
+exactly k Ritz vectors. Thus b>k is allowed; this audit does not incorrectly
+restrict oversampling to b<=k.
+
+Their Theorem 3.1 states two per-vector guarantees for the rank-k output Z:
+
+  ||D^T z_i||^2 >= sigma_i(D)^2
+                    - c log^2(N)/q^2 * sigma_{k+1}(D)^2,
+
+and, if gap=sigma_k(D)/sigma_{b+1}(D)-1,
+
+  q >= C log(N/epsilon)/sqrt(min(1,gap))
+
+suffices for per-vector additive epsilon*sigma_{k+1}^2 error. The first
+guarantee has no improvement in q as b grows; the second depends on a real
+oversampling gap, not merely the block width. Arbitrary fixed inputs do not
+have a uniform lower bound on that gap when b<m.
+
+Their Algorithm 2 runs TWO branches:
+
+  Z1 = BlockKrylov(rank=k, block=k, iterations=~O(q)),
+  Z2 = BlockKrylov(rank=k, block=k+b', iterations=~O(sqrt(p))),
+  b' = ceil((3/2) max(1,k/(q^2 epsilon))).
+
+The displayed choices of q in every parameter regime satisfy q>=sqrt(p).
+It computes W_i=colspan(D^T Z_i), then chooses W1 or W2 using estimated
+singular values and the gap threshold approximately 1+1/(2p).
+
+Theorem 3.2 proves
+
+  ||D(I-WW^T)||_{S_p} <= (1+O(epsilon)) ||D-D_k||_{S_p}.
+
+For k<=epsilon*N^alpha, its explicit-square running time is
+~O(sqrt(p)*N^{2+eta}), for any fixed multiplication slack eta>0. The other
+regimes use q=max(sqrt(p),...) and hence retain the same sqrt(p) lower
+bound on the selected iteration parameter. No improved p=infinity bound is
+stated for Algorithm 2. Their stable LazySVD Theorem 5.3 does cover
+p in [2,infinity], but costs the usual ~nnz(D)k/sqrt(epsilon).
+
+The proof in Appendix B is stronger than the simplified norm statement in
+one useful respect: it bounds pth-power residual by
+(1+O(p*epsilon))*||D-D_k||_{S_p}^p, plus explicitly negligible terms.
+This stronger form is retained in the comparison below.
+
+2. Finite-p to spectral conversion, including a stronger interlacing route
+-----------------------------------------------------------------------
+Let rank(D)<=m and k=1. A direct norm-equivalence conversion gives
+
+  ||D(I-WW^T)||_2
+    <= (1+O(epsilon)) (m-1)^{1/p} sigma_2(D).
+
+Thus ordinary conversion requires epsilon=O(theta) and p of order
+log(m)/theta. Since q>=sqrt(p), this already retains the ordinary
+theta^{-1/2} number of passes, up to logarithms.
+
+One must also check a potentially stronger conversion. Write E=D(I-WW^T),
+with rank(W)=1. Rank-one singular-value interlacing gives
+
+  sigma_j(E) >= sigma_{j+1}(D).
+
+If a pth-power guarantee is
+
+  ||E||_{S_p}^p <= (1+rho) sum_{j>=2}sigma_j(D)^p,
+
+then subtracting the lower bounds for j>=2 yields
+
+  ||E||_2^p <= sigma_2(D)^p
+                 +rho*sum_{j>=2}sigma_j(D)^p
+             <= [1+rho*(m-1)] sigma_2(D)^p.
+
+This conversion is sharp as an implication from that scalar error guarantee
+and rank interlacing alone: D=diag(L,1,...,1), W=e_2, has residual largest
+singular value L and pth-power excess L^p-1. Choosing
+L^p=1+rho*(m-1) attains the displayed upper bound.
+
+For the Appendix B guarantee rho=O(p*epsilon), the certified sufficient
+parameter scaling for spectral 1+theta is therefore
+
+  p*epsilon*m <= c*((1+theta)^p-1),
+
+with a suitable small absolute constant c. Consider the two regimes:
+
+  (a) p*theta >= c0>0. Then q>=sqrt(p)=Omega(theta^{-1/2}).
+
+  (b) p*theta <= c0. Then ((1+theta)^p-1)=O(p*theta), so the above
+      uniform spectral conversion needs epsilon=O(theta/m). Algorithm 2
+      consequently chooses b'>=c*m/(q^2*theta). If q=o(theta^{-1/2}),
+      the prescribed block exceeds m asymptotically. Even q smaller by a
+      fixed constant makes b' comparable to m, with constants adjusted.
+
+Hence the checked Schatten guarantees do not yield both a genuinely
+sub-full-rank block and o(theta^{-1/2}) passes with a uniform spectral
+rank-one error guarantee. This remains true regardless of whether fast
+rectangular multiplication makes some substantial range of widths b free.
+
+This calculation does not prove that Algorithm 2 fails on a particular
+input, nor that its bases cannot admit a stronger analysis. It establishes
+that the published finite-p bounds cannot simply be substituted to obtain
+the claimed faster spectral endpoint.
+
+3. Factor access and orthogonalization must be charged separately
+-----------------------------------------------------------------
+For M=A B with A in R^{N x m}, B in R^{m x N}, applying M or M^T to b
+columns costs, up to constants,
+
+  T_MM(N,m,b)+T_MM(m,N,b),
+
+not b times a scalar matvec cost. A fair Krylov comparison must use these
+batched costs. Its range width is at most L=min(m,(q+1)b). Constructing
+and extracting the basis additionally incurs tall QR/Gram and projected
+core work at width L, plus expansion of the final rank-one output in N^2.
+
+The explicit-square simplification in Kacham--Woodruff Section 3.1,
+O(q*T(N,b)), uses an inequality that absorbs QR cost into multiplication
+by their EXPLICIT N x N matrix. When M is implicit and has an inner
+dimension m<<N, the factorized block application may be cheaper than that
+explicit multiplication. The absorption argument must not be copied
+without checking the tall basis/core terms.
+
+One can commute the product iterations into latent coefficients, e.g.
+
+  M M^T (A X)=A (Q P X), P=A^T A, Q=B B^T.
+
+This avoids lifting the full physical block on every iteration, but
+applying Q P to a fresh block still requires original-factor block products
+unless the true Grams (or another adequate representation) are computed.
+Materializing exact P,Q restores the fast-Gram baseline. The paper does
+not supply a cheaper exact Gram representation for arbitrary factors.
+
+At full block width b>=m, the Gaussian product sketch spans range(M)
+with probability one, so optimal rank-one extraction is possible. However,
+forming/applying these full-width factor blocks has the same dimension
+triple (N,m,m) as exact Gram formation, by symmetry of the matrix-
+multiplication tensor. Under the supplied rectangular bound, this costs
+the named Gram exponent, not the proposed output-optimal bound.
+
+4. Candidate's latest regime
+----------------------------
+For N=m^{59/50}, theta=m^{-25/59}, h=m^{-7/100}, the proposed
+preconditioned construction has verified exponents
+
+  setup:     m^{3362/1425} = N^{6724/3363},
+  tests:     m^{27811/11800} = N^{27811/13924},
+  output:    m^{59/25} = N^2.
+
+Both construction exponents are strictly below output. Ordinary scalar
+Krylov and exact Gram have the named bound
+
+  N^{7056/3481+o(1)} = N^{2+94/3481+o(1)}.
+
+The audited finite-Schatten large-block theorem does not currently give a
+smaller uniform spectral construction cost: the preceding parameter
+analysis leads either back to theta^{-1/2} passes or to full-width blocks.
+This comparison does not assert that no other existing or future
+large-block spectral theorem could improve the frontier.
+
+5. Related scope cautions
+-------------------------
+Chen et al. (2025), arXiv:2508.06486, primarily analyze block sizes up to
+the target rank. That should not be used to dismiss b>r methods; the
+Kacham--Woodruff algorithm above explicitly permits b>r.
+
+Bakshi--Narayanan (2023), arXiv:2304.03191, prove scalar matrix-vector
+query lower bounds in a dimension regime sufficiently large relative to
+the accuracy parameter. These do not directly rule out arithmetic savings
+from wide, cheaply batched queries, nor factor-aware preprocessing. No
+claim of an appropriate large-block arithmetic lower bound is made here.
+
+6. A direct spectral theorem with arbitrary oversampling
+-------------------------------------------------------
+J. A. Tropp, Analysis of Randomized Block Krylov Methods, Part III,
+Caltech ACM Technical Report 2018-02 (public release June 2021),
+https://tropp.caltech.edu/reports/Tro18-Analysis-Randomized-TR.pdf,
+Theorem 2.5 on PDF page 48, directly analyzes spectral rank-k error with
+arbitrary oversampling a=b-k>=2. Its failure bound has the form
+
+  min(1, [(18*k*tail_content/t)
+              *exp(-4*q2*sqrt(t/(2+t)))]^{a/2}).
+
+The tail_content depends on an optional first depth q1; q=q1+q2. Before
+this bound is nontrivial, q2 must exceed
+
+  log(18*k*tail_content/t)/(4*sqrt(t/(2+t))).
+
+The polynomial theta^{-1/2} dependence remains even as oversampling grows.
+This source explicitly distinguishes the depth threshold from the failure
+probability benefit of oversampling. The Part I Theorem 1.5 likewise gives
+gap-free extreme-eigenvalue error O(log^2(stable_rank)/q^2), with block size
+principally improving failure probability. These results support the
+published-bound comparison above; neither is a block arithmetic lower bound.

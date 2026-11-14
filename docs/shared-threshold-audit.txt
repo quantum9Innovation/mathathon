@@ -1,0 +1,810 @@
+Shared threshold cores and the greedy precision loss
+Independent exact-arithmetic audit, 2026-11-14
+
+STATUS
+
+There is a proved strengthening of the CURRENT MANUSCRIPT'S arithmetic
+bound: the per-rank r*m^(omega+zeta) setup term can be replaced by ONE
+m^(omega+zeta) setup. A shared Frobenius form, symmetric Woodbury
+updates, and generalized Lanczos suffice. All new per-threshold preparation
+is absorbed by the existing Ir*sqrt(hr/theta) term. This is not a novelty
+certificate for the overall algorithm or its classical components.
+
+The resulting total bound, in the arithmetic model of
+docs/sketch-preconditioned-spectral.tex, is
+
+  ~O(I + G_h + m^(omega+zeta) + r*m^2/sqrt(h)
+           + I*r*sqrt(h*r/theta) + T_MM(n,r,p)).                 (A)
+
+It holds for the same 1<=r<=m, 0<theta<=h<=1/16, arbitrary fixed factors,
+and success probability 1-delta. The proof below does NOT use an exact
+eigendecomposition oracle. The original small Ritz-problem arithmetic
+convention is retained. A floating-point/bit-complexity theorem is not
+proved: the canonical-form similarity, auxiliary resolvents, and Woodbury
+core can be ill-conditioned even when the actual preconditioner is not.
+
+There is also an explicit sharp obstruction to eliminating the sqrt(r)
+loss using ONLY the current stage guarantee of relative leading-Rayleigh
+accuracy. This is an obstruction to that black-box specification, not to
+all stronger eigenvector or block algorithms.
+
+
+1. THE MATRICES AND THEIR EXISTING UNIFORM BOUNDS
+
+Use exactly the fixed support coordinates W,L,G from the main manuscript,
+in dimension a=rank(A)<=m. Set
+
+  Z=AW,  G=Z^T Z,  Q'_i=L Q_i L^T,  Q_{0,i}=L Qtilde_i L^T,
+  H_i=M_i M_i^T=Z Q'_i Z^T.
+
+The matrices Z and G are implicit. The good initial embedding event gives
+
+  (1+h)^(-1) I <= G <= (1-h)^(-1) I,
+  (1-h) Q'_i <= Q_{0,i} <= (1+h) Q'_i
+
+for EVERY adaptive residual i simultaneously, as proved in the main text.
+Zero residuals are detected by Q_{0,i}=0 and need no threshold queries.
+
+For a nonzero residual, keep the main manuscript's coarse Rayleigh
+estimate nu_i and initial bracket [ell_0,b_0]. For any t in this bracket,
+let
+
+  K_i(t) = t G - G Q'_i G,
+  F_i(t) = alpha(t) I - Q_{0,i},    alpha(t)=(1+32h)t,
+  Delta_i(t) = F_i(t)-K_i(t).
+
+The existing bounds are
+
+  22 h t I <= Delta_i(t) <= 42 h t I,
+  F_i(t) >= 28 h t I,
+  spec(F_i(t)^(-1/2) K_i(t) F_i(t)^(-1/2)) subset [-1/2,1].  (1)
+
+Also Q_{0,i} is PSD, so
+
+  F_i(t) <= (1+32h)t I <= 3t I,
+  kappa_2(F_i(t)) <= 3/(28h) <= 1/h.                         (2)
+
+The bounds are independent of factor conditioning and of the spectral
+scale of the current residual. They hold even for t below the true
+lambda_1(H_i). A true K_i(t) action costs O(I), exactly as in the main text.
+
+
+2. UPDATE Q_{0,i} WITHOUT A MATRIX-MATRIX PRODUCT AT EVERY RANK
+
+The main text already maintains
+
+  Qtilde_{i+1}=Qtilde_i-d_i w_i^T-w_i d_i^T+c_i^T Qtilde_i c_i * d_i d_i^T,
+  w_i=Qtilde_i c_i.
+
+Write
+
+  a_i=L d_i,  b_i=L w_i,  gamma_i=c_i^T Qtilde_i c_i,
+  U_i=[a_i,b_i],
+  S_i=[[gamma_i,-1],[-1,0]].
+
+Then EXACTLY
+
+  Q_{0,i+1}=Q_{0,i}+U_i S_i U_i^T.                           (3)
+
+Each S_i is nonsingular with determinant -1 and inverse
+[[0,-1],[-1,-gamma_i]]. Store the accumulated columns
+
+  U=[U_0 ... U_{i-1}],   S=blockdiag(S_0,...,S_{i-1}).
+
+Thus
+
+  Q_{0,i}=Q_{0,0}+U S U^T,   with k=2i columns.               (4)
+
+There is no requirement that U have independent columns. Updating the
+explicit Q_{0,i}, adding its two new stored columns, and computing Ld_i,
+Lw_i take O(m^2) per stage. Only the INITIAL Q_{0,0}=L Qtilde_0 L^T
+requires fast square matrix multiplication. The main text need not
+recompute this congruence from scratch at later stages.
+
+
+3. ONE EXACT SHARED CORE, WITH NO SPECTRAL ORACLE
+
+Compute a Frobenius normal form of Q_{0,0}, with its transformation,
+
+  Q_{0,0}=S_F C S_F^(-1),
+
+once. Here C is block diagonal with companion blocks. The deterministic
+algorithm of Neiger--Pernet--Villard (2024), Corollary 5.2, computes the
+transformation in O(a^w (log log a)^2) field operations, for any feasible
+square multiplication exponent w>2. Invert S_F using another O(a^w)
+operations. This also provides the companion polynomials; no eigenvalues
+are computed or supplied.
+
+Primary source:
+  https://arxiv.org/html/2402.07345v2
+  Section 5.1, Corollary 5.2.
+  V. Neiger, C. Pernet, G. Villard,
+  Computing Krylov Iterates in the Time of Matrix Multiplication (2024).
+
+For alpha that is not an eigenvalue of Q_{0,0}, define
+
+  B_0(alpha)=alpha I-Q_{0,0}.
+
+Its inverse applies to a known a-by-k block using two common basis
+transforms and companion solves. A shifted companion block of size d
+solves against one arbitrary vector in O(d) operations by backward row
+recurrence, followed by one scalar division. The divisor is the defining
+polynomial evaluated at alpha, up to sign. Consequently
+
+  B_0(alpha)^(-1) V
+
+costs O(T_MM(m,m,k)+mk), after the shared setup. This statement includes
+indefinite base resolvents and rank-deficient Q_{0,0}; only an exact pole
+must be avoided. A single new right-hand side costs O(m^2).
+
+All of this is exact field arithmetic (+,-,*,/, zero tests), rather than
+an uncharged exact eigendecomposition. The main algorithm already permits
+positive square roots for normalization and small approximate symmetric
+Ritz computations; those are not replaced by an exact spectral oracle.
+
+
+4. EXACT WOODBURY PREPARATION FOR EACH ACTUAL THRESHOLD
+
+At stage i, equation (4) gives
+
+  F_i(t)=B_0(alpha(t))-U S U^T.
+
+For a nonpole alpha(t), form
+
+  X=B_0(alpha(t))^(-1) U,
+  J=S^(-1)-U^T X.
+
+The determinant lemma shows J is nonsingular: F_i(t) is SPD by (1),
+B_0(alpha(t)) is nonsingular by construction, and S is nonsingular.
+This remains true if U is rank deficient. Compute J^(-1) by ordinary
+fast algebra, with no positivity assumption on J. Then
+
+  F_i(t)^(-1)=B_0(alpha(t))^(-1)+X J^(-1) X^T.                (5)
+
+The symmetric expression is important. After preparation, applying (5)
+to a vector takes O(m^2+mk+k^2)=O(m^2), since k=2i<=2m. No solve
+iterations or condition-dependent exact-arithmetic operation count occur.
+When i=0 the correction is empty.
+
+Choose a fixed feasible exponent
+
+  9/4 < w < min(5/2,9/4+zeta).
+
+Square blocking alone, without a special rectangular theorem, yields
+
+  T_MM(m,m,k) <= O(m^2 * max{1,k}^{w-2})  for k<=2m.        (6)
+
+For k<=m, partition the two length-m dimensions into length-k blocks;
+there are O((m/k)^2) products of k-by-k blocks, each O(k^w). For m<k<=2m,
+constant padding gives the same bound up to constants.
+
+The Gram U^T X costs O(m k^{w-1}) when k<=m, and J^(-1) costs O(k^w).
+Both are bounded by the right-hand side of (6). If k>m, constant-factor
+padding bounds them by O(m^w), again covered by (6). Therefore ALL the
+per-threshold Woodbury preparation costs
+
+  O(m^2 (1+i)^{w-2}),                                      (7)
+
+apart from the logarithmic algebra factors already suppressed. This is
+an exact bound; no constant-cost low-rank solve has been assumed.
+
+
+5. GENERALIZED LANCZOS REPLACES THE CHOLESKY CONGRUENCE
+
+It is unnecessary to compute a Cholesky factor or inverse square root
+of F_i(t) at every threshold. Fix a stage and threshold, abbreviate K,F,
+and run Lanczos/Rayleigh--Ritz on
+
+  T=F^(-1) K
+
+using the F-inner product <x,y>_F=x^T F y. This is selfadjoint because
+F T=K=K^T. Apply T using one true K action and (5), and form F-inner
+products using the explicit F. Every action and normalization costs O(I).
+One can cache F times each basis vector; the F-orthogonalization cost for
+q<=a basis vectors is O(aq^2), and the small symmetric Ritz processing
+costs O(q^3), as in the original proof. Both are absorbed by O(Iq).
+
+In the analysis ONLY, set
+
+  C=F^(-1/2) K F^(-1/2),    y=F^(1/2)x.
+
+Then the generalized Krylov space maps exactly to the ordinary Krylov
+space for the symmetric C, whose spectrum lies in [-1,1]. An F-unit
+Ritz witness x returns the ACTUAL quotient
+
+  q=x^T K x/(x^T F x).
+
+Recompute this quotient from the witness; do not use a scalar eigenvalue
+estimate without a corresponding vector. Computing the original vector
+z=Zx/sqrt(x^T Gx) uses the same final lifting as in the main proof.
+
+The start x_0 is standard Gaussian in coefficient coordinates, not a
+uniform random vector in the F-inner product. This distinction is
+harmless but requires the following argument.
+
+Lemma (elliptical Gaussian witness).
+Let F be SPD with kappa(F)<=1/h, let C=F^(-1/2)KF^(-1/2) have spectrum
+in [-1,1], and let g~N(0,I_a). Generalized Lanczos initialized by g
+returns, with failure probability at most beta, an actual quotient q with
+
+  lambda_min(C) <= q <= lambda_min(C)+eta
+
+using
+
+  O(min{a, eta^(-1/2)*log(a/(h*beta*eta))})
+
+actions, up to constants and the small Ritz accuracy allocation.
+
+Proof.
+In symmetric coordinates the initial vector is y_0=F^(1/2)g. Fix a unit
+minimum-eigenvalue eigenvector u of C. The scalar u^T y_0 is Gaussian
+with variance u^T F u >= f_min=lambda_min(F). Gaussian
+anticoncentration gives
+
+  P{|u^T y_0| < (beta/2)*sqrt(f_min)} <= beta/2.
+
+Markov's inequality gives
+
+  P{||g||^2 > 2a/beta} <= beta/2.
+
+On their joint good event, the squared normalized overlap satisfies
+
+  |u^T y_0|^2/||y_0||^2
+      >= beta^3/(8a*kappa(F)) >= h*beta^3/(8a).             (8)
+
+For completeness, the usual deterministic Chebyshev argument needs only
+such an overlap; it does not require an isotropic start. Write mu=lambda_min(C)
+and let alpha be the normalized overlap in (8). If mu>=1-eta/2, every
+Rayleigh vector is already eta-accurate. Otherwise take a degree-d
+Chebyshev polynomial p, normalized to p(mu)=1, which is bounded by
+2 exp(-c*d*sqrt(eta)) on [mu+eta/2,1] and by 1 on [mu,mu+eta/2].
+The Rayleigh value of p(C)y_0 is at most
+
+  mu + eta/2 + 8 exp(-2c*d*sqrt(eta))/alpha^2.
+
+Thus d=O(eta^(-1/2)*log(1/(eta*alpha^2))) suffices. The actual minimum
+Ritz vector in that Krylov space is at least as good. Allocate half the
+error to this bound and half to the small symmetric Ritz solve. Substitute
+(8), noting that log(beta^(-3)) is only a constant multiple of log(1/beta).
+If Krylov saturates, its minimum Ritz eigenvalue is exact in the model;
+a Gaussian has a component in the minimum eigenspace with probability one.
+This proves the lemma.
+
+The only new start-conditioning penalty is logarithmic in 1/h. Since
+theta<=h, it is already among the permitted accuracy logarithms.
+
+
+6. BASE POLES: BOTH ORDINARY AND FINAL THRESHOLD QUERIES
+
+The ACTUAL F_i(t) is uniformly SPD, but the auxiliary base
+B_0(alpha(t)) may be singular inside a later residual's bracket. Ignoring
+this distinction would invalidate the shared inverse formula.
+
+Exact deterministic pole avoidance is cheap. The companion polynomials
+of Q_{0,0} have total degree a. Their product at alpha vanishes exactly
+at a base pole. Evaluate them by Horner's rule in O(a) operations.
+
+For every nonterminal bracket [ell,b] with ell<b, take a+1 distinct
+equally spaced trial thresholds inside its middle third,
+
+  [ell+(b-ell)/3, ell+2(b-ell)/3].
+
+At most a trials can be poles, so at least one is not. Scan until finding
+a nonpole, at cost O(a^2)<=O(m^2). Use that trial for the actual randomized
+test. An update to ell or b shrinks the bracket by a factor at most 2/3,
+so the number of tests remains O(log(1/e)). No eigenvalue calculation,
+new failure event, or unbounded restart is needed. Exact zero tests are
+part of the field-arithmetic model.
+
+The FINAL query requires care: simply changing t=ell to a nearby t>ell
+loses the old reason that lambda_min(C)<=0. The following modification
+fixes it without changing asymptotic cost.
+
+Let e be the required stage relative-Rayleigh error, 0<e<=h/8, and
+tau=e/(512h), as in the main proof. Use generalized Ritz additive
+accuracy tau/2 for ALL threshold calls, but retain the decisions
+
+  q<0: ell=t;
+  q>=tau: b=t;
+  0<=q<tau: return the witness.
+
+These decisions remain certified: q>=tau implies mu_min>=tau/2>=0;
+the uncertain case gives mu_min>=-tau/2, stronger than the old -tau bound.
+
+Tighten the terminal bracket condition to
+
+  b-ell <= e*ell/4096.                                      (9)
+
+At termination choose any nonpole trial in the middle third, exactly as
+above. Since lambda=lambda_1(H_i) remains inside [ell,b], an eigenvector
+of the true generalized pencil at lambda supplies the test bound
+
+  mu_min(C) <= max{0,t-lambda}*||G||/lambda_min(F_i(t))
+             <= e*ell/(4096) * (16/15)/(28 h t)
+             < tau/2.                                      (10)
+
+If t<lambda, the simpler mu_min(C)<=0 gives the same conclusion.
+The actual Ritz value therefore obeys q<=tau, although t may exceed
+lambda. The main witness inequality is unchanged:
+
+  z^T H_i z >= t-64*tau*h*t.
+
+Using (9), ell<=lambda, t<=3lambda/2, and tau=e/(512h),
+
+  lambda-z^T H_i z
+      <= e*lambda/4096 + (3/16)e*lambda < e*lambda.
+
+Thus final quality is preserved. The tightening of the bracket and the
+factor-two tighter Ritz tolerance change only constants and logarithms.
+The nonterminal uncertain case keeps the original proof with additional
+slack. Finite termination is guaranteed because all selected trials are
+strictly inside a positive-width bracket.
+
+
+7. COST AND PROBABILITY: THE IMPROVED GENERAL-RANK THEOREM
+
+All initial embedding, Gram, support, and proxy-formation costs are as in
+the main manuscript. The extra shared Frobenius setup costs
+~O(m^(omega+zeta)). Maintaining Q_{0,i} via (3) costs O(rm^2).
+
+There are only logarithmically many thresholds at each stage. From (7),
+ALL per-threshold shared-inverse preparation, summed over stages, costs
+
+  ~O(m^2 * sum_{i=0}^{r-1}(1+i)^(w-2))
+      = ~O(m^2 r^(w-1)).                                    (11)
+
+Select w=9/4+min{zeta/2,1/16}, so w<5/2. Since r>=1,
+theta<=h, and I>=2m^2,
+
+  m^2 r^(w-1) <= m^2 r^(3/2)
+                <= I r sqrt(h*r/theta).                     (12)
+
+Thus the preparation cost (11) is already paid by the existing input
+iteration term, for EVERY rank range. No r<=sqrt(m) restriction, rebasing,
+rank cutoff, or unsupported input-optimal rectangular multiplication is
+needed. Choosing the actual feasible exponent below 5/2 also eliminates
+the exponent-slack boundary problem in a cutoff argument.
+
+The coarse current-core estimates retain the existing cost
+~O(r m^2/sqrt(h)). The current method of generating actual leading-Rayleigh
+witnesses retains ~O(I r sqrt(h*r/theta)) true work. Each generalized
+operator action adds only O(m^2), absorbed by O(I). Orthogonalization,
+Ritz processing, true-vector formation, coefficient updates, and final
+lifting retain their old bounds. Expansion retains T_MM(n,r,p).
+This proves (A).
+
+All pole selection and canonical-form work is deterministic. Conditional
+on the initial embedding event and every past random choice, the next
+coarse matrix and next threshold pair K,F are fixed. Draw a fresh Gaussian
+start and apply the elliptical witness lemma with the same allocated
+failure probability as the original threshold call. The adaptive union
+bound is unchanged; no independence from earlier stages is silently used.
+As in the main manuscript, cap stage/query counts and return zero on an
+unexpected zero denominator or normalization. Neither occurs on the good
+events just proved, and the arithmetic runtime stays bounded off them.
+
+
+8. CONDITIONING AND THE EXACT-ARITHMETIC LIMITATION
+
+The ACTUAL threshold preconditioner has condition number O(1/h), and
+the generalized operator is similar to a bounded symmetric matrix through
+a transformation of condition O(h^(-1/2)). Therefore the randomized
+witness analysis and exact-arithmetic query bound have no input-condition
+dependence. These statements do not establish numerical stability of (5).
+
+The base resolvent can be arbitrarily close to singular while F_i(t)
+remains well conditioned. For example, take base core diag(c,d), deflate
+its first direction, and leave current core diag(0,d). If alpha(t)=c+u
+with u arbitrarily small and c near (1+32h)d, the actual preconditioner
+diag(alpha,alpha-d) has condition O(1/h), but the base resolvent
+diag(u,alpha-d) is arbitrarily ill-conditioned. The deterministic pole
+test excludes u=0, not extremely small u. Moreover the Frobenius
+similarity and the small symmetric Woodbury core can themselves be badly
+conditioned and involve large cancellations.
+
+Randomly jittering thresholds inside the middle-third interval could
+give a high-probability separation from the at most a base poles, but
+does not alone control the canonical-form similarity or small-core
+cancellation. No polynomial bit/precision bound is claimed here. The
+setup removal is valid in the same exact real-arithmetic model as the
+main manuscript. A stable numerical replacement needs additional work.
+
+
+9. SHARP OBSTRUCTION FOR THE CURRENT GREEDY ACCURACY SPECIFICATION
+
+The sqrt(r) iteration loss arises because each stage uses e=Theta(theta/r).
+The following family proves that this error accumulation is unavoidable
+if the stage oracle is specified ONLY by
+
+  z_i^T H_i z_i >= (1-e)lambda_1(H_i).
+
+Fix r>=1, 0<e<1, t>0, and choose Lambda>t/(1-e)^r. Let
+
+  H_0=diag(Lambda I_r,t).
+
+Inductively suppose H_i has r-i untouched eigenvalues Lambda, a single
+tail eigenvalue t_i=t/(1-e)^i, and i zero eigenvalues. Use one untouched
+head eigenvector u_i and the current tail eigenvector w_i, and choose
+
+  z_i=sqrt(a_i)u_i+sqrt(1-a_i)w_i,
+  a_i=((1-e)Lambda-t_i)/(Lambda-t_i).
+
+The condition on Lambda ensures 0<a_i<1. Its Rayleigh value is EXACTLY
+(1-e)Lambda. The two-dimensional Nyström residual on their span has one
+zero eigenvalue and one positive eigenvalue
+
+  Lambda*t_i / ((1-e)Lambda) = t_i/(1-e).
+
+All other head directions are untouched. Hence after r stages,
+
+  lambda_1(H_r)=t/(1-e)^r,
+  lambda_{r+1}(H_0)=t.
+
+The bound in the main manuscript is therefore attained, not merely loose.
+To infer spectral error <=(1+theta)sigma_{r+1} uniformly from this oracle
+specification, one needs
+
+  (1-e)^(-r) <= (1+theta)^2,
+  e <= 1-(1+theta)^(-2/r) = O(theta/r).
+
+The family is a genuine matrix-product example: take M=H_0^(1/2),
+A=M, B=I, and pad with zero ambient rows/columns if desired. This does
+NOT prove a lower bound for the actual randomized threshold algorithm,
+which might return better witnesses on that family, nor for stronger
+correlation-PCA/block guarantees. It proves that the current Rayleigh-only
+black-box lemma cannot remove sqrt(r) by a better accumulation argument.
+
+
+10. SHORT REVIEW OF THE ADAPTIVE ABSOLUTE-ERROR WRAPPER
+
+For i>=0, k=floor(log2(i+1)), let
+
+  e_i=theta/[32(i+1)(k+1)^2].
+
+Dyadic grouping gives sum_i e_i <=(theta/32)sum_{k>=0}(k+1)^(-2)
+<theta/16. Call the leading-Rayleigh primitive with parameter 8e_i<=h,
+obtain s_i>=(1-e_i)||M_i||^2, and define U_i=s_i/(1-e_i).
+On the simultaneous good event, U_i is an upper bound on ||M_i||^2.
+The Nyström lemma and product bound yield
+
+  U_i <= lambda_{i+1}(H_0)/prod_{j<=i}(1-e_j)
+      <= lambda_{i+1}(H_0)/(1-theta/16).
+
+Thus accepting when U_i<=epsilon^2 is safe. With
+r_epsilon=min{r:sigma_{r+1}(M)<=epsilon/(1+theta)}, acceptance must occur
+by i=r_epsilon because (1+theta)^2(1-theta/16)>1. A zero residual stops
+earlier; exact rank drop caps deflations by m. Summable failure allocation
+proportional to delta/((i+1)(i+2)) handles the unknown stopping rank.
+The stage-action sum is at most
+~sqrt(h/theta)*(R+1)^(3/2) for R returned directions, including the final
+certification call. The shared setup improvement above applies to these
+same adaptive residual cores as well.
+
+If R=0 and the full output matrix is explicitly written, retain an O(np)
+output-write cost. An MM(n,0,p)=0 convention must not erase the cost of
+materializing the zero matrix.
+
+No edits to the main manuscript or research-state files were made.
+
+
+11. INDEPENDENT AUDIT OF THE TWO-LEVEL FINE-PROXY THEOREM
+
+The two-level theorem in docs/multilevel-proxy-audit.txt and the integrated
+two-level section of docs/sketch-preconditioned-spectral.tex were checked
+independently. No substantive mathematical or arithmetic-cost gap was found
+under 0<theta<=h<=H/4, H<=1/32. The following checks are material.
+
+Fine bracket, without a fine Gram:
+
+* The supplied P_H,Q_H are 2H-relative proxies for the fine factors.
+  Their ratios to P_h,Q_h lie between (1-H)/(1+h) and (1+H)/(1-h),
+  within [1-2H,1+2H]. The main primitive's domain is satisfied because
+  2H<=1/16 and the requested parameter h<=2H.
+* Its support reduction can use the SAME W,L based on P_H. Its mass is
+  Ghat=W^T P_h W, and its right metric is Qhat=L Q_h L^T. Both apply
+  through fine factors in O(J_h). No fine whitening or Cholesky is needed.
+* Its coarse proxy remains Q0=L Q_H L^T, and the threshold inflation
+  becomes (1+64H)t. The shared base Frobenius form works for this shift
+  as well as (1+32H)t. A separate supplied-core primitive does not entail
+  forming a fine Gram, a fine product, or another tall sketch.
+* For the actual fine Rayleigh value s_h,
+  (1-h/8)lambda_h<=s_h<=lambda_h, and fine OSEs give
+  (1-h)^2 lambda<=lambda_h<=(1+h)^2 lambda. Therefore
+
+      [s_h/(1+h)^2, s_h/((1-h/8)(1-h)^2)]
+
+  is a valid bracket. Its lower endpoint is at least
+  (1-h/8)(1-h)^2/(1+h)^2 lambda >=(1-33h/8)lambda.
+  Intersecting the coarse bracket preserves lambda and the needed
+  coarse-preconditioner bounds.
+* The extra fine-bracket cost J_h*sqrt(H/h) is absorbed by
+  J_h*sqrt(H/theta), because theta<=h. Its dense coarse norm work is
+  still m^2/sqrt(H), not m^2/sqrt(h). The coarse norm estimate can be
+  reused with its wider 2H-valid interpretation, or recomputed at the
+  same asymptotic cost.
+
+Matrix comparisons:
+
+  ||Khat_t-K_t||<=10ht,
+  22ht I<=F_h-K_t<=42ht I
+
+follow by expanding the two symmetric products with Ghat retained as
+the mass. On the fine bracket, K_t>=(t-lambda)G>=-5ht I. The latter
+constant uses h<=1/128 and ||G||<=16/15; it has slack. Thus F_h>=17ht I,
+and the stated conservative bound 16ht I is valid.
+
+Since F_H-K_t lies between 22Ht and 42Ht and h<=H/4,
+
+  0<=F_H-F_h<=42Ht I,
+  F_H <= (1+42H/(16h)) F_h.
+
+For an ANALYTICAL Cholesky F_H=JJ^T, D=J^(-1)F_hJ^(-T) consequently
+has spectrum in [h/(3H),1]: h/H+42/16<=1/4+42/16=23/8<3.
+
+The explicit Legendre construction is exact arithmetic:
+
+  a=h/(3H), rho=(1-sqrt(a))/(1+sqrt(a)), c=(1+sqrt(a))^2/4,
+  T=((1+a)I-2D)/(1-a),
+  D=c(I-2rho T+rho^2 I).
+
+The generating function gives
+
+  D^(-1/2)=c^(-1/2) sum_{j>=0} rho^j P_j(T).
+
+The identity c^(-1/2)/(1-rho)=1/sqrt(a) makes the truncated tail at
+most rho^(k+1)/sqrt(a). This also bounds the relative inverse-root
+error because sqrt(x)<=1 on [a,1]. Requiring rho^(k+1)<=eta sqrt(a)
+with eta=h/1000 is sufficient. Multiplying rho repeatedly finds k,
+and the rational three-term Legendre recurrence applies the polynomial
+with k D-actions and O(km) vector work. No coefficients in a monomial
+basis, integral, cosine, or trigonometric nodes are computed.
+
+The relative error is below one, so the REAL truncated polynomial is
+positive on [a,1], proving its invertibility. This justifies all analytic
+inverse-polynomial definitions. It is not necessary separately to assume
+that truncation preserves positivity.
+
+For R=J^(-T)p(D) and Fbar=J p(D)^(-2)J^T,
+
+  -4eta F_h<=Fbar-F_h<=4eta F_h.
+
+Since F_h<=F_H<=2t I in this parameter range, one obtains the integrated
+main text's bounds
+
+  21ht I<=Fbar-K_t<=43ht I, Fbar>=15ht I.
+
+In fact E=R^T K_t R has spectrum in [-1/3,1]: its upper bound follows
+from Fbar-K_t>=0, and K_t>=-5ht I together with Fbar>=15ht I gives
+the lower bound. Thus the integrated main text's stronger bound is valid;
+the audit note's older [-2,1] bound was merely looser.
+
+The witness constant 64 is safe, and the integrated constant 45 for
+the uncertain threshold is safe as well:
+
+  43(1+H)<=43*33/32<45.
+
+No additional coefficient-error union bound is required: p is a fixed
+polynomial at each threshold, and all its fine-factor actions are exact
+in the arithmetic model.
+
+
+12. SHARED CORES EXTEND TO TWO LEVELS AND ADAPTIVE RANK
+
+The analytical Cholesky in the two-level proof does not have to be
+computed. At one threshold let F=F_H and use the exact shared inverse
+from Sections 3--6. Put
+
+  T=F^(-1)F_h,   Eop=p(T)F^(-1)K_t p(T).
+
+Both T and Eop are selfadjoint in the F-inner product. In particular
+p(T)^T F=F p(T), and the palindrome around F^(-1)K_t is essential.
+Under the analytical coordinate map y=J^T x, these become
+
+  D=J^(-1)F_hJ^(-T),
+  E=p(D)J^(-1)K_tJ^(-T)p(D),
+
+exactly the symmetric operators already analyzed. A generalized F-unit
+Ritz witness x gives w=p(T)x and the ACTUAL quotient w^T K_t w; normalize
+Zw by sqrt(w^T G w) to obtain the original leading-Rayleigh vector.
+
+The effective metric can be written without forming it as
+
+  Fbar=p(T)^(-T) F p(T)^(-1)=F p(T)^(-2),
+
+which is symmetric despite the nonsymmetric Euclidean representation
+of T. It equals J p(D)^(-2)J^T. Neither its inverse nor p(T)^(-1)
+is applied by the algorithm.
+
+Here F_H>=28Ht I and F_H<=2t I, so kappa(F_H)<=1/H. Gaussian starts
+in coefficient coordinates therefore obey the normalized-overlap lemma
+of Section 5, with h there replaced by H. This adds only logarithms.
+
+The final-query pole fix remains valid. At the tightened bracket
+b-ell<=e*ell/4096, a top generalized eigenvector gives
+
+  mu_min(E) <= max(0,t-lambda)||G||/(15ht)
+             < e/(1024h)=tau/2.
+
+A Ritz approximation of accuracy tau/2 has actual q<=tau. The old
+witness calculation and the same terminal loss bound apply. The proof
+must use Fbar_min=15ht here, not the coarser bound 28Ht.
+
+At adaptive residual i keep Q_H,i by the exact rank-two updates of the
+main text. Retain Q_h only as the initial fine factor product. A current
+fine right-Gram action is the composition
+
+  v -> L^T v -> R_i^T L^T v -> B_h^T R_i^T L^T v
+    -> B_h B_h^T R_i^T L^T v -> R_i(...) -> L R_i(...).
+
+The R_i=I-D_i C_i^T transforms cost O(mi)<=O(m^2), and the fine factor
+actions cost O(m s_B(h)); together these are O(J_h). The fine left mass
+W^T P_h W stays fixed and also applies in O(J_h). There is no explicit
+fine Gram update, no materialized L R_i, and no transformed tall factor.
+
+The initial coarse and fine Loewner events survive EVERY adaptive
+congruence by R_i. Their 2H comparison to one another survives too.
+Thus each current fine-product norm estimate has the same proof and
+cost; no new embeddings or fine Gram formation appear at later ranks.
+
+The shared Frobenius form uses Q_{H,0}. Its low-rank representation of
+Q_{H,i} supports all (1+32H)t and (1+64H)t shifts. Per-threshold
+preparation still sums to ~m^2 r^(w-1), absorbed by the true input term.
+The general-rank bound is therefore
+
+  ~O(I+G_H+m^(omega+zeta)+r*m^2/sqrt(H)
+       +I*r*sqrt(h*r/theta)+J_h*r*sqrt(H*r/theta)
+       +T_MM(n,r,p)).
+
+The summable-error adaptive absolute wrapper applies without changing
+its proof. With R discovered directions, replace its input work by
+
+  ~[I*sqrt(h/theta)+J_h*sqrt(H/theta)]*(R+1)^(3/2),
+
+retain (R+1)m^2/sqrt(H), one shared m^(omega+zeta) setup, and the
+np+T_MM(n,R,p) output term. Allocate the stage confidence budget among
+the fine-bracket calls, outer threshold calls, and coarse norm estimate;
+four initial embedding failure events require only a constant allocation
+change. The polynomial operator has no additional randomized failures.
+
+One minor prose clarification was sent to the parent: the Gaussian
+overlap statement in the main shared-core proof means NORMALIZED
+squared overlap |u^T F^(1/2)g|^2/||F^(1/2)g||^2. The unnormalized
+transformed component is scale dependent. Its stated denominator/Markov
+argument already gives the correct normalized interpretation.
+
+
+13. TWO-LEVEL OUTPUT EXAMPLE: EXACT RATIONAL CHECK
+
+For N=m^(59/50), theta=m^(-11/25), H=m^(-7/100),
+h=m^(-17/200), the independently checked m-based exponents are
+
+  I                         109/50
+  coarse Gram                3362/1425
+  I sqrt(h/theta)            943/400
+  J_h sqrt(H/theta)          471/200
+  fine-bracket work          871/400
+  core                      9/4
+  coarse norm               407/200
+  output                    59/25.
+
+The three leading construction margins below 59/25 are respectively
+1/1425, 1/400, and 1/200. Fine sketch rows have exponent 117/100<59/50,
+with polynomial margin 1/100, so all dimension/accuracy/confidence logs
+fit below the ambient row count asymptotically.
+
+The corresponding leading N-exponents are
+
+  coarse Gram                6724/3363
+  true actions              943/472
+  fine-proxy actions         471/236,
+
+all strictly below two. The requested accuracy is theta=N^(-22/59).
+For every fixed rank and fixed confidence, sufficiently small fixed
+algebra slack gives construction o(N^2), and conventional explicit
+expansion gives total O(N^2). No spectral/data promise was added.
+
+At this theta the ordinary Krylov comparison is N^(120/59+o(1)); the
+named exact-Gram comparison remains N^(7056/3481+o(1)). A one-level
+distortion exponent would need at least 2/25 to place its true-action
+bound at or below output, whereas its then-known Gram bound exceeds
+output. This establishes improvement over the OPTIMIZED CURRENT
+one-level upper-bound tradeoff with the same multiplication bounds,
+not a lower bound against unknown faster one-level implementations.
+
+The two-level mathematical and exact-arithmetic audit is affirmative.
+Global novelty and stable finite-precision complexity remain separate
+unresolved questions. Main/state files were not edited.
+
+
+14. FINAL FIXED-DEPTH MANUSCRIPT AUDIT
+
+The integrated Fixed-depth tradeoff theorem and Two finer sketch levels
+corollary were independently checked against Section 7 of
+docs/multilevel-proxy-audit.txt. The audit is affirmative for FIXED L;
+there is no conclusion for dimension- or accuracy-dependent growing depth.
+
+The key extended validity window is |t-lambda|<=16h_j lambda, with
+h_0<=1/1024 and h_j<=h_{j-1}/8. The original metric has
+||G||<=1024/1023. Consequently t>=63lambda/64 and ||Q'||<=2t.
+The proxy error ||K_j-K||<=10h_j t actually holds throughout the
+LEVEL-0 window, because that argument uses only ||Q'||<=2t and the
+relative fine-proxy errors. This broader version is needed during a
+fine norm search before its own fine window has been constructed.
+The parent was asked to state that dependency explicitly.
+
+On the level-j window the inflation128 construction gives, with slack,
+
+  K>=-17h_j tI,
+  118h_j tI<=F_j-K<=138h_j tI,
+  F_j>=100h_j tI, ||F_j||<=4t.
+
+If the preceding effective proxy obeys [117,139]h_{j-1}t difference
+bounds and minimum99h_{j-1}t, then
+
+  0<=Fbar_{j-1}-F_j<=139h_{j-1}tI,
+  spectrum(R_{j-1}^T F_j R_{j-1})
+      subset [h_j/(2h_{j-1}),1].
+
+Indeed h_j/h_{j-1}+139/100<=1/8+1.39<2. Relative inverse-root
+error h_j/1000 perturbs F_j by at most .016h_j t, resetting the
+[117,139] and99 bounds. It does not add errors from all preceding levels.
+
+The preceding true-lambda bracket lies within (1+-6h_{j-1})lambda.
+Multiplying its endpoints by (1-h_j)^2 and (1+h_j)^2 gives a bracket
+for the fine-product norm lambda_j whose every threshold lies within
+8h_{j-1}lambda of lambda. Thus R_{j-1}(t) is valid on that search.
+The difference Fbar_{j-1}-K_j lies in [115,141]h_{j-1}t; with
+.99I<=G_j<=1.01I, the preconditioned spectrum is in [-1,1], the
+witness constant is below 160, and the uncertain upper-bound constant
+is below 143. The common 256 constants in the manuscript are valid.
+
+Using tau=e/(2048h_{j-1}), e=h_j/8, loses at most
+(3/2)*512e/2048<e in an uncertain query. A final lower-endpoint
+query loses at most e/4+256e/2048<e. Translating the actual s_j gives
+a true-lambda bracket inside (1+-5h_j)lambda, which establishes the
+next window. Importantly this uses the fine G_j mass, not original G.
+
+The cost recurrence is valid with operators rebuilt at each NEW threshold:
+
+  c_0=O(m^2),
+  c_j=~O_L((J_{h_j}+c_{j-1})sqrt(h_{j-1}/h_j)).
+
+Only the explicit coarse Cholesky is factored per threshold; it is
+cached during every recursive application at that threshold. No p(D_j)
+matrix or fine Gram is formed. The product of degree factors telescopes
+to sqrt(h_0/h_L), and products of logarithms remain polylogarithmic
+because L is fixed. Every intermediate norm refinement is absorbed
+by the final work sum since theta<=h_L<=h_j. The exact adaptive
+congruence argument covers fixed-rank deflation and constant counting
+rank in the adaptive absolute-error specialization.
+
+For L=2 and exponents (b,a0,a1,a2)=(56/125,7/100,17/200,89/1000),
+the maximum m-based construction exponent is
+
+  4719/2000 = 59/25-1/2000.
+
+The level-1 term is 2359/1000, the level-2 term and true-action term
+are 4719/2000, and the coarse Gram is 3362/1425. The gap between the
+last leading exponent and coarse Gram is exactly 23/114000. Choosing
+fixed matrix-multiplication slack below that gap leaves the claimed
+construction exponent unchanged:
+
+  N^(2-1/2360+o(1)).
+
+Fine level 2 rows have exponent 589/500=1.178<59/50=1.18; logarithms
+fit within this polynomial margin. The ordinary Krylov comparison is
+N^(601/295+o(1)), as stated. Constant-rank explicit expansion gives
+O(N^2) total on every fixed factor pair.
+
+Two minor qualifications were sent to the parent. First, generalized
+inner-product normalization should explicitly exit on a NONPOSITIVE
+squared norm off the good events, not just zero, because failed coarse
+norm estimation can make the auxiliary metric indefinite. Second, an
+adaptive constant-r_epsilon runtime specialization is on the same
+successful event as its returned-width guarantee, as the preceding
+absolute-error theorem already states. Neither affects the proved
+fixed-rank unconditional arithmetic budget or success guarantee.
+
+No further mathematical or cost-accounting gap was found in the final
+shared-core, two-level, or fixed-depth proof as read. No main/state files
+were edited.

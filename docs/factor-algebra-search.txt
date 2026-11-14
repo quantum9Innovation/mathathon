@@ -1,0 +1,496 @@
+Raw-factor algebraic search: exact-scalar reductions and the inertia escape
+2026-11-14. Independent continuation; no shared manuscript/state was edited.
+
+STATUS
+
+No new algorithm meeting the unrestricted ~I*r+m^omega construction target
+was established. This search gives two concrete results:
+
+  (1) Exact scalar determinant/trace shortcuts are substantially stronger
+      than needed: reverse differentiation turns several proposed raw-factor
+      scalar oracles into full Gram/rectangular multiplication algorithms.
+  (2) A cheap polynomial-ratio bracket for sigma_(r+1)^2 can be obtained
+      directly from r+1 random product actions. Thus an inertia-only route
+      need not compute the exact scalars in (1).
+
+Standard full block-Wiedemann/Kalman construction, polynomial-matrix
+compression, and batched exact updates do not presently yield the target
+after raw-factor costs are included. An exact sign/inertia certificate that
+avoids a dense Gram remains the substantive missing mechanism. These are
+scoped reductions and cost audits, not lower bounds on approximate spectral
+algorithms or a new matrix multiplication theorem. No novelty is claimed
+for reverse AD, Gaussian compression, Schur complements, or Krylov methods.
+
+Read first: research-direction.typ, current research-state.txt, relevant
+approach-ledger.txt entries, ridge-filters.tex, and factor-pca-search.txt.
+The completed hierarchy is preserved; its original theta=1/m hard case
+remains open. The current search deliberately changes the mechanism.
+
+
+1. EXACT SCALAR PRODUCT NORM ALREADY RECOVERS THE FULL GRAM
+
+Proposition (straight-line arithmetic reduction).
+Suppose a field-arithmetic program computes exactly
+
+  f(A,B)=||AB||_F^2=tr(A^T A B B^T)
+
+from raw A(n,m),B(m,p), at cost T(n,m,p). Reverse differentiation gives
+all entries of its B-gradient with constant-factor arithmetic overhead:
+
+  Y=grad_B f=2(A^T A)B.
+
+Choose B to be a fresh dense Gaussian m-by-p matrix, p>=m. Its first
+m columns B0 are invertible almost surely. Therefore the complete Gram is
+
+  A^T A = (1/2)Y[:,1:m] B0^(-1).
+
+The total is O(T+n*m+m*p+m^omega), including random entries, the entire
+gradient output, and the small inverse/product. No tall transform, exact
+Gram, factor norm, or input-conditioned solve is hidden. This works for
+arbitrary fixed A, including rank deficiency, because only B0 is inverted.
+
+The reverse chain rule for +,-,*,/ takes O(1) operations per original gate,
+so the statement counts ALL operations, not merely multiplications. The
+primary Baur--Strassen theorem proves constant-overhead differentiation in
+the nonscalar model and explicitly notes analogous all-operation bounds:
+W. Baur,V. Strassen, The complexity of partial derivatives, TCS22(1983),
+Theorem1 and introduction, pp317--318:
+https://web.vu.lt/mif/s.jukna/tropical/Baur-Strassen.pdf .
+
+Scope: the clean statement is for exact arithmetic circuits/straight-line
+programs. It also applies to exact algebraic algorithms on a generic smooth
+branch, with usual nonzero-pivot guards. For fixed A, a Gaussian B avoids
+nontrivial algebraic branch boundaries almost surely. One must NOT blindly
+differentiate an arbitrary Monte Carlo approximation, an integer-valued
+comparison oracle, or a program known correct only at one isolated input.
+Positive-root primitives can be differentiated on positive smooth branches;
+the field-only statement suffices for the exact polynomial algorithms under
+consideration here. Storage for the reverse pass is allowed by the present
+arithmetic model; it is at most proportional to the program size.
+
+Rectangular multiplication consequence. Given X,Y(n,m), apply a Gram
+algorithm to [X Y](n,2m). Its off-diagonal block is X^T Y. Thus a scalar
+oracle with T=~O(m(n+p)+m^omega) would give exact rectangular multiplication
+in ~O(n*m+m^omega) at constant-factor-expanded widths. In the hard shape
+n=p=N=m^(9/8), this would replace the checked Gram exponent169/72 in
+powers of m by9/4. It is a real matrix multiplication improvement, not a
+free scalar-statistic shortcut. This is NOT an unconditional lower bound:
+such a multiplication improvement may be possible.
+
+In particular, the exact trace tr(PQ), P=A^T A,Q=BB^T, is not an
+obviously cheaper primitive just because it has one scalar output. It is
+already f above. Approximate stochastic estimates do not inherit this exact
+AD reduction and are not excluded by it.
+
+
+2. EVEN ONE-FACTOR GRAM MOMENTS AND DETERMINANTS HAVE THIS ISSUE
+
+For G=X^T X and generic full-column-rank X(N,m), define
+
+  f2(X)=tr(G^2),       grad f2=4XG;
+  e2(G)=((tr G)^2-tr(G^2))/2,
+                    grad_X e2=2X[(tr G)I-G];
+  d(X)=det(I+G),      grad d=2X adj(I+G).
+
+The first m rows X0 are invertible for generic X. Multiplying the same
+rows of a gradient by X0^(-1) recovers G immediately for f2/e2 (trG is
+computable in O(Nm)). For d, recover H=adj(I+G), then
+
+  G=d*H^(-1)-I.
+
+The small postprocessing costs O(m^omega). Thus an exact raw second
+spectral moment, second elementary coefficient, or positive-shift Gram
+determinant at the proposed target cost also gives the complete Gram.
+The determinant is never zero, so no tiny-eigenvalue condition enters.
+
+To turn the generic-X statements into arbitrary-X algorithms, draw a dense
+Gaussian R and use the routine on X+R,X-R,R. Each is generic almost surely,
+including its first m rows, and polarization gives
+
+  G(X)=[G(X+R)+G(X-R)]/2-G(R).
+
+This costs three evaluations, O(Nm) extra arithmetic/random samples, and
+small-core algebra. This genericization also avoids pivot-branch derivative
+issues for otherwise exact rational programs. It does not justify AD of a
+mere approximate determinant value; derivative accuracy needs its own proof.
+
+Computing the full exact characteristic polynomial includes these harder
+coefficients/determinant evaluations. A direct raw-factor charpoly routine
+with ~I+m^omega cost would therefore carry an exact rectangular-MM advance.
+For a product routine, one may set B=[I_m 0] so that its nonzero squared
+singular values are those of X. The two-factor trace reduction in Section1
+is cleaner when the oracle is valid at generic B rather than a fixed
+special sparse B.
+
+The determinant/adjoint equivalence is classical, not new. Villard's
+explicit differentiation of the Kaltofen determinant algorithm makes this
+connection concrete for Krylov/baby-step algorithms:
+https://arxiv.org/html/0804.1021v1 , Sections1--2.
+The raw rectangular recovery above is an elementary consequence whose
+literature priority was not established in this search.
+
+
+3. CURRENT EXACT CHARPOLY/KRYLOV PAPERS DO NOT GIVE A RAW-FACTOR ORACLE
+
+Neiger--Pernet2021 Theorem1.1 takes an explicitly supplied square matrix
+and computes its characteristic polynomial in O(m^omega) field operations,
+with zero tests. Its polynomial-matrix algorithms do not make the entries
+of a composed raw Gram free:
+https://arxiv.org/html/2010.04662v2 .
+
+Neiger--Pernet--Villard2024 compute maximal Krylov bases from a supplied
+square A and initial U in O(m^omega loglogm), and obtain the smaller-block
+case in O(m^omega). Their polynomial fractions represent (I-xA)^(-1)U;
+they do not state the same bound given only a tall Gram factor or separate
+A,B factors. Replacing dense multiplication by an implicit operator at
+every polynomial-matrix step requires a new cost proof:
+https://arxiv.org/html/2402.07345v2 , introduction and Theorem4.1.
+
+Important new exact-algebra update: Villard, On computing the determinant
+over a ring, posted Nov5,2026, proves O(m^omega) division-free and zero-test-
+free determinant/charpoly circuits for a GIVEN square matrix. Its compression
+and homotopy are genuine strong tools, but still do not supply the input
+entries of P,Q or PQ. Applying it to a large raw bordered matrix has that
+large dimension, not m. The straight-line nature also makes Section1's
+AD warning especially direct:
+https://arxiv.org/html/2611.07786v1 , Theorem5.1 and introduction.
+
+No result in these inspected statements bypasses raw Gram formation.
+Conversely, this is not evidence that a structure-exploiting extension is
+impossible; it identifies the new theorem such an extension would prove.
+
+
+4. FULL BLOCK-WIEDEMANN/KALMAN COST, WITH FAST BATCHING
+
+For a dimension-m implicit core Gram/product operator, standard generic
+block Wiedemann uses approximately2m/b consecutive b-column moments.
+The arithmetic for each operator action is at least CHARGED through the
+raw factors, rather than m^2b. A primary description gives the sequence
+length2n/b+2 and generator degree<=ceil(n/b): Kaltofen's survey exposition,
+https://users.cs.duke.edu/~elk27/bibliography/96/Ka96_stratagem.pdf .
+The modern certificate paper describes the block sequence and qL~n scalar
+applications; a cheap VERIFIER is not a cheap constructor:
+https://arxiv.org/abs/1602.00810 .
+
+Use the strongest rectangular bound already adopted in the project. In the
+hard case N=m^a,a=9/8,b=m^c, one factor action has exponent
+
+  f(c)=a+1,                            c<=a/(a+1)=9/17;
+  f(c)=(a+(a+1)c)^2/(4ac),             9/17<=c<=1.
+
+The consecutive moment-generation term has exponent f(c)+1-c. In the
+first branch it decreases with c. In the second branch it equals
+
+  a/(4c)+(a+1)/2+1+[(a-1)^2/(4a)]c.
+
+Its derivative is negative for c<=1 when a=9/8, so this checked cost is
+minimized at c=1:169/72, precisely the exact Gram bound. At the largest
+input-optimal block it is353/136=2.595588..., and at b=sqrt(m) it is
+21/8=2.625, both worse than Gram. Adding generator/core algebra only
+increases these costs. The target is9/4.
+
+This is an upper-bound optimization for the STANDARD consecutive-moment
+construction, not a black-box lower bound for all determinant algorithms.
+Generic maximal Krylov basis construction also needs m total basis columns;
+Keller-Gehrig doubling avoids scalar passes only when suitable square
+powers/compressed polynomial operators are actually supplied. Materializing
+those powers from raw factors is the omitted operation. A low true minimal
+polynomial or known structured invariant space may help, but is an additional
+promise not valid for every input.
+
+Baby-step/giant-step determinant algorithms explicitly compute a dense
+power A^s before their giant steps (see Villard2008 AlgorithmDet, step2).
+Replacing that step by raw-factor action does not magically square an
+operator. No valid O(I+m^omega) construction resulted from that substitution.
+
+
+5. RAW BORDERED PENCILS AND WHY ELIMINATION MERELY HIDES THE GRAMS
+
+Even det(I+X^T X) has a raw sparse bordered representation
+
+  det[ I_N  X ; -X^T  I_m ] = det(I_m+X^T X).
+
+Its dimension is N+m with O(Nm) nonzeros. The dense exact algorithms cost
+(N+m)^omega. Eliminating I_N explicitly produces the Gram. A putative
+specialized near-input-plus-core exact determinant algorithm for this
+arrow structure would be a new rectangular-MM algorithm by Section2.
+
+For the general singular threshold z>0, use the raw symmetric pencil
+
+  L_z = [ zI_n    0       A       0
+            0    zI_p     0      B^T
+           A^T    0       0      -I_m
+            0     B      -I_m     0 ].
+
+The inner block D0=[0 -I;-I 0] is its own inverse and has m positive,
+m negative eigenvalues. Its Schur complement is
+
+  S_z=[zI_n AB;(AB)^T zI_p].
+
+Therefore negative_inertia(L_z)=m+#{sigma_i(AB)>z}. Conversely eliminating
+the positive outer diagonals produces the2m core
+
+  [ -(A^T A)/z   -I ; -I  -(BB^T)/z ],
+
+so ordinary elimination pays exactly for P and Q. The bordered expression
+is a useful correct linearization, not a cost saving by itself.
+
+An uncompressed rank-one Woodbury update to a dense m-core requires its
+current inverse applied to the new raw row; batching b rows costs dense
+core/block products and small inversions. A merge tree that constructs exact
+core sums ultimately forms the same full Gram. Fast factor batching or
+polynomial elimination must be charged at every stage; no free transformed
+tall factors or uncharged Schur complements were found in this search.
+
+
+6. CHEAP TARGET-SCALE INITIALIZATION THAT DOES ESCAPE THE EXACT-SCALAR ISSUE
+
+There is no need to compute a full exact spectral moment merely to obtain
+a polynomial-ratio initial bracket for sigma_j^2,j=r+1. This elementary
+Gaussian-compression lemma is useful if an inertia-only primitive is found.
+
+Draw Omega(p,j) standard Gaussian and orthonormalize it to Q. Compute
+Y=M Q through raw factors and the SMALL compression Hs=Y^T Y(j,j).
+For j<=m, even conventional costs are O(I*j)+O(m^omega): p*j^2 and
+n*j^2 are bounded by I*j, and all j-core algebra fits m^omega.
+
+Let lambda_j=sigma_j(M)^2>0 and let beta_j=lambda_min(Hs). Compression
+min--max gives beta_j<=lambda_j. In the top-j true right singular space,
+
+  Hs >=lambda_j*(U_j^T Q)^T(U_j^T Q),
+
+so beta_j>=lambda_j*sigma_min(U_j^T Q)^2. A Gaussian square-head
+distance bound gives sigma_min(U_j^T Omega)>=delta/(C*j^(3/2)), and
+Markov gives ||Omega||_F^2<=C*p*j/delta, jointly with probability1-delta
+after constant budget changes. Thus
+
+  beta_j >=lambda_j*delta^3/(C*p*j^4).
+
+For rho=e_j(Hs)/e_(j-1)(Hs), the exact small coefficient lemma gives
+beta_j/j<=rho<=beta_j. Consequently
+
+  rho<=lambda_j<=[C*p*j^5/delta^3]*rho
+
+on this event. Only dimension/confidence logarithms enter subsequent
+bisection, irrespective of lambda_1/lambda_j or input conditioning.
+
+If rank(Hs)<j, the Gaussian product sketch has rank=rank(M)<j almost
+surely, so its range gives an exact width<=r support projection of M.
+Compute M^T times that basis through the factors and expand. This also
+handles zero optimal tails without full Gram formation. Rank failure
+checks have fixed costs; there is no unbounded restart.
+
+This Gaussian-compression scale lemma is standard in spirit and not
+claimed new. Its role here is to show that avoiding exact full scalars
+does not force a spectral-ratio search. The genuinely missing step is
+the threshold decision/certificate, not target-scale initialization.
+
+
+7. WHAT AN INERTIA-ONLY BREAKTHROUGH STILL HAS TO SUPPLY
+
+Exact inertia is integer-valued and locally constant away from roots;
+its derivative is zero. Sections1--2 therefore do NOT turn a sign-only
+raw-factor algorithm into a full Gram algorithm. This is a real possible
+escape from the exact-scalar reductions, not a proof that such an algorithm
+exists. Near-input construction still needs more than a count: it must
+produce an adequate physical subspace without paying for a dense congruence.
+
+A precise certificate target for the symmetric S_z above is a width<=r
+matrix W=[U;V] such that S_z is PSD on W-perp. Such a dual negative-pivot
+certificate is sufficient. For x perpendicular to
+
+  U-(1/z)M V,
+
+the graph vector [x;-(1/z)M^T x] belongs to W-perp. Its S_z quadratic
+equals z||x||^2-||M^T x||^2/z, so the physical left space
+range(U-MV/z) has residual<=z. Mapping the certificate costs O(I*r),
+and exact range algebra/output have already been accounted. This is the
+proper orientation; merely taking W's left block need not work.
+
+At z just above sigma_(r+1), S_z has at most r negative eigenvalues.
+Full Gaussian-congruence LDL supplies this certificate but currently pays
+for dense product/Gram work. A raw arrow-pivot algorithm exploiting only
+the EXCESS negative index beyond the known m of D0 could be a different
+mechanism. It must provide both the count/threshold logic and these dual
+columns within ~I*r+m^omega. No such construction is proved here.
+
+Oblivious partial-principal compression is not enough in general. For
+
+  K=I-(1+gamma)uu^T, ||u||=1, gamma=1/m,
+
+there is one negative eigenvalue. If u is uniform, every proper coordinate
+principal submatrix is PSD: negativity needs subset size>m/(1+gamma)>m-1.
+For a Gaussian b-dimensional subspace, negativity instead requires
+||Proj(u)||^2>1/(1+gamma). Its probability is at most(1+gamma)*b/m by
+Markov, since the expected projection energy is b/m. Thus a small number
+of independent sublinear random compressions misses the negative direction
+with high probability. This is NOT an adaptive lower bound: a single
+K-action reveals u in this specially structured example. It only rejects
+the proposed oblivious small-principal-subproblem shortcut.
+
+
+8. CONCRETE NEXT PROOF OBLIGATIONS AND HONEST OUTCOME
+
+The algebraic route would become substantial if it proved ONE of:
+
+  A. A raw symmetric bordered-pencil inertia algorithm with a small dual
+     negative-index certificate, at ~I*r+m^omega cost, avoiding the dense
+     Schur frontier. Counts alone do not establish returned low-rank factors.
+  B. A new exact rectangular-MM algorithm. The determinant/trace circuits
+     above would be legitimate ways to obtain one, but cannot be invoked
+     as known cheap scalar primitives.
+  C. An adaptive approximate sign/certificate algorithm whose AD does not
+     imply an exact Gram and whose error control does not restore the
+     isotropic-sketch cap or theta^(-1/2) raw passes.
+
+Any candidate must count raw transformations, inner products of wide
+iterates, generator construction, degree-dependent polynomial work, and
+the output. Its initial scale can use Section6, so no true singular-value
+ratio logarithm is necessary. A favorable scalar low-minimal-polynomial
+promise is not the unrestricted theorem requested.
+
+No candidate surviving all those obligations was found in this search.
+The exact-scalar reductions and the raw-pencil/dual-certificate formulation
+are the concrete mathematical progress. They do not settle the research
+goal or prove it impossible. The hard target remains N=m^(9/8),r=1,
+theta=1/m,total N^(2+o(1)); the completed shape-limited hierarchy remains
+valid and is not being replaced by this unsuccessful algebraic search.
+
+
+9. PRIORITY CONTINUATION: ORDER-SENSITIVE RAW PARTIAL KRYLOV
+
+The parent subsequently proposed a significantly better targeted primitive:
+given raw X(N,m),v(m), compute ONLY
+
+  K_q(X^T X,v)=[v,Hv,...,H^(q-1)v]
+
+in ~O(I_X*q^(omega-2)+m*q^2+m^omega), where I_X=N*m. This is an
+OPEN CANDIDATE, not disproved by Sections1--4 and not established by the
+sources inspected here. The earlier full-moment audit must not be applied
+to it as if q=m. Its order-dependent input overhead is materially different
+from a hypothetical full exact scalar oracle at input-plus-core cost.
+
+At the original shape I=m^(17/8),q=~sqrt(m),omega=9/4, its input term is
+m^(17/8+1/8)=m^(9/4), its m*q^2 term is m^2 times logarithms, and its
+core is m^(9/4). Thus it would be a major general algorithmic improvement
+with a decisive solution of the original hard total-output instance.
+It retains polynomial dependence on accuracy in the general tradeoff;
+it is not yet the stronger logarithmic-accuracy target for every geometry.
+
+9.1 Precise truncated polynomial problem
+
+For a supplied constant small coupling J, define
+
+  F(z)=[ I_N      -X
+        -z J X^T  I_m ].
+
+The lower part of F(z)^(-1)[0;v] is
+
+  w(z)=(I-z J X^T X)^(-1)v mod z^q.
+
+The coefficients are the requested partial Krylov sequence. Identity J
+gives the one-Gram problem. The signs here are chosen to give I-zH;
+the alternative plus sign merely alternates coefficients.
+
+The promising precise obligation is an ORDER-q approximant/kernel or
+fraction computation on this raw bordered matrix, whose cost depends on
+q^(omega-2), rather than computing its full minimal denominator first.
+One may normalize the truncated right denominator to one: the desired
+power-series vector is unique modulo z^q. Full generic denominator degree
+can still be m, regardless of q, so computing the full exact rational
+fraction is stronger than needed.
+
+NPV2024 Lemma3.2 gives an arbitrary prescribed-order Krylov expansion,
+but still pays an O(n^omega) FULL minimal-kernel-basis setup before its
+truncated inverse/product steps. Its improved high-order lifting is not a
+proof of the raw, low-order bound above. No order-sensitive raw kernel
+bound of the proposed form was located. The target is therefore a concrete
+new polynomial-matrix theorem, not a substitution already licensed by NPV.
+
+9.2 Required extension from covariance to arbitrary factor products
+
+Computing short Krylov for ONE Gram is not automatically enough for AB:
+forming X=A*(BB^T)^(1/2) would hide a true Gram and a full tall transform.
+There is, however, a clean constant-factor raw formulation. Set
+
+  Xraw=diag(A,B^T), G=Xraw^T Xraw=diag(P,Q),
+  J=[0 I;I 0].
+
+Then (JG)^2=diag(QP,PQ). A short-Krylov routine supporting the fixed
+permutation J therefore handles product-of-Grams powers at only twice
+the order and dimension, without whitening or forming either Gram.
+The raw input size stays O(I), and the saddle matrix in9.1 applies with
+this explicit J. A theorem restricted to J=I must not silently claim this
+extension; the coefficient matrix is now generally nonsymmetric, although
+the algebraic truncated-series task is still well defined.
+
+For physical left Krylov, M M^T(Ax)=A(QP)x. Initialize a suitable raw
+coefficient seed through Q A^T times a physical Gaussian vector and then
+lift the product-of-Grams iterates by A. This gives exactly the ordinary
+physical Krylov space, not an unrelated coefficient-space projection.
+Extra seed/operator actions are within O(I) and constant order factors.
+
+9.3 All downstream hard-case costs fit if the primitive is proved
+
+With q=~sqrt(m), the complete m-by-q coefficient block is lifted by A
+in T_MM(N,m,q)=m^(17/8+o(1)) in the original shape: q remains inside
+the input-optimal range c<=9/17. Even conventional physical QR costs
+N*q^2=m^(17/8) times logs. Full-basis M^T actions, compressed Gram
+construction, and final physical rank-one projection also fit belowm^(9/4).
+The small q-core can be extracted within q^omega plus lower physical
+costs by the exact-field Gram/LDL routine already established; even a
+cubic q-core arithmetic charge is onlym^(3/2). Full output is
+N^2=m^(9/4). Thus no hidden postprocessing obstacle invalidates this
+conditional route. The missing theorem is genuinely sequence generation.
+
+9.4 Why obvious batching/Padé recursion does not yet prove it
+
+The unknown Krylov columns cannot simply be passed to one fast rectangular
+multiply. A row-update Sherman--Morrison formula shows the closure problem.
+For R0(z)=(I-zH0)^(-1), adding xx^T changes the RHS expansion to
+
+  Rnew(z)v=R0(z)v
+      +z R0(z)x [x^T R0(z)v]/[1-z x^T R0(z)x].
+
+It requires R0(z)x and x^T R0(z)x for the NEW seed x, not just the
+stored expansion R0(z)v. For a concrete PSD example, let v=e1 and
+H0=diag(1,a). Its entire old Krylov sequence is independent of a.
+After adding x=(1,1)^T,
+
+  (H0+xx^T)^2 v = [5,a+3]^T,
+
+which depends on the previously invisible coordinate. Thus a merge rule
+retaining only each child's one-RHS truncated expansion is not sufficient.
+The raw input may retain that coordinate, so this is a state-summary
+counterexample, not a lower bound on a better global algorithm.
+
+The same issue defeats naive divide-and-conquer over raw rows: powers of
+H1+H2 require noncommuting mixed words, not just powers of each child on
+v. Keller-Gehrig doubling needs H^(2^j) actions or a suitable polynomial
+fraction; counting those as free reintroduces the desired primitive itself.
+Low displacement rank of the final Hankel moment matrix only helps AFTER
+its moments/generators are available. It does not by itself generate them
+from the raw factors.
+
+Batched negative-shift solves are a different possible construction of a
+rational space, not exact coefficients of this nilpotent/order-q expansion.
+Confluent interpolation near zero can require exponentially accurate solves;
+the existing coefficient-growth audit prevents hiding that refinement work
+in termwise error control. This does not preclude a new stable simultaneous
+extraction, but it is not currently a proof of exact partial Krylov.
+
+9.5 Current assessment of the targeted candidate
+
+No decisive algebraic obstruction was found for the proposed q-sensitive
+bound, and the exact-scalar AD reductions do not exclude it. No inspected
+primary theorem supplies it either. The useful precise next lemma is:
+
+  Solve the rank-one-RHS raw saddle expansion F(z)^(-1)[0;v] moduloz^q
+  in ~O(I*q^(omega-2)+m*q^2+m^omega), uniformly for a fixed coordinate
+  permutation J, without a full degree-m kernel/fraction setup.
+
+A proof should exhibit its actual truncated representation, show closure
+under whatever recursion is used, and charge every raw block multiplication.
+It must not assume that a full square operator, unknown future iterates,
+or all transformed tall factors are already present. If proved, its physical
+Krylov consequence and hard-case total bound above are ready to use.

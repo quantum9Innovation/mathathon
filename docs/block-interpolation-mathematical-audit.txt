@@ -1,0 +1,274 @@
+Independent mathematical audit: all-depth direct block interpolation
+===================================================================
+2026-11-14, cutoff. This audit modifies no theorem/source note. It checks
+docs/block-interpolation-search.txt Section 7, source SHA
+259d7692ab7629231da8a7dd61ec7cbb8c53c2ece7a826ad66d78bfb2952f50f,
+and the parent's subsequently communicated fractional-moment sharpening.
+Primary-literature/priority and source relgap translation are separately
+being audited by research_runs. No claim about the original AB runtime
+target follows solely from this interpolation theorem.
+
+AUDIT RESULT. The actual Section 7 proof PASSES. The strengthened
+fractional-moment prefactor also PASSES, subject to explicitly fixing each
+subset's orthogonalization as a measurable function of THAT subset's
+Gaussian blocks alone. Standard deterministic QR/Gram--Schmidt with a
+fixed sign convention realizes that specification. No substantive gap
+has been found in evaluation order, terminal identity, fresh-root
+covariance, fixed-input quantifiers, or confidence bookkeeping.
+
+1. Precise convention and fixed-input statement
+-----------------------------------------------
+Lambda_i are deterministic real diagonal b-by-b matrices, and spectra of
+different blocks are disjoint. Within-block repetitions are allowed.
+Omega_i are independent standard real Gaussian b-by-b matrices, and
+B_i=Omega_i^-1 Lambda_i Omega_i. For a right-coefficient polynomial
+P(z)=sum_l z^l C_l, its LEFT matrix evaluation is
+
+  P(B)=sum_l B^l C_l.
+
+Thus P(z)D evaluates as P(B)D for a constant right factor D. In contrast
+one may NOT evaluate an arbitrary scalar-variable matrix-product
+factorization by multiplying its factors at B. The proof never does so.
+
+For fixed d,b and every fixed admissible collection Lambda_i, the desired
+event is simultaneous over all roots k and all scalar z in a containing
+interval. It is NOT a single Gaussian draw claimed to work for every
+possible input spectrum. Every probability step respects this distinction.
+
+2. Raw block Krylov invertibility and the leading coefficient
+-------------------------------------------------------------
+For any subset S of q blocks, let A_0=diag(Lambda_i:i in S) and
+Gamma=stack(Omega_i:i in S). The determinant of
+
+  K_q=[Gamma,A_0 Gamma,...,A_0^(q-1)Gamma]
+
+is a nonzero polynomial in the Gaussian entries. Witness: Omega_i=I.
+Then reorder rows/columns by coordinate inside each block to obtain a
+direct sum of b scalar Vandermonde matrices, each on q distinct nodes.
+Cross-block disjointness is exactly enough, even with repetitions within
+a block. A finite union covers every subset of a fixed d-block family.
+
+All block Krylov prefixes consequently have full column rank. Block
+Gram--Schmidt gives orthonormal blocks V_0,...,V_(q-1) with
+
+  V_j=sum_(l=0)^j A_0^l Gamma C_(l,j),
+
+where C_(j,j) is invertible. If C_q=C_(q-1,q-1), orthogonality gives
+
+  V_(q-1)^T A_0^(q-1) Gamma C_q=I.                         (A1)
+
+Indeed left multiply the expansion of V_(q-1) by its transpose;
+every lower-degree term vanishes. This identity has the correct order:
+C_q is on the RIGHT. No inverse norm of K_q is assumed in proving it.
+
+3. Terminal block Lanczos recurrence and polynomial annihilation
+----------------------------------------------------------------
+Normalize all scalar nodes into [0,1]. Since A_0 is symmetric, the
+orthogonal-basis representation is block tridiagonal. At its last block,
+
+  A_0 V_last=V_prev H+V_last T,
+
+with the previous term absent for q=1, and ||H||,||T||<=1. To check the
+absence of earlier blocks, use symmetry to move A_0 onto V_j, whose
+image is in the Krylov prefix through degree j+1 and hence orthogonal
+to V_last for j<=q-3. No residual outside the full qb-space remains.
+
+Let P_j(z)=sum z^l C_(l,j). The i-th block row of V_j equals
+Omega_i P_j(B_i), so
+
+  R_q(z)=zP_last(z)-P_prev(z)H-P_last(z)T
+
+has degree q and R_q(B_i)=0 for every selected original block. The
+coefficient order matches the recurrence exactly. H/T are multiplied on
+the right, and multiplication by scalar z becomes LEFT multiplication
+by B_i at evaluation. The leading coefficient is the C_q in (A1).
+
+4. Decisive end-to-end resolvent identity, including q=1
+------------------------------------------------------
+Write R_q(z)=sum_(l=0)^q z^l C_l. Annihilation is the rectangular
+identity sum_l A_0^l Gamma C_l=0. For z outside spec(A_0), subtract
+this zero from (zI-A_0)^-1 Gamma R_q(z). Since A_0 commutes with its
+own resolvent, ordinary polynomial division gives
+
+ (zI-A_0)^-1 Gamma R_q(z)
+   =sum_(l=1)^q sum_(t=0)^(l-1)
+                       z^(l-1-t) A_0^t Gamma C_l.
+
+Left multiplication by V_last^T kills t<q-1. Only l=q,t=q-1 survives;
+(A1) makes it I. Therefore, with
+
+  W_q(z)=V_last^T(zI-A_0)^-1 Gamma,
+
+one has W_q(z)R_q(z)=I. Both are square b-by-b, so R_q(z) is
+invertible and its inverse IS W_q(z). In particular
+
+  ||R_q(eta)^-1||<=||Gamma||/dist(eta,spec(A_0)).            (A2)
+
+No updated nonnormal solvent or internal cross-gap occurs here.
+
+For q=1 this reduces to V_0=Gamma C_0, A_0V_0=V_0T, and
+R_1(z)=zC_0-C_0T. Directly,
+W_1R_1=V_0^T(z-A_0)^-1(z-A_0)V_0=I. Thus the base terminal case
+has no missing P_-1 term, indexing defect, or factor normalization.
+
+5. Fresh original root, independent rows, and fundamental interpolants
+----------------------------------------------------------------------
+For root k, construct R_q using the OTHER q=d-1 blocks only. Set
+N_k=Omega_k R_q(B_k). Row l is exactly
+
+  omega_(k,l)^T R_q(eta_(k,l)),
+
+where eta_(k,l) is the corresponding fixed diagonal root eigenvalue.
+Conditional on all other blocks these rows are independent Gaussians.
+By (A2), each covariance R_q(eta)^T R_q(eta) is at least
+(delta_k/||Gamma||)^2 I, with delta_k the root-to-others gap. Therefore
+the independent-row small-ball lemma applies CONDITIONALLY, even though
+the covariance floor is a random function of the other blocks.
+
+Define F_k(z)=R_q(z)N_k^-1 Omega_k. For other nodes its evaluation is
+zero. At the root, left multiply by Omega_k to get
+
+  Omega_k F_k(B_k)=N_k N_k^-1 Omega_k=Omega_k,
+
+so F_k(B_k)=I. The order N_k^-1 Omega_k is essential and is correct
+in the source. All d resulting polynomials give surjectivity of the
+square interpolation map and hence uniqueness. Invertibility also
+follows from the raw Krylov determinant argument, without circularity.
+
+6. Inductive polynomial bound and the original recursive constant
+-----------------------------------------------------------------
+For q-node fundamentals G_i of the OTHER blocks, uniqueness yields
+
+  P_j(z)=sum_i G_i(z)P_j(B_i),
+  ||P_j(B_i)||=||Omega_i^-1 (V_j)_i||<=M,
+
+where M=max_i||Omega_i^-1||. Thus sup||R_q||<=3q G_q M.
+No multiplication order or q-versus-b dimension factor is missing.
+
+The actual source's three event collections each have failure beta/3:
+  (i) d inductive calls at beta/(3d);
+ (ii) d Gaussian norm tails and d inverse tails, each beta/(6d);
+(iii) d fresh-root N_k tails, each beta/(3d), obtained conditionally.
+They need not be mutually independent; a union bound suffices.
+
+With L_g=b sqrt(6d/beta), u=beta/(6d b^(3/2)),
+v=beta/(3d b^(3/2)), the proof obtains
+
+  3q^(3/2)L_g^2/(u v)=324q^(3/2)d^3 b^5 beta^-3.
+
+This verifies recursion (15) exactly. Its log grows O(d^2 log(d+1)
++d log(b/beta)); there is no hidden dependence on any spectral gap.
+Affine normalization restores (L_spec/Delta)^(d-1), because scalar
+affine changes commute with left evaluation and preserve the fundamental
+polynomial's sup over the corresponding containing interval.
+
+7. Stronger fractional-moment/path bound supplied by the parent
+----------------------------------------------------------------
+This refinement is sound and improves log C from quadratic to linear
+in d up to logarithms. Define every subset polynomial by a FIXED
+measurable subset-only orthogonalization, so the nested conditioning
+used below is legitimate. For S of size q+1>=2 and k in S put
+
+  Z_(S,k)=delta_(S,k) ||N_(S,k)^-1||/||Gamma_(S\k)||.
+
+Conditional on Omega_(S\k), the row lemma gives
+
+  Pr{Z_(S,k)>z | Omega_(S\k)}<=min(1,b^(3/2)/z).
+
+Integrating the tail of sqrt(Z) yields
+
+  E[sqrt(Z_(S,k)) | Omega_(S\k)]<=2b^(3/4).                (A3)
+
+Let E_0 be the global Gaussian event
+
+  max_i||Omega_i||<=L_0=2b sqrt(d/beta),
+  max_i||Omega_i^-1||<=U_0=4d b^(3/2)/beta.
+
+The total norm-tail failure is beta/4 by Frobenius Markov, and the
+inverse-tail failure is beta/4 by the row lemma. Thus Pr(E_0)>=1-beta/2.
+On E_0, deterministic recursion for EVERY subset gives
+
+ G(S)<=max_(k in S) [3q^(3/2)U_0 L_0^2/Delta]
+                           Z_(S,k) G(S\k).                (A4)
+
+Expand along each of the d! removal-order paths. For a FIXED path, later
+Z factors depend only on the remaining Gaussian matrices. Repeated
+conditioning in (A3) therefore gives
+
+ E[product_path sqrt Z]<=(2b^(3/4))^(d-1).
+
+IMPORTANT: do not condition this expectation on E_0, which would alter
+the Gaussian laws. Obtain a separate Markov/path event unconditionally,
+then union it with E_0. Markov and a union over d! paths show, with failure
+at most beta/2,
+
+ max_path product Z
+   <=[2d! (2b^(3/4))^(d-1)/beta]^2.                         (A5)
+
+Combining (A4),(A5), q=1,...,d-1, gives
+
+ G_d<=4 beta^-2 (d!)^2 ((d-1)!)^(3/2)
+                    [192 d^2 b^5/(beta^2 Delta)]^(d-1).   (A6)
+
+The arithmetic factor checks: 3U_0L_0^2=48d^2 b^(7/2)beta^-2;
+the squared moment term contributes (4b^(3/2)) per level, producing192.
+An intentionally loose simple bound, valid for every d>=2, is
+
+ G_d<=[768 d^8 b^5/(beta^4 Delta)]^(d-1).                  (A7)
+
+Indeed d!<=d^(d-1), (d-1)!<=d^(d-2), 4<=4^(d-1), and beta<1.
+The d=2 endpoint satisfies the same bound. Affine scaling replaces
+Delta^-1 by L_spec/Delta. Thus the base in (A7) is polynomial in
+d,b,1/beta, and log C=O(d log(db/beta)). There is no conditioning
+on an intersection of random spectral or Gaussian events in the moment
+calculation, and no union over a continuum of input spectra.
+
+8. Graph-angle transfer and scope
+---------------------------------
+For a fixed symmetric n-by-n A and a db-dimensional target invariant
+subspace, use a containing interval for the ENTIRE spectrum of A, so
+tail eigenvalues also lie where the interpolation sup is controlled.
+In eigen-coordinates the target-head raw Krylov matrix K_H is square;
+the full K_d has graph matrix K_T K_H^-1. For target y=(y_i),
+
+  p_y(z)=sum_i F_i(z)Omega_i^-1 y_i
+
+has the exact head values. Cauchy--Schwarz over blocks then gives
+
+  ||K_T K_H^-1||<=sqrt(d)||Omega_T||_F
+                            max_i||Omega_i^-1|| G_d.
+
+This equals the tangent of the largest principal angle. The source's
+orientation is correct. A tail Frobenius Markov event and the joint
+head events above yield the claimed spectrum-uniform relgap_b^(1-d)
+dependence, allowing arbitrary within-block repeats. If n=db, the
+tail graph is zero and the angle is zero almost surely.
+
+This is an initial structural angle bound. An actual convergence theorem
+to a target inside a larger spectrum still needs its stated EXTERNAL
+separation. The result does not prove the disproved product-of-solvent
+constants, construct raw powers faster, or automatically attain the
+original factored-product N^2 goal. Its possible novelty is the direct
+cluster-robust interpolation/angle theorem; primary-source comparison
+and final manuscript copying require their own review.
+
+9. Actual appended Section 8 copy and primary gap definition
+------------------------------------------------------------
+Re-read the ACTUAL appended Section 8 at source SHA
+c8113a957c01ab0da70be21cc630c39d9d76b150151fe31ea6c606a4b3625cae
+(715 lines). It matches the independently audited parent sharpening in
+Section 7 of this review, including subset-only fixed QR, unconditional
+fractional moments, d! paths, event union, exact192 factor, and simplified
+768 d^8 b^5 beta^-4 base. Its looser factorial inequality proves the
+displayed d^8 bound; no copying correction is needed.
+
+Also inspected the primary HTML of Shao arXiv:2507.10144v2, introduction
+equation (1): relgap_b is explicitly the minimum CROSS-BLOCK gap for the
+SUPPLIED b-by-b partition, divided by the full A spectral width. Thus
+the note's partition-specific definition agrees with that displayed
+source definition. Mere maximum eigenvalue multiplicity<=b does not
+ensure that a particular equal-size partition has a positive cross-gap;
+the appended source caution is correct and should be retained.
+
+Primary page: https://arxiv.org/html/2507.10144v2
+This check validates scope, not global novelty or priority.

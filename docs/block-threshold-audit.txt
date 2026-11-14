@@ -1,0 +1,1424 @@
+Stronger spectral certificates: removing the greedy sqrt(r) loss
+Independent mathematical audit, 2026-11-14
+
+STATUS
+
+The sqrt(r) loss CAN be removed from the input-iteration term by going
+beyond relative leading-Rayleigh accuracy. A low-eigenspace leakage
+certificate (cPCA) suffices. Sections 1--4 below prove the required
+Nystrom reduction and a self-contained positive-shift, fixed-polynomial
+cPCA implementation. Section 5 records an alternative implementation via
+the primary AppxPCA theorem, suitable for substituting faster stochastic
+linear solvers. It includes a computable near-isotropic start and no
+singular-value-ratio dependence.
+
+For the existing deterministic preconditioned solver, the proved general
+rank bound becomes
+
+  ~O(I+G_h+m^(omega+zeta)+r*m^2/sqrt(h)
+       +I*r*sqrt(h/theta)+m^2*r^(w-1)+T_MM(n,r,p)),          (A)
+
+where 9/4<w<min(5/2,9/4+zeta) is a feasible square exponent. The
+shared-core preparation term m^2*r^(w-1) must now remain explicit;
+the old sqrt(r) input term can no longer automatically absorb it.
+It is absorbed whenever
+
+  (I/m^2)*sqrt(h/theta) >= m^(w-2),
+
+which covers the current high-accuracy output regimes uniformly for r<=m.
+
+The more global absolute-pencil idea from the task also has a useful
+proved quadratic block certificate, in Section 6. It is not by itself
+a complete global rank-threshold selection algorithm. The cPCA reduction
+already provides a complete way around greedy precision accumulation.
+
+All claims are exact real-arithmetic claims in the manuscript's model.
+No global novelty or stable finite-precision theorem is asserted.
+
+
+1. A TAIL-MASS NYSTROM LEMMA
+
+Let H>=0 have descending eigenvalues lambda_1,...,lambda_d. Let z be
+unit, s=z^T H z>0, and R=H-Hz z^T H/s. For 1<=j<d write
+
+  t=lambda_{j+1}(H),
+  w_j=||Pi_{bottom d-j eigenvectors} z||^2.
+
+If w_j<1, then
+
+  lambda_j(R)
+    <= lambda_1*t/[lambda_1*(1-w_j)+t*w_j]
+    <= t/(1-w_j).                                        (1)
+
+In particular, bottom-tail mass <=epsilon implies
+lambda_j(R)<=lambda_{j+1}(H)/(1-epsilon).
+
+Proof.
+First take a simple positive spectrum and nonzero coordinates of z in
+the eigenbasis. If t=0 the result follows by rank drop, so consider t>0.
+The nonzero residual roots interlace H's eigenvalues and obey
+
+  f(mu)=sum_i lambda_i*z_i^2/(lambda_i-mu)=0.
+
+This follows from the rank-one determinant identity, using
+lambda_i^2/(lambda_i-mu)=lambda_i+mu*lambda_i/(lambda_i-mu).
+The function is increasing between adjacent poles. Let
+
+  mu0=lambda_1*t/[lambda_1*(1-w_j)+t*w_j].
+
+If mu0>=lambda_j(H), interlacing proves the bound. Otherwise the
+head terms are positive and, because x/(x-mu0) decreases for x>mu0,
+
+  positive head >= lambda_1*(1-w_j)/(lambda_1-mu0).
+
+The negative tail magnitude is at most t*w_j/(mu0-t). These two
+expressions are equal at the displayed mu0. Thus f(mu0)>=0, and
+the interlacing residual root is at most mu0. Continuity handles repeated
+eigenvalues, zero coordinates, w_j=0, and semidefinite H. If the
+corresponding tail eigenvalue is zero, rank(R)=rank(H)-1 supplies the
+same conclusion. The formula is sharp in the two-dimensional case.
+
+The statement is stronger than a relative-Rayleigh Nystrom bound: it
+uses WHERE z's error lies, not merely its lost Rayleigh value.
+
+
+2. A STRONG cPCA ORACLE IMPLIES GAP-FREE RANK-r SPECTRAL ERROR
+
+For a nonzero PSD residual H_i, suppose an oracle returns a unit z_i
+satisfying
+
+  ||Pi_{lambda <= (1-gamma)lambda_1(H_i)} z_i||^2 <=epsilon. (2)
+
+No gap at that cutoff is assumed. Define the usual right Nystrom update
+of M_i by v_i=M_i^T z_i/sqrt(z_i^T H_i z_i). This produces
+
+  H_{i+1}=H_i-H_i z_i z_i^T H_i/(z_i^T H_i z_i).
+
+For r successful stages with fixed gamma,epsilon in (0,1),
+
+  lambda_1(H_r)
+    <= lambda_{r+1}(H_0)/[(1-gamma)(1-epsilon)^r].           (3)
+
+Proof by a moving tail threshold.
+Put t0=lambda_{r+1}(H_0), alpha=(1-epsilon)^(-1), and t_i=alpha^i t0.
+Initially lambda_{r+1}(H_0)=t0. Inductively, as long as no earlier
+case below has finished the analysis, maintain
+
+  lambda_{r-i+1}(H_i)<=t_i.
+
+If lambda_1(H_i)<=t_i/(1-gamma), all later residuals are PSD
+downdates of H_i, hence their maximum eigenvalue is no larger. This
+already proves (3). Otherwise t_i<(1-gamma)lambda_1(H_i).
+The bottom eigenspace starting at index r-i+1 then lies inside the
+bad eigenspace in (2). Apply (1) with j=r-i to obtain
+
+  lambda_{r-i}(H_{i+1})<=t_i/(1-epsilon)=t_{i+1}.
+
+At i=r the invariant gives the desired bound. The analysis need not
+tell the algorithm when the first case occurred. If t0=0, exact rank
+drop proves the result; if a residual becomes zero, stop immediately.
+
+For 0<theta<1 choose
+
+  gamma=theta/2,  epsilon=theta/(2r).
+
+Bernoulli gives (1-epsilon)^r>=1-theta/2=1-gamma. Therefore
+
+  ||M-MV_r V_r^T|| <= sigma_{r+1}(M)/(1-theta/2)
+                   <= (1+theta)sigma_{r+1}(M).             (4)
+
+The rank-r factor guarantee follows, with exact zero-tail recovery.
+Only the leakage tolerance epsilon depends on r, and an inverse-based
+cPCA oracle depends logarithmically on that tolerance. The spectral
+cutoff width gamma remains Theta(theta), removing the old sqrt(r).
+This is a black-box reduction from (2), not an assertion that ordinary
+Rayleigh witnesses meet (2).
+
+
+3. A SELF-CONTAINED SAFE-SHIFT cPCA ORACLE USING EXISTING PRIMITIVES
+
+Fix one residual H=M_i M_i^T with lambda=lambda_1(H)>0. Keep the main
+manuscript's support coordinates
+
+  Z=AW, G=Z^T Z, Q'=L Q_i L^T, H=Z Q' Z^T,
+  I/(1+h)<=G<=I/(1-h), 0<h<=1/16.
+
+Let 0<gamma<=h/2 and 0<epsilon<=1/4. All norms and random starts
+in coefficient space use the true G metric, which applies in O(I).
+The conceptual isometry ZG^(-1/2) and square root G^(1/2) are used
+only to analyze eigenvectors; they are not constructed.
+
+3.1 Scale and a safe shift
+
+Call the existing leading-Rayleigh primitive with parameter gamma/8.
+Its actual squared quotient s obeys
+
+  (1-gamma/64)lambda<=s<=lambda.
+
+Put delta0=gamma/64, and choose a shift t anywhere in
+
+  [s/(1-4delta0), s/(1-5delta0)].                           (5)
+
+If using the shared Frobenius inverse, choose a nonpole in this interval
+by the same a+1-point companion-polynomial test. No eigenvalue oracle is
+needed. Direct scalar estimates give
+
+  (gamma/32)lambda <= t-lambda <= (gamma/8)lambda.           (6)
+
+The true stiffness K=tG-GQ'G is SPD. The explicit current-core proxy
+F=(1+32h)tI-Q0 has
+
+  22htI<=F-K<=42htI.
+
+These comparisons remain valid above lambda even if t is outside the
+old initial bracket: ||Q'||<=(1+h)lambda<=2t and
+||Q0||<=(1+h)^2lambda<=(1+3h)t suffice for their proofs.
+
+Also K>=(t-lambda)G>=(gamma/40)tI. Consequently the preconditioned
+operator A=F^(-1)K, selfadjoint in F, has spectrum in
+
+  [gamma/(4096h),1].                                     (7)
+
+For instance F<=K+42htI<=(1+1680h/gamma)K gives the stronger lower
+bound gamma/(1681h). Constants in (7) are deliberately loose.
+
+3.2 A FIXED symmetric approximate inverse
+
+Apply the manuscript's explicit Legendre inverse-root polynomial p to
+A on the interval (7), at relative tolerance nu. It has degree
+
+  ~O(sqrt(h/gamma)*log(1/nu))
+
+and is evaluated with arithmetic, division, and scalar square roots
+only. A's action uses true K and the exact shared F inverse. Define
+
+  S_hat=p(A)^2 F^(-1).
+
+This is a symmetric positive matrix. In analytical symmetric coordinates
+C=F^(-1/2)KF^(-1/2), it equals
+
+  S_hat=F^(-1/2)p(C)^2 F^(-1/2),
+
+so
+
+  (1-nu)^2 K^(-1)<=S_hat<=(1+nu)^2 K^(-1).                (8)
+
+There is no adaptively stopped nonlinear solve inside a power iteration.
+The polynomial and its degree are fixed at this stage.
+
+3.3 An explicit power/precision argument, with no singular-value ratio
+
+Let c=gamma*s/64 and let B=c K^(-1)G, selfadjoint in G. Its eigenvalues
+are c/(t-lambda_j(H)). By (6), its largest eigenvalue b1 satisfies
+
+  1/10<=b1<=1/2.
+
+Every eigenvalue corresponding to lambda_j<=(1-gamma)lambda is at
+most b1/9. All dependence on spectral scale has disappeared.
+
+Take a fresh standard Gaussian in coefficient space and G-normalize it.
+With failure probability beta', its conceptual symmetric-coordinate
+squared overlap with one fixed top eigenvector is at least
+
+  alpha0^2=(beta')^3/(16a),                               (9)
+
+because kappa(G)<2. This is the Gaussian overlap/Markov argument in
+docs/shared-threshold-audit.txt, with the mass G instead of a threshold
+preconditioner. Allocate beta' separately from the initial Rayleigh call.
+
+Choose an integer q by repeated multiplication so that
+
+  9^(-q)<=alpha0*sqrt(epsilon)/16.
+
+Then q=O(log(a/(beta'*epsilon))). For the exact B-power vector w,
+its norm is at least alpha0*10^(-q), and its bad-eigenspace component
+is at most sqrt(epsilon)/16 times its norm.
+
+Use B_hat=c S_hat G, with
+
+  nu=alpha0*sqrt(epsilon)*10^(-q)/(100q).
+
+The symmetric-coordinate matrices obey
+||B_hat-B||<=2nu and max(||B_hat||,||B||)<=1, by (8).
+The telescoping power identity therefore gives
+
+  ||B_hat^q-B^q||<=2q nu
+      <=(sqrt(epsilon)/50)||w||.
+
+After G-normalization, the computed vector has squared bad leakage
+strictly below epsilon. Its physical lift z=Zx/sqrt(x^T Gx) therefore
+satisfies (2). The same estimate proves it is nonzero.
+
+Crucially log(1/nu)=O(log(a/(beta'*epsilon))) up to logarithms of
+logarithms. The exponentially small value 10^(-q) causes NO polynomial
+precision cost because q itself is logarithmic in the problem parameters.
+No lambda_1/lambda_k or factor-condition ratio appears. Scalar coefficient
+work and the outer power count are only polylogarithmic. The main true
+action count is ~O(sqrt(h/gamma)), with O(I) work per action.
+
+This gives a fully constructive cPCA oracle from the existing one-level
+preconditioner, rather than merely naming a stronger black box.
+
+
+4. GENERAL-RANK COST, ADAPTIVITY, AND EXACT ZERO TAILS
+
+Reuse every initial embedding and the exact proxy updates from the
+manuscript. Each new right vector lies in range(B^T); orthogonality and
+the coefficient updates remain exactly the same as before. On the good
+events, leakage (2) implies
+
+  z_i^T H_i z_i>=(1-gamma)(1-epsilon)lambda_1(H_i)>0.
+
+Thus the Nystrom step is defined, and every nonzero residual loses exactly
+one rank. If rank(M)<=r, it becomes zero by that many steps, regardless
+of how small the nonzero singular values are. The zero proxy test remains
+valid. No limiting accuracy argument is used for exact recovery.
+
+The initial leading-Rayleigh call in Section 3 has parameter Theta(gamma),
+not epsilon. Its cost and all polynomial-inverse work are
+
+  ~O(m^2/sqrt(h)+I sqrt(h/gamma)
+                +m^2(1+i)^(w-2))
+
+at stage i, after the common initial setup. The last term is the shared
+core preparation from the exact Frobenius/Woodbury construction. Its
+sum is m^2 r^(w-1), which MUST remain explicit now that the input term
+is linear rather than r^(3/2). This establishes (A).
+
+Condition on all previous outcomes and choose fresh Gaussian starts at
+each call. Allocate the common embedding failure event and the O(r)
+stage budgets within delta, with logarithmic per-call allocations as
+usual. Everything inside each polynomial is fixed linear arithmetic.
+The true-vector formation and dual lifting to final factors cost O(Ir),
+already included. Explicit expansion costs T_MM(n,r,p).
+
+The method has no gap assumption, no nonzero-tail promise, and no
+leading-to-tail singular-value ratio in its arithmetic bound. Its proof
+uses a stronger certificate than the sharp Rayleigh-only example permits.
+
+
+5. APPxPCA WRAPPER FOR A FASTER POSITIVE-SHIFT SOLVER
+
+The safe-shift initializer in Section 3 costs I sqrt(h/gamma). To use a
+faster solver that would beat that term, replace the WHOLE cPCA stage,
+including scale refinement, by the safe-shift search already proved by
+Allen-Zhu--Li:
+
+  LazySVD: Even Faster SVD Decomposition Yet Without Agonizing Pain,
+  arXiv:1607.03463v2, Algorithm 1 and Theorem 3.1, PDF printed page 5,
+  Appendix A.2 for shift safety.
+  https://arxiv.org/pdf/1607.03463
+
+The theorem returns squared leakage <=epsilon below
+(1-gamma)lambda_1. It uses O(log(1/gamma)*m1+m2) approximate inverse
+calls, where m1=O(log(a/p)) and m2=O(log(a/(p epsilon))). Every queried
+shift alpha satisfies
+
+  alpha/(alpha-lambda_1(normalized M)) <=12/gamma,
+  1/(alpha-lambda_1(normalized M))
+      <=12/[gamma*lambda_1(normalized M)].                 (10)
+
+It does NOT first use I/sqrt(gamma) ordinary Lanczos. Its inverse-power
+tests safely reduce the shift distance geometrically.
+
+5.1 A scale available at input-plus-core cost
+
+Use constant-distortion coarse Grams and the original cheap dense-core
+norm estimate to obtain b0 with
+
+  lambda_1(H)<=b0<=3lambda_1(H)/2.
+
+This costs ~O(I+m^omega) initially; after adaptive deflation the coarse
+proxy updates and another constant-accuracy dense-core norm estimate cost
+~O(m^2)<=~O(I). If the residual coarse proxy is zero, stop exactly.
+Normalize the CONCEPTUAL symmetric matrix
+
+  S=G^(1/2)Q'G^(1/2),  M_norm=S/b0.
+
+Its largest eigenvalue lies in [2/3,1]. Hence (10) has no dependence on
+the unknown scale or a singular-value condition number.
+
+5.2 Generalized inverse implementation and error metric
+
+The coefficient operator similar to M_norm is Q'G/b0. A shifted inverse
+call applied to a coefficient vector v is
+
+  x=b0 K_s^(-1)Gv,
+  K_s=sG-GQ'G,  s=alpha*b0.
+
+Equivalently, solve the NORMALIZED SPD system
+
+  (K_s/s)x=Gv/alpha.                                      (11)
+
+By (10), mu=(s-lambda_1(H))/s>=gamma/12 for every queried system.
+All raw shifts are O(lambda_1(H)). The full Gv and all power-method
+norms, scalar inner products, and normalizations use O(I) exact work
+per oracle call, only polylogarithmically many calls.
+
+The Euclidean oracle error in conceptual symmetric coordinates is
+
+  ||G^(1/2)(x-x_exact)||.
+
+Since gmax=lambda_max(G)<=16/15, a coefficient Euclidean error at most
+epsilon_oracle/sqrt(gmax) suffices. A normalized strongly convex quadratic
+objective gap at most mu*epsilon_coeff^2/2 guarantees this error.
+RHS norms may grow during unnormalized powers, but their logarithms are
+O((m1+m2)log(1/gamma)), because all normalized inverse norms are O(1/gamma).
+
+The literal paper displays absolute inverse accuracies
+
+  epsilon_1=(gamma/6)^m1/(64m1),
+  epsilon_2=epsilon*(gamma/6)^m2/(8m2),
+  m1=ceil(4 log(288a/p^2)), m2=ceil(log(36a/(p^2 epsilon))).
+
+Their log reciprocals are polylogarithmic in dimension, 1/gamma,
+1/epsilon, and 1/p. In the generalized implementation it is harmless
+and safer to choose stricter tolerances
+
+  epsilon_1'=(gamma/C)^m1/(C m1),
+  epsilon_2'=epsilon*(gamma/C)^m2/(C m2),
+
+for a fixed C>=1000. They are below the displayed source tolerances
+and cover the constant factors in the G-error metric and normalized
+inverse-norm bounds. The deterministic inexact-power perturbation bound
+uses only (C/gamma)^phase amplification, whose logarithm remains
+polylogarithmic. There is no hidden sigma_1/sigma_{r+1} precision factor.
+
+5.3 A computable near-uniform initial sphere law
+
+The theorem uses a uniform sphere start in symmetric coordinates. A plain
+Gaussian coefficient start is elliptical; it should not silently be
+called uniform. One option is to redo the proof with the constant-condition
+Gaussian overlap (9), changing only constants. A more literal implementation
+is as follows.
+
+Apply the explicit Legendre construction to G, whose spectrum is in the
+known fixed interval [1/(1+h0),1/(1-h0)]. Obtain a FIXED polynomial J_G
+approximating G^(-1/2) to relative eta0=p/(100a). This needs O(log(a/p))
+G-actions, hence ~O(I), and no true square root or eigendecomposition.
+Draw g~N(0,I), set c=J_G g, and G-normalize c. Its conceptual
+unnormalized image y=G^(1/2)c is Gaussian with covariance eigenvalues in
+[(1-eta0)^2,(1+eta0)^2]. The Gaussian KL formula gives
+
+  KL(N(0,Cov(y)) || N(0,I)) <= O(a eta0^2).
+
+Pinsker gives total variation at most p/10 with the displayed generous
+constant. Normalization cannot increase total variation, so the starting
+sphere law is within p/10 of uniform. Invoke the literal AppxPCA theorem
+with failure p/2 and allocate another p/4 to all randomized inverse
+solver failures. This produces a rigorous generalized implementation with
+overall failure below p, at harmless extra ~O(I) work. The same coarse
+whitening G is fixed across residual ranks.
+
+5.4 Conditional substitution of the stochastic solver
+
+If a normalized positive-shift system (11) with gap mu admits the
+audited solve cost
+
+  ~O(I+I^(3/4)m^(1/2)/sqrt(mu)),
+
+then (10)--(11) and the primary AppxPCA theorem give a cPCA stage at
+
+  ~O(I+I^(3/4)m^(1/2)/sqrt(gamma)).
+
+The Nystrom reduction in Section 2 yields general-rank spectral cost
+
+  ~O(I+m^(omega+zeta)+rI
+       +r I^(3/4)m^(1/2)/sqrt(theta)+T_MM(n,r,p)),           (12)
+
+provided the stochastic system solver's moment, objective-gap, setup,
+and high-probability costs are all established. That linear-system
+analysis is in docs/frontier-reduction-audit.txt, not proved here.
+No shared Frobenius term is needed for (12), since its normalized
+stochastic solves do not use those inverses. Only the coarse Gram
+support and adaptive rank-two proxy updates remain.
+
+
+6. A QUADRATIC CERTIFICATE FOR THE PROPOSED GLOBAL ABSOLUTE PENCIL
+
+The following local block statement is proved. It explains why the
+all-spectrum preconditioner idea is stronger than a bare minimum-Rayleigh
+certificate, although a full rank-threshold selection algorithm is not
+completed in this section.
+
+In normalized positive-mass coordinates, suppose
+
+  Kbar=S+E,  S=S^T, ||S||<=1, ||E||<=c h.
+
+Choose a>=c and let Fbar=|S|+a h I. Then
+
+  -Fbar<=Kbar<=Fbar,
+  0<=Fbar-Kbar Fbar^(-1) Kbar<=C h I.                    (13)
+
+The first inequality follows from |S|+-S>=0 and ahI+-E>=0.
+For the second, note that S commutes with Fbar,
+||S Fbar^(-1)||<=1, and
+
+  0<=Fbar-S Fbar^(-1)S<=2a h I.
+
+Expanding (S+E)Fbar^(-1)(S+E), the cross terms have norm at most
+2c h, while E Fbar^(-1)E>=0. Thus the upper bound in (13) holds;
+its lower bound follows from the first inequality by congruence.
+
+Undoing the mass normalization gives
+
+  -F<=K<=F,  0<=F-KF^(-1)K<=C h Dtilde.                  (14)
+
+For K=t P^(-1)-Q, one may use the coarse positive mass
+Dtilde=t Ptilde^(-1)+Qtilde and normalized sketch pencil
+S=Dtilde^(-1/2)(t Ptilde^(-1)-Qtilde)Dtilde^(-1/2).
+Relative input Gram errors imply the O(h) bound on E. Rank-deficient P
+requires the usual support restriction.
+
+Now let C=J^(-1)KJ^(-T), F=JJ^T. Suppose rank-r U is orthonormal and
+
+  ||(I-UU^T)(I-C)||<=1+eta,  0<eta<=1/10.                (15)
+
+For w orthogonal to U, (15) implies
+
+  w^T(C^2-2C)w <=(2eta+eta^2)||w||^2.
+
+Put w=J^T y. Combining with (14), and writing b=2eta+eta^2<1,
+
+  2y^T K y >= y^T K F^(-1) K y-b y^T F y
+             >=-b C h y^T Dtilde y.                      (16)
+
+This uses the STRONG action-norm certificate (15), not merely a lower
+bound on compressed C. For physical left output, dual lifting uses
+the subspace A J U: if z is orthogonal to that space, y=A^T z has
+J^T y orthogonal to U. Equation (16), Dtilde comparable to
+tP^(-1)+Q, then gives residual norm squared <=(1+O(eta h))t.
+Thus eta=Theta(theta/h), when <=1/10, is sufficient; the naive
+eta=Theta(theta) loss is not necessary. Dual lifting costs O(Ir).
+
+If t>=sigma_{r+1}(AB)^2, K has at most r negative eigenvalues and
+the (r+1)-st eigenvalue of the PSD matrix I-C is at most one.
+The ordinary block Krylov spectral LRA theorem can then supply (15)
+in ~O(sqrt(h/theta)) block passes. A complete global algorithm still
+needs a threshold selection/bracket proof without a hidden
+sigma_1/sigma_{r+1} scale dependence, a charged construction of the
+absolute-value proxy (or a regularized-root surrogate), and controlled
+matrix-free true P^(-1) actions. Those steps are NOT asserted complete
+here. The strong-cPCA/Nystrom route above bypasses this remaining
+global threshold problem and already proves (A).
+
+
+7. LIMITS AND NOVELTY
+
+Strong cPCA and shift-and-invert power methods are established tools;
+AppxPCA is explicitly primary prior art. This note's proved improvement
+is the leakage-sensitive Nystrom counting argument and its application to
+the current factored-product solver costs, not an invention claim for
+cPCA or variance reduction. A global novelty comparison is still needed.
+The fixed polynomial proof avoids uncharged root/eigenvalue oracles,
+and exposes all precision tolerances. It does not prove floating-point
+stability of the original factor whitening, canonical form, Woodbury
+application, or stochastic solves. Only dedicated audit files were edited.
+
+
+8. ACTUAL STOCHASTIC MANUSCRIPT AUDIT
+
+Independently read docs/stochastic-product-spectral.tex, including its
+new compressed product support, literal generalized AppxPCA implementation,
+inverse-compression proof of the tail-mass lemma, rank counting, and
+adaptive absolute-error rule. This addendum records the checked actual
+prose, not just the proposed derivation. No main file was edited.
+
+8.1 Normalized pencil and oracle RHS
+
+The manuscript defines
+
+  D_s=sG-GQ_cG/c,
+  Hcal=G^(1/2)Q_cG^(1/2)/c.
+
+Therefore the shifted inverse in coefficient space is EXACTLY
+
+  x=D_s^(-1)Gv,
+
+with no missing c, s, or 1/s multiplier. This D_s is the raw stiffness
+K_{s*c} divided by c, NOT divided by s*c. Confusing these two normalizations
+would produce a wrong RHS. Conceptual Euclidean error equals
+||G^(1/2)(x-x_exact)||, bounded by sqrt(gmax) times coefficient Euclidean
+error, with gmax=64/63. Thus the desired source tolerance is obtained by
+tightening the coefficient tolerance by this fixed factor.
+
+Every Gv, G-inner product, normalization, and final physical lift costs
+O(I); there are only polylogarithmically many such operations per cPCA
+stage. They are included in the stage's leading ~I term. Computing the
+near-uniform J_G Gaussian start also costs ~I. No true G root is formed.
+
+With the previous scale choice c=4nu and nu in [nu0/2,nu0], the original
+1/5<=lambda/c<=1 bounds were valid. The UPDATED actual manuscript uses
+nu in [.9nu0,nu0] and
+
+  c=nu/[.9(1-xi)^2], xi=1/64.
+
+Then 1>=lambda/c>=.9(63/65)^2>.84. Obtaining .9 rather than .5
+relative core-norm accuracy changes only constants. This makes the top
+normalized eigenvalue exceed 1/2, so the literal primary AppxPCA constants
+apply without a lower-scale ambiguity. Its spectrum can still contain
+zero: no smallest-positive-eigenvalue lower bound is used.
+
+All good-event inverse shifts satisfy s<=2 and
+s-lambda_top(Hcal)>=gamma*lambda_top(Hcal)/12. The original 1/5
+bound already gave minimum gap gamma/60. Congruence by G^(1/2)
+gives a known normalized strong-convexity bound mu>=c0 gamma, with
+universal c0>0, and operator norm O(1). A solver may use this known
+lower bound instead of needing the actual smallest eigenvalue.
+
+The actual manuscript's TV-start proof is correct. Relative inverse-root
+error eta makes covariance eigenvalues lie in [(1-eta)^2,(1+eta)^2].
+Its stated KL bound8k eta^2 gives Pinsker TV<=2sqrt(k)eta<p*/10 for
+eta<=p*/(100k). Normalization is measurable and cannot increase TV.
+The same statement applies to the entire adaptive algorithm via the
+usual coupling/data-processing argument, provided fresh solver randomness
+and the allocated accurate-oracle event are used.
+
+8.2 Precision, RHS growth, and all-outcome caps
+
+The unnormalized inverse-power iterates are NOT bounded by a constant.
+On good events their norms grow at most
+
+  (C/gamma)^(C log(k/(p*^2 epsilon_pca))).
+
+Their logarithms, source inverse-accuracy logarithms, and Euclidean/G
+conversion losses are all polylogarithmic. For a zero-start normalized
+SPD solve, the correct initial gap is ||b||^2/(2mu), not a constant.
+The manuscript states this dependence correctly.
+
+For a completely explicit all-outcome arithmetic cap, use the above
+deterministic good-event RHS bound in the solver's planned contraction
+budget, or return the current factors if an actual RHS norm exceeds it.
+Also cap AppxPCA's phase count, inner epoch counts, and every required
+positive normalization or denominator. Off-event divergent iterates then
+do not increase runtime or demand a data-dependent extra log norm.
+The UPDATED actual manuscript now explicitly uses this deterministic
+Gamma RHS cap and sets the solver epoch budgets in advance. It also
+chooses inverse tolerances (gamma/C)^[C log(k/(p*^2 epsilon_pca))],
+with sufficiently large fixed C. They are stricter than both source
+tolerances, including the final epsilon_pca factor; their log reciprocal
+is still polylogarithmic. All per-call O(I) true G-metric operations are
+included in the leading ~I cost.
+
+The previously duplicated unnormalized-iterate sentence is fixed in
+the updated manuscript.
+
+8.3 Independent check of the NEW inverse-compression tail proof
+
+For H positive definite, in a basis starting with z, the nonzero
+Nystrom residual is the Schur complement. Its inverse is the compression
+of H^(-1) to z-perp. For bottom-subspace y, the manuscript's map
+
+  x=y-<z_tail,y> z_head/(1-w)
+
+is injective and orthogonal to z. Its norm squared is
+(1+v)||y||^2, where v=|<z_tail,y>|^2/[(1-w)||y||^2]
+and v<=w/(1-w). Its inverse energy is at least
+(1/t+v/lambda_1)||y||^2. The quotient decreases in v, giving the
+lower bound (1-w)/t+w/lambda_1.
+
+This constructs a (d-j)-dimensional subspace on which the compressed
+inverse has Rayleigh quotient at least that bound. Min--max therefore
+puts its (d-j)-th LARGEST eigenvalue above the bound. That eigenvalue
+is exactly 1/lambda_j(R), because inversion reverses order. This proves
+the claimed sharp tail-mass bound with the correct index. The H+epsilon I
+continuity argument preserves the head/tail split and w, and rank drop
+handles zero eigenvalues. This proof is independent of the secular proof
+in Section 1 and is correct.
+
+8.4 Counting, rank-sensitive stopping, and adaptive absolute error
+
+When r<k, the r-stage moving-tail proof applies directly. When r>=k,
+the algorithm stops after ell=k nonzero Nystrom updates, and rank drop
+gives EXACT zero residual. One should not demand r nonzero updates after
+the product rank is exhausted. Choosing leakage theta/(4r) is merely
+stronger when r>k; its extra dependence is only log(r)<=log(m).
+
+The compressed dimension is k on the good embedding event; off that
+event the computed dimension khat obeys khat<=k. Thus a cap of
+min(r,khat) stages is compatible with an ALL-OUTCOME cost in terms of
+ell=min(r,k), provided inner iteration caps are also enforced as above.
+
+The adaptive schedule in the actual manuscript is
+
+  gamma=theta/8,
+  epsilon_i=theta/[32(i+1)(i+2)].
+
+Its total leakage sum is theta/32. Variable-leakage moving-tail counting
+applied to the first i stages gives
+
+  U_i=s_i/[(1-gamma)(1-epsilon_i)]
+     <=sigma_{i+1}(M)^2/[(1-gamma)^2 prod_{j<=i}(1-epsilon_j)]
+     <=sigma_{i+1}(M)^2/(1-9theta/32).
+
+The product estimate is exact: (1-gamma)^2>=1-theta/4 and
+prod(1-epsilon_j)>=1-theta/32. The displayed (1+theta)^2 margin is
+more than enough to force acceptance by r_e. For i=0 the upper bound
+is valid directly. Rank drop and the zero proxy handle zero tails and
+zero products without division by zero. Leakage and confidence schedules
+change only logarithmic costs, so stage costs add linearly in R+1.
+The separate np output term correctly handles R=0.
+
+The initial coefficient support, minibatch and acceleration details are
+being independently audited by the other research agents. For the
+wrapper, inverse RHS scaling, metric/TV initialization, precision logs,
+new inverse-compression lemma, counting, and adaptive certificate, no
+substantive mathematical gap was found in the version read.
+
+
+9. FULL BLOCK ABSOLUTE-PENCIL ROUTE
+
+Status: complete exact-real-arithmetic candidate theorem, with all dense
+postprocessing costs explicit. The local certificate in Section 6 extends
+to a global gap-free rank-r algorithm. No exact spectral decomposition,
+true Gram construction, or logarithm of a singular-value ratio is used.
+The resulting arithmetic theorem still needs a global novelty review.
+
+9.1 Setup and total-cost statement
+
+Take 0<theta<=h<=1/64 and h-accurate independent Gram sketches. Apply the
+same product-support compression as in the stochastic manuscript. On the
+common good event the coefficient dimension k is rank(M), and
+
+  M=Z L B_orig, Z=A W, G=Z^T Z,
+  Q=L B_orig B_orig^T L^T, Q0=L Qbar_orig L^T,
+  I/(1+h)<=G<=I/(1-h), (1-h)Q<=Q0<=(1+h)Q.
+
+Z,G,Q are operators only. Bmass below is unrelated to the supplied right
+factor B_orig. The computed support dimension khat never exceeds rank(M),
+even off the embedding event, by the same deterministic support argument
+in the stochastic manuscript. A zero support returns zero. If r>=k on the
+good event, lift the whole support and return the exact product; its cost
+is ~O(I+G_h+m^omega+Acal(k)+n k^2)+np+T_MM(n,k,p).
+Thus the nontrivial case is 1<=r<k with positive optimal tail.
+
+Put
+
+  delta_mass=theta/10^6, alpha=theta/(10^6 h), b=r+1,
+  q=~O(sqrt(h/theta)), Lraw=(2q+1)b, d<=min(k,Lraw),
+  Acal(s)=T_MM(n,m,s)+T_MM(p,m,s).
+
+Transposition/permutation of multiplication dimensions means that Acal(s)
+bounds a constant number of forward/transpose factor-block products and
+the smaller core products. Precompute the inverse of each explicit
+triangular preconditioner factor in its per-query dense setup, so block
+applications are matrix products. The construction bound is
+
+  ~O(I+G_h+m^(omega+zeta)+q Acal(r+1)
+       +k Lraw^2+Acal(r)+n r^2),                         (B)
+
+followed by np+T_MM(n,r,p) for explicit output. There are logarithmically
+many scalar threshold queries; their cost is included by the tilde. G_h
+is precisely the two sketched-Gram formation costs from the hierarchy
+manuscript: with s=~O(m/h^2),
+
+  G_h=T_MM(m,min(n,s),m)+T_MM(m,min(p,s),m).
+
+Applying the embeddings costs ~I. The q factor multiplies FAST BLOCK cost,
+not Ir. In the exact
+support branch, k<=r and the preceding bound with r in place of k suffices.
+Exact characteristic-coefficient powering below avoids a dense SVD
+oracle altogether. An earlier conservative Jacobi alternative would add
+~d^4, harmless in the concrete regime, but is no longer needed.
+
+9.2 A fixed true-factor inverse-mass approximation
+
+Choose an EVEN l by repeated multiplication until
+(h/(1-h))^(l+1)<=delta_mass, rounding the first sufficient degree up to
+the next even integer if needed.
+Define the FIXED polynomial operator
+
+  Bmass=sum_{i=0}^l (I-G)^i.
+
+Then Bmass G=I-(I-G)^(l+1), so
+
+  (1-delta_mass)G^(-1)<=Bmass<=(1+delta_mass)G^(-1),
+  (1-2h)I<=Bmass<=(1+2h)I.                              (17)
+
+Evaluation costs O(log(1/theta)) true G actions on each block. It is a
+fixed symmetric positive operator, not an adaptively stopped inverse.
+It is positive even OFF the embedding event: G is always SPD on the
+computed support, and for even l and any g>0,
+sum_{i=0}^l(1-g)^i=[1-(1-g)^(l+1)]/g>0. Positivity here does not assume
+the good-event spectral interval; only the approximation bounds do.
+The analytical matrix Hhat=Bmass^(-1/2)Q Bmass^(-1/2) satisfies
+
+  lambda_j(H)/(1+delta_mass)
+      <=lambda_j(Hhat)<=lambda_j(H)/(1-delta_mass),         (18)
+
+where H=G^(1/2)QG^(1/2) has the nonzero spectrum of M M^T. None of these
+roots is formed. The pencil K_t=t Bmass-Q has inertia equal to the
+number of Hhat eigenvalues above t. Mass approximation therefore causes
+only multiplicative O(theta) error at every positive spectral scale.
+
+9.3 A uniform smooth absolute preconditioner with finite arithmetic
+
+For EVERY t>0 form the explicit coarse matrices
+
+  D=tI+Q0, S=(tI-Q0)D^(-1).
+
+These commute, D is SPD, and spectrum(S) is in [-1,1]. The normalized
+true-pencil error obeys
+
+  D^(-1/2)K_tD^(-1/2)=S+E, ||E||<=2h,                    (19)
+
+because t(Bmass-I) lies between +-2h tI and Q-Q0 lies between
++-h Q0/(1-h), hence between +-2h Q0. No lambda_1/t factor appears.
+
+Let a=8, M0=S^2+a^2 h^2 I, and start X_0=2I. Use exact Newton iteration
+
+  X_{j+1}=(X_j+M0 X_j^(-1))/2.
+
+Every iterate is symmetric and commutes with D,S. Scalar eigenvalues
+rho=sqrt(m0) lie in [a h,2]; for x_j>=rho,
+
+  x_{j+1}-rho=(x_j-rho)^2/(2x_j)<=(x_j-rho)/2.
+
+After O(log(1/h)) predetermined steps, halving the known starting bound 2,
+we have sqrt(M0)<=X<=sqrt(M0)+a h I. Materialize
+
+  F=D(X+a h I)=J J^T
+
+and its Cholesky factor/inverse. These finite computations use arithmetic,
+positive scalar square roots, and ~O(k^(omega+zeta)) work per query. This
+is an exact-arithmetic operation count; D may be ill-conditioned, so no
+finite-precision or bit theorem follows from it.
+
+The ACTUAL finite F satisfies
+
+  8hD<=F<=2D, -F<K_t<F,
+  0<=F-K_t F^(-1)K_t<=36hD.                             (20)
+
+Proof: in D-normalized coordinates Fbar=X+a h I lies between
+sqrt(S^2+a^2h^2)+a h I and sqrt(S^2+a^2h^2)+2a h I. The a h margin
+above |S| dominates E. At Fbar0=sqrt(S^2+a^2h^2)+a h I, exactly
+
+  Fbar0-S Fbar0^(-1)S=2a h I.
+
+The scalar derivative of x-s^2/x is at most 2 for x>=|s|, so replacing
+Fbar0 by Fbar adds at most 2a h to this residual. The two E cross terms
+cost at most 2||E||<=4h, using ||S Fbar^(-1)||<=1; the negative
+E Fbar^(-1)E term can be dropped for an upper bound. This gives 36h.
+The lower bound follows from -F<K_t<F by congruence. All inequalities
+therefore hold with no uncharged exact absolute value or eigenbasis.
+
+Set C=J^(-1)K_tJ^(-T) and T=I-C. They are symmetric, spectrum(C) is
+in (-1,1), and T is PSD with norm at most 2. In fact T>=3hI, since
+F-K_t>=6hD and F<=2D. Thus the initial Gaussian block has full column
+rank almost surely. The bounded transform S avoids any need to resolve
+Q0 eigenvalues at absolute precision theta*t/||Q0||.
+
+9.4 A positive initial quantile bracket from exact coefficients
+
+For V>=0 with positive descending eigenvalues v_1,...,v_k, its elementary
+symmetric coefficients satisfy, for 1<=j<=k,
+
+  v_j/j<=e_j/e_{j-1}<=(k-j+1)v_j.                        (21)
+
+For the lower bound, j e_j=sum_{|I|=j-1}v_I sum_{i notin I}v_i, and
+every such I misses a top-j value. For the upper bound remove the
+largest-index element from each ordered size-j subset. Its value is at
+most v_j, and each size-(j-1) subset is charged at most k-j+1 times.
+
+Set j=r+1. Choose a power of two qpow>=log_2 k, using repeated doubling
+and scalar squaring. Form Q0^qpow by O(log log k) matrix squarings.
+Compute its characteristic coefficients EXACTLY using deterministic
+Frobenius form, NPV2024 Corollary 5.2; multiply the companion characteristic
+polynomials in at most O(k^2) additional operations. Take the positive
+qpow-th root by repeated square roots:
+
+  rho=(e_j(Q0^qpow)/e_{j-1}(Q0^qpow))^(1/qpow).
+
+Then v_j/2<=rho<=2v_j, where v_j=lambda_j(Q0). Since
+
+  v_j/[(1+h)(1+2h)]<=lambda_j(Hhat)
+       <=v_j/[(1-h)(1-2h)],
+
+[rho/4,4rho] brackets lambda_j(Hhat) with upper/lower ratio 16. This costs
+~O(k^(omega+zeta)) and O(log log k) scalar square roots, with no log(v_1/v_j).
+The powers and coefficients may have huge magnitudes; they are exact field
+operations in this model. There is no finite-word claim. Rank k<=r takes
+the exact-recovery branch before dividing positive coefficients.
+
+Primary source for the exact field subroutine:
+  Neiger--Pernet--Villard (2024), Computing Krylov iterates in the time
+  of matrix multiplication, Section 5.1, Corollary 5.2.
+  https://arxiv.org/html/2402.07345v2
+
+9.5 Quantile block Krylov and exact coefficient extraction
+
+For current T, run block Krylov with target rank r+1. Its space is
+span[T Omega,T^3 Omega,...,T^(2q+1)Omega]. Let V be its orthonormal
+basis, Y=T V, and A_small=Y^T Y. All matrices are formed from actual
+actions; ||A_small||<=4. A separate explicit Chebyshev filter below
+extracts the final rank-r projection. Thus no assumption about truncating
+an enlarged Frobenius-optimal basis is needed.
+
+Musco--Musco's PERVECTOR theorem, applied to target r+1, implies
+
+  lambda_{r+1}(A_small)
+    >=lambda_{r+1}(T)^2-(alpha/100)lambda_{r+2}(T)^2
+    >=(1-alpha/100)lambda_{r+1}(T)^2.                      (22)
+
+This does NOT follow merely from a spectral-LRA guarantee. Use the
+printed source success probability 99/100 and repeat independently
+O(log(1/beta)) times. As proved below, EVERY computed qvalue is at least
+mu_{r+1}(C) by deterministic min--max, whether or not that Gaussian run
+has good upper quality. Therefore take the MINIMUM qvalue over the
+independent runs: if ANY run succeeds, the minimum has both desired
+bounds. All runs fail with probability at most .01^s. This is a rigorous
+arbitrary-confidence amplification without identifying a successful run,
+without a validation eigensolver, and without relying on an unstated
+confidence extension of the printed theorem. Its logarithmic repetition
+cost is included by the tilde. No spectral ratio is used.
+
+NO Ritz eigenproblem is solved. Instead reuse the exact coefficient
+lemma (21) on A_small, of dimension d. Choose a power of two p and
+z=d^(1/p), by starting p=1,z=d and repeatedly replacing p by 2p and
+z by sqrt(z), until z<=1+alpha/100. Thus
+p=O(log(d)/alpha), while the number of loop iterations is
+O(log(log(d)/alpha)). Form A_small^p by repeated squaring, compute its
+characteristic coefficients by the same deterministic fast Frobenius
+subroutine, and set, with j=r+1,
+
+  rho_small=(e_j(A_small^p)/e_{j-1}(A_small^p))^(1/p),
+  beta_lower=rho_small/z,
+  qvalue=1-sqrt(beta_lower).
+
+Every p-th root is a sequence of scalar square roots, since p is a power
+of two. If exact rank(A_small)<j, define beta_lower=0 instead; this does
+not occur on the good event, because T>=3hI and V has dimension at least
+j. Matrix powers, coefficients, and all these roots are finite actual
+arithmetic. Their magnitudes can be enormous; no finite-word cost is
+claimed. Total coefficient extraction work is ~O(d^(omega+zeta)),
+absorbed by ~m^(omega+zeta), and O(log(log(d)/alpha)) scalar square roots.
+
+Writing beta_j=lambda_j(A_small), equation (21) gives EXACTLY
+
+  beta_j/z^2<=beta_lower<=beta_j.
+
+With (22) and z<=1+alpha/100 this implies
+
+  (1-alpha/20)lambda_{r+1}(T)^2
+      <=beta_lower<=lambda_{r+1}(T)^2.
+
+Taking square roots, and using ||T||<=2, proves
+
+  mu_{r+1}(C)<=qvalue<=mu_{r+1}(C)+alpha.                 (23)
+
+mu_{r+1}(C) here is ordered ASCENDING and equals 1-lambda_{r+1}(T).
+The certified LOWER beta is necessary for the first inequality. This
+relative coefficient extraction even works when the relevant T
+eigenvalue is near zero; it introduces no approximation gap or eigenvalue
+oracle. The root and coefficient method was independently suggested and
+audited by the alternatives agent.
+The lower inequality in (23) is deterministic conditional on the common
+embedding event (which ensures T>=0): every compressed singular value
+is at most the corresponding singular value of T. Only the upper
+inequality requires a successful Musco run. This proves the minimum-over-
+repetitions amplification just described.
+
+Primary source: Musco--Musco (2015), Randomized Block Krylov Methods for
+Stronger and Faster Approximate Singular Value Decomposition, Algorithm 2,
+Theorem 12 (per-vector guarantee), proved using Lemma 9 Property 2.
+https://arxiv.org/pdf/1504.05477
+
+9.5a Final width-r projection from an explicit Chebyshev filter
+
+When the threshold wrapper decides to return, the quantile bounds below
+give lambda_{r+1}(T)<=B0=1+alpha. Set L0=B0+alpha=1+2alpha. For an
+integer v define the scalar polynomial
+
+  p_v(x)=Cheb_v(2x/B0-1)/Cheb_v(2L0/B0-1).
+
+Here Cheb_v is the ordinary first-kind Chebyshev polynomial. For x<=B0
+in T's nonnegative spectrum, |p_v(x)|<=1/denom. For x>=L0, p_v(x)>=1.
+The denominator grows at least .5 exp(v sqrt(alpha)); this follows from
+Cheb_v(1+u)=cosh(v arcosh(1+u)) and arcosh(1+u)>=sqrt(u) for 0<=u<=1,
+with u=2alpha/B0>=alpha. No exp or inverse-cosh oracle is used in the
+algorithm: evaluate the denominator by the three-term recurrence and
+stop at a predetermined threshold. Its degree is
+
+  v=O(alpha^(-1/2)log(k/(alpha beta))).
+
+Take a FRESH Gaussian block Omega of width r and let H0 index eigenvalues
+of T strictly above B0. Its size j is at most r. With probability at least
+1-beta, Omega_H has full row rank and
+
+  ||Omega_L Omega_H^dagger||<=R, R=(100k/beta)^3.
+
+For an elementary proof, restrict Omega_H to its first j square columns.
+Conditional Gaussian column distances show each distance is at least
+beta/(Cj), except probability O(beta); hence the inverse Frobenius norm is
+at most C j^(3/2)/beta. Markov bounds ||Omega_L||_F by Ck/sqrt(beta).
+These imply the displayed generous R. The case j=0 needs no inverse.
+
+Select the degree until denom>=2R/alpha and form Yout=p_v(T)Omega using
+the Chebyshev recurrence. No Krylov basis or Ritz projection is used here.
+Let E_strong select coordinates whose T eigenvalues are at least L0.
+Analytically multiply Yout by
+
+  Omega_H^dagger diag(p_v(tau_H))^(-1) E_strong.
+
+Its head component is EXACTLY the strong eigenvector matrix, with every
+weak-head coordinate forced to zero. Thus no inverse of a tiny weak-head
+p_v value enters the bound: the only nonzero selected inverse values are
+at most one. Its tail error has norm at most R/denom<=alpha/2. If P_Y
+projects onto range(Yout), it follows that
+
+  ||(I-P_Y)U_strong||<=alpha/2.
+
+All remaining eigenvalues are below L0 and ||T||<=2, so
+
+  ||(I-P_Y)T||<=L0+2(alpha/2)=1+3alpha.                  (24)
+
+Take ANY exact rank-revealing orthonormal basis U of range(Yout), of width
+at most r. This is the required strong action-norm certificate. An actual
+rank drop is harmless. The filter costs ~q Acal(r)+O(k r^2), with the
+same asymptotic q as before. Its unnormalized recurrence can have norm
+exponential in q (for example bounded by 7^q||Omega||); this is data-scale
+independent but is not a stable finite-word claim. All arithmetic counts
+remain exact-real-arithmetic counts.
+
+9.6 Safe threshold decisions and a useful uncertain result
+
+Let lambda*=lambda_{r+1}(Hhat), with ell<=lambda*<=u from 9.4. At the
+midpoint t obtain (23). If qvalue<0, mu<0 and t<lambda*, so ell=t.
+If qvalue>=alpha, mu>=0 and t>=lambda*, so u=t. Otherwise
+0<=qvalue<alpha implies |mu|<=alpha.
+
+Put beta0=alpha/(1-alpha^2)<=2alpha. For c in [-1,alpha],
+
+  c<=beta0(1-c^2).
+
+Apply this on the bottom-(r+1) C eigenspace, undo J, and use (20).
+On a dimension r+1 subspace,
+
+  y^T K_t y<=36 beta0 h y^T D y.
+
+Since I<=2Bmass and Q0<=2Q, D<=2(t Bmass+Q). With
+x0=72 beta0 h<=144alpha h, min--max gives
+
+  lambda*>=(1-x0)t/(1+x0)>=(1-288alpha h)t.              (25)
+
+The symmetric scalar inequality c>=-beta0(1-c^2) for c>=-alpha,
+on a codimension-r subspace, likewise gives
+lambda*<=(1+576alpha h)t. Only (25) is needed for output. These
+quantile comparisons hold at all positive t and have no lambda_1 scale.
+
+If no uncertain result occurs, bisect until u-ell<=alpha h ell and take
+the final t=u. No final quantile call is needed. By inertia mu>=0,
+so lambda_{r+1}(T)<=1 EXACTLY. Also
+
+  lambda*<=t<=(1+alpha h)lambda*.
+
+No pole avoidance is needed: D and F are SPD at EVERY t>0. A bracket
+ratio initially 16 makes the number of calls O(log(1/theta)), with a
+deterministic iteration cap. This upper-endpoint choice is simpler than
+the also-valid lower-endpoint argument, and avoids needing a lower
+perturbation bound on its C quantile.
+
+9.7 Dual lift, physical projection, and the spectral error
+
+At an uncertain result lambda_{r+1}(T)<=1+alpha; the final upper-endpoint
+choice has the stronger bound lambda_{r+1}(T)<=1. Apply 9.5a to obtain (24).
+Put b0=(1+3alpha)^2-1<=7alpha<1. For w perpendicular to U,
+
+  w^T(C^2-2C)w<=b0||w||^2.
+
+Substitute w=J^T y and F<=K_tF^(-1)K_t+36hD:
+
+  2 y^T K_t y
+    >=y^T K_tF^(-1)K_t y-b0 y^T F y
+    >=(1-b0)y^T K_tF^(-1)K_t y-36 b0 h y^T D y
+    >=-36 b0 h y^T D y.
+
+Thus y^T K_t y>=-126alpha h y^T D y on the dual complement. Lift to
+
+  S_out=range(Z J U).
+
+NO G inverse occurs in this lift. For physical x perpendicular to S_out,
+y=Z^T x gives J^T y perpendicular to U. Also
+
+  y^T G^(-1)y<=||x||^2, ||y||^2<=2||x||^2,
+  y^T Q0 y<=2x^T(MM^T)x.
+
+Using Bmass<=(1+delta_mass)G^(-1), we obtain
+
+  t||x||^2-x^T(MM^T)x
+   >=y^T(tG^(-1)-Q)y
+   >=-(252alpha h+delta_mass)t||x||^2
+      -252alpha h x^T(MM^T)x.
+
+The residual squared on S_out's orthogonal complement is consequently
+
+  <=[(1+252alpha h+delta_mass)/(1-252alpha h)]t.           (26)
+
+Combining (25), or t<=(1+alpha h)lambda* in the final branch, with (18), proves
+the desired bound by (1+theta)^2 lambda_{r+1}(MM^T). A loose constant
+check: (26) costs at most 1+758alpha h, (25) at most 1+576alpha h,
+and (18) at most 1+2delta_mass. Their product is below
+1+2000(alpha h+delta_mass)<1+theta for theta<=1/64.
+
+Orthonormalize ZJU, obtaining U_phys, and output
+C_out=U_phys U_phys^T M. Z has full column rank on the support and J
+is nonsingular, so the physical rank equals width(U)<=r. Forming the lift and M^T U_phys
+uses fast factor-block products Acal(r); conventional physical QR costs
+O(n r^2). Explicit expansion incurs np+T_MM(n,r,p), already charged.
+
+9.8 Costs, precision model, and failure accounting
+
+Each T action on b columns costs ~Acal(b). True inverse-mass polynomial
+actions use A/A^T; true Q actions use B_orig/B_orig^T. All other actions
+use explicit cores. Form the raw Krylov blocks with at most Lraw columns
+and orthonormalize them with exact rank-revealing QR. Some columns can be
+dependent, so charge the safe cost O(k Lraw^2), rather than assuming a
+generic rank profile to charge only O(kd^2). Computing Y=T V in b-column
+batches costs another O(q Acal(b)); Y^T Y costs at most O(kd^2), already
+bounded by O(k Lraw^2). Newton, inversions, Cholesky,
+and exact coefficient extraction cost ~m^omega per query. The final fresh
+projection filter costs another ~q Acal(r)+O(k r^2), bounded by the terms
+already in (B). This establishes (B).
+
+Allocate fresh conditional Gaussian budgets over the capped O(log1/theta)
+queries and union bound with the common embedding event. The confidence
+amplification argument in 9.5 gives success at least 1-delta_failure.
+For example, bound the number of queries by a deterministic
+Qmax=ceil(log_2(15*10^6/theta))+1, use Gaussian budgets
+beta=delta_failure/[4(Qmax+1)] per query/final filter, and assign half the
+failure budget to the two initial embeddings. Scalar logarithms here only
+describe the bound: the algorithm can find this integer by repeated halving.
+The number of phases, polynomial degrees, and coefficient-power squarings
+is fixed in advance. Check required positive roots, denominators, and norms.
+Failed-event exits return current factors and have the same arithmetic
+cap. All computed ranks and dimensions are bounded by the deterministic
+khat<=rank(M), even off the embedding event.
+
+Approximate inverse mass, bounded normalized root, explicit filtering,
+and small-core coefficient powering have explicit theta/h/dimension/
+confidence-dependent budgets. Matrix powers, characteristic coefficients, D inversions, and
+Cholesky are exact real arithmetic. Their word lengths, conditioning, and
+cancellation can depend arbitrarily on the input. No stable finite-word
+or bit-complexity theorem is asserted or hidden as a tilde factor.
+
+9.9 Concrete growing-rank consequence
+
+Let n=p=N=m^(59/50+o(1)), r=ceil(m^(1/10)), theta=m^(-21/50),
+h=m^(-7/100). Then b has exponent .1, q exponent 7/40=.175, and d
+exponent 11/40=.275. Full rectangular multiplication gives
+Acal(b)=m^(109/50+o(1)); this block width is well inside the input-optimal
+range. The construction exponents in powers of m are
+
+  sketched Gram: 3362/1425=2.3592982456...,
+  block actions: 109/50+7/40=471/200=2.355,
+  square core: 9/4=2.25,
+  basis QR/Gram: 1+2*(11/40)=31/20=1.55,
+  small coefficient extraction: at most 9/4,
+  final conventional physical QR: 59/50+1/5=69/50=1.38.
+
+The sketched row exponent is 57/50=1.14<59/50. Fixed multiplication
+slack fits inside the smallest output margin 1/1425. Construction is
+
+  N^(6724/3363+o(1))=N^(2-2/3363+o(1)).
+
+The output rank is N^(5/59+o(1))<N^(1/2), so fast rectangular expansion
+costs N^(2+o(1)). This is an exponent-two total-output statement, not a
+literal fixed-rank O(N^2) expansion assertion.
+
+For a FAIR ordinary block-Krylov comparison, its factor action at width r
+is already input optimal and its iteration count is m^(.21). Its bound
+is m^(239/100+o(1))=N^(239/118+o(1)); the remaining basis and Ritz costs
+are smaller. Exact Gram has the checked bound N^(7056/3481+o(1)).
+Both are above two. The full-rank stochastic linear-r bound has accelerated
+exponent 489/200=2.445 in powers of m, also above output here. These are
+comparisons of upper bounds only. Global novelty is not established.
+The stronger original theta=1/m, m=N^(8/9) target remains unresolved.
+
+
+10. FAST EXACT ORTHOGONALIZATION SHARPENS THE BLOCK COST
+
+Both proposed cost sharpenings are valid in the SAME exact-real-arithmetic
+model as initial support construction. No generic rank-profile assumption
+is needed. In particular dependencies in the raw Krylov matrix do not
+invalidate the fast bound when its two dimensions are at most m.
+
+10.1 A primary deterministic rank-revelation subroutine
+
+Jeannerod--Pernet--Storjohann, Rank-profile revealing Gaussian elimination
+and the CUP matrix decomposition (Journal of Symbolic Computation, 2013),
+Algorithm 6 and Proposition 3, return the exact rank and row rank profile
+of a matrix over an arbitrary field. Proposition 6 bounds the work for
+an a-by-b rank-s input by O(ab s^(omega-2)), with O(ab) for rank zero.
+Applying the algorithm to the transpose reveals an independent column
+subset. These statements are deterministic, use exact zero comparisons,
+and permit arbitrary dependencies and rank profiles.
+
+Primary source, PDF printed pages 16 and 23:
+  https://arxiv.org/pdf/1112.5717
+  Proposition 3 (rank and row profile), Proposition 6 (operation count).
+
+Thus a rectangular matrix with at most m rows and at most m columns has
+an independent-column subset in ~O(m^(omega+zeta)) operations. One can
+either apply the rectangular proposition directly or pad to an m-by-m
+matrix. Rank zero costs O(m^2), within this bound.
+
+10.2 Gram--Cholesky gives an orthonormal basis once independence is known
+
+Let H be a full-column-rank a-by-s matrix. Form H^T H=R^T R with R
+upper triangular and positive diagonal, then return H R^(-1). This is
+EXACTLY an orthonormal basis of range(H). Its cost is
+
+  T_MM(s,a,s)+O(s^(omega+zeta))+T_MM(a,s,s).               (27)
+
+Fast positive-definite Cholesky needs no spectral oracle: recursively
+factor the leading block, perform one triangular solve and one matrix
+product to form the Schur complement, then factor the complement.
+The recurrence 2 T(s/2)+O(s^(omega+zeta)) is O(s^(omega+zeta)). All scalar
+square roots are of positive numbers. Triangular inversion has the same
+matrix-multiplication recurrence. Thus (27) follows from finite algebra
+and scalar square roots, with no convergence or condition-number factor.
+
+As elsewhere, this exact Gram method makes no floating-point stability
+claim: conditioning is irrelevant to its real-arithmetic operation count.
+
+10.3 Raw Krylov QR when Lraw<=m
+
+Let Kraw be k-by-Lraw, with k<=m, Lraw=(2q+1)(r+1)<=m. Its columns may
+have any dependencies. Use 10.1 to select a maximal independent subset
+H=Kraw[:,J], of width d<=min(k,Lraw). Then use 10.2 to orthonormalize H.
+All dimensions in (27) are at most m, hence the two products and the
+Cholesky/inverse cost ~O(m^(omega+zeta)). The rank-revelation cost has
+the same bound. This constructs the EXACT range basis V needed in 9.5.
+It does not require generic rank, a gap, an approximate SVD, or a costly
+Gram--Schmidt pass through all the raw columns.
+
+Likewise form A_small=(T V)^T(T V) by fast multiplication, costing at
+most ~m^omega, rather than the conservative O(kd^2). Exact coefficient
+extraction is already bounded by ~m^omega. The final filter's k-by-r
+matrix Yout has both dimensions at most m, so the same subroutine gives
+ANY exact orthonormal range basis in ~m^omega, even when its rank drops.
+
+Thus, under Lraw<=m, every small-core rank revelation, orthogonalization,
+Gram, normalized Newton step, coefficient extraction, and Cholesky costs
+~O(m^(omega+zeta)) per threshold query. The conservative k Lraw^2 term
+in (B) is unnecessary in this parameter regime. If Lraw>m, retain the
+conservative global bound or select a separately charged fallback.
+
+10.4 Physical thin QR is bounded by the existing fast lifting cost
+
+Let U be the independent core basis from the final filter, with width
+t<=r. The physical Yphys=Z J U has full column rank. In fact this holds
+even off the common embedding event: W_0 is supported in range(A^T A),
+so A is injective on range(W_0); the compressed U_0 has independent
+columns, and J is nonsingular because the explicit coarse F is SPD.
+The exact core range basis U remains independent. Rank-zero output
+simply skips this operation.
+
+Apply (27) with a=n,s=t. The two multiplication dimensions are
+(t,n,t) and (n,t,t). Tensor-dimension cyclic/transposition symmetry and
+padding t<=r<=m give
+
+  T_MM(t,n,t)+T_MM(n,t,t)<=O(T_MM(n,m,r)),
+  t^(omega+zeta)<=m^(omega+zeta).
+
+Therefore physical orthogonalization costs
+
+  O(Acal(r))+~O(m^(omega+zeta)),
+
+already covered by lifting and core setup. No O(n r^2) term is needed,
+even in the conservative global theorem. This is consistent with the
+initial support model: both use independent-column selection followed
+by exact Gram--Cholesky algebra and fast multiplication.
+
+10.5 Sharpened conditional theorem
+
+Combining these facts with Section 9, when
+
+  Lraw=(2q+1)(r+1)<=m, q=~O(sqrt(h/theta)),
+
+the construction cost is simply
+
+  ~O(I+G_h+m^(omega+zeta)+q Acal(r+1)).                   (28)
+
+Add np+T_MM(n,r,p) for explicit output. All Gaussian repetitions are
+processed independently, so their raw bases are never concatenated;
+they contribute only logarithmic factors to (28), not to Lraw. The final
+filter needs only a width-r block and does not keep its degree-q Krylov
+basis. The condition is on the actual chosen capped per-run degree,
+including its logarithms. In the example of 9.9,
+Lraw=m^(11/40+o(1))<m by a fixed exponent margin, so it holds eventually
+and all claimed construction/output exponents remain unchanged.
+
+Globally one may drop the n r^2 term from (B) using 10.4 while keeping
+k Lraw^2, or use (28) only under its explicit Lraw constraint. There is
+no uncharged rank-revealing QR oracle in either statement.
+
+
+11. AUDIT OF THE ACTUAL INTEGRATED ABSOLUTE-PENCIL MANUSCRIPT
+
+Read docs/absolute-pencil-spectral.tex in full, including the integrated
+statement, every lemma and proof, the unnumbered support/mass/threshold
+arguments, cost and confidence section, example, and stated model limits.
+This review concerns the ACTUAL source, re-read after the root's copy
+corrections, rather than merely the earlier Section 9 derivation.
+Only this audit file was edited.
+
+Verdict: PASS in the manuscript's stated exact-real-arithmetic model.
+No substantive proof, constant, sign, support, zero-tail, confidence, or
+cost gap was found. Global novelty and numerical/bit complexity are
+separate and are explicitly not claimed by the manuscript.
+
+11.1 All theorem/lemma statements read
+
+  - Theorem "Block product approximation" (thm:main), including BOTH
+    runtime statements: the clean bound under actual raw width L<=m,
+    and the conservative m L^2 bound for unrestricted L.
+  - Lemma "Finite weighted defect" (lem:defect).
+  - Lemma "Coefficient ratio" (lem:coeff).
+  - Lemma "Certified threshold quantile" (lem:quantile).
+  - Lemma "Filtered Gaussian projection" (lem:filter).
+  - Lemma "Weighted strong-action transfer" (lem:transfer).
+  - The growing-rank corollary (cor:example), including its exponent and
+    fair fast-batched-Krylov comparison.
+
+There are no other lemma environments in the version read. The important
+unnumbered arguments were also checked individually below.
+
+11.2 Finite weighted defect
+
+The integrated proof correctly normalizes by D=tI+Q0. The two errors
+t(B_m-I) and -(Q-Q0) together lie between +-2hD, giving ||E||<=2h,
+not a bound involving ||Q||/t. The even Neumann polynomial is fixed
+throughout the entire threshold search. Its relative mass error and
+the [1-2h,1+2h] interval are valid.
+
+The finite Newton iteration starts above every square-root eigenvalue;
+the scalar error halves, so its predetermined logarithmic count gives
+the exact stated upper approximation. F is a commuting positive core
+computed without a matrix-root or eigenbasis oracle. Its actual bounds
+8hD<=F<=2D, F-K>=6hD, and +-K<F are correct for h<=1/64.
+
+The identity F0-SF0^(-1)S=2ahI, derivative bound at most two, and the
+two E cross terms give 4ah+4h=36h. The negative E Fbar^(-1)E term is
+correctly dropped for the upper bound; the lower bound follows from
+the congruent spectral interval. Thus 0<=Delta<=36hD is valid even
+when K itself is singular or indefinite. It implies T>=3hI and ||T||<=2.
+
+11.3 Coefficient extraction and certified quantile
+
+The coefficient-ratio lemma is valid for nonnegative spectra when v_j>0,
+including repeated values. The upper proof's largest-index removal and
+the lower j e_j identity both have the correct direction and factors.
+Exact powers and characteristic coefficients plus repeated scalar
+square roots are genuinely finite allowed operations. The corrected
+log(2p) complexity also covers p=1.
+
+The smallest dyadic p0, found by repeated square roots of k, supplies
+the factor-two initial quantile. Combined with mass/proxy comparison,
+[rho/4,4rho] is a valid positive bracket of ratio sixteen, independent
+of lambda_1/lambda_{r+1}. Rank at most r takes the exact branch first.
+
+The integrated quantile proof uses the REQUIRED Musco--Musco PERVECTOR
+Theorem 12, with A=T and target j=r+1. Its squared Ritz value is the
+eigenvalue of (TV)^T(TV), so the stated lower and deterministic upper
+bounds are exactly the source quantities. It does not substitute a
+spectral-LRA guarantee for per-vector quality.
+
+The second dyadic coefficient powering returns the certified lower
+beta_-, with beta_j/z^2<=beta_-<=beta_j. The alpha/100 accuracies give
+(1-alpha/20)tau_j^2<=beta_-<=tau_j^2, and hence q in [mu,mu+alpha].
+The early d<j/rank<j branch is now explicitly BEFORE all ratios.
+The deterministic lower q>=mu is valid for every Gaussian run on the
+embedding event. Taking the minimum over independent repetitions
+therefore amplifies 99/100 success without identifying a good run.
+
+11.4 Filter, uncertain min--max, and physical transfer
+
+The fresh width-r Chebyshev filter has the right scalar interval:
+tail x<=1+alpha is suppressed, strong x>=1+2alpha is amplified.
+Its denominator grows at the stated sqrt(alpha) rate. The Gaussian
+head has at most r rows; the square-subblock inverse-distance bound and
+Frobenius Markov bound justify the displayed generous R. For selected
+strong columns, the analytical right inverse forces EVERY weak-head
+coordinate to zero. Only strong inverse polynomial values enter the
+norm bound, so no small weak value is hidden. Tail error alpha/2 gives
+the actual action-norm certificate ||(I-P_Y)T||<=1+3alpha. Arbitrary
+rank loss in Y is harmless, and the algorithm needs only exact range QR.
+
+At an uncertain q in [0,alpha), the scalar inequality
+c<=alpha(1-c^2)/(1-alpha^2) on c<=alpha applies to the bottom-j C
+space. Undoing J gives a dimension-j K inequality. Since
+D<=2(tB_m+Q), generalized min--max yields exactly the integrated
+lambda_* >=(1-288alpha h)t. Both safe bisection signs are correct.
+At the final UPPER endpoint t=u, inertia gives tau_j(T)<=1 without
+another quantile call, while t<=(1+alpha h)lambda_*.
+
+The physical lift is correctly Z J U. For x perpendicular to that
+subspace, w=J^T Z^T x is perpendicular to U, so symmetry turns the
+action-norm certificate into the needed C^2-2C quadratic inequality.
+The integrated proof retains the essential factor b on Delta:
+
+  KF^(-1)K-bF=(1-b)KF^(-1)K-bDelta.
+
+With b<=7alpha this gives K>=-126alpha h D on the dual complement.
+The three physical inequalities for y=Z^T x are valid; in particular
+y^T G^(-1)y is the squared projection onto range(Z). The resulting
+252 constants and mass-error term prove the stated physical residual
+factor, without a G inverse or transposed J in the actual lift.
+
+Writing nu=alpha h=epsilon_m=theta/10^6, the transfer factor is at
+most 1+758nu, the uncertain threshold costs at most 1+576nu, and
+mass comparison at most 1+2nu. Their product is below
+1+2000(alpha h+epsilon_m)=1+.004theta<1+theta over the stated range.
+This is indeed stronger than the needed squared (1+theta)^2 factor.
+
+11.5 Support, exact zero tails, cost, and all-outcome caps
+
+The integrated product support uses M=AW L_c B, not the generally false
+A=AWL_c. On the embedding event the support dimension equals rank(M).
+Off it, the deterministic computed-rank upper bound remains correct,
+and Z remains injective. Thus a zero product exits with zero support;
+if rank(M)<=r, the whole-support projection is EXACT on the embedding
+event before any inverse-mass/filter approximation. No tiny positive
+tail is confused with exact zero and no relative-zero limit is used.
+
+Fast CUP on a transpose selects actual independent raw columns despite
+arbitrary dependencies. Under actual raw width L<=m, its field cost,
+independent-column Gram--Cholesky basis, compressed Gram, and coefficient
+extraction are all ~m^omega. For unrestricted raw width the explicit
+m L^2 term safely charges conventional rank revelation/orthogonalization.
+Gaussian repetitions are separate runs and never concatenate raw bases.
+Every true-factor block action, including inverse-mass polynomial actions,
+is included in ~q Acal(r+1). Core triangular inverses are charged in setup.
+
+The full-column-rank physical lift has exact Gram--Cholesky cost
+T_MM(r,n,r)+r^omega+T_MM(n,r,r), bounded by Acal(r)+m^omega using
+padding and tensor dimension symmetry. Its formation and M^T U_p have
+the same fast block cost. np plus T_MM(n,r,p) includes all explicit output.
+Thus both theorem runtime bounds match Sections 9--10.
+
+The ratio-sixteen bracket and scalar halving give the stated Qmax cap,
+on every outcome. Neumann degree, bounded-root iteration count, coefficient
+power loops, per-run Krylov depth/repetition count, and final filter degree
+depend only on supplied parameters and computed dimensions. The positive
+support G,Q0, even polynomial B_m and coarse F remain positive on failed
+embedding outcomes; their quantitative comparisons may fail. Required
+rank/denominator checks precede divisions. All costs remain capped even
+on failure, and returned width is always at most r. Fresh conditional
+quantile/filter failure budgets plus the initial delta/2 event sum to
+less than delta.
+
+11.6 Corrections made by root during this review
+
+The first version's log p bound at p=1, blanket claim of never forming
+true Grams despite the explicit identity-sketch fallback, and placement
+of the deficient-rank quantile guard were reported. Re-reading confirmed
+the root corrected all three in the actual source. The smallest dyadic
+p0 construction is also explicit. These were copy/model-exposition
+corrections and did not change the mathematics or asymptotic theorem.
+
+The claimed growing-rank exponents match the audit: construction
+N^(6724/3363+o(1)), explicit total N^(2+o(1)), fair batched Krylov
+N^(239/118+o(1)), exact Gram N^(7056/3481+o(1)). The source expressly
+distinguishes exponent-two output from literal fixed-rank O(N^2), and
+does not claim the original stronger target or global priority is solved.

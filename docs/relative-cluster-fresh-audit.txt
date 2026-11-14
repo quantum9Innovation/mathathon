@@ -1,0 +1,617 @@
+FRESH INDEPENDENT AUDIT: RELATIVE-GAP CLUSTER STRENGTHENING
+========================================================
+
+Date: 2026-11-14.
+
+Scope. This reviews the new mathematical proposal communicated by the
+coordinator and the subsequently supplied uniform-grid sharpening. It
+was not yet a frozen section of the manuscript when this audit began.
+The precise statements and constants audited are recorded below, so
+this audit should not be construed as approval of an unwritten later
+version. The prerequisite terminal-resolvent identity was independently
+checked in docs/cluster-robust-krylov-fresh-audit.txt against manuscript
+SHA-256
+1fc394588b2096d380d91218aca5eab4d06bc55ac361c52be573314405a37e80.
+
+VERDICT
+-------
+
+PASS for the relative interpolation theorem below, including the
+conditional covariance argument, elimination-path moment bound,
+uniformization, clustering/whole-component packing, auxiliary padding,
+projection back to the actual Krylov space, and the good-start bridge.
+No fatal algebraic or probability flaw was found after checking these
+steps independently. No hardware benchmark or numerical experiment is
+used as mathematical evidence.
+
+The main caveats are substantive to the statement:
+
+* The relative bound is for scalar evaluation at or below the smallest
+  nonnegative target node, not for arbitrary points in the spectral
+  interval. It is well suited to PSD top-eigenspace/low-rank analysis.
+* A zero minimum target node needs a separate limiting argument. Merely
+  approaching it from below while asserting z>=0 is invalid. A factor-2
+  relative comparison on negative points repairs this without introducing
+  a spectral condition number.
+* A naive separate confidence allocation beta/N to N pointwise theorems
+  is unnecessary. Union over points only at the final path Markov step;
+  then N appears as N^2 outside the depth power. The uniform polynomial
+  grid removes even that dependence on the number of tail eigenvalues.
+* The resulting low-rank rate has extra D log(Db/beta) terms compared
+  with the literal quantitative formula conjectured by Chen et al.
+  It establishes relative-gap/no-condition-number convergence up to
+  logarithmic overhead, not their complete displayed conjecture verbatim.
+* The argument proves a good Krylov starting SPACE, not a condition-number
+  free lower bound for the minimum singular value of the raw monomial
+  Krylov matrix. The latter is a different claim.
+
+1. PRECISE RELATIVE INTERPOLATION STATEMENT CHECKED
+--------------------------------------------------
+
+Let D>=2 and b>=1. Fix real diagonal b-by-b matrices Lambda_1,...,
+Lambda_D with nonnegative entries and pairwise disjoint spectra.
+Let Omega_i be independent standard Gaussian b-by-b matrices and
+B_i=Omega_i^-1 Lambda_i Omega_i. Let F_i be the ACTUAL right-coefficient
+fundamental polynomials of degree <=D-1 with LEFT evaluation
+
+  F_i(B_j)=delta_ij I_b.
+
+Put
+
+  m=min(all entries of all Lambda_i),
+  g=min_(i!=j,lambda in spec Lambda_i,eta in spec Lambda_j)
+        |lambda-eta|/max(lambda,eta).
+
+Cross-block disjointness and nonnegativity make every denominator in
+this minimum positive and imply 0<g<=1. In particular, there cannot
+be zero in two different blocks. For 0<beta<1 the bound checked is
+
+  Pr{ max_i sup_(0<=z<=m) ||F_i(z)||_2
+          <=[20000 D^12 b^5/(beta^4 g)]^(D-1) } >=1-beta.       (R1)
+
+This probability event can be chosen jointly with
+
+  ||Omega_i||<=2 b sqrt(D/beta),
+  ||Omega_i^-1||<=4 D b^(3/2)/beta   (all i).                 (R2)
+
+For D=1 take F_1=I_b and omit g. The singleton statement holds
+deterministically. Statements involving g should not be written with
+an undefined empty minimum in that case.
+
+If spectra are normalized, positive multiplicative scaling preserves g
+and the interval [0,m]. An arbitrary affine shift does not preserve this
+relative parameter. No normalization is needed for the identities below;
+the norm-of-recurrence-coefficients bound from the absolute-gap proof is
+not used in the relative argument.
+
+2. RESOLVENT RESIDUES REALLY ARE FUNDAMENTAL POLYNOMIALS
+------------------------------------------------------
+
+Fix q>=1 blocks S. Write A=diag(Lambda_i:i in S), Gamma=stack(Omega_i),
+and let V_last be the last b-column orthonormal Krylov block. The
+terminal degree-q right-coefficient polynomial R satisfies
+
+  R(B_i)=0  (i in S),
+  W(z)R(z)=I_b,
+  W(z)=V_last^T(zI-A)^-1 Gamma.
+
+These identities hold almost surely on the common generic full-rank
+event for every subset. They hold without any bound on ||A||.
+For block row V_i of V_last, define
+
+  A_i=V_i^T Omega_i.
+
+The ordering in the partial fractions is
+
+  W(z)=sum_(i in S) A_i (zI-B_i)^-1.
+
+Indeed (zI-Lambda_i)^-1 Omega_i=Omega_i(zI-B_i)^-1.
+Since W and R are square, W R=I implies R W=I wherever these expressions
+are initially defined, and then as a rational identity. Define
+
+  G_i(z)=R(z) A_i (zI-B_i)^-1.
+
+Their sum is identically I_b. The possible poles of different summands
+are disjoint. Each B_i is diagonalizable, including when Lambda_i has
+repeated eigenvalues, so its resolvent has only simple poles at its
+distinct eigenvalues. At a pole belonging to block i no other G_j has
+a pole; the identity sum G_j=I therefore forces its residue to vanish.
+All poles of G_i are removable. A rational function without finite poles
+is polynomial, and its O(|z|^(q-1)) growth at infinity gives degree <=q-1.
+The same argument may be applied entry by entry.
+
+There is no unjustified evaluation of a matrix-polynomial product here.
+Instead use the polynomial identity
+
+  R(z) A_i=G_i(z)(zI-B_i).
+
+Its LEFT evaluation at B_j is
+
+  0=B_j G_i(B_j)-G_i(B_j) B_i.
+
+If i!=j, disjoint spectra make the Sylvester map X -> B_j X-X B_i
+invertible; for example, diagonalizing each B turns it into entrywise
+multiplication by nonzero eigenvalue differences. Hence G_i(B_j)=0.
+Left evaluation of sum_i G_i(z)=I at B_j then gives G_j(B_j)=I.
+By interpolation uniqueness, G_i is exactly F_i^S. This handles q=1
+as well, when its sole polynomial is I_b.
+
+3. RELATIVE TRANSFER IDENTITY AND DETERMINISTIC BOUND
+----------------------------------------------------
+
+For eta outside the spectra in S, R(eta)^-1=W(eta). Consequently
+
+  R(z)R(eta)^-1
+    =sum_(i in S) F_i^S(z)(zI-B_i)(eta I-B_i)^-1.             (R3)
+
+All factors have the stated order. The identity follows from
+R(z)A_i=F_i^S(z)(zI-B_i), not from multiplying left matrix evaluations.
+
+Suppose first m>0 and 0<=z<m, and let eta be any eigenvalue in the fresh
+root block. Every lambda from S satisfies lambda>=m>z. Therefore
+
+  |z-lambda|/|eta-lambda|
+     <=lambda/[g max(lambda,eta)]<=1/g.
+
+Diagonal similarity then gives
+
+  ||(zI-B_i)(eta I-B_i)^-1||<=kappa(Omega_i)/g.
+
+Writing
+
+  G_S(z)=max_(i in S)||F_i^S(z)||,
+  kappa_S=max_(i in S)kappa(Omega_i),
+
+equation (R3) yields
+
+  ||R(z)R(eta)^-1|| <= q G_S(z) kappa_S/g.                 (R4)
+
+This is the required comparison. No lambda_max/lambda_min ratio occurs.
+Also G_S(z)>=1/q, since sum_i F_i^S(z)=I. Thus its use as a random
+denominator in the next conditional estimate is legitimate.
+
+4. NORMALIZED FRESH GAUSSIAN ROWS
+--------------------------------
+
+Let T have at least two blocks, k in T, S=T\{k}, and q=|S|.
+Construct R using ONLY the Gaussian blocks in S, with a fixed measurable
+orthogonalization rule. For a deterministic z outside all target nodes,
+define
+
+  Ntilde_(T,k)(z)=Omega_k R(B_k)R(z)^-1.
+
+Conditional on the blocks of S its row l is
+
+  omega_(k,l)^T R(eta_l)R(z)^-1,
+
+where eta_l is the corresponding diagonal entry of Lambda_k. These rows
+are independent centered Gaussian rows. The inverse of the multiplying
+matrix is R(z)R(eta_l)^-1, so (R4) proves the covariance lower bound
+
+  Cov(row l)>=h_(T,k)(z)^2 I_b,
+  h_(T,k)(z)=g/[q G_S(z) kappa_S].
+
+The quantity h is fixed by the conditioning and positive almost surely.
+There is no dependence on Omega_k hidden in R, G_S, or kappa_S.
+
+Moreover, constant-right-factor evaluation gives
+
+  F_k^T(z)=Ntilde_(T,k)(z)^-1 Omega_k.
+
+Define Z_(T,k)(z)=h_(T,k)(z)||Ntilde_(T,k)(z)^-1||. The independent-row
+lemma gives, before conditioning on any success event,
+
+  Pr{Z>u | Omega_S}<=min(1,b^(3/2)/u),
+  E[Z^(1/2) | Omega_S]<=2 b^(3/4).                         (R5)
+
+This is exactly the same valid conditioning mechanism as in the audited
+absolute-gap proof. Substituting norms into the last expression for F
+gives the pointwise deterministic recursion, on (R2),
+
+  G_T(z)<=[q U_0 L_0^2/g] Z_(T,k)(z) G_S(z)
+
+for each k, hence with a maximum over k on the right. The factor is q,
+not q^(3/2), because no stacked-Gaussian resolvent norm is needed here.
+The singleton base value is one.
+
+5. JOINT POINTWISE AND UNIFORM PROBABILITY BOUNDS
+------------------------------------------------
+
+For all D blocks put L_0=2b sqrt(D/beta), U_0=4D b^(3/2)/beta.
+The union of the D norm and D inverse-norm failures costs beta/2, as
+in the absolute proof. On this one shared event,
+
+  U_0 L_0^2=16 D^2 b^(7/2) beta^-2.
+
+For any fixed evaluation point z and elimination path pi, later Z
+factors are measurable in the blocks remaining after the current root
+is removed. Iterating conditional expectation in (R5) therefore gives
+
+  E[(product_path Z(z))^(1/2)]<=(2b^(3/4))^(D-1).
+
+For N fixed evaluation points, union over all pairs (point,path) only
+at the final Markov step. With additional failure at most beta/2,
+
+  max_(z,pi) product_path Z(z)
+       <=[2 N D! (2b^(3/4))^(D-1)/beta]^2.
+
+Expanding the recursion and combining with the shared Gaussian event
+gives the exact intermediate bound
+
+  max_grid G_D(z)
+    <=4 N^2 beta^-2 (D!)^2 (D-1)!
+        [64 D^2 b^5 beta^-2/g]^(D-1).                     (R6)
+
+In particular, N^2 is OUTSIDE the depth power. There is no need to pay
+beta/N in the Gaussian norm event or at each level of elimination.
+
+For m>0 let r=D-1 and take N=4r^2+1 deterministic grid nodes
+
+  z_j=j m/N,  j=0,...,N-1.
+
+The upper endpoint m is deliberately omitted. Thus every grid point is
+strictly below every target eigenvalue and all R(z_j) are invertible.
+Every x in [0,m] is within m/N of a grid node, including x=m.
+
+For any real b-by-b polynomial F of degree <=r, scalar Markov's
+inequality applied to u^T F(z)v for every fixed pair of real unit vectors
+gives
+
+  sup_[0,m]||F'(z)|| <=[2r^2/m] sup_[0,m]||F(z)||.
+
+Using a nearest grid point and the fundamental theorem of calculus,
+
+  sup||F|| <= max_grid||F|| + [2r^2/N] sup||F||,
+
+so sup||F||<=2 max_grid||F||. This also holds simultaneously for the
+finitely many fundamental matrix polynomials, without another probability
+allocation or any net over vectors u,v.
+
+Since N<=5D^2, (R6) implies
+
+  max_i sup_[0,m]||F_i||
+    <=8 N^2 beta^-2 (D!)^2 (D-1)!
+        [64D^2 b^5 beta^-2/g]^(D-1)
+    <=[12800 D^11 b^5/(beta^4 g)]^(D-1)
+    <=[20000 D^12 b^5/(beta^4 g)]^(D-1).
+
+The simplification uses (D!)^2<=D^[4(D-1)], (D-1)!<=D^(D-1), and
+8N^2 beta^-2<=200D^4 beta^-2<=(200D^4 beta^-2)^(D-1).
+All hold for D>=2. This proves (R1) jointly with (R2) when m>0.
+
+6. ZERO MINIMUM TARGET NODE
+--------------------------
+
+When m=0 the asserted interval is just {0}; a positive-width grid is
+unavailable. Approaching 0 from negative points does not preserve the
+previous assumption z>=0, so the comparison must be checked again.
+
+For D>=2 there is at least one positive target node; otherwise cross-
+block disjointness would fail. Let nu be the smallest positive target
+node and take z=-epsilon with 0<epsilon<=nu. If lambda>0, then
+
+  |z-lambda|=lambda+epsilon<=2lambda,
+  |z-lambda|/|eta-lambda|<=2/g.
+
+If lambda=0 then the fresh eta>0, since zero cannot occur in two blocks,
+and epsilon/eta<=1<=2/g. Thus (R4)--(R6) hold at every such negative
+point with g replaced by g/2, uniformly in epsilon. Taking N=1 gives
+
+  G_D(-epsilon)
+    <=4 beta^-2(D!)^2(D-1)!
+       [128D^2 b^5 beta^-2/g]^(D-1)
+    <=[512D^7 b^5/(beta^4 g)]^(D-1)
+
+with probability at least 1-beta jointly with (R2).
+
+Fix any deterministic sequence epsilon_j down to zero with epsilon_j<=nu.
+The actual F_i are continuous scalar-variable polynomials almost surely.
+The limsup of the joint good events is contained in
+
+  (R2) intersect {G_D(0)<=[512D^7 b^5/(beta^4 g)]^(D-1)}.
+
+Its probability is at least the limsup of the individual probabilities,
+hence at least 1-beta. This does not take an intersection of infinitely
+many probability-(1-beta) events. Since 512D^7<=20000D^12, the same
+advertised constant in (R1) covers m=0. D=1 remains the separate base.
+
+7. FORWARD RELATIVE b-GAP TO WHOLE-CLUSTER BLOCKS
+-----------------------------------------------
+
+Let lambda_1>=...>=lambda_k>=0 be fixed target values, b<k, and assume
+the following ratios are defined and have positive minimum:
+
+  gamma=min_(1<=i<=k-b) (lambda_i-lambda_(i+b))/lambda_i>0.
+
+Thus 0<gamma<=1. Put tau=gamma/b. Make maximal contiguous components
+by connecting i to i+1 exactly when
+
+  (lambda_i-lambda_(i+1))/lambda_i < tau,
+
+using the obvious zero-zero connection for repeated zero values. All
+repeated values must remain in one component. Every component has at
+most b entries: if it had b+1, for its first index i the b strict
+adjacent inequalities would give
+
+  lambda_(i+b)>lambda_i(1-tau)^b>=lambda_i(1-gamma),
+
+contradicting the definition of gamma. A component of b+1 zeros would
+likewise contradict positivity/well-definedness of the forward gap.
+
+Different components are separated by a boundary relative gap >=tau.
+For arbitrary values lambda>=eta on opposite sides of that boundary,
+1-eta/lambda is at least the relative gap at the boundary. Thus every
+cross-component pair is separated by at least tau in the symmetric
+relative parameter |lambda-eta|/max(lambda,eta).
+
+Pack components whole, in order, into bins of capacity b by the next-fit
+rule. If there are D bins, each adjacent pair of bins has total size
+strictly greater than b: the first component of the later bin did not
+fit in the former. Pairing bins shows
+
+  D<=2 ceil(k/b)-1.
+
+There is no bin-splitting of components, so spectra of distinct bins are
+disjoint and their relative gap is at least gamma/b. Any deficient bin
+can be padded to size b by copies of an eigenvalue already in that bin.
+This preserves cross-bin disjointness and the relative gap. The padding
+adds at most Db-k synthetic target coordinates. For b>=k, use one padded
+bin and the ordinary D=1 base case instead of a forward-gap minimum.
+
+This padding step is what overcomes the equal-size-partition obstruction
+in the original theorem. One must not pretend that every cluster of
+size <=b can already be partitioned into exactly k/b disjoint full blocks.
+
+8. AUXILIARY PADDING DOES TRANSFER TO THE ORIGINAL KRYLOV SPACE
+--------------------------------------------------------------
+
+Let M be the original PSD matrix in a fixed orthonormal eigenbasis and
+augment it by a diagonal block of the prescribed target eigenvalue copies,
+obtaining Mhat. Augment the original n-by-b Gaussian start Omega with
+independent standard Gaussian rows, obtaining Omegahat. Let P delete
+the synthetic coordinates. Then
+
+  P Mhat^j Omegahat=M^j Omega  for every j>=0,
+  P K_D(Mhat,Omegahat)=K_D(M,Omega).
+
+The augmented head has dimension Db and admits the full blocks above;
+the augmented tail consists of the original n-k tail rows, all at values
+in [0,m]. The relative interpolation theorem therefore gives an augmented
+graph with a controlled norm. To obtain a graph over the ORIGINAL k head
+coordinates, set all synthetic head coordinates to zero and then project.
+Every vector [y;Xy] of the resulting original graph lies in the actual
+original depth-D Krylov space, and its graph norm is no greater than the
+augmented bound.
+
+This is an existence argument for the original space. Neither padding
+nor the target spectrum needs to be constructed by the actual algorithm.
+For probability, the augmented success event implies a property depending
+only on the original Omega: that its Krylov space contains such a graph.
+Marginalizing the auxiliary Gaussian rows preserves its lower probability
+bound. No conditioning on an auxiliary success event is used to alter
+the distribution of the original start.
+
+With head confidence beta/2, the joint event supplies
+
+  G<=[320000D^12 b^5/(beta^4 g)]^(D-1),
+  max_i||Omega_i^-1||<=8D b^(3/2)/beta.
+
+The original tail has Frobenius norm <=sqrt(2b(n-k)/beta) except with
+probability beta/2. Thus the original depth-D Krylov space contains
+a graph over its k target coordinates with norm at most
+
+  C_beta=[8D b^(3/2)/beta] sqrt[2D b(n-k)/beta]
+            [320000D^12 b^5/(beta^4 g)]^(D-1).             (R7)
+
+Use g>=gamma/b for the forward-gap construction. In particular, the
+bracket in (R7) is at most 320000D^12 b^6/(beta^4 gamma).
+The tail-empty case is trivial and should be stated separately.
+
+9. GOOD START, CONVERGENCE, AND EXACT CLAIM SCOPE
+-----------------------------------------------
+
+If the actual original K_D contains the graph [I_k;X] with ||X||<=C_beta,
+then
+
+  Q=[I_k;X](I_k+X^T X)^(-1/2)
+
+has k orthonormal columns in that space and
+
+  ||(U_k^T Q)^-1||^2=||I_k+X^T X||=1+||X||^2<=1+C_beta^2.
+
+Therefore the simulated starting matrix
+
+  B=[Omega,M Omega,...,M^(D-1)Omega]
+
+is a (k,L)-good start with L=1+C_beta^2. This does not require its
+columns to be independent or well conditioned; its range is what matters.
+The deterministic identity
+
+  K_s(M,B)=K_(s+D-1)(M,Omega)
+
+then transfers any applicable good-start convergence theorem to the
+actual standard small-block iteration.
+
+For M=A A^T, Chen et al. Section 3.1 states the relevant good-start
+criterion and a low-rank approximation theorem with additional depth
+O(log(nL/epsilon)/sqrt(epsilon)). Its Section 3.4 gives an outer-gap
+variant. The new calculation yields
+
+  q=O( [D log(Db/(beta gamma)) + log(n/epsilon)]/sqrt(epsilon) ),
+  D<=2 ceil(k/b)-1,                                      (R8)
+
+with no spectral condition-number ratio. Source and precise imported
+algorithm/output guarantees:
+https://arxiv.org/html/2508.06486v2#S3
+
+The constant-probability version has the expected k/b scale up to
+logarithms and is insensitive to within-cluster gaps. The same calculation
+works for a larger head rank ell when invoking an outer-gap theorem.
+The exact dependence retained in (R8) is safer than claiming the literal
+quantitative conjecture: D log(Db/beta) is not in general absorbed by
+D log(1/gamma)+log(n/(beta epsilon)). For example, the relative gap can
+stay constant through an arbitrarily long geometrically decreasing
+spectrum. The raw monomial conditioning conjecture is not a consequence
+of this argument. Priority and comparison with all prior relative-gap
+convergence results still require a literature review.
+
+FINAL ASSESSMENT
+----------------
+
+The new relative comparison is mathematically credible and survives this
+independent attempt to find a fatal flaw. The explicit theorem (R1),
+with joint event (R2), follows by the audited algebra and probability
+steps above. Whole-component packing and analysis-only padding then
+provide a real extension beyond supplied equal-size target partitions.
+The resulting actual block-Krylov convergence claim should be stated
+with the logarithmic overhead visible, and kept separate from raw
+monomial singular-value, finite-precision, and algorithm-runtime claims.
+
+ACTUAL MANUSCRIPT SNAPSHOT ADDENDUM
+==================================
+
+The complete updated docs/cluster-robust-krylov.tex was subsequently read,
+including its actual Sections 7--10 and all the earlier corrections.
+Exact SHA-256 of that actual source snapshot:
+400f7c351d85b8d3e45667689746c5784958a4344cdd1127599642caaa9d8b3d
+
+ACTUAL-COPY VERDICT: PASS. The displayed new theorem and convergence
+consequences survive this independent check. The actual theorem is
+restricted to strictly positive head nodes h>0, so it does not claim
+the separate zero-head extension discussed in Section 6 of this audit.
+No manuscript changes were made by this reviewer.
+
+A. Different but valid proof of the normalized resolvent identity
+
+The actual source, lines 393--412, proves the identity using the exact
+evaluation functional rather than the rational-pole argument reviewed
+above. That proof is also correct. For 0<=t<q,
+
+  (zI-A)^-1 A^t Gamma
+    =z^t(zI-A)^-1 Gamma
+       -sum_(r=0)^(t-1)z^(t-1-r) A^r Gamma.
+
+Multiplication by V_last^T kills every lower-degree term because
+r<=q-2. With L_z=R(z)V_last^T(zI-A)^-1 and R(z)W(z)=I this gives
+
+  L_z A^t Gamma=z^t I.
+
+Since the raw Krylov matrix is invertible, L_z is its unique polynomial
+evaluation functional. Its i-th horizontal b-column block is exactly
+F_i^S(z)Omega_i^-1. Multiplying by (zI-A)(eta I-A)^-1 Gamma yields
+the actual displayed normalized identity in the correct order. No
+affine-relative-gap invariance is needed: the identity can be derived
+for the unscaled operator and its norm comparison uses the original
+positive eigenvalues. The mention of affine scaling cancels only in
+the resolvent ratios, not in the definition of g_rel itself.
+
+B. Actual relative theorem and joint event
+
+Lines 427--474 exactly implement the sound normalized-row recursion,
+shared Gaussian norm event, final union over N d! pairs, and omitted-
+endpoint Markov grid reviewed above. The intermediate coefficient 64,
+the grid factor 2, and simplification to 12800 d^11 all check. The
+round-up to 20000 d^12 is safe. The event legitimately includes the
+head inverse-norm bound used in the subsequent angle calculation.
+The relative angle constant 320000 is 20000 times 2^4, as required
+when substituting beta/2. There is no additional tail-point union.
+
+C. Actual packing, projection, and good-start statements
+
+Lines 502--539 correctly keep whole components together, apply next-fit
+packing, pad only within a bin, and transfer augmented graphs by setting
+dummy head coordinates to zero before projection. Marginalizing the
+dummy Gaussians is valid because the conclusion is a property of the
+original Krylov space. The augmented dimension is at most a constant
+multiple of n: D b<=2b ceil(k/b)-b<2k+b<=3k for b<k<=n, so n_aug<4n.
+Thus its appearance inside a logarithm is harmless. More precisely the
+tail row count remains n-k, as in (R7).
+
+The actual good-start claim in lines 542--563 needs no raw singular-value
+bound and no extra output-specific conditioning. Choose the k orthonormal
+graph columns Q constructed in Section 9 of this audit. They lie in the
+entire initial orthogonalized Krylov space and have inverse head overlap
+squared at most 1+T^2. That proves precisely the property required by the
+imported theorem. The exact span identity holds even when the initial
+Krylov matrix has dependent columns; orthogonalization preserves its
+range. Each final iteration is still one multiplication of the original
+small block through the ordinary Krylov process, so multiplying depth by
+b is the appropriate matrix-vector count up to fixed conventions for
+applying M M^T. The source correctly states the logarithmic overhead
+instead of claiming the literal Chen quantitative conjecture.
+
+D. Raw monomial counterexample
+
+Lines 579--592 are correct. The polynomial is monic, so its coefficient
+Euclidean norm is at least one. Its first k-1 evaluations vanish, and
+
+  |p(2^(-(k-1)))|
+     =product_(j=0)^(k-2)(2^(-j)-2^(-(k-1)))
+     <=2^(-(k-1)(k-2)/2).
+
+Normalizing its coefficient vector gives the stated deterministic upper
+bound on sigma_min(K). For any fixed constants C>0,a>=0,c>1, a proposed
+lower bound C k^(-a)c^(-k) would force
+
+  |g_k|>=C k^(-a)c^(-k) 2^((k-1)(k-2)/2),
+
+whose right side tends to infinity. A Gaussian tail or simply the
+second-moment Markov bound shows that the lower-bound success probability
+tends to zero. The minimum adjacent relative gap is exactly 1/2. Thus
+this refutes the specified condition-number-free exponential-in-depth
+raw-monomial form, while leaving the proved source theorem with its
+condition number untouched. It does not refute the good-start result.
+
+E. Earlier corrections and small remaining wording points
+
+The actual copy explicitly defines Q and Q_perp as orthonormal eigenvector
+matrices at lines 290--298, reuses the combined head event at lines
+331--335, and restores the ambient-dimension logarithm at lines 355--360.
+The three earlier recommendations are therefore addressed.
+
+No remaining point below invalidates a displayed theorem, but explicit
+wording would improve scope precision:
+
+* State 0<epsilon<1 for the low-rank depth formula, or replace epsilon
+  by min(epsilon,1) in sufficient-depth expressions.
+* Under the section's lambda_k>0 assumption, zero optimal rank-k tail
+  means rank(M)=k, and the exact D+1 branch is valid. To claim the same
+  branch when rank(M)<k, explicitly rebuild the startup analysis on
+  r=rank(M) positive eigenvalues, with the usual r<=b base case.
+* The logarithm of the relative-angle right side is meaningful as written
+  when the tail is nonempty. In the full-head case its bound is zero;
+  use log(1+T) or state that this trivial case is separate.
+* As in the original copy, the q=1 previous-block polynomial term should
+  be understood as absent, and the scalar-filter ratio for an empty tail
+  needs the trivial-case convention. These are notation points only.
+
+This actual-copy pass certifies the mathematics within the stated scope,
+not novelty, finite precision, restart behavior, or matrix-product runtime.
+
+FINAL DELTA READ
+----------------
+
+The subsequently amended actual source was read through the changed
+good-start, zero-tail, arithmetic-realization, counterexample, and
+bibliographic paragraphs. Exact SHA-256:
+94d9e1f601ce4813f6a65b529b95a8246db665a9ea42d73bc323d4d5ba1b265e
+
+Verdict remains PASS. The explicit graph orthonormalization now appears
+in the source and correctly handles a startup space with more than k
+columns. The zero-tail branch is explicitly qualified by the positive-
+top-k hypothesis, so the previously noted rank<k ambiguity is removed.
+
+The added ordinary arithmetic accounting is also correct within its
+stated setting. For w raw columns the explicit-matrix bound
+O(npw+(n+p)w^2+w^3) covers matrix actions, orthogonalization, compressed
+matrix construction and SVD. Factor actions for M=A_1 B_1 replace npw
+by Iw, I=m(n+p). If w<=m<=min(n,p), then (n+p)w^2<=Iw and w^3<=Iw.
+Expansion of final rank-k factors has the stated O(npk) classical cost.
+For a larger basis, QR of the two skinny factors and an exact core SVD
+give the usual factorized fallback. This supports an ordinary arithmetic
+realization; it makes no new exponent or improved accuracy claim.
+
+The remaining epsilon-domain suggestion is optional precision: insert
+0<epsilon<1 in the sufficient-depth statement. No additional mathematical
+change is requested by this audit. The coordinator may make that trivial
+scope clarification after this frozen delta review.

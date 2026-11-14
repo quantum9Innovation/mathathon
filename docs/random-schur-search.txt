@@ -1,0 +1,347 @@
+Random far spaces: a resolvent-profile theorem and its limitation
+==============================================================
+2026-11-14, research_runs. Dedicated research note; no manuscript edited.
+
+Status
+------
+There is a rigorous positive result: a Haar random far space is uniformly
+positive with a core width controlled by a REGULARIZED POSITIVE RESOLVENT
+TRACE, rather than by the smallest positive eigenvalue. It is a direct
+application of Gaussian escape geometry, proved below with an explicit
+width estimate. This gives a conditional profile-dependent Schur algorithm.
+
+The same analysis does not yield the original unrestricted target. For an
+arcsine positive bulk, a deterministic interlacing inequality forces the
+core-width times interval-Chebyshev inverse degree to be Omega(m), for
+EVERY far space. Flat-plus-low-rank instances evade that inverse cost via
+their separate centered low-rank structure. These statements are not
+lower bounds against arbitrary raw-factor algorithms or more powerful
+multilevel/spectrum-aware inverse methods.
+
+1. Random-far theorem with a regularized trace profile
+----------------------------------------------------
+Let K be real symmetric m-by-m, with r negative eigenvalues -nu_j,
+0<nu_j<=nu, and nonnegative eigenvalues lambda_i. Let ||K||<=L.
+Zero eigenvalues are included among the nonnegative lambda_i. Define
+
+  T(b)=sum_i 1/(lambda_i+b),
+  d_eff(b)=b*T(b), b>0.
+
+Let F be a Haar random subspace of codimension s, and let V_F be any
+orthonormal basis of F. For a>0 put
+
+  E_a={x: ||x||=1, x^T K x<=a}.
+
+For every b>0, its Gaussian width obeys
+
+  w(E_a)<=sqrt(r)+sqrt((nu+a+b)*T(b)).                    (1)
+
+Proof in spectral coordinates. On E_a,
+
+  sum_i lambda_i x_i^2 <= nu*||x_-||^2+a <= nu+a.
+
+Therefore sum_i (lambda_i+b)x_i^2<=nu+a+b. For a Gaussian vector g,
+weighted Cauchy--Schwarz gives
+
+  g^T x <= ||g_-||+
+       sqrt((nu+a+b)*sum_i g_i^2/(lambda_i+b)).
+
+Take supremum and expectation, then Jensen. This proves (1); no
+convexity or knowledge of the negative eigenvectors is needed.
+
+A slightly sharper one-parameter resolvent form is available. For
+0<u<1/(nu+a), the SPD matrix H_u=I+u(K-aI) satisfies
+x^T H_u x<=1 on E_a. Thus E_a is contained in an ellipsoid and
+
+  w(E_a)^2 <= tr(H_u^{-1})
+    =sum_j 1/(1-u(nu_j+a))
+       +sum_i 1/(1+u(lambda_i-a)).                       (2)
+
+Indeed the supremum of g^T x over that ellipsoid is
+sqrt(g^T H_u^{-1}g), and Jensen proves the trace bound. This also
+allows optimizing u using the actual negative magnitudes. In particular
+u=1/[2(nu+a)] gives the convenient bound
+
+  w(E_a)^2 <= 2r+2*d_eff(nu+a).                           (3)
+
+The elementary positive-eigenvalue comparison used here is
+2(nu+a)+lambda_i-a >= nu+a+lambda_i.
+
+Gaussian escape theorem. If G_s is an s-by-m standard Gaussian matrix,
+then, with probability at least 1-exp(-t^2/2),
+
+  inf_(x in E_a) ||G_s x|| >= sqrt(s-1)-w(E_a)-t.         (4)
+
+Since ker(G_s) is a Haar far space, a strictly positive RHS implies
+
+  V_F^T K V_F > a I.                                    (5)
+
+Consequently either of (1) or (2) supplies an explicit sufficient width.
+For example it suffices that
+
+  sqrt(s-1) > sqrt(2r+2*d_eff(nu+a))
+                     +sqrt(2 log(1/delta)).              (6)
+
+Up to universal factors this is
+
+  s=O(r+d_eff(nu+a)+log(1/delta)).                        (7)
+
+If the required width exceeds m, no nontrivial far space is asserted.
+The zero-dimensional far space/full-core fallback is always available.
+
+Primary geometric sources:
+Yehoram Gordon, On Milman's inequality and random subspaces which escape
+through a mesh in R^n, in Geometric Aspects of Functional Analysis
+(1986/87), Lecture Notes in Mathematics 1317, pp. 84--106, 1988,
+DOI 10.1007/BFb0081737.
+https://link.springer.com/chapter/10.1007/BFb0081737
+
+For an accessible primary modern treatment, Christopher Liaw, Abbas
+Mehrabian, Yaniv Plan, Roman Vershynin, A Simple Tool for Bounding the
+Deviation of Random Matrices on Geometric Sets, arXiv:1603.00897 (2016),
+published in Geometric Aspects of Functional Analysis, 2017,
+DOI 10.1007/978-3-319-45282-1_18; Theorem 1.4 and Section 2.3 give
+the corresponding random-kernel escape consequence with universal
+constants. The sharp Gaussian form (4) is the usual Gordon version.
+https://arxiv.org/abs/1603.00897
+https://arxiv.org/pdf/1603.00897
+
+2. What the theorem does and does not make algorithmic
+-----------------------------------------------------
+The spectral profile is an ANALYSIS parameter, not an assumed free oracle.
+An actual random critical space is easy: orthogonalize an m-by-s Gaussian
+matrix to U_C and set Pi_F=I-U_C U_C^T. Householder reflectors or the
+projection suffice; a dense m-by-(m-s) far basis is not required.
+
+On the good event (5), write in critical/far coordinates
+
+  K=[[C,B^T],[B,A]],    aI<A<=LI.
+
+One-sided fixed Chebyshev inverse polynomials T_-<=A^{-1}<=T_+
+to absolute error zeta have degree
+
+  q=O(sqrt(L/a)*log(poly(L,1/a,1/zeta))).                 (8)
+
+Choose zeta<=1/(2L). Then the analytical matrices with far blocks
+T_+^{-1} and T_-^{-1}, respectively, bracket K in Loewner order.
+Their operator errors are at most 2L^2*zeta. Their Schur complements
+are C-B^T T_+ B and C-B^T T_- B, and are explicit s-by-s cores.
+This is the same one-sided Schur certificate mechanism as in the
+independent adaptive-defect note; no inverse fine matrix is formed.
+
+If one true K action on s vectors costs O(I*s), and I>=m^2, the
+ordinary-arithmetic cost is
+
+  ~C_setup + ~I*s*sqrt(L/a) + O(s^3) + explicit output.    (9)
+
+The ambient projection and ordinary QR terms are
+O(m*s^2*sqrt(L/a)), dominated by I*s*sqrt(L/a) when s<=m.
+Any dense core setup, e.g. m^3 for conventional coarse whitening, is
+charged in C_setup. It must not be called input-linear in a regime
+where m^3 itself exceeds the output budget.
+
+A parameter trial can first validate A>=a/2 using a randomized minimum-
+eigenvalue approximation to additive a/4 and an actual returned quotient.
+Its cost ~I*sqrt(L/a) is dominated by (9). This is a high-probability
+validation, not an exact PSD oracle. A finite search can test geometrically
+spaced widths and a-values under geometrically increasing cost budgets,
+with fresh failure allocations. A bound for an adaptive implementation
+must explicitly include this scheduling and confidence overhead. The
+profile theorem alone is not such an implementation theorem.
+
+3. Flat positive bulk: tiny negative magnitude allows a tiny random core
+---------------------------------------------------------------------
+For K=I-(1+gamma)u u^T, ||u||=1, the eigenvalues are -gamma and
+m-1 copies of 1. Hence d_eff(b)=(m-1)b/(1+b). Taking a~gamma gives
+
+  s=O(1+m*gamma+log(1/delta)),    A>=Theta(gamma) I.
+
+This avoids the bad conclusion obtained by trying to FIND a negative
+witness in a random small restriction. Here the SMALL random space is
+critical, and its LARGE orthogonal complement is the positive far space.
+
+There is an exact calculation. If z=||U_C^T u||^2, then
+
+  lambda_min(A)=(1+gamma)z-gamma,
+  z~Beta(s/2,(m-s)/2).
+
+For s~m*gamma+log(1/delta), the positive margin is of order s/m-gamma.
+It is not a constant margin for s=o(m). A constant-conditioned far
+block requires a linear-size random core in this flat example, unless
+one exploits additional structure in its inverse.
+
+At gamma=1/m and constant confidence, the small random core has constant
+size, but interval-Chebyshev inversion costs ~sqrt(m). Consequently
+the raw input work is still ~I*sqrt(m), like ordinary rank-one Krylov.
+
+The centered-flat hybrid DOES remove this cost: A is exactly scalar
+identity minus rank one. Its nontrivial direction can be found from a
+single generic action of A-I, and its inverse is then a scalar-plus-
+rank-one Sherman--Morrison formula. A compression median also finds the
+unknown scalar exactly using three columns in the noiseless rank-one
+case. This is standard centered low-rank structure; the random split
+does not itself discover a new uniformly cheap inverse.
+
+For the parent's congruence example
+
+  K=eta D^{1/2}[I-(1+gamma)u u^T]D^{1/2},
+
+if D is explicitly available, D^{-1/2} metric coordinates reduce it
+exactly to the previous example up to eta. In unweighted coordinates,
+negative magnitude is at most eta*gamma*lambda_max(D), while the
+positive eigenvalues are at least eta*lambda_min(D), by rank-one
+interlacing. The crude flat estimate becomes s=O(1+m*gamma*kappa(D)
++log(1/delta)). Thus arbitrary coordinate anisotropy cannot be ignored.
+If D or a good substitute is unavailable cheaply, the weighted random
+split is another missing access-cost obligation.
+
+4. Arcsine positive bulk: a precise obstruction to this one-level route
+--------------------------------------------------------------------
+Consider an arbitrarily rotated matrix with eigenvalues
+
+  -nu,  lambda_i=sin^2(pi*i/(2m)), i=1,...,m-1.
+
+For m^{-2}<=b<=1,
+
+  T(b)=Theta(m/sqrt(b)),   d_eff(b)=Theta(m*sqrt(b)).       (10)
+
+This follows directly by comparing sin(pi*i/(2m)) with i/m and summing
+1/(b+(i/m)^2); no limiting density assumption is needed. It is the
+usual arcsine density lambda^{-1/2}(1-lambda)^{-1/2} profile.
+
+With a~nu, (6) gives s=O(1+m*sqrt(nu)+log(1/delta)). At nu=1/m,
+the core width is ~sqrt(m) and inverse degree is ~sqrt(m), so (9)
+costs ~I*m, the classical Gram scale. Optimizing a in the regularized
+trace certificate gives s~m*sqrt(nu+a), hence
+
+  s/sqrt(a) ~ m*sqrt(1+nu/a) >= m.                        (11)
+
+There is also a deterministic dimension/conditioning explanation. For
+ANY far space of codimension s, min--max gives
+
+  lambda_min(V_F^T K V_F) <= lambda_s
+                         <= (pi^2/4)*(s/m)^2.            (12)
+
+Indeed F intersects the span of the bottom s+1 eigenvectors, on which
+every Rayleigh quotient is at most lambda_s. If s<=m/2, the largest
+compressed eigenvalue is bounded below by a positive constant, again
+by interlacing. Thus its interval condition number is Omega((m/s)^2).
+The width times the interval-Chebyshev degree is therefore Omega(m).
+For s>m/2 the width alone is already Omega(m).
+
+This rules out beating the Gram scale by THIS random-split plus
+unpreconditioned, interval-certified far-inverse accounting on this
+profile. It is not a lower bound for actual spectrum-adapted CG on
+every compression, a structured inverse, multilevel preconditioning,
+or a new raw-factor partial-Krylov algorithm. A matrix with a known
+eigenbasis can of course be much easier than its interval bound.
+
+5. Relation to the flat-Schur claimed frontier and clustered Krylov
+----------------------------------------------------------------
+The new centered-Schur shortcut has a serious ordinary Krylov comparator.
+If K=L diag(S_exact,A)L^T, kappa(L)=O(1), A in a fixed positive
+interval, and S_exact=aI+rank_k+O(theta), then for a>theta the PSD
+base L diag(aI,A)L^T has two constant-factor positive spectral bands:
+one at scale a and one at constant scale. A rank-k perturbation moves
+only O(k) eigenvalues outside their union, by interlacing.
+
+There is an explicit polynomial separating these two bands from x<=0.
+For bands [a,Ca] and [c,L], choose
+
+  p1(x)=(1-x/(Ca))^u,
+  p2(x)=(1-x/L)^v,  v=O(u*log(1/a)).
+
+On the small band p1 contracts by exp(-Omega(u)); on the far band
+the contraction of p2 cancels p1's at-most-(O(1/a))^u growth.
+At x<=0 both factors are at least one. Hence degree
+O(log(1/epsilon)*log(1/a)) suffices. If a=O(theta), a shift O(theta)
+creates a small positive band at scale theta within the allowed error.
+
+An oversampled Gaussian block of width O(r+k) can annihilate the
+positive-outlier coordinates analytically BEFORE filtering, using the
+pseudoinverse of its rows in the O(r+k)-dimensional exceptional space.
+No degree-k polynomial root annihilation is necessary. The standard
+randomized range bound then captures the negative head to arbitrarily
+small polynomial-in-theta accuracy using only logarithmic filter depth.
+
+Primary components: Nathan Halko, Per-Gunnar Martinsson, Joel A. Tropp,
+Finding Structure with Randomness: Probabilistic Algorithms for
+Constructing Approximate Matrix Decompositions, SIAM Review 53(2),
+217--288, 2011, arXiv:0909.4061; Theorem 9.1 is the deterministic
+filtered range bound, and its Gaussian analysis controls the inverse.
+https://arxiv.org/abs/0909.4061
+https://users.oden.utexas.edu/~pgm/Pubs/2010_HMT_random_review.pdf
+
+Classical eigenvalue-filter context: Yousef Saad, On the Rates of
+Convergence of the Lanczos and the Block-Lanczos Methods, SIAM Journal
+on Numerical Analysis 17(5):687--706, 1980,
+DOI 10.1137/0717059.
+https://epubs.siam.org/doi/10.1137/0717059
+
+Rank-r extraction itself does not block this comparison. For PSD H,
+||H||<=L, lambda_(r+1)(H)<=1, let E span eigenvectors above 1+delta.
+If ||(I-P_Q)E||<=epsilon and U are the top-r Ritz vectors of Q^T H Q,
+then, for each such exact eigenvector e with eigenvalue lambda,
+
+  (Q^T H Q-lambda I)Q^T e=-Q^T H(I-P_Q)e.
+
+Every discarded Ritz value is <=1 by min--max. Summing the per-vector
+bounds gives
+
+  ||(I-P_U)E||_F <= sqrt(r)*(epsilon+L*epsilon/delta).
+
+Since H<=(1+delta)I+L P_E,
+
+  ||(I-P_U)H^{1/2}||^2
+    <=1+delta+L*r*(epsilon+L*epsilon/delta)^2.             (13)
+
+For strong ACTION residual of a bounded PSD T, use H=T^2 in this
+formula (L<=4), not H=T; then (13) bounds ||(I-P_U)T||^2.
+Choosing epsilon polynomially smaller than delta^(3/2)/sqrt(r)
+costs only logarithms in filter degree. No precise individual leading
+eigenvector or singular-value-ratio dependence is required.
+
+This establishes a serious conditional UPPER/NEAR-threshold comparison
+at ~I*(r+k) plus m^3 preprocessing and ordinary core/output work.
+A complete adaptive global wrapper still needs all below-threshold
+count cases, parameter discovery and confidence caps. Therefore the
+flat-Schur algorithm should currently be described as a new certificate
+construction/instance-sensitive route, not as a proved improvement over
+all established polynomial Krylov compositions on its conditional class.
+
+6. The trace-profile cost also has a standard filtering comparator
+---------------------------------------------------------------
+For a>0, let k(a) be the number of nonnegative eigenvalues of K below a.
+On the remaining positive interval [a,L], the usual normalized Chebyshev
+polynomial
+
+  p_q(x)=T_q((2x-L-a)/(L-a)) / T_q((-L-a)/(L-a))
+
+has |p_q(x)|<=epsilon for degree
+q=O(sqrt(L/a)*log(1/epsilon)); take q even. On x<=0 it has p_q(x)>=1.
+Treat the r negative directions and k(a) small-positive directions as
+the exceptional space. A Gaussian block of width O(r+k(a)) can set
+every undesired small-positive coordinate to zero analytically before
+filtering, as in Section 5. HMT's deterministic filtered-range bound
+then captures the negative head with arbitrarily small polynomial-in-
+theta error. Rank-r Ritz extraction handles the upper/near case.
+
+This standard composition has input arithmetic
+
+  ~I*(r+k(a))*sqrt(L/a).                                  (14)
+
+Since k(a)<=2*d_eff(a)<=2*d_eff(nu+a), (14) is no larger than the
+regularized-trace Schur accounting (9), up to constants/logarithms.
+It does not require the exact negative magnitude nu as a supplied value.
+Very weak negative directions may be ignored after an allowed O(theta)
+threshold shift; no logarithm of an arbitrarily tiny negative eigenvalue
+is necessary for a relative-accuracy LRA guarantee.
+
+Thus the random-far theorem is a useful explicit geometric statement and
+may inform certificates or more structured inverse algorithms, but its
+current input-pass bound alone is not a new frontier even in the generic
+K-action model. A claimed improvement would need an additional cheap
+Schur inverse, a stronger raw-factor access property, or another mechanism
+that beats this deflated/oversampled polynomial comparator. The global
+adaptive below-threshold wrapper remains a separate obligation in both
+compositions; this note does not assert its complete automatic subsumption.

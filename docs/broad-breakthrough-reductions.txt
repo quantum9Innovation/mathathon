@@ -1,0 +1,489 @@
+Broad factor-access spectral research: reductions to major primitives
+====================================================================
+Independent research note, 2026-11-14. Only this dedicated file is edited.
+The goal is a broad ~O(I*r+m^omega) construction with logarithmic accuracy
+dependence, including the original N=m^(9/8), r=1, theta=1/m case.
+This note gives precise positive conditional reductions and isolates an
+actionable partial-Krylov route. It does not claim the missing primitives
+have been solved or that spectral LRA automatically implies exact MM.
+
+Main findings
+-------------
+1. Fast EXACT tall-Gram determinant or full raw-factor Krylov preprocessing
+   would imply a genuine improvement to square matrix multiplication.
+   At all tall aspects, input+core with core exponent9/4 implies11/5.
+   At just the original N=m^(9/8) aspect it already implies20/9.
+2. A weaker PARTIAL raw-factor Krylov theorem with cost
+      ~O(I*q^(omega-2)+m*q^2+m^omega)
+   could solve the original hard case at q=sqrt(m) without forcing those
+   full-Krylov/MM consequences. No inspected published theorem supplies
+   this raw-factor extension. Its needed polynomial linearization is explicit.
+3. A rank-sensitive truncated INERTIA DECOMPOSITION is an alternate broad
+   target. Any maximal negative-definite basis, not an accurate eigenbasis,
+   supplies the correct dual projection. A sign-only determinant oracle
+   escapes the differentiation reduction, but efficient witness extraction
+   is an additional obligation.
+4. Ordinary high-accuracy tall least squares and zero-tail low-rank product
+   recovery already admit sketch-preconditioned input+core approaches.
+   They are useful components, not by themselves the missing breakthrough.
+
+1. Exact Gram determinant -> exact Gram -> faster square MM
+----------------------------------------------------------
+Let A be an arbitrary N-by-m real matrix, N>=m. Suppose a differentiation-
+compatible exact field algorithm computes det(X^T X) from raw tall X in
+
+  T(N,m)=~O(Nm+m^w), 2<w<3.
+
+The basic assumption is a rational straight-line computation, or a
+branching computation on a generic nonsingular branch where reverse
+automatic differentiation applies. This is an exact magnitude computation,
+not a sign test or a relative-error approximation.
+
+Take a fresh invertible Gaussian R in R^(m by m), set X=[R;A], and put
+
+  P=A^T A, H=R^T R+P, F=det(H)>0.
+
+Jacobi differentiation gives the m-by-m block
+
+  grad_R F = 2F R H^(-1).
+
+Reverse differentiation computes all partials at constant-factor field
+overhead, plus initialization/output of at most O(Nm) entries. Hence
+
+  H^(-1)=(2F)^(-1) R^(-1) grad_R F,
+  P=(H^(-1))^(-1)-R^T R
+
+are recovered with an additional O(m^w) field operations. No tall matrix
+product is performed in this recovery. R ensures full column rank even
+when A is rank deficient. It also avoids exceptional branch boundaries:
+for fixed A, a nonidentically-zero rational equality test in R vanishes
+with probability zero. A test identically zero in R is constant on this
+restricted input family. A straight-line version needs no such qualification.
+For randomized branching algorithms, correct generic branches and their
+derivatives must be justified; one cannot simply differentiate a failure
+path. The clean arithmetic-circuit implication is already sufficient.
+
+This is an application of Baur--Strassen, not a new differentiation
+principle. It yields a useful specialized consequence for raw tall Grams.
+Appending identity rows would simplify the algebra at R=I, but random R
+avoids a branch-specific specialization that could have an incorrect
+derivative with respect to the appended rows.
+
+Cross-products follow by applying this Gram algorithm to the raw tall
+matrix [U V]: its off-diagonal block is U^T V. Thus an m-by-N times
+N-by-m product costs ~O(Nm+m^w), with no symmetry promise on that product.
+
+Now multiply two D-by-D matrices. Split output rows and columns into
+b-by-b blocks, so each block is a b-by-D times D-by-b multiplication.
+The preceding algorithm gives total
+
+  ~O((D/b)^2*(Db+b^w))
+    =~O(D^3/b+D^2*b^(w-2)).
+
+At b=D^(1/(w-1)), the exponent is
+
+  w_new=3-1/(w-1).
+
+For w=9/4 this equals11/5=2.2, strictly below9/4. If a primitive is
+proved only for aspect N=m^kappa, the same blocking gives
+
+  w_new(kappa)=max(3-1/kappa, 2+(w-2)/kappa).
+
+At kappa=9/8 and w=9/4 the bound is20/9=2.2222.... Thus even that
+single original tall aspect has a nontrivial MM consequence.
+
+If the hypothetical algorithm is a MODULAR reduction to input work plus
+square-MM calls, so every improved square-MM exponent can be substituted
+back into it, this can be bootstrapped. For w=2+e,
+
+  e_new=e/(1+e), so e_j=e_0/(1+j*e_0) -> 0.
+
+It would imply omega=2 as an infimum. A black box with a permanently
+hardcoded m^(9/4) term only gives the one-step11/5 consequence, not this
+bootstrap. Do not conflate the two assumptions.
+
+The same implication applies to an exact raw tall-Gram characteristic
+polynomial, since it gives a determinant after appending R. It does NOT
+follow from approximate determinant values: a uniformly small function
+error does not control derivatives. Nor does it follow from determinant
+SIGN, which is locally constant away from zero.
+
+2. Exact full raw-factor Krylov preprocessing has the same consequence
+---------------------------------------------------------------------
+Suppose an algorithm returns the exact monomial Krylov matrix
+
+  K=[v,Hv,...,H^(m-1)v], H=X^T X,
+
+from raw tall X in ~O(Nm+m^w), without first forming H. Use X=[R;A]
+again. H has simple spectrum almost surely: its eigenvalue-discriminant
+polynomial in R is not identically zero. For existence, choose a large
+diagonal D with distinct entries and D-P positive definite; a real R
+with R^T R=D-P gives H=D. A fresh Gaussian v then has nonzero overlap
+with every eigendirection almost surely, so K is invertible.
+
+One additional raw H action computes H^m v in O(Nm), giving
+
+  K_shift=[Hv,...,H^m v], H=K_shift*K^(-1).
+
+Recover P=H-R^T R in O(m^w) further work. Therefore full exact raw
+Krylov at input+core implies the same rectangular and square-MM bounds
+as Section1. This reduction needs no automatic differentiation and
+works in the field/square-root/comparison/Gaussian model already used
+by the manuscripts. An exact invariant basis together with its action
+matrix has the same implication. A mere unspecified span without the
+monomial iterates/action representation is a different output promise.
+
+Neiger--Pernet--Villard2024 Theorem4.1 takes an EXPLICIT coefficient
+matrix. Its fast polynomial-kernel/Frobenius preprocessing does not
+automatically take raw X as that input. The reduction explains exactly
+why that extension would be a major algorithmic advance.
+
+3. Partial raw Krylov: the credible weaker target
+------------------------------------------------
+The parent's proposed partial target is materially weaker:
+
+  T_partial(I,m,q)
+    =~O(I*q^(w-2)+m*q^2+m^w), q<=m.
+
+At the original input I=m^(17/8), q=sqrt(m), w=9/4, its three
+exponents are9/4,2,9/4. Hence it fits the original core budget.
+At q=m it instead has I*m^(1/4) and the conservative m^3 basis term;
+it does not assert the input+core full-Krylov primitive of Section2.
+The improvement therefore need not imply a new MM exponent.
+
+This is a proposed theorem, not a bound established by the inspected
+sources. Exact monomial vectors, maximal independent columns or a
+certified enough partial range must be specified; a numerically unstable
+span is not an automatically valid finite-word implementation. Raw
+factor applications, coefficient preparation, rank revelation and final
+physical lifting all still need charges.
+
+Why the proposed q dependence is plausible as a research target:
+once the q Krylov vectors are KNOWN, all their raw-factor products can
+be batched. At the original q=sqrt(m), both N-by-m-by-q products and
+their tensor permutations are input optimal under the adopted rectangular
+bound. The unresolved operation is obtaining this ADAPTIVE sequence
+without q sequential input passes. A rank-sensitive polynomial-kernel or
+elimination method could conceivably pay q^(w-2) instead. Simply batching
+already known right-hand sides does not prove that saving.
+
+Single-covariance exact linearization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+For H=X^T X, solve the polynomial system
+
+  [[I_N, X],[-z X^T,I_m]] [y(z);x(z)]=[0;v].
+
+Its Schur complement is I_m+zH, so
+x(z)=(I+zH)^(-1)v=sum_j(-z)^j H^j v. Computing only its first q
+coefficients is exactly the desired partial-Krylov task. Input size is
+O(Nm), degree is one, the RHS has one column, and identity diagonal
+blocks are explicit. Its determinant degree is at most m, despite the
+larger matrix dimension N+m. A useful theorem must exploit these facts
+from the raw factors; forming the Schur coefficient H costs the Gram
+bound and loses the intended gain.
+
+General product linearization: do not materialize AB
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+A raw-covariance theorem alone does not directly cover arbitrary AB.
+Let P=A^T A, Q=B B^T. Ordinary physical normal-operator iterates satisfy
+
+  (M M^T)^j A u = A(QP)^j u.
+
+Use variables (x,w,h,y) of dimensions(m,p,m,n) and equations
+
+  x-z B w=u,  w-B^T h=0,  h-A^T y=0,  y-Ax=0.
+
+Equivalently, the polynomial matrix is
+
+  [[I_m,-zB,0,0],
+   [0,I_p,-B^T,0],
+   [0,0,I_m,-A^T],
+   [-A,0,0,I_n]].
+
+It has O(I) raw-factor entries, degree one, and a rank-one RHS. Its
+Schur complement is I-z QP. The desired Taylor coefficients are
+(QP)^j u; starting with u=B*g produces the usual M-started Krylov
+vectors after the physical A lift. A field-algebra proof for this sparse
+identity-block linearization would directly handle the actual input model.
+Another form uses X=diag(A,B^T) and the fixed exchange matrix
+J=[[0,I],[I,0]]: (J X^T X)^2=diag(QP,PQ). A theorem must justify
+this fixed-indefinite-mass extension rather than silently replacing X
+with the unmaterialized product M.
+
+4. Truncated inertia decomposition would imply the BROAD target
+--------------------------------------------------------------
+Use the established constant-sketch product support and whitening:
+M=Z Bcal, G=Z^T Z~I, Q=Bcal Bcal^T. Fix a true-mass Neumann
+polynomial Bmass~G^(-1) to relative accuracy O(theta); its degree is
+O(log(1/theta)) and each block action uses the original factors.
+The represented pencil K_t=t Bmass-Q has one fixed generalized spectrum.
+
+Consider this precise missing primitive for such raw-factor pencils:
+given t,r, in ~O(I*r+m^w) operations return either
+
+  (a) V with r+1 columns and V^T K_t V negative definite; or
+  (b) a basis V with s<=r columns, V^T K_t V negative definite,
+      and K_t positive semidefinite on (K_t V)^perp.
+
+The empty V is permitted in(b) when K_t is PSD. This is a truncated
+inertia decomposition, not just a determinant value. It need only
+resolve the first r+1 negative directions; it need not expose all
+positive pivots or all eigenvalues. Shared mass and the original
+constant Gram sketches can be reused over thresholds.
+
+Case(a) certifies t<lambda_(r+1) of the represented product spectrum.
+Case(b) certifies at most r negative eigenvalues, hence the opposite
+inequality. The plain coarse coefficient ratio supplies an initial
+bracket of polynomial dimension ratio. Exact bisection to relative
+O(theta), with O(log(m/theta)) calls, therefore finds an upper t at
+the desired tail scale without any input-condition logarithm.
+
+The physical output in case(b) is the span Z*K_t*V. For x orthogonal
+to that span, y=Z^T x satisfies V^T K_t y=0 and y^T K_t y>=0.
+Consequently
+
+  x^T M M^T x=y^T Qy
+    <=t*y^T Bmass*y<=(1+O(theta))*t*||x||^2.
+
+Combining the threshold and represented/true mass comparisons yields
+the desired1+theta spectral factor after choosing the internal constant
+accuracy budget. Computing K_t V and the physical lift costs ~O(I*r)
+and core work. This gives the broad target plus the explicit output
+charge. No eigenvector accuracy or final high-degree projection filter
+is needed once this primitive exists.
+
+Any maximal negative-definite basis is enough
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+For nonsingular symmetric K of negative index s, if V has s columns
+and V^T K V<0, its K-orthogonal complement is PSD. In a basis[V X]
+with V^T KX=0, the quadratic form is block diagonal; Sylvester inertia
+puts all s negative directions into the V block. Thus its Euclidean
+normals are K V. For s=1, ANY v with v^T K v<0 suffices, and the
+one physical normal is Z K v. This is why accurate PCA eigenvectors
+are an unnecessarily strong intermediate output.
+
+Exact rank-one negative-witness extraction can also be expressed as
+search for a negative LDL pivot and its transformed preimage. Full
+Gaussian-congruence LDL gives v=S L^(-T)e_j and K v proportional to
+S^(-T)L e_j, recovering the already audited exact-Gram baseline.
+The new algorithmic burden is finding that witness from raw factors
+without forming every Gram or paying for all positive pivots.
+
+5. Sign-only determinant/inertia can escape the AD implication
+-------------------------------------------------------------
+Under the promise negative_index(K)<=1 and det(K)!=0,
+
+  sign(det K)>0 iff K is positive definite,
+  sign(det K)<0 iff K has one negative eigenvalue.
+
+Thus sign of a threshold determinant is exactly a decision primitive
+in that promised regime. Its local derivative is zero, so Section1's
+value-to-Gram differentiation reduction does not apply. Without the
+index promise, determinant sign gives only parity, not the needed count.
+
+Decision does not yet provide a cheap negative v. Principal-block
+self-reductions can use sign tests to decide where negative inertia lies,
+but the Schur-complement step needs solves with positive restrictions.
+Those restrictions can be arbitrarily ill-conditioned; the fact that
+they are SPD does not provide the required uniform input+core solve.
+Alternatively reconstructing many principal data with many sign queries
+can reintroduce an input factor. A sign/inertia algorithm which returns
+a negative pivot/witness at essentially its decision cost is therefore
+a meaningful positive primitive to pursue. No lower bound rules it out
+here, and no such raw-factor cost theorem was established by this audit.
+
+The inference 'theta->0 spectral LRA gives exact eigendata' is invalid.
+For H=diag(L,1,0), L>1, take
+u=sqrt(1-1/L)*e1+L^(-1/2)*e3. Then
+||(I-u u^T)H^(1/2)||=1, the optimal rank-one spectral residual, although
+u is not the leading eigenvector. This holds even at zero slack. It
+does not obstruct fast spectral LRA; it explains why an automatic exact
+determinant/MM implication has not been justified for that weaker output.
+
+6. Already accessible positive components
+-----------------------------------------
+Tall least squares with logarithmic precision
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+For raw tall X, a constant OSE plus a small-core whitening makes
+G=R^(-T)X^T X R^(-1) have constant condition. Polynomial/Chebyshev
+iteration then solves a positive normal system in O(log(1/epsilon))
+true-factor passes in the energy norm. Setup is input+square-MM, and
+r right-hand sides cost ~O(I*r+m^w) with the normal logarithms. This
+is the familiar sketch-preconditioning mechanism, already reflected in
+Clarkson--Woodruff's high-accuracy regression results. It does not solve
+indefinite threshold systems or give all m inverse columns at rank-free
+input cost. Confusing those tasks would hide the hard part.
+
+Exact low-rank products
+~~~~~~~~~~~~~~~~~~~~~~~
+The zero-tail case is likewise not the key barrier. If rank(AB)=r,
+two constant OSEs produce small SA and BT^T, and the small product
+C0=SABT^T has the same rank with high probability. Choose an invertible
+r-by-r cross C0[I,J]. Exact CUR gives
+
+  M=(M T_J^T)*C0[I,J]^(-1)*(S_I M).
+
+The two lifted factors require width-r original-factor products, the
+core costs m^w, and expansion is charged. This gives the target shape
+at zero tail. Making such a core robust relative to a tiny nonzero
+spectral tail without an accurate Gram is the unresolved problem.
+
+7. Bounded primary-source audit and possible mechanisms
+------------------------------------------------------
+Baur--Strassen1983
+  Walter Baur, Volker Strassen. The complexity of partial derivatives.
+  Theoretical Computer Science22(3),317--330. Theorem1 and the explicit
+  matrix-inversion/determinant reduction justify constant-overhead
+  differentiation; the paper also discusses counting all operations.
+  https://doi.org/10.1016/0304-3975(83)90110-X
+  https://web.vu.lt/mif/s.jukna/tropical/Baur-Strassen.pdf
+  The tall-Gram augmentation/gradient and exponent consequences in
+  Sections1--2 are this note's derivations, not statements attributed
+  to that paper.
+
+Neiger--Pernet--Villard2024
+  Vincent Neiger, Clement Pernet, Gilles Villard. Computing Krylov
+  iterates in the time of matrix multiplication. ISSAC2024,419--428.
+  Theorem4.1 preprocesses an EXPLICIT n-by-n coefficient matrix into
+  a maximal Krylov basis in O(n^w loglog(n)), or O(n^w) with sufficiently
+  few starting vectors. Its polynomial-kernel input explicitly contains
+  xI-A. It does not supply an implicit-Gram access theorem. Sections1--2
+  show why a full input+core extension is much stronger; Section3 asks
+  for only a truncated raw identity-block extension.
+  https://doi.org/10.1145/3666000.3669715
+  https://arxiv.org/abs/2402.07345
+
+Berthomieu--Neiger--Passe2026
+  Jeremy Berthomieu, Vincent Neiger, Hugo Passe. Computing submatrices
+  of the Hermite normal form of a structured polynomial matrix.
+  ISSAC2026, DOI10.1145/3815436.3815457. Theorem1.1 takes supplied
+  displacement generators, determinant/adjugate degree bounds and an
+  output-row parameter. Its cost retains displacement rank and those
+  degree bounds; selected inverse rows are reconstructed by structured
+  evaluation/interpolation. The raw saddle identity blocks are promising
+  structure, but a generator/output-sensitive q theorem is still needed.
+  No constant displacement rank for arbitrary raw X is established here.
+  https://arxiv.org/abs/2602.08027
+
+Jeannerod--Pernet--Storjohann2013
+  Proposition6 gives CUP cost O(N*m*s^(w-2)) for explicit rank-s input.
+  This motivates a rank-sensitive rather than full-dense elimination
+  target. Here s would need to measure exposed Krylov/negative structure,
+  not the full algebraic rank of the raw factors, which can be m.
+  https://arxiv.org/abs/1112.5717
+
+Clarkson--Woodruff2013/2017
+  Low Rank Approximation and Regression in Input Sparsity Time.
+  Their embedding/preconditioning results already reduce regression's
+  epsilon dependence to logarithmic. This is evidence that positive
+  high-accuracy least squares alone is not the new primitive.
+  https://arxiv.org/abs/1207.6365
+  https://doi.org/10.1145/3019134
+
+Anand--Chen2026: a useful fresh mechanism, not a subsumption
+  Emile Anand, Peter Chen. The Komlos Problem in Matrix-Multiplication
+  Time. arXiv2610.20995, October14,2026. Theorem1.1/Remark1.2 gives
+  input+square-MM complexity for signing. It replaces a tiny-gap
+  top-eigenvalue potential with a resolvent potential and reuses an
+  anchor subspace over a batch with rank-one inverse updates. Its
+  controlled Gram is PSD AND entrywise nonnegative, with monotonic row
+  barriers; arbitrary product pencils lack that promise. Smooth resolvent
+  certificates plus cached subspaces are worth examining, but this is
+  not a generic factored-product eigensolver theorem.
+  https://arxiv.org/abs/2610.20995
+
+8. Concrete next proof objectives
+---------------------------------
+Highest priority: prove a q-sensitive polynomial-kernel or truncated
+elimination bound for the explicit raw identity-block linearization in
+Section3, initially at q<=sqrt(m) and one RHS. It would resolve the
+original exponent target without requiring exact all-spectrum extraction.
+Charge raw-factor products rather than pretending the Schur coefficient
+is free, and test whether low polynomial output order can replace full
+coefficient dimension in the elimination cost.
+
+Parallel longer-term target: a truncated inertia decomposition for the
+shared-mass signed pencil, returning arbitrary negative witnesses and
+their dual normals. A sign-only determinant scheme with witness-aware
+self-reduction could avoid both the exact-value/MM implication and the
+unnecessary demand for accurate leading eigenvectors. The raw-access
+cost and positive-Schur-solve subproblem are the actual missing theorem.
+
+The exact determinant/full-Krylov consequences are useful ambition
+checks: if a proposed method claims those stronger outputs at input+core,
+it must either deliver the corresponding MM improvement or identify an
+extra promise that invalidates the reduction. The partial-Krylov and
+low-index-witness objectives deliberately ask for less and remain
+plausible routes to a broad spectral result. None is solved in this note.
+
+9. Actual Anand--Chen mechanism: a transferable lemma and its limits
+-------------------------------------------------------------------
+Read Proposition2.1 and AppendixB of arXiv2610.20995, rather than only
+the abstract. Their general-use ingredient is metric stability of a
+cached curvature certificate. The following own lemma isolates a part
+which DOES NOT require entrywise nonnegative factors.
+
+Let M0=Mfixed+Gamma*Gamma^T<bI, A0=bI-M0, R0=A0^(-1), with
+Mfixed fixed during a batch. For a diagonal weight perturbation Delta,
+assume ||Delta||<=a and
+
+  ||R0^(1/2)*Gamma||^2<=L.
+
+Then, without any entrywise-sign condition,
+
+  ||R0^(1/2)*(Gamma*Delta*Gamma^T)*R0^(1/2)||<=aL.
+
+If aL<1 and Mx=M0+Gamma*Delta*Gamma^T, it follows that
+
+  (1-aL)A0 <= bI-Mx <= (1+aL)A0,
+  R0/(1+aL) <= (bI-Mx)^(-1) <= R0/(1-aL).
+
+This is an immediate congruence/operator-norm proof, valid for arbitrary
+signed Gamma. It is the right generic replacement for an entrywise
+monotonicity assertion when all changes are relative PSD-factor weights.
+
+A generic cached-curvature corollary also needs no entrywise signs.
+Suppose P0,D0>=0 and a fixed E satisfies P0|E<=(1-rho)D0|E.
+If within a window
+
+  Px|E <= (1+eta)P0|E+eta D0|E,
+  Dx|E >= (1-eta)D0|E,
+
+then for eta<=rho/6,
+
+  (Px-Dx)|E <= [-rho+(3-rho)eta]D0|E <=-(rho/2)D0|E.
+
+Thus one anchor subspace remains valid throughout that window. The paper
+proves analogous stronger drift estimates for its particular weights,
+gradients and negative diagonal barrier curvature. A future factor-access
+method could reuse this principle if it supplies its OWN leverage cap
+and relative drift bounds. It is a positive reusable lemma, not a generic
+PCA algorithm extracted from a discrepancy theorem.
+
+What does not transfer for free
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+For Gamma containing all of M0, the metric cap can be as large as
+lambda_max(M0)/(b-lambda_max(M0)). Anand--Chen freezes heavy rows and
+uses load counting/spread to keep the remaining cap polylogarithmic
+while losing few dimensions. Those bounds exploit nonnegative coefficient
+vectors, a positive resolvent probe, and the special barrier mass budget.
+Arbitrary covariance rows aligned with a near-barrier direction do not
+have that polylogarithmic cap. A new leverage/count or relative-curvature
+invariant is required; merely replacing entries by absolute values can
+destroy the product geometry.
+
+Tiny-row retirement is also task-specific. N identical raw rows v/sqrt(N)
+have individual squared norm ||v||^2/N, arbitrarily small, while their
+sum Gram is v v^T. Discarding all such rows destroys an order-one spectral
+direction. The paper controls separate row discrepancies, where its
+retirement error has a different meaning; it does not certify this
+covariance deletion.
+
+The Gaussian completion sampler and rank-one row-replacement inverse
+maintenance are geometric and can operate in an arbitrary fixed feasible
+subspace. They efficiently generate many constrained directions AFTER
+such a subspace is known. They do not themselves discover a negative
+subspace from raw A,B or remove the cost of computing each true factor
+action. Reusing a certificate across a batch is the promising transferable
+mechanism; obtaining a large valid trust window at raw input cost is
+the exact missing lemma.

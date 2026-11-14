@@ -1,0 +1,406 @@
+Classical-arithmetic gate for the raw partial-Krylov proposal
+2026-11-14. Scope update after the user's practical-theory clarification.
+
+No benchmark, implementation heuristic, or practical SOTA claim is made.
+The task asks for a new theoretical algorithm with reasonable primitives,
+not a hardware-specific speedup or a replacement of GEMV by GEMM. No such
+new classical-arithmetic theorem has been proved in this search.
+
+1. The proposed exact raw short-Krylov primitive is still useful
+
+The candidate in factor-algebra-search.txt Section9 is
+
+  K_q(J X^T X,v)
+    in ~O(I_X*q^(omega-2)+m*q^2+m^omega),
+
+including the fixed-permutation J extension needed for arbitrary products.
+At omega=9/4 it would solve the original hard total-time instance. It is
+not currently proved. At classical omega=3 its input term becomes I_X*q,
+so merely proving that formula uniformly in omega would NOT itself give
+a new classical pass complexity. The m^omega setup must also be paid.
+Replacing it by a small projected q-core without proof would erase the
+principal missing algorithmic step.
+
+A genuinely practical-strength target would instead be
+
+  ~O(I_X*polylog(q)+m*q^2+q^3)
+
+or a weaker concrete bound that saves a polynomial number of raw passes
+without a full m^3 setup. An approximate routine may suffice, but needs a
+certified spectral-subspace error bound independent of the conditioning of
+the monomial Krylov basis and of the true leading-to-tail ratio. Elementwise
+small errors in raw monomial vectors do not provide that guarantee.
+
+In the original shape N=m^(9/8), q=~sqrt(m), this stronger expression is
+~O(m^(17/8)+m^2), with output m^(9/4), so it would meet the total-time
+gate using conventional arithmetic. This is an OPEN target, not a result.
+
+2. Tempting immediately available methods do not meet that theorem
+
+Orthogonalized Chebyshev/power recurrences still use q dependent true
+operator actions. Blocking already known independent columns reduces their
+GEMM cost but does not construct unknown future iterates in one call.
+The same is true of a batch polynomial recurrence or a compact WY update
+whose generating vectors have not yet been obtained. Communication-avoiding
+Arnoldi can reduce synchronization or basis-maintenance costs while retaining
+the sequential operator-action work; that is not the requested arithmetic
+advance.
+
+Stable block Davidson/LOBPCG and sketch-preconditioned eigensolvers are useful
+practical comparators. A favorable local convergence experiment, approximate
+Gram preconditioner, or reused dense core eigenbasis does not establish a
+gap-free arbitrary-factor high-accuracy runtime. No new such convergence
+theorem was obtained here. They are therefore not offered as a substitute
+for the requested advance.
+
+Exact QR-SVD avoids normal-equation conditioning and is the appropriate
+stable exact reference when the factor Grams would square condition numbers.
+Classical tall QR costs O((n+p)m^2) plus its small-core work. TSQR changes
+communication and constant factors; sketch-preconditioned QR followed by
+exact transforms must charge those full tall transforms. This is standard
+linear algebra, not a new smaller arithmetic exponent. Lifting only r
+retained coefficient vectors is already charged efficiently in the existing
+comparators.
+
+Batched negative-shift/ridge solves can be cheap on many RHSs. Constructing
+the desired sharp filter from them must nevertheless pay for the needed
+precision and extraction. Existing uniform coefficient-growth results show
+that termwise refinement can restore the polynomial pass count; degree
+alone is not a batching lower bound. A new stable extraction theorem remains
+possible, but has not been supplied by ordinary reassociation.
+
+3. Concrete algebraic work that remains
+
+The promising focused question is still the order-q raw saddle expansion
+
+  [ I_N      -X      ] [u(z)] = [0]
+  [-z J X^T  I_m     ] [w(z)]   [v]   modulo z^q,
+
+without computing the full degree-m rational fraction or dense Gram.
+The output-sensitive polynomial-kernel/fraction algorithm must be given,
+not assumed. The exact one-RHS row-update counterexample in the companion
+search note explains why naive child Padé summaries fail to close under
+row/block merges. General polynomial-matrix algorithms currently inspected
+still pay their full kernel setup before low-order series extraction.
+
+The full-determinant AD reduction does not rule out this short-order task.
+For example, differentiating a scalar weighted short trajectory with respect
+to X produces X times a coefficient matrix of rank at most 2q: one factor
+in every term belongs to the forward q-dimensional Krylov span, while reverse
+adjoints collect the other factors into at most q columns. At q<<m this
+does not directly recover a full generic Gram as the exact trace/determinant
+gradients do. This is a scope observation, not a lower bound against some
+different reduction.
+
+No new classical theorem beyond standard block Lanczos, orthogonalized
+Chebyshev, or known sketch-and-solve was established. The note preserves
+the practical success bar explicitly rather than labeling the unproved
+galactic-exponent candidate as a practical algorithm. The original hard
+instance and unrestricted near-input-plus-core goal remain open.
+
+4. Lazy signed elimination: an exact potential and a failed sampling rule
+
+New route requested by the parent: process the raw bordered threshold pencil
+with its known m negative baseline, maintaining only the at-most-r excess
+negative directions, in O(mr) work per raw row plus O(m^3) core work. The
+following audit concerns an actual proposed mechanism, not an impossibility
+claim for all offline or adaptive algorithms.
+
+4.1 What the Schur and signed-URV algorithms actually cost
+
+Primary sources:
+
+  A.-J. van der Veen, A Schur Method for Low-Rank Matrix Approximation,
+  SIAM J. Matrix Anal. Appl. 17(1),139--160 (1996),
+  https://sps.ewi.tudelft.nl/pubs/schur93.pdf
+  https://doi.org/10.1137/S0895479893261340
+
+  M. Zhou and A.-J. van der Veen, Stable subspace tracking algorithm based
+  on signed URV decomposition, ICASSP2011,2720--2723,
+  https://citeseerx.ist.psu.edu/document?doi=66b4aa07906e72cc80b4cce4e8764b548acf938e&repid=rep1&type=pdf
+  https://doi.org/10.1109/ICASSP.2011.5947047
+
+  Expanded journal version: IEEE Trans. Signal Processing 60(6),3036--3051
+  (2012), https://sps.ewi.tudelft.nl/pubs/aj12tsp.pdf
+  https://doi.org/10.1109/TSP.2012.2190732
+
+The 1996 algorithm supplies all threshold-spectral approximants from a
+hyperbolic factorization of [epsilon I,H], for an explicit m-by-n H. Its
+Fig.1 processes every column through all m pivots; the signed triangular
+state retains m-d positive and d negative columns. Sections4.2--4.3 charge
+about (m^2 n)/2 elementary rotations overall, and about m^2/2 per update.
+Section4.4 also exhibits prefix breakdown at an exact threshold even when
+the final matrix is not at threshold. The small final d does not remove
+the positive triangular state or its rotations. [Source-derived summary:
+94 words; no long quotation.]
+
+The 2011 signed-URV Table3 explicitly eliminates against both the m-d
+positive and d negative pivots, and states O(m^2) per vector update. Its
+stable treatment uses only one hyperbolic rotation; the ordinary rotations
+remain. The 2012 journal abstract likewise promises QR-update order, not
+O(md). [Source-derived summary: 46 words from the conference paper; 17
+words from the journal abstract.]
+
+Thus applying these algorithms to H=AB directly first needs the explicit
+product; reducing to a true m-dimensional covariance first needs its exact
+Gram/QR information. Applying their signed elimination to the larger raw
+bordered pencil does not by itself make its m baseline negative directions
+free. A raw-factor rank-sensitive extension would be a new ingredient.
+
+4.2 The attractive logdet counting bound is correct
+
+Consider the easier all-positive prefix case
+
+  K_i=t I-sum_{j<=i} x_j x_j^T > 0,  K_N >= g I,  K_0=t I,
+  ell_i=x_i^T K_(i-1)^(-1) x_i.
+
+The matrix determinant lemma gives 0<=ell_i<1 and
+
+  det K_i = det K_(i-1) (1-ell_i).
+
+Consequently
+
+  sum_i ell_i <= sum_i -log(1-ell_i)
+               = log(det K_0/det K_N) <= m log(t/g).             (4.1)
+
+There are at most m log(t/g)/tau rows with ell_i>=tau. If each such row
+could be recognized cheaply, processed for O(m^2), and every other row
+handled safely for O(mr), this would give the desired type of heavy-row
+count with only logarithmic accuracy dependence. Two unproved steps are
+essential: a cheap exact or certified ell_i query, and preservation of the
+final threshold certificate after ignoring or sampling the light rows.
+
+4.3 A constant-probability late-cancellation counterexample
+
+The following independently derived example disproves the most direct
+light-row rule: independently retain row i with probability
+
+  p_i=min(1,c ell_i),
+
+and use its Horvitz--Thompson covariance contribution x_i x_i^T/p_i. It
+does not disprove scalar summation, alternative samplers, adaptive revisits,
+correlated rounding, or a global offline algorithm.
+
+Take dimension1, t=1, 0<g<=1/2, c>=1, even N>=4c, and identical squared
+row lengths w=(1-g)/N. All true prefixes are positive:
+
+  K_i=1-iw,  K_N=g,  ell_i=w/K_(i-1).
+
+Let xi_i be independent Bernoulli(p_i), and let
+
+  S=sum_i (xi_i w/p_i-w),  Khat_N=g-S.
+
+For i<=N/2, K_(i-1)>=1/2 and p_i<=2c/N<=1/2. Hence
+
+  Var(xi_i w/p_i-w)
+    =w^2(1-p_i)/p_i >= w K_(i-1)/(2c) >= 1/(8cN),
+
+so V=E S^2>=1/(16c). Every nonzero centered increment has magnitude at
+most 1/c: if p_i<1 then w/p_i=K_(i-1)/c<=1/c, while p_i=1 gives zero.
+Independence and centering imply
+
+  E S^4 <= 3V^2 + V/c^2 <= 19V^2.
+
+Paley--Zygmund applied to S^2 therefore yields
+
+  Pr{|S| >= 1/sqrt(32c)} >= 1/76.                              (4.2)
+
+Thus whenever eta g < 1/sqrt(32c), this estimator fails the final relative
+margin requirement |Khat_N-K_N|<=eta K_N with probability at least1/76.
+Achieving that requirement at smaller constant failure probability requires
+c=Omega((eta g)^(-2)) for this rule, despite sum ell_i<=log(1/g).
+The failure is precisely that errors small in an early positive metric are
+amplified by later cancellation. The potential (4.1) alone does not supply
+a gap-logarithmic lazy Schur algorithm.
+
+4.4 Negative count does not bound the relevant positive barrier mass
+
+For the final metric, even the entirely positive case gives
+
+  sum_i x_i^T K_N^(-1) x_i
+    =tr(K_N^(-1)(t I-K_N)).
+
+If K_N=g I this is m(t-g)/g although the negative index is zero. More
+generally K_N with m-r eigenvalues +g and r eigenvalues -g has negative
+index r but
+
+  tr(|K_N|^(-1)(t I-K_N)) = m t/g-m+2r.                       (4.3)
+
+Arbitrary orthogonal rotation preserves this example. In particular, a
+count of excess negatives does not control either absolute-inverse leverage
+mass or the dimension of a positive block lying close to the threshold.
+This is a limitation of this barrier strategy, not a complexity lower bound:
+the displayed isotropic examples themselves have easy structure.
+
+A negative-space-only summary also cannot close exact rank-one updates.
+For example K_a=diag(a,1), K_b=diag(b,1), with 0<a<c^2<b<1, initially
+have the same empty negative certificate. After appending x=c e_1 as a
+downdate, K_a-xx^T has one negative direction and K_b-xx^T has none.
+The positive state is necessary for the next decision. A full dense
+positive state can be stored with O(m^2) memory, but neither this example
+nor the signed-URV algorithm tells how to update it in O(mr) arithmetic.
+
+4.5 Precise missing mechanism
+
+One possible escape is a correlated/resparsified representation that makes
+earlier errors shrink relative to all later Schur complements. Its proof
+must pay for revisiting old rows or transforming their raw coordinates;
+computing each dense inverse quadratic form still costs O(m^2) by direct
+arithmetic. Another is to batch many unresolved rows and exploit genuine
+structure in their joint negative certificate. The count r by itself does
+not provide the needed numerical-rank or positive-gap bound.
+
+No new O(Nmr+m^3) raw-factor threshold/inertia algorithm has been obtained.
+The concrete progress is the exact potential (4.1), the failure theorem
+(4.2) for its natural sampling implementation, and the verified costs of
+the closest hyperbolic-Schur / signed-URV algorithms. The broad practical
+and original total-output targets remain open.
+
+5. Independent actual-copy audit: adaptive flat-plus-low-rank Schur route
+
+Reviewed docs/adaptive-defect-search.txt,728 lines, SHA256
+  1dbeafe86c939486cd58c123becb1163cf24450d27067133405c8c2834a5b43e.
+This review concerns that exact copy, especially Sections9--14. It does not
+modify the note or upgrade its unresolved novelty/global-runtime scope.
+
+5.1 One-sided order and physical dual orientation: PASS
+
+Write the normalized true pencil in critical/far coordinates as
+
+  Kbar_U=[C B^T;B A],  (1/4)I<=A<=2I,  ||B||<=2.
+
+The fixed polynomial T_-<=A^-1<=T_+ has T_+-T_-=delta I. Hence
+S=S_+=C-B^T T_-B and S_-=S-delta B^TB. For an operator-norm-tau
+approximation Stilde, the actual definitions imply
+
+  Slo=Stilde-(tau+4delta)I <= S_-,
+  Shi=Stilde+tau I >= S.
+
+The analytical lower full surrogate changes the critical diagonal block
+by Slo-S_- and the far block from A to T_+^-1. Both changes are negative
+semidefinite. Their norms are at most 2tau+4delta and 4delta, respectively.
+The upper surrogate changes the two diagonal blocks by PSD errors at
+most 2tau and 8delta. Thus epsilon=2tau+8delta safely bounds each full
+surrogate error; no noncommuting inverse subtraction has been assumed.
+
+For any negative pivot W_c of Slo, the analytical lifted pivot
+[W_c;-T_+B W_c] has lower-surrogate image [Slo W_c;0]. Congruence back
+through U and J_D yields the physical dual space
+
+  range(Z J_D U_C Slo W_c).
+
+This direction is correct. In particular it is J_D, not J_D^-T. For a
+physical x, y=Z^T x and xi=J_D^T y, so x orthogonal to the displayed
+space is exactly xi orthogonal to U_C Slo W_c. Positivity of the full
+surrogate on that complement transfers to the true pencil. The same
+reasoning works for all q=n_-(Slo)<=r negative directions at once, with
+no greedy factor r in the required additive precision. Zero pivots are
+excluded from the negative pivot, not inverted.
+
+5.2 Moderate coarse constants and the finite inverse: PASS
+
+At H=1/4 and e_m=theta/64, G^-1 is in [.75I,1.25I] and B_m has the
+stated relative error. The direct estimate
+||B_m-I||<=.25+1.25 e_m is less than1/3; Q_0-Q is bounded in absolute
+Loewner value by Q_0/3. Normalizing by D=tI+Q_0 therefore even gives
+||Kbar-S0||<=1/3; the note's1/2 is safe. A positive subspace of
+S0-gamma I, gamma>=3/4, consequently gives A>=I/4. No exact invariant
+subspace is needed.
+
+On x in[1/4,2], the displayed Chebyshev mapping is in[-1,1]. Its
+denominator gives |p_l(x)-1/x|<=8 rho_c^l with rho_c<1/2. Degree
+ceil(log2(16/delta)) makes the error at most delta/2, and the two fixed
+scalar corrections really bracket A^-1. Polynomial division by x is
+formal scalar coefficient division with zero constant numerator, not an
+application of A^-1. The fixed self-adjoint polynomial is essential;
+independently stopped CG on each RHS would not justify this argument.
+
+5.3 Median and adaptive approximation: PASS
+
+For S=a0 I+L+E, rank L<=ell, ||E||<=nu, every (2s+1)-dimensional
+orthogonal compression at s>=ell has a middle eigenvalue within nu of
+a0, by rank perturbation and min--max. The additive-nu core bisection
+therefore produces |a-a0|<=2nu. At most ell singular values of S-aI
+exceed3nu. The fact that the compression may be deterministic causes
+no problem. At ell=0 the s=0 trial is covered by this same argument.
+
+The range argument remains valid for signed E_a. Solve its full head
+Gaussian coordinates with a pseudoinverse, zero the weak head coordinates,
+and retain only eigenvalues with |lambda|>tau/32. All remaining tail
+eigenvalues have |lambda|<=tau/64, so the power leakage ratio is at most
+2^-q. The strong/tail split gives the stated operator bound, and
+||E_a-P E_a P||<=2||(I-P)E_a|| is valid for a self-adjoint E_a.
+
+The fresh power test is an upper certificate with its allocated failure
+probability: the top absolute eigenvector has Gaussian coefficient at
+least beta/100 except O(beta), while ||g||<=sqrt(d/beta) except beta.
+The selected power-of-two u makes Gamma between ||R|| and2||R|| on this
+event. A fresh g conditional on the built Stilde is required and is
+explicitly specified. The test also returns zero exactly for R=0.
+
+For nu=tau/512, a successful range event at s>=c_nu(S) gives residual
+below tau/4, so its fresh norm test accepts. Doubling reaches width at
+most O(c_nu+1), including the full-core case d<=4c_nu+3. Forming the
+exact full S if 2s+1>=d is a valid finite fallback. The d=0 case takes
+this full-core branch immediately; it must not invoke log(d) or a norm
+test on a zero-dimensional operator.
+
+5.4 Brackets, inflation, rank and confidence: PASS
+
+If v_j=lambda_j(Q_0)>0, the coarse bounds imply
+
+  v_j/[1.25^2(1+e_m)] <= lambda_j(Hhat)
+     <= v_j/[.75^2(1-e_m)],
+
+which is contained in[v_j/2,2v_j] for e_m<=1/64. The ordinary
+coefficient ratio therefore supports the stated polynomial-factor initial
+bracket at H=1/4, for any j=r+1<=k. The k<=r exact-support branch occurs
+before this ratio can have a zero denominator or ask for an absent tail.
+
+The full surrogate order plus D<=2(tB_m+Q) gives the two scalar shift
+inequalities exactly. The BELOW/ABOVE/NEAR sign directions are correct.
+In a NEAR exit t_out=t rho^2 has a lower surrogate with negative index
+at most r and t_out<rho^3 lambda_j(Hhat). At a final bracket b<=rho ell,
+the same statement holds for b rho^2. The initial bracket ratio16k^2
+and the specified fixed bisection cap suffice to reach that condition.
+
+For epsilon=3theta/64, rho=(1+3theta/32)/(1-3theta/32). The inequality
+rho^3<=1+theta holds throughout0<theta<=1; expanding the difference
+leaves positive coefficients after a conservative lower bound
+1-9(3/32)-(3/32)^3>0. The additional physical mass ratio is at most
+1+theta/31. Their product is at most(1+theta)^2, as required for the
+squared residual. All adaptive centers, Gaussian heads and test vectors
+can be conditioned sequentially; the capped failure allocations form a
+finite union. Generic-LDL exceptions are probability zero or guarded.
+
+5.5 Raw-input and adaptive-rank costs: PASS, conditional scope retained
+
+A block of s Schur actions uses fixed-degree far and mass polynomials,
+so all raw applications are to the SAME s-column block at each stage.
+Its cost is logarithmic factors times Acal(s), plus core algebra. The
+norm tests add Acal(1); the median uses2s+1 columns. Summing doubling
+widths costs the same order as the final width by column tiling, and
+there are only logarithmically many thresholds. Thin QR and explicit
+small-core inertia are bounded by m^omega with fast algebra or m^3
+conventionally. Physical q-column lifting and right-factor projection cost
+Acal(r), then the actual dense output costs T_MM(n,r,p) (or npr).
+
+This verifies the stated construction bounds
+
+  ~O(I+m^(omega+zeta)+Acal(c_*+1)+Acal(r)),
+  ~O(I+m^3+I(c_*+r+1)) with conventional arithmetic,
+
+on the correctness/efficiency event, subject to the inherited n,p>=m
+model. Widths are capped by m. On failed events fixed polynomial degrees,
+trial counts, guarded ranks and the full-core fallback still bound the
+runtime; they do not guarantee the small-c_* bound or correctness.
+
+No required mathematical correction was found in this copy. Two scope
+limits are substantive: c_* is the best centered numerical rank over
+ALL queried and final inflated Schurs, and can be Theta(m) despite a
+single negative direction; and this is an exact-real arithmetic theorem,
+not a supplied finite-precision certification theorem. The complete
+composition's novelty versus existing randomized Schur-preconditioning
+methods has not been established by this algebra audit. The result is
+an instance-sensitive candidate, not the unrestricted practical advance
+or original hard-case theorem.

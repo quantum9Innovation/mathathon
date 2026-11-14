@@ -1,0 +1,229 @@
+Mathematical review of hierarchical absolute spectral approximation
+Review date: 2026-11-14
+
+Reviewed artifacts
+  docs/hierarchical-absolute-spectral.pdf, all 13 pages.
+  PDF SHA256 ec453934d22f79a2c8b72db8a846aa9c47135c84ea708caa6058757c82d37ba9
+  Matching source SHA256
+    5f491bbc0000845d8271a9dfd97a1a9bdf4c5bc47a63fae178b5fabc80006508
+  Companion support reduction, weighted defect, coefficient ratios, threshold
+  oracle and Gaussian filter in docs/absolute-pencil-spectral.tex.
+
+Verdict
+  No fatal mathematical error found in the stated exact-real-arithmetic
+  theorem. The new noncommuting refinement, strong transfer, carried lift,
+  and unfolded schedule are consistent. This is a mathematical review;
+  the precise coverage of the Lean development is recorded separately in
+  formal/VERIFICATION.txt. It must not be read as a claim that every
+  algorithmic and probabilistic dependency has been checked by Lean.
+
+  The arithmetic model is essential: arbitrary exact real operations,
+  positive scalar square roots, exact comparisons, Gaussian sampling,
+  and unbounded representations. This result does not establish the same
+  cost in machine arithmetic, nor a stable implementable numerical method.
+
+Proof checks
+
+1. Support and fixed target pencil (paper Section 2)
+  The companion's reduction preserves the PRODUCT support. It does not
+  assert A=AWLc. On the simultaneous sketch event, M=Z Lc B,
+  G=Z^T Z is positive definite and near identity, and Q0 approximates Q.
+  Off-event the computed dimension cannot exceed rank(M), and Z remains
+  injective. The full-support branch therefore handles exact zero tails
+  before a positive eigenvalue bracket is needed.
+
+  The same even Neumann polynomial Bm is used at every level/threshold.
+  Its relative error theta/10^9 is small enough independently of depth.
+  Congruence/min--max gives the stated comparison between H and Hhat;
+  H, rather than Hhat, has the exact physical squared singular values.
+
+2. Fine proxy (Section 3)
+  Inverse Loewner comparison, the coarse whitening bounds, and
+  theta<=h_L<=h_j imply -8h_j D <= K_j-K <= 8h_j D.
+  Fine Neumann actions use the sketched factors and existing support
+  maps. Identity sketches are correctly included as true-factor actions.
+  No fine Gram or new support reduction is needed.
+
+3. Relaxed refinement (Lemma 5)
+  Set epsilon=h/H<=1/1024 and P=(1+epsilon)Fprev.
+  The weighted error bound is E Fprev^-1 E <= 8h^2 D/H.
+  Young's inequality yields the claimed kappa_P<=6. For example an
+  explicit coefficient for C_P is
+    (1+epsilon)C + 8*kappa*epsilon*(1+epsilon)^2,
+  which is at most 2(C+1) for C>=1 and kappa<=5.
+
+  For eta=8epsilon, f_eta(x)=sqrt(x^2+eta^2)+eta obeys
+    f_eta(x)-x^2/f_eta(x)=2eta.
+  Its scalar bounds produce Fstar>=128hD, Fstar+/-K>=56hD,
+  and Fstar<=(5/4)P. The inverse-order comparison needed here is
+    P^-1 <= (5/4) Fstar^-1.
+  It gives
+    Fstar-2K_j Fstar^-1 K_j <=16 C_P hD.
+  Replacing K_j=K+E with parameter-one Young gives the coefficient four
+  and error (16C_P+2)hD. Relative polynomial error then gives coefficient
+  five and Cnext=100(C+1), with the stated floor and margins.
+  None of these comparisons assumes that D, E, K or successive factors
+  commute. The ordinary defect need not be small or nonnegative after
+  changing its coefficient to five.
+
+4. Finite polynomial (Lemma 4)
+  The ellipse with parameter 1+eta/4 has imaginary semiaxis <=eta/4;
+  hence Re(z^2+eta^2)>=15eta^2/16. This keeps both analytic square-root
+  branches away from their cuts. The Chebyshev tail/alias bound gives
+  degree O(eta^-1 log(1/(tau eta))). Dyadic nodes and the real-pair DCT
+  can be constructed with the allowed scalar square roots and field
+  operations. This is a finite construction, not a computed matrix root.
+
+5. Threshold and physical transfer (Lemma 6)
+  For beta=alpha/(1-kappa alpha^2), the crucial scalar inequality has
+  exact factorization
+    alpha(1-kappa c^2)-c(1-kappa alpha^2)
+      =(alpha-c)(1+kappa alpha c)>=0
+  on -1<=c<=alpha under the stated small-alpha condition.
+  It justifies the bottom-j subspace comparison and near-threshold bound.
+
+  Writing q=y^T K F^-1 K y>=0 and b=(1+3alpha)^2-1,
+    2y^T K y >=q-b y^T F y
+                >=(1-kappa b)q-b C h y^T D y
+                >=-b C h y^T D y.
+  This explains why the relaxed defect is sufficient and where the
+  essential extra h in the final error enters.
+  The physical complement is the complement of range(Z R^-T U).
+  Its Rayleigh quotient gives precisely equation (13), with a positive
+  denominator. The threshold/mass/physical error budgets fit comfortably
+  below (1+theta)^2. Zero eigenvalues and repeated values are allowed.
+
+6. Exact carried lift (Section 6)
+  With RL=R0 S, T=I-S^T A0 S and V0=I-A0 S S^T,
+    T S^T=S^T V0,
+    phi(T)S^T Xi=S^T phi(V0)Xi,
+    RL^-T phi(T)S^T Xi=R0^-T phi(V0)Xi.
+  These identities hold for every polynomial and arbitrary noncommuting
+  factors. R0^-T=J0, so the executed physical columns have the exact dual
+  span required by Lemma 6. The correlated Gaussian head and tail need
+  no independence: separate least-singular-value and Frobenius estimates
+  followed by a union bound suffice. Nonnormal recurrence growth is a
+  precision issue outside the operation-count theorem.
+
+7. Cost and probability (Sections 7 and 8)
+  The ratios in the action recurrence telescope. The scalar square-root
+  schedule has terminal h_L in [sqrt(rho),1024sqrt(rho)), and
+    h_j^2=h_(j-1) h0 sqrt(rho).
+  Consequently true-factor work is <=32N^2 before common overhead;
+  each fine term is <=N^2/h0. The overhead is
+    exp(O((log log m)^2))=m^o(1),
+  including all level multipliers. The multiplication overhead chi(m)
+  occurs once per leaf, rather than being exponentiated by the depth.
+  The raw outer width is m^(1/2+d+o(1))<m. Internal recurrences do not
+  enlarge it. Output tiling uses the same fixed kernel at rank<=sqrt(m).
+  Core slack can be chosen because d>1/8.
+
+  Fresh conditional query/filter failure budgets and the joint embedding
+  event give the claimed confidence. Bad-event execution uses only forward
+  fine polynomials, with scalar/rank checks and capped degrees, so the
+  stated outcome caps do not require failed fine factors to be invertible.
+
+8. Corollaries and comparator
+  The optimized parameters satisfy 5d*(1+d*)=1 and alpha*=1/(1+d*).
+  Both comparison gaps equal s*=(7-3sqrt(5))/8=0.0364745084375788...
+  The adaptive stopping argument also covers rank zero and checks full
+  support before requesting quantile r+1. Its small-rank runtime is on
+  the same high-probability event as its accuracy/width guarantee.
+  The Appendix A LDL congruence has the correct dual orientation:
+  range(Z S^-T L Eminus). It realizes the Gram comparator without an
+  SVD or ordered-eigenvalue oracle. The two-level rational exponents are
+  consistent with the cited rectangular multiplication formula.
+
+Primary-source checks
+  Amanov, van den Berg, Zuiddam, Theorems 1.1 and 1.2 and Corollary 4.17:
+    https://arxiv.org/html/2610.30054v1
+  These support omega<=9/4 and MM(m,m,ceil(sqrt(m)))=m^(2+o(1)).
+  Musco--Musco, Theorem 12 (per-vector, not just low-rank spectral error):
+    https://arxiv.org/html/1504.05477v4
+  Cohen--Nelson--Woodruff, Appendix A.2 (fast subspace embeddings):
+    https://arxiv.org/html/1507.02268v3
+  Neiger--Pernet (deterministic characteristic polynomial):
+    https://arxiv.org/abs/2010.04662
+  Jeannerod--Pernet--Storjohann (rank revelation):
+    https://arxiv.org/abs/1112.5717
+  Vecharynski--Knyazev (absolute-value/multigrid antecedent):
+    https://arxiv.org/abs/1104.4530
+  Allen-Zhu--Li (ridge/PCP antecedent):
+    https://proceedings.mlr.press/v70/allen-zhu17c.html
+  This review does not establish global novelty over every composition
+  of existing algorithms. The paper appropriately limits that claim.
+
+Practical examples and significance
+
+  1. Feature and cross-feature kernels. For X,Y in R^(N by m), let
+     A=X and B=Y^T. This approximates the interaction/kernel matrix
+     XY^T while reading the feature factors. Y=X gives the PSD Gram case.
+     The general theorem is strongest for arbitrary nonsymmetric products;
+     specialized PSD algorithms require a separate comparison.
+
+  2. Compression of a composed linear map. If a model has consecutive
+     dense linear layers B:R^N->R^m and A:R^m->R^N, the output factors
+     give a rank-r replacement. For every input x,
+       ||(AB-C)x||_2 <=(1+theta)sigma_(r+1)(AB)||x||_2.
+     This controls worst-direction distortion. It does not imply a bound
+     on prediction accuracy, training loss or principal-vector angles.
+
+  3. Low-rank approximation of a factored covariance or operator. The
+     guarantee remains meaningful under cancellation/ill-conditioned
+     factor representations, because the error is measured against the
+     tail of AB. No factor-energy or actual spectral-gap assumption is
+     introduced. Numerical stability under that conditioning remains open.
+
+  The table uses the optimized power law m=N^alpha* without integer
+  rounding. 'Power ratio' is N^s*, comparing leading powers only. It
+  excludes constants and subpolynomial factors and is NOT a measured
+  speedup. Dense-output memory assumes eight bytes per entry, decimal GB.
+
+        N        m (approx.)   floor sqrt(m)   theta      Power ratio   Output GB
+     10^4          2,609             51       0.03476        1.40          0.8
+     10^6        133,233            365       0.006479       1.66      8,000
+     10^9     48,631,503          6,973       0.0005215      2.13   8,000,000,000
+
+  More decisively, the displayed schedule accepts its first refinement
+  only if sqrt(h0*h0*sqrt(rho))<=h0/1024, equivalently
+    rho<=1024^-4=2^-40, or N/m>=2^40.
+  At m=N^alpha*, this requires log10(N)>=82.5316114..., so its
+  literal hierarchy does not activate at ordinary data sizes. Below
+  that cutoff the theorem uses the companion fallback; its asymptotic
+  statement supplies no useful finite-size speed guarantee for that branch.
+  Constants such as A_L=10^6(C_L+1) further enlarge the proved degrees.
+
+  The significance is an output-optimal leading exponent (N^(2+o(1)))
+  for growing rank and vanishing relative excess, improving the two
+  checked N^(2.0364745...+o(1)) upper bounds. The improvement is not
+  literal quadratic time, a lower-bound separation, or practical speed
+  evidence. If only low-rank factors are needed, the N^2 dense output is
+  unnecessary, and this particular total-output comparison becomes less
+  relevant. A stable implementation and wall-clock experiments are needed
+  before recommending it in an application.
+
+  For a concrete compression interpretation at N=10^4, m approximately
+  2609 and r=51, suppose sigma_52(AB)=0.01. The guarantee is residual
+  <=0.010347552..., so the same number bounds output error for every
+  unit input vector. The two output factors store about 2Nr=1,020,000
+  entries (8.16 MB at eight bytes each), while the explicit dense matrix
+  stores 100,000,000 entries (800 MB). This illustrates why applications
+  often prefer to retain factors. It is a guarantee/example calculation,
+  not evidence that this algorithm runs efficiently at those dimensions.
+
+Reproducible checks supplied with this review
+
+  scripts/check_hierarchical_review.py uses rational arithmetic to verify
+  every displayed two-level exponent, their 1/7600 margin, and conversion
+  of the largest construction exponent to 6724/3363 in powers of N. Its
+  standard-library part also reproduces the practical dimension table.
+
+  Optional --numpy diagnostics (NumPy 2.5.3, seed 20261114):
+    48 noncommuting finite-polynomial refinements, all checked inequalities
+      passed within a normalized numerical tolerance of 10^-8;
+    48 independent carried-polynomial identities, worst relative discrepancy
+      5.019559591980756e-16;
+    largest dyadic interpolation node count: 32768.
+  Dense eigendecompositions and floating-point FFTs are used only to test
+  these small examples. They provide neither proof nor an implementation
+  or timing comparison of the fast exact-arithmetic algorithm.

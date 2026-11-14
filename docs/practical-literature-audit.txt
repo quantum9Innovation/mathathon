@@ -1,0 +1,340 @@
+Practical theoretical scope: factorized spectral low-rank approximation
+====================================================================
+2026-11-14, research_runs. Dedicated note; no manuscripts or state edited.
+
+Scope and conclusion
+--------------------
+"Practical" here means an arithmetic algorithm using ordinary matrix
+multiplication, QR, Cholesky, small SVD/eigendecomposition, and polynomial
+degrees/storage that could plausibly be useful. It does not mean a measured
+hardware speed claim. No benchmark or timing claim is made.
+
+The clean classical one-level corollary below is a simplification of the
+existing construction, not a new frontier over the previously audited
+stochastic construction. Its optimized construction term is a geometric
+interpolation between the stochastic and exact-Gram terms. The new linear
+covariance surrogate has a smaller stochastic variance constant but the
+same exponent under the currently justified signed-SVRG analysis. A useful
+balanced-stack lemma gives an ordinary covariance-PCA wrapper without an
+inverse lift; it does not by itself improve the raw-factor runtime.
+
+Notation: M=AB, A is n-by-m, B is m-by-p, I=(n+p)m, target rank r,
+and ||M-C||_2 <= (1+theta) sigma_(r+1)(M). All comparisons include
+np*r for ordinary expansion of a rank-r output into its full matrix.
+Polylogarithms and standard oversampling/confidence factors are suppressed.
+Exact real arithmetic and customary numerical SVD flop counting must be
+distinguished from a proved finite-precision, arbitrary-condition theorem.
+
+1. Strong classical baseline routes and exact guarantee scope
+------------------------------------------------------------
+(a) Factor-aware economy QR plus small-core SVD is a mandatory comparator.
+Write A=U_A R_A and B^T=U_B R_B. Then
+
+  M=U_A (R_A R_B^T) U_B^T.
+
+Ordinary arithmetic costs O(I*m+m^3), followed by skinny extraction/lifting
+and np*r output. This avoids materializing AB. The construction uses standard
+orthogonal factorizations and works for arbitrary factors, with numerical
+rank/conditioning qualifications for a finite-precision implementation.
+
+(b) Ordinary factor-access randomized block Krylov/subspace methods are the
+other mandatory comparator. With q=~theta^(-1/2), block width ~r, they use
+~I*r*q input arithmetic, plus the actual basis, Gram, extraction and output
+work. Maintaining a latent basis of width w=~r*q costs O(m*w^2+w^3)
+with ordinary QR; it must not be called free when w is large. At w<=m
+these terms are at most O(m^3). One can fall back to the full QR/SVD route.
+The spectral guarantee is product-only and gap-free; it is substantially
+stronger than an error measured relative to factor norms or ||M||_F.
+
+Primary: Cameron Musco and Christopher Musco, Randomized Block Krylov
+Methods for Stronger and Faster Approximate Singular Value Decomposition,
+NeurIPS 2015, arXiv:1504.05477 (especially Theorem 12).
+https://arxiv.org/abs/1504.05477
+https://papers.nips.cc/paper_files/paper/2015/hash/1efa39bcaec6f3900149160693694536-Abstract.html
+The later oversampling literature improves useful spectrum-dependent
+bounds and failure probabilities; it does not make this uniform tiny-theta
+comparison a constant-pass theorem. See the existing oversampled-Krylov
+audit rather than substituting finite-Schatten results for the spectral case.
+
+(c) Generalized Nystrom is a serious simple sketch-and-solve construction,
+but its clean near-optimal theorem is Frobenius. With independent skinny
+sketches Omega,Psi one can form
+
+  C=M Omega (Psi^T M Omega)^dagger Psi^T M
+
+through A(B Omega) and (Psi^T A)B. Stable small-core solves and optional
+rank-r truncation must be counted. Oversampled rank-r truncation generally
+needs thin orthogonalizations O((n+p)*ell^2+ell^3), even if construction of
+the untruncated GN factors was cheaper. Theorem 3.2 of the primary source
+is a Frobenius error theorem. It is not a uniform (1+theta)*sigma_(r+1)
+spectral result at width O(r).
+
+Primary: Yuji Nakatsukasa, Fast and stable randomized low-rank matrix
+approximation, arXiv:2009.11392, 2020; Theorems 3.2 and 4.1.
+https://arxiv.org/abs/2009.11392
+https://arxiv.org/pdf/2009.11392
+
+A direct limitation of plain non-power range finding is instructive.
+For M=diag(1+2theta,1,...,1), a rank-one relative-(1+theta) spectral
+approximation needs constant overlap with the first coordinate. The range
+of M Omega for a Gaussian m-by-ell sketch has expected overlap O(ell/m),
+since M has condition at most three. Thus ell=o(m) does not uniformly
+supply that overlap with constant success. This is a limitation of that
+one-pass range-restricted construction, not of arbitrary factor algorithms.
+
+(d) Projector/ridge and generalized-eigenvalue reductions are already broad
+and some are globally gap-free with a transition band. They must not be
+dismissed as uniformly gap-dependent. However their true solve dependence
+is material to the comparison:
+
+* Frostig--Musco--Musco--Sidford 2016, Principal Component Projection
+  Without Principal Component Analysis, ICML/PMLR 48. Theorems 1.2/3.2
+  use ~gamma^(-2) ridge calls and their stated gap assumptions.
+  https://proceedings.mlr.press/v48/frostig16.html
+* Allen-Zhu--Li 2017, Faster Principal Component Regression and Stable
+  Matrix Chebyshev Approximation, ICML/PMLR 70. Theorem 7.3 is a global
+  transition-band theorem, with O(gamma^(-1) log(1/(gamma*epsilon)))
+  positive ridge calls. These are not sqrt(gamma)^(-1) calls.
+  https://proceedings.mlr.press/v70/allen-zhu17c.html
+* Jin--Sidford 2019, Principal Component Projection and Regression in
+  Nearly Linear Time through Asymmetric SVRG, NeurIPS. Theorem 1 is
+  global with a gray band; Theorems 3 and 5 and full-version Theorems
+  6--8 expose the squared-system/asymmetric-solver dependence. A squared
+  denominator of width gamma has regularization gamma^2. Treating that
+  as a gamma-strongly-convex ordinary quadratic would incorrectly remove
+  a square root of the accuracy cost.
+  https://arxiv.org/abs/1910.06517
+* Allen-Zhu--Li 2017, Doubly Accelerated Methods for Faster CCA and
+  Generalized Eigendecomposition, ICML/PMLR 70. Theorem 4.2 charges a
+  B^{-1}A oracle; Theorem F.3 has a signed-sample accelerated pattern.
+  Neither theorem makes a raw two-factor negative covariance complement
+  free. Ordinary CCA of the two full inner column spaces may have all
+  canonical correlations one and does not retain the Euclidean AB
+  singular spectrum.
+  https://proceedings.mlr.press/v70/allen-zhu17b.html
+  https://arxiv.org/abs/1607.06017
+
+These sources provide algorithmic components. The previous scoped audits
+did not establish a reduction from their published input models to the
+claimed two-factor threshold cost. This is a scope statement, not a novelty
+certification by absence.
+
+2. The classical one-level optimization is not a new frontier
+------------------------------------------------------------
+Replacing all fast multiplication and fast range revelation by ordinary
+arithmetic gives the existing one-level threshold construction the term
+
+  T(h)=~I + ~m^3/h^2 + ~I*r*sqrt(h/theta) + ordinary lifting/output,
+
+provided its raw Krylov width w=~r*sqrt(h/theta)<=m. Ordinary latent
+QR/core work then costs at most ~m^3. Sketch row count is ~m/h^2,
+capped by using the corresponding original factor as an identity sketch.
+The displayed optimum must be clipped to the allowed constant distortion,
+row-cap and width regimes. At an interior optimum,
+
+  h_*=(m^6*theta/(I^2*r^2))^(1/5),
+  C_* = ~m^(3/5)*(I*r)^(4/5)*theta^(-2/5).
+
+For r=1, if S=I^(3/4)*m^(1/2)*theta^(-1/2) is the old signed
+stochastic term and G=I*m is the classical Gram term, then exactly
+
+  C_*^5=S^4*G.
+
+Consequently C_* cannot beat min(S,G); a useful simplified algorithm
+does not constitute a new asymptotic frontier over both older routes.
+
+A clean named-baseline corollary remains: n=p=N, m=N^(6/11), r=1,
+theta=N^(-12/11), h=N^(-2/11) gives setup and input work ~N^2;
+sketch rows N^(10/11)<N and width N^(5/11)<m. Classical Gram and
+ordinary factor Krylov each cost N^(23/11). The older stochastic term
+already costs N^(87/44)<N^2 before output, however. This is a simplicity
+example, not a new improvement over every audited route.
+
+The current absolute-pencil proof has deliberately loose constants in
+its strong residual tolerance. Calling it practically useful would need
+retightening those constants and supplying a clean ordinary SVD/LDL
+wrapper. Stating the above exponents alone does not complete that work.
+
+3. One-sided inverse linearization: correct, but no new exponent yet
+-----------------------------------------------------------------
+For SPD G with ||G-I||<=h<1,
+
+  G^{-1}=2I-G+E,
+  E=(G-I)G^{-1}(G-I)>=0,
+  ||E||<=h^2/(1-h).
+
+Thus K_lin=2tI-(tG+Q) is a lower surrogate for K=tG^{-1}-Q,
+with 0<=K-K_lin<=t*h^2/(1-h) I. The matrix tG+Q is an ordinary
+stacked covariance and its samples are linear rather than cubic products.
+The identity is the inverse tangent/Newton--Schulz remainder; the identity
+itself should not be described as a new mathematical principle.
+
+Direction matters: n_-(K)<=r does NOT imply n_-(K_lin)<=r. Indeed a
+flat critical band can acquire extra negatives. Safe inflation is available:
+because (2I-G)G=I-(G-I)^2 >= (1-h^2)I,
+
+  K_lin(t/(1-h^2)) >= K(t).
+
+With h=O(sqrt(theta)) this costs only a 1+O(theta) threshold change.
+
+The true stacked factors are analytical only: a dense transform of every
+raw row/column would cost I*m. An action of a length-weighted minibatch
+can transform the vector once, accumulate raw rank-one actions, and
+transform back. A batch of m samples has constant normalized second
+moment and costs O(m^2). This is exactly the same order as the earlier
+independent-copy cubic pencil sampler. The linear sampler improves its
+large universal variance constant but, under the same justified
+nonconvex-component SVRG plus accelerated proximal-point analysis, still
+gives ~I+I^(3/4)*m^(1/2)/sqrt(theta) per top-PCA stage.
+
+The shifted component 2tI-C_hat can be indefinite even when its mean
+is SPD. Convex-component acceleration cannot be invoked merely because
+C_hat is PSD. Garber et al.'s nonconvex-component expected-variance
+theorem is applicable, but that is the same theorem already used:
+
+Dan Garber, Elad Hazan, Chi Jin, Sham M. Kakade, Cameron Musco,
+Praneeth Netrapalli, Aaron Sidford, Faster Eigenvector Computation via
+Shift-and-Invert Preconditioning, ICML 2016/full arXiv:1605.08754,
+Theorems 9, 12 and 15.
+https://arxiv.org/abs/1605.08754
+https://proceedings.mlr.press/v48/garber16.html
+
+For thresholds far below lambda_1(Q), variance normalization also must
+account for that large norm. A direct threshold sampler cannot silently
+reuse the norm-comparable top-eigenvalue analysis. The earlier adaptive
+top-PCA wrapper handles this by norm-comparable shifts and deflation;
+an all-at-once threshold wrapper is an additional obligation.
+
+4. Balanced-stack reverse AGM and a direct product-output lemma
+--------------------------------------------------------------
+This elementary lemma is useful for simplifying a wrapper, independent
+of whether its runtime is new. Suppose active factors A_b,B_b have SPD
+Grams P=A_b^T A_b and Q=B_b B_b^T. Put S=(P+Q)/2, Delta=(P-Q)/2,
+and assume ||S^{-1/2}Delta S^{-1/2}||<=epsilon<1. Then for every j,
+
+  (1-epsilon^2)*lambda_j(S) <= sigma_j(A_b B_b) <= lambda_j(S).  (L1)
+
+Proof. For any s>0, rotate the symmetric block matrix
+[[P,sI],[sI,Q]] to [[S+sI,Delta],[Delta,S-sI]]. Its Schur complement
+is J_s=S-sI-Delta(S+sI)^{-1}Delta. Since
+
+  0<=Delta(S+sI)^{-1}Delta<=Delta S^{-1}Delta<=epsilon^2*S,
+
+we have (1-epsilon^2)S-sI<=J_s<=S-sI. Schur inertia in the original
+coordinates identifies n_+(J_s) with the number of singular values of
+A_b B_b exceeding s. Comparing these counts proves (L1), including
+equalities by continuity. Singular factors can first be reduced to their
+active product support, as in the existing constant-distortion reduction.
+
+Now let V have orthonormal r columns and set C=A_b V V^T B_b. If
+||(I-VV^T)S(I-VV^T)||<=s, then
+
+  ||A_b B_b-C||<=s.                                         (L2)
+
+To see this, on the complement write P_res,Q_res for the restricted
+factor Grams. They satisfy P_res+Q_res<=2sI. Hence
+
+  P_res^{1/2} Q_res P_res^{1/2}
+    <=2s P_res-P_res^2<=s^2 I.
+
+These are the squared nonzero singular values of the residual product.
+There is no exact P^{-1} lifting and no need for a product eigenvector.
+An ordinary covariance-PCA subspace with tail factor 1+zeta consequently
+gives product error at most (1+zeta)/(1-epsilon^2)*sigma_(r+1)(AB).
+
+Relative-h Gram sketches can be balanced exactly in their small core:
+choose T with T^T P_tilde T=T^{-1}Q_tilde T^{-T}=D. The true balanced
+Grams lie between D/(1+h) and D/(1-h); in fact epsilon<=h exactly:
+(1-h)P<=(1+h)Q and the symmetric inequality imply -hS<=Delta<=hS.
+Only skinny transformed directions need be materialized. The balancing
+core and h-accurate classical sketch Grams cost ~m^3/h^2. Taking h~sqrt
+theta makes the balanced-stack approximation error second order, but
+one still needs relative-theta covariance PCA of S. Applying ordinary
+Krylov to S costs ~I*r/sqrt(theta), not the improved preconditioned
+sqrt(h/theta) term automatically. Applying the linear stochastic oracle
+has the same exponent as Section 3. Thus no new total bound follows yet.
+
+Primary algebraic antecedent, verified publisher metadata:
+Rajendra Bhatia and Fuad Kittaneh, On the Singular Values of a Product
+of Operators, SIAM Journal on Matrix Analysis and Applications 11(2),
+272--277 (April 1990), DOI 10.1137/0611018.
+https://epubs.siam.org/doi/10.1137/0611018
+Their singular-value arithmetic--geometric mean domination supplies the
+upper inequality's established context. The short Schur proof above is
+self-contained; absence of an exact matched keyword result does not
+certify novelty of its reverse estimate or its algorithmic use.
+
+5. What a new practical theorem would still need
+----------------------------------------------
+A useful next mechanism must improve one of the real expensive steps:
+fine Gram setup; raw-factor passes for the threshold subspace; or the
+variance-times-action-cost product of a signed complement sampler.
+Simply replacing a cubic unbiased sampler by a linear one improves
+constants but does not change the proved cost exponent. Simply applying
+PCP to a positive ridge oracle has its published accuracy-dependent call
+count. Simply using GN does not give the required uniform spectral tail.
+
+The independent critical-Schur note is a different direction: on a small
+computable threshold-critical subspace, one-sided far-block inverse
+polynomials and an arbitrary negative witness can certify the output
+without a high-accuracy eigenvector. Its unresolved uniform obligation
+is handling a large critical core cheaply. The current practical note
+does not close that obligation or the original N=m^(9/8), theta=1/m,
+rank-one N^2 target.
+
+6. Closest spectral-shifting prior for the flat-critical-core extension
+--------------------------------------------------------------------
+Primary metadata:
+
+Shusen Wang, Luo Luo, Zhihua Zhang, SPSD Matrix Approximation vis Column
+Selection: Theories, Algorithms, and Extensions, JMLR 17(49):1--49, 2016.
+https://www.jmlr.org/papers/v17/14-199.html
+https://www.jmlr.org/papers/volume17/14-199/14-199.pdf
+
+Section 7/Algorithm 5 already approximates an SPSD matrix by scalar
+identity plus low rank. Theorem 9/Corollary 10 quantify a Frobenius
+improvement; Example 1 has exact recovery of a flat bulk with positive
+spikes. Their center is a tail mean estimated from trace and a leading
+singular-value sum (Theorem 11), rather than a compression median.
+
+Shusen Wang, Chao Zhang, Hui Qian, Zhihua Zhang, Improving the Modified
+Nystrom Method Using Spectral Shifting, KDD 2014, pp. 611--620,
+DOI 10.1145/2623330.2623614.
+https://wangshusen.github.io/papers/KDD2014.pdf
+Its Theorem 3/Corollary 4 and Example 1 are an earlier direct antecedent
+for shifted low-rank approximation and exact flat-tail recovery.
+
+The note's indefinite matrix-free S=a0 I+L+E, rank(L)<=k, ||E||<=nu
+can be handled by an elementary composition of standard tools:
+
+* Any (2k+1)-dimensional orthogonal compression has its middle eigenvalue
+  within nu of a0: a rank-k perturbation can put at most k compressed
+  eigenvalues above the noise band and at most k below it. An additive-nu
+  computed median a therefore leaves sigma_(k+1)(S-aI)<=3nu.
+* Apply a standard constant-relative-error spectral range finder/power
+  method to the SELF-ADJOINT operator S-aI. A logarithmic power depth
+  suffices to turn the dimension factor in elementary range-finding
+  bounds into a constant. This works for positive and negative spikes.
+* If V captures the centered range to ||(I-VV^T)(S-aI)||<=c*nu, then
+  ||S-[aI+VV^T(S-aI)VV^T]||<=2c*nu, by symmetry and the triangle
+  inequality. The represented small core can be indefinite.
+* Fresh residual norm tests and doubling rank estimates make the procedure
+  adaptive without knowing k. Their query and ordinary QR/core costs,
+  and the confidence union bound, still need to be charged explicitly.
+
+This gives the same qualitative matrix-free scalar-plus-low-rank spectral
+surrogate as the new critical-core note. The median's rank-interlacing
+proof is elementary, and centering plus ordinary spectral range finding
+is a simple composition. It should not be sold as a new general-purpose
+LRA primitive merely because the cited spectral-shifting theorem uses
+Frobenius norm or a different center. The potential factor-access result
+is instead the ONE-SIDED Schur lift: the surrogate's inertia and arbitrary
+negative witness certify an output space for the original product while
+avoiding accurate PCA of the full critical operator. That transfer and
+its actual adaptive raw-factor cost require separate proof and comparison.
+
+Conversely, the cited Frobenius theorems alone do not establish this
+operator-noise guarantee: a d-dimensional noise floor nu can contribute
+sqrt(d)*nu Frobenius error. Dropping that factor by norm conversion would
+be an invalid claimed subsumption. Both the simple standard composition
+and the genuine one-sided certificate obligation should be stated.

@@ -1,0 +1,489 @@
+Relative-tail interpolation and condition-free Krylov convergence
+================================================================
+2026-11-14, research_runs. Independent derivation/audit of the parent's
+relative-tail construction. Earlier shared manuscripts remain unchanged.
+
+Status
+------
+The relative normalized-resolvent identity, fresh-row covariance bound,
+fractional-moment path argument, and uniform-tail Markov grid all pass
+this audit. Together they give a condition-number-free convergence bound
+for orthogonalized small-block Krylov spaces with a relative cross-gap.
+The relative forward-gap padding extension has also been checked here
+and is independently being checked by alternatives.
+
+The closest Chen et al. 2026 conjectures must be separated: the convergence
+claims can hold without kappa, up to the additional logarithms proved
+here; the analogous kappa-free RAW MONOMIAL smallest-singular-value
+claim is false, by the explicit geometric-spectrum example in Section 7.
+No claim of exact resolution of every displayed rate, an unrestricted
+matrix-product speedup, or finite-precision robustness is made.
+
+1. Setup and exact evaluation-functional identity
+------------------------------------------------
+Let a selected family contain q blocks of b nonnegative eigenvalues
+Lambda_i and independent square Gaussian starts Omega_i. Cross-block
+spectra are disjoint. Use left evaluation and right polynomial
+coefficients throughout. A0=diag(Lambda_i), Gamma=col(Omega_i), and
+the full raw q-block Krylov matrix is generically invertible, as proved
+in the earlier all-depth audit.
+
+Let R_q be its terminal orthogonal block-Lanczos polynomial and let
+V_last be the last orthonormal block. The already-checked identity is
+
+  R_q(z)^{-1}=V_last^T(zI-A0)^{-1}Gamma=:W_q(z)             (1)
+
+for every z outside spec(A0). Define the b-by-qb row operator
+
+  L_z=R_q(z)V_last^T(zI-A0)^{-1}.
+
+For 0<=t<q, resolvent division and V_last's orthogonality to all
+A0^j Gamma with j<q-1 give
+
+  L_z A0^t Gamma=z^t I.                                   (2)
+
+Indeed (zI-A0)^{-1}A0^t equals z^t(zI-A0)^{-1} minus lower powers;
+every lower-power term vanishes after V_last^T. The surviving term
+is R_q(z)W_q(z)=I. Thus L_z is EXACT scalar evaluation of every
+right-coefficient polynomial of degree<q represented by this raw basis.
+
+Let G_i be the q-node fundamental polynomials. Choosing the data
+supported only at block i in (2) yields
+
+  (L_z)_i=G_i(z)Omega_i^{-1}.                              (3)
+
+Consequently, for eta outside the selected spectra,
+
+ R_q(z)R_q(eta)^{-1}
+   =L_z(zI-A0)(eta I-A0)^{-1}Gamma
+   =sum_i G_i(z)(zI-B_i)(eta I-B_i)^{-1}.                 (4)
+
+This derivation preserves all noncommuting orders. It is preferable to
+the alternative residue-cancellation argument because no pole bookkeeping
+or Sylvester uniqueness argument is required. The latter argument is
+also valid: disjoint block spectra prevent cancellation of a pole between
+different blocks, and the sum of the resulting polynomials is I.
+
+2. Relative scalar ratio removes the spectral condition number
+--------------------------------------------------------------
+Let the full target head be nonnegative, and initially assume its minimum
+h is positive. Consider scalar tail points 0<=z<h. Let the relative
+cross-gap for the fixed partition be
+
+  g=min_(i!=j,lambda in Lambda_i,eta in Lambda_j)
+                |lambda-eta|/max(lambda,eta)>0.
+
+For every fresh root value eta and selected other value lambda,
+
+  |z-lambda|/|eta-lambda|
+      <=lambda/|eta-lambda|<=1/g.                         (5)
+
+Diagonal similarity therefore gives
+
+ ||(zI-B_i)(eta I-B_i)^{-1}||<=kappa(Omega_i)/g,
+ ||R_q(z)R_q(eta)^{-1}||
+      <=q*G_other(z)*max_i kappa(Omega_i)/g.               (6)
+
+The relevant gap is relative to the pair's larger eigenvalue, not to
+the largest eigenvalue of the whole head. Thus neither lambda_1/h nor
+an additive full-diameter gap is introduced.
+
+The theorem is PSD/tail-sided. An arbitrary affine shift of an indefinite
+matrix changes these relative gaps, so condition removal must not be
+asserted for generic indefinite or interior targets from (5) alone.
+
+3. Fresh independent rows and the path probability bound
+--------------------------------------------------------
+For a root k omitted from the selected q-block family, put
+
+  Ntilde=Omega_k R_q(B_k)R_q(z)^{-1}.
+
+R_q(z) is invertible because z is strictly below every selected node.
+Conditional on all other blocks, row l is
+
+  omega_(k,l)^T R_q(eta_(k,l))R_q(z)^{-1}.
+
+Its covariance is at least a^2 I with
+
+  a=g/[q*G_other(z)*max_i kappa(Omega_i)],                 (7)
+
+by inverting (6). The rows remain independent. F_k(z)=Ntilde^{-1}
+Omega_k exactly. No root Gaussian is hidden in R_q or the conditional
+covariance floor. Since sum_i G_i(z)=I, G_other(z)>=1/q, so the
+normalization in (7) is positive on the nonsingular event.
+
+Define Z=a*||Ntilde^{-1}||. The same row-distance lemma gives
+
+  Pr{Z>x|other blocks}<=min(1,b^{3/2}/x),
+  E[sqrt(Z)|other blocks]<=2b^{3/4}.                       (8)
+
+For D total blocks and confidence beta, use the single common norm event
+
+  ||Omega_i||<=L0=2b*sqrt(D/beta),
+  ||Omega_i^{-1}||<=U0=4D*b^{3/2}/beta,
+
+with failure at most beta/2. Do NOT condition the moment calculation on
+this event. On it, the deterministic pointwise recursion is
+
+ G(S,z)<=max_(k in S)
+       [(|S|-1)*U0*L0^2/g] Z_(S,k,z) G(S\k,z).            (9)
+
+There is no sqrt(q) stack-norm factor and no factor three in (9).
+For a fixed nested deletion path the half moment of the product of Z's
+is at most (2b^{3/4})^{D-1}, by tower conditioning on remaining blocks.
+For a deterministic set of N scalar points, union the N*D! path events
+ONLY after the final Markov inequality. Their simultaneous product bound
+is [2N D!(2b^{3/4})^{D-1}/beta]^2 except beta/2. Combining it with
+the norm event proves
+
+ max_(z in grid) G_D(z)
+  <=4N^2 beta^{-2}(D!)^2(D-1)!
+                  [64D^2 b^5 beta^{-2}/g]^{D-1}.           (10)
+
+Constants check: U0 L0^2=16D^2 b^{7/2}beta^{-2}; multiplying the
+squared half-moment factor4b^{3/2} gives64D^2 b^5 beta^{-2}.
+No independence between paths, points, or the norm event is required.
+
+4. Uniform tail interval without a D log(n) penalty
+--------------------------------------------------
+For h>0 and D>=2, put t=D-1 and N=4t^2+1. Use the grid
+
+  z_j=j*h/N, j=0,...,N-1.
+
+The upper endpoint is deliberately omitted, so every point is strictly
+below all head nodes and R_q(z_j) is invertible for every subproblem.
+Every x in [0,h] is nevertheless within h/N of a grid point.
+
+For a matrix polynomial F of degree<=t, scalar Markov inequality on
+[0,h], applied to fixed unit bilinear forms u^T F(x)v, gives
+
+  sup_x ||F'(x)||<=2t^2/h * sup_x||F(x)||.
+
+The mesh therefore yields sup_[0,h]||F||<=2 max_j||F(z_j)||.
+This is deterministic; it needs no union over uncountably many x or
+over vectors u,v. Since N<=5D^2, (10) gives the safe uniform bound
+
+ Pr{max_i sup_(0<=z<=h)||F_i(z)||
+       <=[20000D^12 b^5/(beta^4*g)]^{D-1}}>=1-beta.         (11)
+
+Its log-prefactor is O(D log(Db/beta)). In particular a factor D log(n)
+from a naive union over all tail eigenvalues is unnecessary.
+
+If the head minimum is zero, the interval collapses to {0}. A separate
+fixed-input limit can handle it: at z=-epsilon the scalar ratio in (5)
+is at most1/g+epsilon/Delta_abs, tending1/g. The same proof with this
+vanishing perturbation, continuity of the fundamental polynomials and
+Fatou gives the limiting pointwise probability bound. One cannot instead
+claim to approach zero from nonnegative points strictly below it.
+For a first clean theorem, retaining positive head minimum is sufficient.
+
+5. Graph angle, good starts, and exact algorithmic scope
+------------------------------------------------------
+For a top target head of dimension Db and Gaussian start, the usual graph
+argument gives
+
+ tan angle(head,K_D(H,Omega))
+   <=sqrt(D)||Omega_tail||_F max_i||Omega_i^{-1}||
+                    max_i sup_(0<=z<=h)||F_i(z)||.          (12)
+
+Allocate separate confidence to the tail Frobenius bound; its contribution
+is polynomial in n,b,1/beta OUTSIDE the exponent D-1. Consequently
+the log good-start parameter is
+
+  O(D log(Db/(beta*g))+log(n/beta)).                       (13)
+
+There is no polynomial or logarithmic dependence on lambda_1/h.
+
+For padding to a non-multiple head size k, the original raw initial
+space may have MORE than k columns. This is covered by the published
+good-start definition, which asks for existence of a suitable orthonormal
+k-column subspace inside that range. The zero-dummy graph below gives
+such a subspace by orthonormalizing [I;X]; its parameter is1+||X||^2.
+
+Take B=[Omega,H Omega,...,H^{D-1}Omega], including all its columns.
+Regardless of its rank or width, K_s(H,B)=K_(D+s-1)(H,Omega) exactly.
+Chen et al.'s Definition3.1/Imported Theorem3.2 explicitly allow this
+wide simulated start. Thus the new graph estimate transfers to the
+standard spectral/Frobenius LRA theorem without assuming a monotonicity
+property of arbitrary Rayleigh--Ritz extraction on nested spaces.
+
+Up to universal constants, the resulting depth is
+
+ D+theta^{-1/2}[D log(Db/(beta*g))+log(n/(beta*theta))].    (14)
+
+The corresponding gap-dependent statement uses a suitable larger head
+and replaces theta^{-1/2} by the inverse square root of the applicable
+external relative gap. Standard full reorthogonalization, storage and
+extraction costs remain charged. This is a convergence improvement for
+the same algorithm; it does not improve a raw factor-action's cost.
+
+6. Relative forward b-gap: contiguous components and dummy padding
+----------------------------------------------------------------
+For descending positive target nodes lambda_1>=...>=lambda_k and k>b,
+define precisely the forward relative gap
+
+  gamma=min_(1<=i<=k-b)(lambda_i-lambda_(i+b))/lambda_i>0.
+
+Cut consecutive nodes whenever their adjacent relative gap is at least
+gamma/b. Every remaining component has at most b nodes. Otherwise b
+consecutive uncut edges give
+
+ lambda_(i+b)>(1-gamma/b)^b lambda_i
+                >=(1-gamma)lambda_i,
+
+contradicting the definition of gamma. This proof uses the forward gap,
+not an arbitrary nearest-neighbor gap with varying denominators.
+
+Greedily pack whole consecutive components into blocks of size<=b.
+Consecutive completed block sizes sum to more than b, so the number of
+blocks satisfies D<=2ceil(k/b)-1. Every cross-block pair has symmetric
+relative gap at least gamma/b: the closest pair across the contiguous
+boundary already has that property, and separating them further only
+decreases their smaller/larger eigenvalue ratio.
+
+Pad each block to b by duplicating one of its own eigenvalues and adding
+independent fictitious Gaussian rows. The relative cross-gap remains
+at least gamma/b; no spectrum rescaling or condition number is incurred.
+For a requested ORIGINAL head vector y, prescribe dummy head values0.
+Interpolation in the augmented system then generates a vector [y;Xy]
+on the original head/tail coordinates and zero dummy coordinates.
+Projection to the original coordinates belongs to K_D(H,Omega), because
+the same raw polynomial coefficients act there. Its graph error is no
+larger than in the augmented system.
+
+The final original-space graph/good-start property is independent of
+the fictitious Gaussian draws. If it holds with probability1-beta for
+the joint draw, it holds with at least that probability marginally for
+the original start. Thus padding is an analysis device, not an operation
+the algorithm must implement. D<=2ceil(k/b)-1 preserves k-linear scalar
+matvec scaling up to logarithms. For k<=b use the ordinary large-block
+Gaussian result instead of defining an empty forward-gap minimum.
+
+Substituting g>=gamma/b into (14) proves a condition-free forward-b-gap
+bound with an additional D log(Db^2/beta) overhead. It does NOT prove
+the exact displayed Chen rate with no such additional logarithms.
+
+7. Explicit counterexample to kappa-free monomial conditioning
+-------------------------------------------------------------
+Let b=1 and C=diag(1,1/2,...,2^{-(k-1)}). Its minimum consecutive
+relative gap is1/2. For a standard Gaussian g, form the raw monomial
+matrix K=[g,Cg,...,C^{k-1}g]. The monic polynomial
+
+  p(x)=product_(j=0)^(k-2)(x-2^{-j})
+
+has coefficient vector c with ||c||>=1. All but its final node
+evaluations vanish, so
+
+  sigma_min(K)<=||Kc||/||c||
+      <=|g_k|*2^{-(k-1)(k-2)/2}.                          (15)
+
+With probability at least0.99, |g_k|<=10, by Markov on g_k^2.
+Thus sigma_min is exp(-Omega(k^2)) with high probability. A literal
+replacement of Delta_k/kappa_k by Delta_k=1/2 in Chen Theorem4.1
+would give a fixed-confidence lower bound polynomial(k)^{-1} times
+(1/12)^{6(k-1)}=exp(-O(k)), which (15) contradicts for all large k.
+All nodes are distinct and positive and ||C||=1, so the example obeys
+that theorem's input hypotheses.
+
+This disproves the PROPOSED strengthened monomial singular-value bound,
+not the published theorem that retains kappa. It does not refute the
+algorithmic convergence conjectures: orthogonalized subspace geometry
+can be well behaved even when this monomial coordinate matrix is very
+ill conditioned. The relative-tail interpolation proof measures the
+former directly.
+
+8. Primary source comparison and significance calibration
+---------------------------------------------------------
+Tyler Chen, Ethan N. Epperly, Raphael A. Meyer, Christopher Musco,
+Akash Rao, Does block size matter in randomized block Krylov low-rank
+approximation?, SODA2026, pp.1026--1046,
+DOI10.1137/1.9781611978971.42, arXiv:2508.06486v2.
+https://arxiv.org/abs/2508.06486
+https://arxiv.org/pdf/2508.06486
+
+Exact source comparison: Theorem1.3 sets t=ceil(k/b),k'=bt and uses
+q=O([t log(kappa_(k')/Delta_(k'))+log(n/(delta*epsilon))]/sqrt(epsilon)).
+Here lambda_i=sigma_i(A)^2, Delta_j=min_(i<j)(lambda_i-lambda_(i+1))/lambda_i,
+and kappa_j=lambda_1/lambda_(j-1). Theorem3.8 uses an expanded head and
+external gap_(k->ell)=(lambda_k-lambda_ell)/lambda_k. Section5 proposes
+replacing Delta by the forward b-gap and removing kappa in both
+convergence theorems AND Theorem4.1. The latter is separately false by
+Section7. The new rate removes kappa and tolerates within-block clusters,
+with extra logarithms explicitly retained. The source itself regards
+the remaining convergence question as mathematically interesting but
+of limited practical importance because these terms are logarithmic.
+[Source-derived comparison: 123 words, excluding formulas/metadata.]
+
+The previous all-depth audit lists Shao2026, MMM2024, Li--Zhang2015,
+and the exact KE-05 negative-resolution source. A bounded targeted
+primary search did not locate a later published theorem supplying this
+relative-tail direct argument. That does not certify priority or global
+novelty. A fair description is a candidate rigorous repair/strengthening
+of the cluster-robust convergence analysis, with a separate correction
+to a proposed monomial-conditioning extension. It is not yet a seminal
+classical runtime advance for arbitrary factorized spectral LRA.
+
+9. Actual manuscript review, immutable source hash
+-------------------------------------------------
+Reviewed docs/cluster-robust-krylov.tex SHA256
+400f7c351d85b8d3e45667689746c5784958a4344cdd1127599642caaa9d8b3d,
+Sections 7--10 and references, on 2026-11-14. The relative terminal
+identity, normalized fresh-row argument, final path/grid union, scalar
+Markov step, and the safe 20000*d^12 constant pass. The relative-angle
+roundup320000 is consistent with using beta/2 for the combined head
+event. No target condition number is reintroduced in this derivation.
+
+The packing bound passes: each completed packed block plus the next
+one has total size>b; if D>=2ceil(k/b), pairing adjacent blocks would
+force the total target count to exceed k. Contiguity preserves symmetric
+relative cross-gap>=gamma_b/b. Dummy coordinates are only an analysis
+device, and their marginalization/projection argument is valid.
+
+The good-start transfer passes with the EXISTENCE interpretation required
+by Chen Definition3.1. Explicitly, for graph Y=[I;X] in the startup range,
+
+  Q=Y(I+X^T X)^(-1/2),
+  ||(U_k^T Q)^(-1)||^2=1+||X||^2.
+
+This selects k orthonormal columns even if the full initial range is
+wider than k. Imported Theorem3.2 permits the full wide starting block,
+and its simulated-start equality is exact. Merely writing an ordinary
+inverse of a rectangular head matrix would be wrong; the present text
+does not do so, but displaying this identity would make its meaning clear.
+
+The zero-tail branch passes UNDER THE STATED POSITIVE-TOP-k ASSUMPTION.
+In that setting a zero optimal tail means rank(A)=k. The graph has
+surjective head and null-eigenspace tail; multiplication by A kills
+the tail and is invertible on the head, so A*K_D equals the whole range
+and K_(D+1) contains it. Rank-k Ritz/SVD extraction is then exact. If
+rank(A)<k, the positive-head assumption fails; the sentence should not
+be read as a proof of that additional case without a separate branch.
+
+The raw monomial counterexample is a valid counterexample to the proposed
+kappa-free STRENGTHENING, not to Chen's published Theorem4.1. The paper
+correctly maintains that distinction and claims convergence only up to
+the retained extra logarithms and constant-factor padding. Its statements
+do not establish the original unrestricted N^2 product goal.
+
+Requested editorial clarifications sent to the parent: explicitly say
+rank(A)=k in the positive-head zero-tail branch; display the graph
+good-start identity above; complete Chen's published SODA2026 metadata.
+No mathematical correction to the reviewed positive-head theorem is
+required. The later amendment hash must be separately checked.
+
+10. Final amended-copy delta review and bounded latest-primary check
+-------------------------------------------------------------------
+Reviewed docs/cluster-robust-krylov.tex SHA256
+94d9e1f601ce4813f6a65b529b95a8246db665a9ea42d73bc323d4d5ba1b265e
+on 2026-11-14, with focus on amended Sections 7--10 and the bibliography.
+
+DELTA VERDICT: PASS. The graph orthonormalization and existence-based
+wide good-start property are now explicit and correct. The zero-tail
+sentence is explicitly qualified by positive top-k rank, so it asserts
+rank(A)=k and does not silently include an arbitrarily repeated zero
+head. The Chen reference now includes SODA2026 pages1026--1046 and
+DOI10.1137/1.9781611978971.42. No unresolved mathematical correction
+was identified in these amendments.
+
+The new ordinary-arithmetic paragraph is correct as an upper bound.
+For raw width w=bq, explicit-matrix operations cost O(npw+(n+p)w^2+w^3).
+Separate factor actions give Iw in place of npw. If w<=m<=min(n,p),
+(n+p)w^2<=Iw and w^3<=m^2w<=Iw. The rank-k full-output expansion
+npk is separately charged. A full factor-QR/core-SVD fallback covers
+larger widths. The paragraph correctly retains epsilon^{-1/2} generic
+accuracy dependence and does not claim a new raw-action exponent.
+
+Latest-source search scope. This was a bounded additional search for
+overlap posted/revised after 30 May2026 through 14 November2026. It
+included exact phrases and date-bounded variants of:
+
+  "block Krylov" "relative gap" "2026" "condition";
+  "small-block" "cluster" "2026" "probabilistic";
+  "matrix polynomial interpolation" "Gaussian" "2026";
+  "cluster robustness" "Lanczos" after:2026-05-30 before:2026-11-15;
+  "block Krylov" "condition number" "relative" with the same dates;
+  "Nian Shao" "2026" "interpolation";
+  "small-block" "gap" "conjecture" "2026";
+  and exact condition-number-free/interpolation variants.
+
+Search snippets and nonprimary aggregators were used only to locate
+candidates. The following NEWER PRIMARY candidates were then opened,
+their version histories checked, and their actual scope inspected:
+
+(a) Tyler Chen and David Persson, Optimal near-optimality bounds for
+the Lanczos method for matrix functions, arXiv:2608.07160v1,
+posted7 August2026.
+https://arxiv.org/abs/2608.07160
+https://arxiv.org/pdf/2608.07160
+Theorems1--2 concern approximation of f(A)b for Stieltjes-type functions,
+with a sharp condition-number-dependent comparison to the best vector
+Krylov approximation. This is not a Gaussian block-initialization,
+matrix-argument interpolation, or relative-b-gap convergence theorem.
+[Source summary: 46 words.]
+
+(b) Nian Shao, Stabilizing the Rayleigh--Ritz procedure by randomization,
+arXiv:2604.01037v4, revised26 October2026 (v3 was8 September2026).
+https://arxiv.org/abs/2604.01037
+https://arxiv.org/pdf/2604.01037v4
+Its problem is reliable extraction of a simple eigenpair from a prescribed
+approximate subspace. It controls randomized compressed eigenproblem
+conditioning; it does not establish the initial small-block Krylov
+subspace's relative-gap overlap or fundamental-polynomial growth.
+The inspected full text has no interpolation section.
+[Source summary: 47 words.]
+
+(c) Angelo A. Casulli, Daniel Kressner, Nian Shao, Lanczos with compression
+for symmetric eigenvalue problems, arXiv:2602.20948v2,
+revised19 August2026.
+https://arxiv.org/abs/2602.20948
+https://arxiv.org/pdf/2602.20948v2
+This compresses Krylov subspaces using rational approximation while
+retaining subsequent matrix-vector Lanczos steps. Its analysis compares
+compression errors with standard unrestarted Lanczos. The inspected
+statements do not supply the new Gaussian relative-tail interpolation
+bound or a condition-free forward-b-gap initialization theorem.
+[Source summary: 45 words.]
+
+(d) George Stepaniants, KE-05 negative resolution, posted12 September2026.
+The primary source was rechecked; it refutes the prescribed intermediate
+chi-product probability bound, and expressly does not refute cluster-
+robust convergence. It is overlapping context, not a positive direct
+relative-gap proof.
+https://github.com/ajt60gaibb/OpenProblemsInNLA/blob/main/randomized-and-low-rank-approximation/KE-05/solution.md
+
+An additional current primary lead, Ming Zhou and Klaus Neymeyr,
+Toward Genuine Efficiency and Cluster Robustness of Preconditioned
+CG-Like Eigensolvers, Numer. Linear Algebra Appl.33:e70078,
+DOI10.1002/nla.70078, first published17 April2026, falls BEFORE the
+requested window. It concerns augmentation/history in preconditioned
+CG-like eigensolvers and does not provide the inspected Gaussian
+direct-interpolation claim.
+https://onlinelibrary.wiley.com/doi/10.1002/nla.70078
+
+The central source histories were also freshly checked: Shao2507.10144
+still has latest v2 dated30 May2026, and Chen et al.2508.06486 still
+has latest v2 dated21 October2025. Thus the latest inspected primary
+versions of those papers remain the versions analyzed in Sections8--9.
+
+SEARCH CONCLUSION. No overlapping later PRIMARY proof of the direct
+spectrum-uniform relative-tail interpolation / condition-free forward-
+b-gap startup statement was identified in this bounded search. This
+does not certify that none exists, and it does not establish publication
+priority or peer review. The present result can accurately be called
+an independently audited candidate new convergence analysis relative to
+the inspected sources. Its benefit concerns cluster/condition dependence
+inside logarithmic convergence terms. The source authors' own limited-
+practical-importance assessment must not be inflated into a claim of a
+seminal classical runtime improvement. The original unrestricted N^2
+factor-product objective remains open. No external posting or contact
+was performed or authorized.
+
+Final visible editorial delta. While Section10 was being saved, the
+manuscript changed to SHA256
+c15e77b3ea67c9b367bb3d1bfa6854803b51b2032ed56d10c18eeeea7cc948ff.
+The relevant statement, good-start/zero-tail, ordinary-cost, counterexample
+and reference sections were reread. The visible changes add the explicit
+0<epsilon<1 range and reword the monomial-counterexample opening; they
+do not change the reviewed mathematics. This final editorial delta also
+PASSES the same scoped review. The latest-primary search conclusion and
+all significance limitations above remain unchanged.

@@ -1,0 +1,444 @@
+Independent product-AMM literature audit -- 2026-11-14
+
+Scope and conclusion
+--------------------
+This is a targeted primary-source audit, not a completeness or novelty
+certificate. No new total-runtime improvement for the general spectral-norm
+product problem has been established by this audit. In particular, none of the
+sources below proves the desired gap-free rank-r bound with logarithmic
+dependence on inverse accuracy and construction time ~O(I r + m^omega).
+All explicit-output comparisons must still add T_MM(n,s,p) for width s, or
+the relevant full-matrix reconstruction cost.
+
+1. Joint leverage score sampling (October 2026)
+------------------------------------------------
+Neophytos Charalambides, Mert Pilanci, Alfred O. Hero III,
+Approximate Matrix Multiplication through Joint Leverage Score Sampling.
+https://arxiv.org/abs/2610.29466
+https://arxiv.org/html/2610.29466v1
+Primary PDF cached transiently at /tmp/mathathon-joint-leverage.pdf;
+layout text at /tmp/mathathon-joint-leverage.txt.
+
+The paper uses A in R^{N x L}, B in R^{N x M}, and approximates A^T B
+by sampling s pairs of rows with replacement. Let U_A,U_B be reduced left
+orthonormal bases, bar_l_i=||U_A(i,:)||^2, tilde_l_i=||U_B(i,:)||^2,
+tau=sum_i sqrt(bar_l_i tilde_l_i), mu=sqrt(L M), and
+pi_i=sqrt(bar_l_i tilde_l_i)/tau. Approximate probabilities satisfy
+hat_pi_i >= beta pi_i for all i, with beta in (0,1].
+
+Lemma 5, equation (2.11), proves only the factor-norm implication
+
+  ||A^T B - (S A)^T(S B)||_2 <= e ||A||_2 ||B||_2
+
+when ||U_A^T U_B-(S U_A)^T(S U_B)||_2 <= e. This is not a bound
+in terms of sigma_{r+1}(A^T B) or product-tail energy.
+
+Theorem 11 as printed assumes the leverage comparability condition (2.13):
+
+  max{ max_i sqrt(bar_l_i/tilde_l_i) * max_i tilde_l_i,
+       max_i sqrt(tilde_l_i/bar_l_i) * max_i bar_l_i } <= mu/tau.
+
+It claims s=Theta(mu log(2 mu/d)/(beta e^2)) and success probability at
+least 1-d*max{sqrt(L/M),sqrt(M/L)}. For the absolute error eps in
+Lemma 5 one must set e=eps/(||A||_2||B||_2). Proposition 12 states a
+slightly looser beta dependence. Setup must compute or approximate the
+leverage-score distribution; output costs O(L M s) conventionally, as
+stated immediately before Algorithm 1, or the corresponding fast MM cost.
+
+Translation to the current product uses the paper's N=m,L=n,M=p, so the
+paper's tall-matrix notation N>max(L,M) does not hold directly. Using thin
+bases with the actual ranks does not improve the hard case: when both
+input factors have full inner rank m, both left bases in R^m span all of
+R^m. Every latent leverage score is then exactly 1, tau=m, pi_i=1/m,
+and the effective rank dimensions give mu=m. The advertised sufficient
+sampling width is ~m/e^2, at least the original inner width for e<1.
+Keeping all m terms is already exact. Thus this is not a smaller-width
+algorithm for the hard dense-factor regime, even before accuracy and
+explicit-output costs are counted.
+
+Directly checkable defects in the printed argument:
+
+(a) Lemma 10 claims
+
+  lambda_max(tilde_Phi) <= max_i alpha_i * max_i tilde_l_i,
+  tilde_Phi=sum_i alpha_i tilde_u_i^T tilde_u_i,
+  alpha_i=sqrt(bar_l_i/tilde_l_i).
+
+Take N=2,L=M=1 and U_A=U_B=(1,1)^T/sqrt(2). Then alpha_i=1,
+tilde_l_i=1/2 and tilde_Phi=1. The claimed inequality is 1<=1/2.
+More generally, U_A=U_B=U with orthonormal columns gives Phi=I while
+the maximum leverage can be strictly below 1. The proof's equality
+replacing the sum of squared row inner products by their maximum is
+false. A valid immediate bound is lambda_max(tilde_Phi)<=max_i alpha_i,
+since sum_i tilde_u_i^T tilde_u_i=I; it lacks the claimed leverage factor.
+Consequently the variance bound used with (2.13) is not established by
+the printed proof. This audit does not claim that no corrected theorem
+for this sampling distribution is possible.
+
+(b) Theorem 14 as printed gives embedding width
+Theta(log(2/d)/(beta e^2)), independent of rank d_A. For any e<1 a
+subspace embedding of a d_A-dimensional subspace must have at least
+d_A rows, by rank. Taking d_A larger than the displayed width contradicts
+the statement. The standard rank factor is absent as printed.
+
+These defects are primary-text observations, not an appeal to citations
+or an assertion about author intent. They are enough to preclude using
+the printed improved claims as established comparison bounds.
+
+2. A purported quadratic-time arbitrary-absolute-error algorithm (2014)
+------------------------------------------------------------------------
+Shiva Manne, Manjish Pal,
+Fast Approximate Matrix Multiplication by Solving Linear Systems.
+https://arxiv.org/abs/1408.4230
+https://eccc.weizmann.ac.il/report/2014/117/download/
+Primary PDF cached transiently at /tmp/mathathon-manne-pal.pdf;
+layout text at /tmp/mathathon-manne-pal.txt.
+
+The advertised ~O(N^2) arbitrary absolute Frobenius-error guarantee is not
+valid for arbitrary real inputs under the supplied construction. Section 2
+reduces the unknown product C to C v=u=A(B v), for an all-equal vector v,
+then Section 4 solves a regularized version of V^T V vec(C)=V^T u.
+This loses all components of C orthogonal to v in each row.
+
+For a concrete 2x2 input let
+
+  A=[[1,-1],[0,0]], B=I_2, C=A,
+  v=(1/8,1/8)^T (the paper sets v_i=N^{-3}).
+
+Then u=C v=0. The unique solution of every positively regularized system
+with this right-hand side is zero; steepest descent initialized at zero
+is already at that solution. Its error from C is sqrt(2) in Frobenius
+norm and sqrt(2) in spectral norm, independent of the requested accuracy.
+Scaling A makes the error arbitrarily large while u remains zero.
+
+Lemma 4 in Section 4.3 drops cross terms as though
+(sum_i c_{ji})^2 >= sum_i c_{ji}^2. This is false for the first row above.
+The underdetermination persists independently of this algebraic error:
+regularization selects one of many possible row vectors with the same
+inner product against v. Thus the claim is not an established quadratic
+upper bound against which a new algorithm needs to compete.
+
+3. Classical random-walk AMM (MFCS 2026)
+---------------------------------------
+Simon Apers, Arjan Cornelissen, Samson Wang,
+Randomized and Quantum Approximate Matrix Multiplication.
+https://doi.org/10.4230/LIPIcs.MFCS.2026.77
+https://drops.dagstuhl.de/storage/00lipics/lipics-vol386-mfcs2026/LIPIcs.MFCS.2026.77/LIPIcs.MFCS.2026.77.pdf
+Full version: https://arxiv.org/abs/2510.08509
+
+Definition 1 and the following paragraph restrict the study to maximum
+entry error and Frobenius error. Table 1 on PDF page 3 gives the new
+classical random-walk runtime, in square dimensions, as
+
+  ~O(|| |A||B| ||_{1,1}^2 / eps^2)
+
+for Frobenius error, plus O(N^2) preprocessing/output. Here |A| and |B|
+denote entrywise absolute values and ||.||_{1,1} is the sum of absolute
+entries. This is a norm of the product of the absolute-valued factors,
+not ||AB||_F, and can be arbitrarily larger under cancellation. The
+paper's dominance claim explicitly excludes using exact fast MM as a
+subroutine. Its quantum bounds use a different computational model.
+This is useful related work, but is not a product-tail spectral theorem
+or a solution of the high-accuracy example in research-direction.typ.
+
+4. Output-Frobenius sparse recovery (February 2026)
+--------------------------------------------------
+Yahel Uffenheimer, Omri Weinstein,
+Improved Sparse Recovery for Approximate Matrix Multiplication.
+https://arxiv.org/abs/2602.04386
+
+The abstract states that for square N x N matrices and parameter t<=N,
+runtime is O(N^2(t+log N)), with a biased estimate satisfying
+
+  E C=(t/N)AB,
+  E ||C-AB||_F^2 <= (1-t/N)||AB||_F^2.
+
+An unbiased variant has expected squared Frobenius error bounded by
+(N/t)||AB||_F^2. This does depend on the output rather than factor norms,
+but does not provide near-optimal rank-r spectral error. The biased
+bound is not small for t<<N; for flat rank-m tails the product Frobenius
+norm can be sqrt(m) times the desired absolute spectral tolerance.
+Using ||E||_2<=||E||_F does not fix this dependence. This entry is an
+abstract-level audit only; no claim about all stronger possible analyses
+of the algorithm is made here.
+
+5. Gram balancing and the limitations of that route
+--------------------------------------------------
+Piyush Sao et al., A Nuclear-Norm Lower Bound for Dithered Scalar
+Quantization of Matrix Products (September 2026).
+https://arxiv.org/abs/2609.05641
+https://arxiv.org/html/2609.05641v1
+
+Section 5 explicitly gives Gram-matrix balancing, and the paper states
+that the infimum of ||AT||_F^2 ||T^{-1}B||_F^2 over invertible T is
+||AB||_*^2 (including the appropriate infimum treatment for singular
+inputs). Therefore exact inner balancing is already in this literature;
+it must not be called a new AMM result.
+
+A simple approximate-balancing observation, not claimed novel:
+if (1-eta)P<=Ptilde<=(1+eta)P and likewise for Q, where P=A^T A,
+Q=B B^T are positive definite, choose W=T T^T to minimize
+tr(Ptilde W)+tr(Qtilde W^{-1}). Then
+
+  ||AT||_F ||T^{-1}B||_F
+    <= [(1+eta)/(1-eta)] ||AB||_*.
+
+Indeed the minimized sketched sum is twice the nuclear norm of the
+two-sided sketched product; true factor energies are at most 1/(1-eta)
+times sketched energies; and embedding distortion bounds that nuclear
+norm by (1+eta)||AB||_*. Constant-distortion sketches and this dense
+core can be built in ~O(I+m^omega), but materializing AT,T^{-1}B costs
+T_MM(n,m,m)+T_MM(m,m,p), comparable to the Gram route. Generating only
+s Gaussian compressed directions avoids materialization at ~O(I s),
+but standard AMM accuracy then depends on nuclear/factor energy and
+needs s of order m on the flat-tail regime. This has not produced an
+improvement over direct product range finding, Krylov, or fast Gram.
+
+6. Output-aware positive-semidefinite shifts
+------------------------------------------
+If H is PSD and a computable Nyström underapproximation L satisfies
+0<=H-L<=2 eps I, then C=L+eps I has ||H-C||_2<=eps. This is an
+elementary Loewner-interval centering argument, and shifted/modified
+Nyström methods are established tools; it is not claimed novel.
+
+For an arbitrary nonsymmetric product the Hermitian dilation
+[[0,AB],[B^T A^T,0]] does not automatically transfer this benefit:
+an identity shift changes only its diagonal blocks. A generalization
+works if a cheap known isometry J makes AB=H J with H PSD: output
+(L+eps I)J. Without such a known orientation, finding the required
+polar/isometric factor is an additional substantial task. No general
+total-runtime gain is proved by this observation.
+
+7. Residual deflation plus COD/sampling: a comparison that survives checking
+---------------------------------------------------------------------------
+Let U in R^{n x k}, V in R^{p x l} have orthonormal columns, set h=k+l,
+and let M=AB. The familiar bilateral/tangent-space approximation is
+
+  C0=UU^T M + M VV^T - UU^T M VV^T,
+  M-C0=(I-UU^T) A B (I-VV^T), rank(C0)<=h.
+
+Writing a_i,b_i for the original paired columns, define
+
+  a_i^res=(I-UU^T)a_i, b_i^res=(I-VV^T)b_i,
+  S=sum_i ||a_i^res||_2 ||b_i^res||_2.
+
+The exact scalar S is computable in O(I h): compute U^T A and B V,
+then use ||a_i^res||^2=||a_i||^2-||U^T a_i||^2 and the analogous
+formula for b_i. No dense m x m transform needs to be materialized.
+One may diagonally balance each residual pair, so the two residual
+factors both have squared Frobenius norm S, then run COD at width
+O(S/eps). This is a valid construction/certificate route.
+
+It is not, by itself, a new variable-rank spectral AMM improvement.
+The nuclear triangle inequality and Eckart--Young--Mirsky imply
+
+  sum_{j>h} sigma_j(M) <= ||M-C0||_* <= S.
+
+An ordinary Gaussian product range finder can already exploit exactly
+this promise using width O((h+S/eps+1) log(1/delta)). Here is one
+explicit derivation. Set q=ceil(64 S/eps)+1 and kappa=h+q, truncated
+at rank(M) if necessary. Then
+
+  sigma_{kappa+1}(M) <= eps/64,
+  ||M-M_kappa||_F^2 <= eps*S/64.
+
+For a Gaussian range finder with target kappa and oversampling
+p=kappa+2, HMT (2011), Theorem 10.6, gives
+
+  E ||(I-QQ^T)M||_2
+   <= (1+sqrt(kappa/(p-1))) sigma_{kappa+1}
+       + e sqrt(kappa+p)/p ||M-M_kappa||_F
+   <= [(2+e sqrt(2))/64] eps < eps/10.
+
+Markov gives failure probability below 1/10 for error eps. Concatenating
+O(log(1/delta)) independent sketch blocks makes failure at most delta:
+the concatenated range contains every successful block's range, and
+orthogonal projection error is monotone under range enlargement. If
+the target reaches the actual rank, a sufficiently wide Gaussian
+sketch recovers the range exactly with probability one instead.
+
+HMT primary source: https://arxiv.org/abs/0909.4061 . The resulting C is
+QQ^T M and its width is O((h+S/eps+1)log(1/delta)); applications of M
+and M^T use the supplied factors. Conventional construction is
+~O(I s + (n+p)s^2) and output expansion is T_MM(n,s,p); fast blocked
+products should be used when comparing exponents. Thus a linear
+S/eps residual-COD width is not better than the standard range-finder
+width after this nuclear-tail argument. The residual computation can
+still supply an adaptive upper bound on an unknown tail parameter,
+but this is not a proved novel SOTA gain.
+
+8. Partial Gram recovery on diagonal-plus-low-rank input classes
+---------------------------------------------------------------
+A rigorous restricted construction is possible, but has substantial
+structured-matrix prior art. Suppose P=A^T A=D+UU^T with U in R^{m x k}
+and three disjoint size-k row sets J1,J2,J3 on which U has full rank.
+Only 3k Gram columns plus diag(P) suffice to reconstruct all of P:
+
+  C12=P[J1,J2]=U1 U2^T,
+  C32=P[J3,J2]=U3 U2^T,
+  C31=P[J3,J1]=U3 U1^T,
+  H11=C12 C32^{-1} C31=U1 U1^T.
+
+For indices outside J1, P[:,J1] equals the low-rank part L[:,J1];
+inside J1, fill the block with H11. Call the resulting m x k matrix W.
+Then L=W H11^{-1} W^T and D=diag(P)-diag(L). The 3k Gram columns
+cost O(n m k) and the full dense reconstruction O(m^2 k+k^3).
+Apply the same construction to Q=B B^T. This gives exact Gram
+matrices in O(I k+m^2 k+k^3), so fast core algebra and lifting yield
+optimal rank-r product error with conventional total
+
+  ~O(I(k+r)+m^2 k+k^3+m^omega) + T_MM(n,r,p).
+
+For constant k this meets the proposed construction scale on this
+restricted class, including arbitrary close product singular values.
+The pivot assumption holds for any fixed three disjoint size-k sets
+when U is full spark. This is an exact-real-arithmetic observation;
+no stability or conditioning guarantee is asserted.
+
+It is not currently a novel AMM theorem. Relevant primary sources:
+
+  P.-G. Martinsson (2011), A Fast Randomized Algorithm for Computing a
+  Hierarchically Semiseparable Representation of a Matrix.
+  https://doi.org/10.1137/100786617
+  https://amath.colorado.edu/faculty/martinss/Pubs/2011_randomhudson.pdf
+
+  P.-G. Martinsson (2016), Compressing Rank-Structured Matrices via
+  Randomized Sampling.
+  https://users.oden.utexas.edu/~pgm/Pubs/2016_martinsson_randomhudson2.pdf
+
+  D. Halikias, A. Townsend (2024), Structured matrix recovery from
+  matrix-vector products.
+  https://arxiv.org/abs/2212.09841
+  https://doi.org/10.1002/nla.2531
+
+  A. Fernandez, F. Dangel, P. Hennig, F. Schneider (2025), Sketching
+  Low-Rank Plus Diagonal Matrices.
+  https://arxiv.org/abs/2509.23587
+
+Diagonal-plus-low-rank Grams are special cases of hierarchical matrices
+with low-rank off-diagonal blocks. Existing randomized reconstruction
+therefore already gives inexpensive structured-core recovery with
+matrix-vector and, for some methods, selected-entry access. Entries of
+these Grams can be evaluated from the input factors and matvecs cost
+O(I). The simple pivot formula is useful for accounting but does not
+establish a novel improvement over all applicable methods.
+
+9. Sample reuse in variance-reduced eigensolvers (ALT 2026)
+----------------------------------------------------------
+Y. Jin, I. Karmarkar, A. Sidford, J. Wang,
+Reusing Samples in Variance Reduction.
+https://proceedings.mlr.press/v313/jin26a.html
+https://raw.githubusercontent.com/mlresearch/v313/main/assets/jin26a/jin26a.pdf
+Primary PDF/text cached transiently at /tmp/mathathon-reuse-samples.*.
+
+Table 2 improves the full-batch/sample-query tradeoff for top eigenvector
+computation of a covariance to, up to logarithms,
+
+  sqrt(alpha/gap) full batch queries,
+  sr(A) alpha^{-2} reused row samples, alpha>Theta(gap).
+
+This is an actual recent refinement and should not be missed when
+auditing stochastic alternatives. On the flat-spectrum covariance
+subclass with a dense N x m factor, sr(A)=Theta(m), gap=Theta(1/m),
+and I=Theta(Nm), conventional arithmetic gives
+
+  T(alpha)=~O(I sqrt(alpha*m)+m^2 alpha^{-2}).
+
+At N=m^{9/8}, the optimum is alpha=m^{-1/4} and T=~m^{5/2}
+=~N^{20/9}, above the fast Gram bound N^{169/81}. Reusing sampled
+rows may support further blocking, but no reduction below the Gram
+frontier has been proved here; the sample counts cannot be silently
+charged as free core operations. These are covariance-eigenvector
+bounds, not yet a general two-factor product theorem.
+
+10. Rayleigh-to-Nystrom deflation and adaptive sketch reuse
+----------------------------------------------------------
+Independent mathematical audit of the rank-r extension (2026-11-14):
+the proposed all-eigenvalue inequality is valid. For H>=0, unit z,
+s=z^T H z>0, define
+
+  R=H-H z z^T H/s.
+
+Then for every j<dim(H),
+
+  lambda_j(R) <= [lambda_1(H)/s] lambda_{j+1}(H).
+
+In particular s>=(1-e)lambda_1(H) gives the proposed factor (1-e)^-1.
+There is a short proof avoiding secular-equation pole bookkeeping.
+First suppose H>0. In an orthonormal basis starting with z, write
+
+  H=[[s,b^T],[b,C]],   S=C-b b^T/s.
+
+The residual is diag(0,S). Rank-one interlacing gives
+lambda_j(S)>=lambda_{j+1}(H). Schur's determinant identity gives
+
+  product_j lambda_j(S)/lambda_{j+1}(H)=lambda_1(H)/s.
+
+Every factor on the left is at least one, so each factor is at most
+their product. For singular H, apply the result to H+eta I and let
+eta decrease to zero. The s>0 condition makes the residual continuous.
+A numerical falsifier sweep over 3000 random diagonal spectra spanning
+six orders of magnitude and random z found no violation; the determinant
+argument supplies the proof, not this numerical check.
+
+For M_i=M(I-V_i V_i^T), H_i=M_i M_i^T, choose such a z_i and set
+
+  v_i=M_i^T z_i/sqrt(s_i).
+
+Then v_i is unit and orthogonal to V_i, and right deflation produces
+exactly the preceding Nystrom residual. Iterating the all-j bound gives
+
+  ||M(I-V_r V_r^T)||^2 <= (1-e)^(-r) lambda_{r+1}(M M^T).
+
+Taking e=1-(1+theta)^(-2/r), or a suitable constant times theta/r,
+therefore gives the relative spectral rank-r guarantee. This is an
+elementary extension of standard Nystrom/Schur-complement deflation;
+the operation or elementary matrix lemma should not be presented as
+independently certified novel mathematics.
+
+Adaptive reuse of the initial B-side sketch is valid as well. Write
+Q=B B^T, V_i=B^T C_i, D_i=B V_i=Q C_i, and R_i=I-D_i C_i^T. Then
+
+  C_i^T Q C_i=I, R_i^2=R_i,
+  B_i=R_i B, Q_i=R_i Q R_i^T=Q-D_i D_i^T.
+
+The original Loewner event (1-h)Q<=Qtilde<=(1+h)Q implies the same
+relative event for R_i Qtilde R_i^T versus Q_i for EVERY R_i, including
+all adaptively selected ones; no independence assumption is needed.
+For the next vector take c=R_i^T A^T z/sqrt(s), d=Q c, v=B^T c.
+Orthogonality gives C_i^T Q c=0. Consequently
+
+  R_{i+1}=R_i-d c^T=(I-d c^T)R_i,
+  Qtilde_{i+1}=(I-d c^T)Qtilde_i(I-c d^T).
+
+This is a rank-two symmetric core update and costs O(m^2). Actual B
+actions compute d and v; they remain charged to input work. Whitening
+of A can be fixed across all stages. The predicted rank-r cost thus is
+
+  ~O(I+G_h+r*m^omega+r*m^2/sqrt(h)
+                  +I*r*sqrt(h*r/theta)+T_MM(n,r,p)),
+
+including the r-stage coarse eigenvalue estimates, repeated threshold
+core factorizations, and explicit output. For fixed r, the previously
+verified output-optimal exponent regime survives.
+
+Related primary source checked for novelty context:
+Y. Nakatsukasa, Z. Tang (May 2026), Finding accurate eigenvalues and
+eigenvectors of positive semi-definite matrices given a subspace.
+https://arxiv.org/abs/2605.05043
+https://arxiv.org/html/2605.05043v1
+Its Theorem 1 orders Nystrom, SVD-extract and Rayleigh--Ritz eigenvalue
+estimates; its setup and Section 2 explicitly treat Nystrom as a standard
+single-pass extraction. It does not state the present general-factor
+sketch-preconditioned total-time theorem. Failure to find the exact
+all-j formula by keyword search is not evidence that this elementary
+Schur-complement consequence is new.
+
+Remaining work
+--------------
+The general absolute-epsilon goal remains open. Candidate algorithms
+must specify the input class, rank/output form, confidence, norm and
+tail parameters, setup and lifting work, precision/iteration costs,
+and explicit output expansion. The counterexamples above eliminate
+specific misleading frontier claims; they are not lower bounds against
+the overall problem or against arbitrary factor-aware algorithms.

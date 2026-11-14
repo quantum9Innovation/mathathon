@@ -1,0 +1,256 @@
+Stochastic product priority/input-model audit -- 2026-11-14
+==========================================================
+
+Scope and finding
+-----------------
+This is a targeted primary-source audit of the completed manuscript
+docs/stochastic-product-spectral.tex. Earlier source/proof audits were read
+first; the independent-copy attribution, EPSI/MSP checks, and general
+Gram/Krylov literature were not restarted. Only this dedicated file is
+modified for this continuation.
+
+The current result is best classified as a separate-factor access-cost
+construction and a corollary of established stochastic-solver/PCA tools.
+It does not introduce stochastic GEPs, covariance-product unbiasing,
+nonconvex-component SVRG, accelerated proximal point, or inverse-power PCA.
+The closest inspected end-to-end template is the full Allen-Zhu--Li 2017
+CCA paper, Appendix F.3, which already combines essentially those solver
+ideas and has the same input^(3/4) acceleration pattern. Its explicitly
+stated paired-data theorem does not supply the current raw-factor product
+oracle or its uniform product-relative variance bound.
+
+No inspected primary theorem was shown to imply the entire claimed
+
+ ~O(Ir + m^(omega+zeta) + r I^(3/4)m^(1/2)/sqrt(theta)
+    +np+TMM(n,r,p)), I=m(n+p),
+
+for arbitrary fixed A,B without additional factor energy, eigengap, or
+condition parameters. This is a scoped comparison, not a global priority
+certificate. The argument below identifies what a direct reduction would
+have to implement, rather than relying on the absence of matching words.
+
+1. Closest accelerated GEP/CCA theorem
+-------------------------------------
+Zeyuan Allen-Zhu and Yuanzhi Li, Doubly Accelerated Methods for Faster CCA
+and Generalized Eigendecomposition, ICML2017. The full version contains
+Theorems4.2,6.3,F.3 and Appendix F.3.1--2:
+https://proceedings.mlr.press/v70/allen-zhu17b.html
+https://arxiv.org/pdf/1607.06017
+
+Source facts: Theorem4.2 gives a general GEP oracle reduction, charging
+the cost Upsilon of B^(-1)A actions. Its gap-free consequence has inverse
+square-root accuracy dependence. TheoremF.3 instead uses paired data X,Y,
+A=[[0,X^T Y],[Y^T X,0]]/s, B=diag(X^T X,Y^T Y)/s, and accelerated SVRG
+on indefinite sample quadratics. For one CCA vector its cost is
+
+ ~O(J [1+sqrt(kappa')/(s^(1/4)sqrt(epsilon*sigma_1))]),
+ J=nnz(X,Y),
+ kappa'=2 max_i{||X_i||^2,||Y_i||^2}/lambda_min(B).
+
+Here sigma_1 is normalized canonical correlation. The general-rank bound
+also charges projection costs and contains sigma_r and rank parameters.
+Appendix F.3 explicitly derives sample Hessian smoothness from paired row
+norms and aggregate strong convexity from epsilon*sigma_r*lambda_min(B).
+Thus both the signed quadratic and its acceleration are direct antecedents.
+
+Own input-model reduction analysis
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Use different letters for the manuscript's factors: M=A0 B0, and its
+small coefficient pencil H0=G Qc G/c with mass G. Substituting this pair
+into the GEP theorem is legitimate. Because G has constant condition,
+an H0 action and a solve in G can be supplied in ~O(I), giving the usual
+~O(Ir/sqrt(theta)) oracle bound, plus projections and output. Supplying
+the two small matrices explicitly instead pays true Gram construction.
+Neither substitution yields I + I^(3/4)m^(1/2)/sqrt(theta): that improvement
+needs the specific cheap sample action and expected-square bound proved
+in the new manuscript. The theorem's Upsilon is not automatically a cheap
+stochastic signed-pencil oracle.
+
+The paired-data theorem is not obtained simply by setting X=A0^T,Y=B0.
+Those matrices share s=m sample rows, and X^T Y=M, but CCA uses marginal
+covariance metrics. After restricting feature supports, if both original
+factors have full inner rank m, col(X)=col(Y)=R^m. The normalized CCA
+cross matrix therefore has all m singular values equal to one: it measures
+the principal angles between equal sample subspaces. This loses the
+singular spectrum of M. For example A0=diag(T,T^(-1)) and
+B0=diag(T^(-1),T) have M=I for every T; CCA's normalized spectrum is
+uninformative about the unrestricted Euclidean product spectrum in general.
+
+Invertible FEATURE coordinate changes preserve canonical correlations,
+while generally changing the desired Euclidean PLS singular spectrum.
+Reciprocal INNER/sample changes preserving A0 B0 retain the product but
+change marginal covariance matrices; in the full-inner-rank direct CCA
+substitution the correlations still remain all one. Neither observation
+is an obstruction to every possible reduction, but it rules out the
+direct identification of the two tasks.
+
+The source also permits isotropic ridge marginals (Remark2.5). With large
+ridges, its normalized cross matrix approaches a scalar multiple of M.
+This does not give the desired uniform runtime by itself. In the displayed
+diagonal example, take equal ridge tau much larger than T^2. Then
+sigma_1 is of order 1/tau, while kappa' is of order T^2/tau. Their ratio
+kappa'/sigma_1 is of order T^2, so the accelerated bound still grows with
+T, although ||M||=1. Merely observing sigma_1 becoming small would be
+insufficient, since kappa' also decreases; the ratio calculation is the
+relevant check.
+
+Coarse whitening removes this factor dependence analytically, but feeding
+the resulting paired features to the published data theorem requires
+materializing transformed factors or paying their actual row-generation
+cost. A general row of (A0 W)^T is A0 times a dense coefficient vector,
+not an original row available in O(n+p) time. The alternative small
+representation G^(1/2) Qc^(1/2) requires true Gram roots. The new raw-row
+oracle avoids both materializations. Replacing those operations by a
+unit-cost feature query would discard the comparison's main bottleneck.
+
+2. Stochastic PLS: the cross-product is covered, the bound is different
+---------------------------------------------------------------------
+Raman Arora, Poorya Mianjy, Teodor Marinov, Stochastic Optimization for
+Multiview Representation Learning using Partial Least Squares, ICML2016:
+https://proceedings.mlr.press/v48/aroraa16.html
+https://proceedings.mlr.press/v48/aroraa16.pdf
+
+Source facts: Theorem3.2 bounds expected additive loss in captured
+cross-covariance by O(sqrt(r/T)) after normalization; Theorem3.3 analyzes
+the matrix-exponentiated-gradient variant. The target is a population PLS
+objective E[x^T U V^T y]. These are sample-complexity/objective guarantees,
+not an asserted high-accuracy finite-input spectral-tail arithmetic bound.
+
+Own reduction and cost accounting
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+There is an exact arbitrary-product representation: draw inner index j
+with probability p_j and set
+
+ x=A0[:,j]/sqrt(p_j), y=B0[j,:]^T/sqrt(p_j).
+
+Then E[xy^T]=M. Thus it would be false to claim arbitrary products lie
+outside the PLS input model. A sample costs O(n+p) from original factors.
+The minimum possible squared Frobenius second moment among these index
+distributions is
+
+ min_p sum_j ||A0[:,j]||^2 ||B0[j,:]||^2 / p_j
+   = (sum_j ||A0[:,j]|| ||B0[j,:]||)^2 = S^2.
+
+The additive objective guarantee consequently retains S after rescaling.
+Even rank-one relative top accuracy theta requires the sufficient
+sample bound of order (S/||M||)^2/theta^2 from this theorem. The ratio
+S/||M|| can be arbitrarily large for cancelling factors. A rank-one
+relative Rayleigh guarantee could be converted to a relative spectral tail
+by a suitable Nystrom finish; the objection is not that conversion is
+impossible. The issue is the theorem's accuracy and variance cost before
+that finish. Coarse coordinate balancing can improve variance only after
+charging for transformed feature access, as above. This does not recover
+the new runtime from the inspected PLS theorem alone.
+
+3. GEP input models already include covariance polynomials
+----------------------------------------------------------
+Chris Junchi Li and Michael I. Jordan, Nonconvex Stochastic Scaled Gradient
+Descent and Generalized Eigenvector Problems, UAI2023:
+https://proceedings.mlr.press/v216/li23b/li23b.pdf
+
+Source facts: Equations7--8 use independent unbiased matrix estimates for
+products of expectations. Theorem2 and Corollary4 require local positive
+tangent curvature, a specified initialization neighborhood, and a
+sub-Weibull gradient parameter. Their angular rate is of order
+sqrt(log(T)/T), with curvature and noise constants. Later sections provide
+strict-saddle/global analysis, not the current gap-free spectral-tail cost.
+
+Own scope conclusion: the new product matrices can be passed as suitable
+unbiased polynomial estimates after their cost and tails are justified.
+The abstract stochastic input model is therefore not new. Repeated or
+arbitrarily clustered top eigenvalues do not furnish the uniform positive
+tangent curvature needed by the inspected local theorem. No simple
+substitution yields the desired theta^(-1/2) cost or all-rank tail guarantee.
+
+Ian Gemp, Charlie Chen, Brian McWilliams, The Symmetric Generalized
+Eigenvalue Problem as a Nash Equilibrium, ICLR2023:
+https://arxiv.org/pdf/2206.04993
+
+Source facts: Section1 explicitly permits outer-product expectations;
+Equation3 includes a signed covariance polynomial for ICA. Section3 uses
+independent minibatches for unbiased products. Theorem2 proves
+deterministic/full-batch asymptotic convergence with positive top-r gaps.
+AppendixE explains remaining issues in extending that proof to Algorithm2.
+
+Own scope conclusion: a product-covariance representation and its
+independent-copy updates are plainly within this paper's scope. It supplies
+neither a finite global iteration bound of the required accuracy dependence
+nor the raw-factor preprocessing/second-moment arithmetic theorem. It is
+prior art for the representation, not a substantiated subsuming complexity
+bound. This distinction is stronger and more accurate than saying our
+matrix class is outside published GEP models.
+
+4. Kernel/dual PCA does not make product feature access free
+----------------------------------------------------------
+Lijun Zhang, Tianbao Yang, Jinfeng Yi, Rong Jin, Zhi-Hua Zhou, Stochastic
+Optimization for Kernel PCA, AAAI2016:
+https://ojs.aaai.org/index.php/AAAI/article/view/10242
+https://cs.nju.edu.cn/_upload/tpl/01/0b/267/template267/zhouzh.files/publication/aaai16spca.pdf
+
+Source facts: The method optimizes a strongly convex Frobenius fitting
+objective with a nuclear-norm penalty and targets singular-value shrinkage
+of K. It accepts low-rank unbiased estimates of K, for example sampled
+kernel columns or random features. Its last-iterate convergence is
+O(1/T); it is not the current inverse-square-root-accuracy spectral-tail
+algorithm.
+
+Own access analysis: the product can be viewed through the kernel
+K_ij=a_i^T BB^T a_j, with a_i original A0 rows, or a small covariance
+kernel after support whitening. Evaluating a generic such kernel column
+requires true factor actions or a previously built Gram. A cheaper unbiased
+kernel estimate still needs a variance/cost construction; kernel duality
+does not supply it. Likewise a polynomial kernel over coefficient vectors
+does not equal the noncommuting G Qc G product simply because both involve
+polynomials. No kernel theorem inspected here removes those charges.
+
+5. Sobczyk et al.: bounded explicit core use only
+------------------------------------------------
+Aleksandros Sobczyk, Marko Mladenovic, Mathieu Luisier, Invariant subspaces
+and PCA in nearly matrix multiplication time, NeurIPS2024:
+https://proceedings.neurips.cc/paper_files/paper/2024/file/21f6bdb10b7e019543daf35012e79210-Paper-Conference.pdf
+
+Source facts: Theorem1.1 takes an explicit definite pencil and computes a
+spectral projector with logarithms of inverse gap and mass conditioning.
+Theorem4.1 explicitly starts given covariance H=X^T X. Theorem4.2 retains
+q=Theta(log(n)/sqrt(epsilon_PCA)) block-Krylov iterations. AppendixB.1
+imports the EIG routine for a bounded explicit matrix, with approximate
+diagonalization in TMM(L) times polylogarithms of dimension/accuracy.
+
+Own comparison conclusion: this is useful primary evidence for processing
+an already constructed small core. It does not eliminate true Gram setup,
+nor certify constant-cost implicit Gram entries. A gap-free additive Ritz
+extraction would additionally need to state how its perturbation/accuracy
+is chosen; exact invariant-subspace precision alone is gap-dependent.
+The current growing-rank comparison already charges a conservative
+O(L^4) max-pivot-Jacobi core cost below the leading input iterations, so
+using a faster core solver cannot invalidate the claimed strict exponent
+separation in that instance. No new solver claim is needed there.
+
+6. Reasoned priority assessment
+-------------------------------
+Already present in the primary literature:
+  * stochastic generalized Rayleigh objectives and covariance polynomials;
+  * independent-copy unbiasing and signed sample Hessians;
+  * the accelerated nonconvex-component CCA solve template, including its
+    characteristic full-gradient-cost^(3/4) expression;
+  * matrix-free metric simulation and approximate shifted inverses;
+  * fast computation on a supplied explicit covariance/core.
+
+The concrete extra obligation met by the current manuscript is different:
+from arbitrary dense raw A0,B0, obtain product-support coordinates and an
+O(mk)-cost sample action with bounded normalized expected square, using
+~O(I+m^(omega+zeta)) setup and ~O(I) adaptive probability refreshes;
+then retain gap-free spectral-tail accuracy through rank-r deflation and
+include all explicit output work. The parameter controlling the solve is
+theta relative to the product, not a factor condition or an actual gap.
+
+The inspected named GEP papers allow the mathematical matrix/oracle class,
+so describing the contribution as a new input model would be misleading.
+Their stated concrete theorems do not discharge that raw-factor access
+obligation. Once this obligation is proved, most of the new total upper
+bound is indeed a corollary of old generic optimization tools. The current
+manuscript's modest 'factor-access oracle and total-cost consequences'
+description matches that evidence. Whether this application-specific
+corollary, or an equivalent construction, appeared elsewhere remains a
+priority question. The comparisons above support the stated improvement
+over the checked routes; they do not establish global SOTA by exclusion.

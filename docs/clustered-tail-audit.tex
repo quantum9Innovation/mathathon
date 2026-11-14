@@ -1,0 +1,287 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[colorlinks=true,urlcolor=blue,linkcolor=blue]{hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newcommand{\R}{\mathbb R}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\range}{\operatorname{range}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\tO}{\widetilde O}
+\title{Clustered tails: a conditional product-approximation theorem and why it is not a new Krylov mechanism}
+\author{Research audit}
+\date{November 14, 2026}
+\begin{document}
+\maketitle
+
+\paragraph{Status.}
+The conditional theorem below is proved in the exact-real arithmetic model,
+using the established constant-accuracy randomized block Krylov theorem.
+It is \emph{not} the desired arbitrary-input theorem, and it is not evidence of
+a new state-of-the-art algorithm. Its acceleration is explained by the
+classical affine invariance of Krylov spaces and clustered-spectrum
+convergence. In particular, an apparent need for a new product-aware
+projector primitive disappears once iterates are kept in the range of the
+left factor. No finite-precision complexity theorem is claimed here.
+
+\section{Setting and conditional theorem}
+Let \(A\in\R^{n\times m}\), \(B\in\R^{m\times p}\),
+\(M=AB\), \(H=MM^\top\), \(I=m(n+p)\), and
+\(a=\rank A\). Write \(\lambda_i=\sigma_i(M)^2\).
+Fix \(1\le r<a\) and \(0<\theta<1\), and put
+\(t=\lambda_{r+1}>0\). The additional assumption is
+\begin{equation}\label{eq:cluster}
+ \lambda_a\ge(1-\rho)t,\qquad 0\le\rho\le\theta.
+\end{equation}
+Thus \(M\) has full row rank on \(\range A\), and its squared
+tail singular values lie in \([(1-\rho)t,t]\). The leading
+\(r\) values are arbitrary. This assumption may fail badly for a
+general product, for instance when \(B\) annihilates part of
+\(\range A^\top\).
+
+\begin{theorem}[Conditional clustered-tail result]\label{thm:cluster}
+Assume \eqref{eq:cluster}. Given constant-distortion input embeddings
+with their usual \(\tO(I+m^{\omega+\zeta})\) setup, there is a
+randomized exact-real arithmetic algorithm producing rank-at-most-\(r\)
+factors and their explicit product \(C\) such that
+\[
+ \Pr\{\norm{M-C}_2\le(1+\theta)\sigma_{r+1}(M)\}\ge1-\delta.
+\]
+Its construction costs
+\(\tO(Ir+m^{\omega+\zeta})\), and expansion costs \(O(npr)\).
+The threshold \(t\) need not be supplied.
+\end{theorem}
+
+The proof below first gives a version with an approximate projector. That
+version isolates a useful exact selfadjoint polynomial and avoids silently
+assuming an available orthonormal basis for \(\range A\). A subsequent
+simplification eliminates the projector actions and shows directly why the
+mechanism is classical Krylov acceleration.
+
+\section{Estimating a centering threshold with \(r+1\) probes}
+Let \(Z\in\R^{n\times(r+1)}\) have full column rank and lie in
+\(\range A\). It can be generated as \(Z=A\Omega\) for a
+Gaussian \(\Omega\), with probability one in exact arithmetic; a
+preconditioned choice is preferable for controlling its conditioning.
+Compute
+\[
+ G=Z^\top Z,\qquad K=(M^\top Z)^\top(M^\top Z),\qquad
+ t_0=\lambda_{\min}(K,G).
+\]
+Here the last expression is the smallest generalized eigenvalue, equivalently
+the minimum Rayleigh quotient of \(H\) on \(\range Z\).
+
+\begin{lemma}\label{lem:threshold}
+For every such full-rank \(Z\),
+\[
+ (1-\rho)t\le t_0\le t.
+\]
+The upper bound \(t_0\le\lambda_{r+1}(H)\) holds without the
+cluster assumption.
+\end{lemma}
+\begin{proof}
+On \(\range A\), the smallest eigenvalue of \(H\) is at
+least \((1-\rho)t\), proving the lower bound. The
+\((r+1)\)-dimensional space \(\range Z\) intersects the orthogonal
+complement of the first \(r\) eigenvectors nontrivially. A vector in
+that intersection has Rayleigh quotient at most \(t\).
+\end{proof}
+
+Generating \(Z\), applying \(M^\top\), and forming the two small
+Gram matrices cost \(O(I(r+1)+(n+p)(r+1)^2)\). Since \(r<m\),
+this is \(O(Ir)\) up to constants. Small-core generalized eigensolving
+costs at most \(\tO(m^{\omega+\zeta})\). Exact arithmetic is
+material: a conventional floating-point computation of a very small
+\(t_0\) in the presence of arbitrarily large head eigenvalues needs
+an explicit precision analysis.
+
+\section{An initially proposed approximate-projector construction}
+Let \(P=A^\top A\), and let \(\widetilde P\) satisfy
+\((1-\eta)P\preceq\widetilde P\preceq(1+\eta)P\), where
+\(0<\eta<1/2\) is fixed. Let \(\Pi_A\) be the orthogonal
+projector onto \(\range A\), and define
+\[
+ J=A\widetilde P^\dagger A^\top,\qquad c=1-\eta^2.
+\]
+The nonzero eigenvalues of \(J\) lie in
+\([1/(1+\eta),1/(1-\eta)]\); the kernels of \(P\) and
+\(\widetilde P\) agree.
+
+For an even integer \(j\), define the fixed selfadjoint polynomial
+\begin{equation}\label{eq:projector}
+ \widehat\Pi_A=I-(I-cJ)^j.
+\end{equation}
+Although an identity appears here, the polynomial vanishes on
+\((\range A)^\perp\).
+\begin{lemma}\label{lem:projector}
+For even \(j\),
+\[
+ 0\preceq\widehat\Pi_A\preceq\Pi_A,
+ \qquad \norm{\widehat\Pi_A-\Pi_A}_2\le\eta^j.
+\]
+Its action on a block of \(s\) vectors costs \(O(Isj)\) after
+the small-core inverse has been formed.
+\end{lemma}
+\begin{proof}
+On \(\range A\), every eigenvalue of \(I-cJ\) lies in
+\([-\eta,\eta]\). Even powers are positive semidefinite with norm
+at most \(\eta^j\). On the complementary space the same matrix
+equals the identity, so \eqref{eq:projector} is zero there. Each
+application of \(J\) uses \(A^\top\), a dense small-core inverse,
+and \(A\); the \(O(m^2s)\) middle cost is absorbed by \(O(Is)\).
+\end{proof}
+
+Choose even \(j=O(\log(1/\theta))\) so that
+\(\xi=\eta^j\le\theta^2/2\), and set
+\[
+ L=H-t_0\Pi_A,\qquad
+ \widehat L=H-t_0\widehat\Pi_A.
+\]
+On the tail of \(H\) inside \(\range A\), every eigenvalue of
+\(L\) has magnitude at most \(\rho t\). Outside \(\range A\),
+\(L\) is zero. Thus \(\sigma_{r+1}(L)\le\rho t\), and Weyl's
+singular-value inequality gives
+\[
+ \sigma_{r+1}(\widehat L)\le(\rho+\xi)t.
+\]
+Apply the known constant-relative-error randomized block Krylov theorem to
+the symmetric (possibly indefinite) operator \(\widehat L\). With
+polylogarithmically many block applications, it returns orthonormal
+\(U\in\R^{n\times r}\) satisfying
+\[
+ \norm{(I-UU^\top)\widehat L}_2\le2(\rho+\xi)t
+\]
+with the assigned failure probability. The theorem is applied to singular
+values, so indefiniteness causes no logical problem.
+
+Return \(C=UU^\top M\). Since
+\(H=t_0\widehat\Pi_A+\widehat L\) and
+\(0\preceq\widehat\Pi_A\preceq I\),
+\begin{align*}
+ \norm{M-C}_2^2
+ &=\norm{(I-UU^\top)H(I-UU^\top)}_2\\
+ &\le t_0+\norm{(I-UU^\top)\widehat L(I-UU^\top)}_2\\
+ &\le t+2(\rho+\xi)t
+ \le(1+\theta)^2t.
+\end{align*}
+This proves the claimed error bound. Use the factors
+\(X=U\), \(Y=M^\top U\); obtaining \(Y\) costs \(O(Ir)\).
+
+There are \(\tO(r)\) Krylov basis vectors and input passes. QR costs
+\(\tO((n+p)r^2)\), absorbed by \(\tO(Ir)\) because \(r\le m\).
+If a conventional block implementation would grow past dimension \(m\),
+cap it at the invariant-space dimension and use exact processing there;
+alternatively the theorem's polylogarithmic factors allow the core algebra
+bound directly. Dense small projected algebra costs
+\(\tO(m^{\omega+\zeta})\), using exponent slack to absorb logarithms.
+The even-\(j\) projector construction is fixed before Krylov starts,
+so there is no substitution of adaptively inaccurate nonlinear actions for
+a fixed symmetric operator.
+
+Allocate failure probability between the input embedding and the Krylov
+start. Threshold generation fails only on a measure-zero event in the
+exact Gaussian model. Expansion costs \(O(npr)\) in addition to every
+construction cost above.
+
+\section{Why the projector is unnecessary}
+On \(\range A\), \(\Pi_A\) is the identity. Choose the initial
+block within this space and preserve that invariant space in exact
+arithmetic. Then use
+\[
+ (H-t_0I)v=H v-t_0v,\qquad v\in\range A,
+\]
+instead of computing a projector. The unwanted ambient eigenvalue
+\(-t_0\) on \((\range A)^\perp\) never enters the iterates.
+
+A well-conditioned random start can be generated from a constant sketch.
+On the \(a\)-dimensional support of \(\widetilde P\), let
+\(G_0\) be standard Gaussian and set
+\(Z_0=A\widetilde P^{\dagger/2}G_0\). Its covariance restricted
+to \(\range A\) has eigenvalues in a fixed constant interval.
+The usual Gaussian starting-matrix estimates therefore lose only a
+constant covariance condition number. More explicitly, the leading
+\(r\)-row block has covariance bounded below by a constant, while
+the full norm is bounded above by a constant times the full Gaussian norm;
+independence of those two blocks is unnecessary for a union bound.
+
+For this implementation, the preceding error proof uses
+\(\sigma_{r+1}(L)\le\rho t\) directly, and gives the slightly
+stronger bound
+\[
+ \norm{M-C}_2^2\le t+2\rho t\le(1+\theta)^2t.
+\]
+The projector polynomial and its \(\log(1/\theta)\) inner factor
+are thus optional. They do not supply the source of the acceleration.
+
+\paragraph{Affine invariance.}
+For every fixed start \(Z_0\),
+\[
+ \mathcal K_q(H-t_0I,Z_0)=\mathcal K_q(H,Z_0),
+\]
+by the binomial formula and its inverse. The singular-value Krylov space
+for \(L\), containing powers \(L,L^3,\ldots\), is contained in an
+ordinary \(H\)-Krylov space of comparable degree. Consequently the
+conditional theorem uses no information unavailable to classical
+polynomial Krylov iteration. It changes the convergence analysis and the
+selection of the final rank-\(r\) subspace within that space.
+
+In floating point, a naive ambient-space implementation may introduce
+components outside \(\range A\), where the shift has eigenvalue
+\(-t_0\). One can retain coefficient representations and regenerate
+tall vectors from \(A\), or use the fixed approximate-projector
+version. Neither observation alone proves a stable bit complexity bound.
+Conditioning of \(A\), scale separation \(\norm M^2/t\), and
+loss of orthogonality have to be tracked explicitly.
+
+\section{Hard-regime accounting and novelty audit}
+In the supplied regime
+\(n=p=N\), \(m=N^{8/9}\), \(r=1\), \(\theta=1/m\),
+the additional hypothesis is
+\[
+ \sigma_m(M)^2\ge(1-1/m)\sigma_2(M)^2.
+\]
+Under that hypothesis, construction is
+\(\tO(N^{17/9}+N^{2+(8/9)\zeta})\), and explicit expansion is
+\(O(N^2)\). This equals the target exponent for this input class.
+It improves the displayed \emph{worst-case upper bounds} for unadapted
+Krylov and Gram routes on that class. It does not prove an improvement
+over the best previously known spectrum-adaptive Krylov method on the
+same class.
+
+Martinsson--Tropp's survey explicitly records affine invariance of Krylov
+spaces and the classical role of blocks for clustered eigenvalues
+(Sections 6.4--6.5). Musco--Musco give gap-free low-rank guarantees and
+spectrum-dependent improvements (Theorems 10 and 13). The theorem here
+is a short application of those tools after centering on the invariant
+space. The threshold estimator of Lemma~\ref{lem:threshold} is a useful
+explicit min--max observation, but no novelty claim is supported by the
+search performed so far. It should not be advertised as a new
+state-of-the-art AMM result.
+
+\paragraph{What remains open.}
+The arbitrary-input target must handle a tail spread across a constant
+interval as well as a narrow cluster. A signed shift then leaves a
+large negative tail, and constant-accuracy approximation of the shifted
+operator no longer implies \(O(\theta t)\) residual. The conditional
+proof supplies no universal threshold-local preconditioner, no cheap
+interior resolvent, and no arithmetic lower bound against such methods.
+
+\begin{thebibliography}{9}
+\bibitem{mm}
+C. Musco and C. Musco.
+\emph{Randomized Block Krylov Methods for Stronger and Faster Approximate
+Singular Value Decomposition} (2015), especially Theorems 10 and 13.
+\url{https://arxiv.org/abs/1504.05477}.
+\bibitem{mt}
+P.-G. Martinsson and J. Tropp.
+\emph{Randomized Numerical Linear Algebra: Foundations and Algorithms}.
+Acta Numerica 29 (2020), Sections 6.4--6.5.
+\url{https://arxiv.org/abs/2002.01387}.
+\bibitem{demmel}
+J. Demmel, I. Dumitriu, and O. Holtz.
+\emph{Fast Linear Algebra Is Stable} (2007).
+\url{https://arxiv.org/abs/math/0612264}.
+\end{thebibliography}
+\end{document}

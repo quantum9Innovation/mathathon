@@ -1,0 +1,395 @@
+Independent proof audit: sketch-preconditioned rank-one spectral approximation
+2026-11-14
+
+Verdict: the direct preconditioned-Lanczos/bisection wrapper is mathematically
+sound in exact arithmetic, provided the support restriction, actual-Rayleigh
+witness requirement, and probability bookkeeping below are included. I found
+no dependence on sigma_1/sigma_2 in the exact-arithmetic argument. This audit
+does not establish novelty, finite-precision stability, or the unrestricted
+~O(Ir+m^omega) target. It supports a rank-one tradeoff with polynomial accuracy
+dependence reduced by a more accurate Gram sketch.
+
+Notation: eta is Gram distortion, beta is failure probability, theta is target
+relative spectral-error slack. Take 0<eta<=1/10, 0<theta<1, I=m(n+p).
+
+1. Whitening and deficient-rank inputs
+
+Suppose the sketches satisfy
+(1-eta)P <= Ptilde <= (1+eta)P,
+(1-eta)Q <= Qtilde <= (1+eta)Q,
+where P=A^T A and Q=B B^T.
+
+For full rank, choose R^T R=Ptilde, Z=A R^(-1), G=Z^T Z,
+Q'=R Q R^T, and Q0=R Qtilde R^T. Then
+M=Z R B, MM^T=Z Q' Z^T, and
+(1+eta)^(-1)I <= G <= (1-eta)^(-1)I.
+
+For rank deficiency, DO NOT run Lanczos in the full m-dimensional coefficient
+space with a singular mass matrix. Its nullspace would give spurious zero
+minimum eigenvalues and witnesses with zero G-norm.
+
+Instead let E=range(Ptilde)=range(P), a=dim(E), and compute an m-by-a
+orthonormal basis U for E using small-core algebra. If a=0, return zero.
+Factor R_E^T R_E=U^T Ptilde U and define, implicitly,
+Z=A U R_E^(-1), G=R_E^(-T) U^T P U R_E^(-1),
+Q'=R_E U^T Q U R_E^T, Q0=R_E U^T Qtilde U R_E^T.
+The same identities and inequalities hold in dimension a. No full A U or U^T B
+is formed: each action uses core-vector products, A/A^T, and B/B^T, in O(I)
+operations. Core basis/factor construction costs ~O(m^omega). All subsequent
+formulas in this report apply in this restricted coordinate space.
+
+The theoretical matrix H=G^(1/2)Q'G^(1/2) is PSD and has the nonzero spectrum
+of MM^T. It is used only in the proof; the algorithm never computes sqrt(G).
+Write lambda=lambda_max(H)=sigma_1(M)^2.
+
+2. Initial bracket from the supplied core alone
+
+Let nu=lambda_max(Q0). Loewner comparison and the bounds on G give
+nu/(1+eta)^2 <= lambda <= nu/(1-eta)^2.
+Therefore L=nu/(1+eta)^2, U=nu/(1-eta)^2 form a bracket of width O(eta lambda),
+with L>=lambda/2 and U<=3lambda/2 for eta<=1/10.
+
+If Q0=0, then Q'=0 by the sketch inequality, hence M=0. Return zero. Conversely
+M=0 implies Q'=Q0=0 after restriction, so this is an exact zero test on the
+embedding event. It avoids undefined relative top-eigenvalue estimates.
+
+An approximate nu with relative error <=eta/10 is sufficient: widen L,U by
+the corresponding multiplicative factors, keep L>=lambda/2, and enlarge the
+universal constants below. There is no need to estimate nu to theta accuracy.
+The usual small-core eigensolver cost/precision convention must be stated.
+
+3. Uniform preconditioner bounds, even for t below lambda
+
+For every t in [L,U], define
+K_t=tG-GQ'G, E_t=K_t-(tI-Q0), W_t=(1+20eta)tI-Q0.
+The exact-core bracket is used for the following explicit constants.
+
+Let e=eta/(1-eta). Since
+||G-I||<=e, ||Q'||<=lambda/lambda_min(G)<=(1+eta)lambda,
+||Q0-Q'||<=eta||Q'||,
+we have
+||E_t|| <= e t + (2e+e^2+eta)(1+eta)lambda <= 9eta t.
+The last inequality uses eta<=1/10 and lambda<=2t.
+
+Thus Delta_t=W_t-K_t obeys
+11eta t I <= Delta_t <= 29eta t I.
+Also t>=nu/(1+eta)^2 implies
+W_t >= ((1+20eta)-(1+eta)^2)tI >=17eta t I.
+Consequently W_t is SPD throughout the bracket, including when K_t is
+indefinite. If W_t=L_t L_t^T is its Cholesky factorization, then
+C_t=L_t^(-1)K_t L_t^(-T)=I-L_t^(-1)Delta_t L_t^(-T)
+has spectrum contained in [-1,1].
+
+This is the key advantage of the direct wrapper: it does not require CG on
+an indefinite K_t, nor unsafe bisection decisions about the true top eigenvalue.
+Each C_t action costs O(I), with triangular solves costing O(m^2)<=O(I).
+Factor W_t once per bracket query in ~O(m^omega).
+
+4. Precisely the randomized Lanczos guarantee that is needed
+
+For a real symmetric C with known ||C||<=1, a random-start Lanczos/Rayleigh-Ritz
+oracle produces an actual unit witness y with quotient q=y^T C y satisfying
+lambda_min(C)<=q<=lambda_min(C)+tau,
+with probability >=1-beta_j in
+O(min{a,tau^(-1/2) log(a/beta_j)}) actions, up to endpoint conventions.
+
+A primary statement is Jiang-Yue-Zhou, An accelerated first-order method with
+complexity analysis for solving cubic regularization subproblems (2021), Lemma 1,
+printed p.481 / PDF p.11:
+https://rjjiang.github.io/papers/COAP2021.pdf
+The result there allows known norm bound U_H and costs
+O(min{a,sqrt(U_H/tau) log(a/beta_j)}). It is gap-free and returns a Rayleigh
+witness, not merely an eigenvalue estimate. The paper traces it to earlier
+randomized Lanczos bounds and Royer-Wright's Lemma 9.
+
+Do not substitute a scalar estimate with no corresponding witness. Fresh random
+starts at adaptive t make the conditional guarantee applicable; allocate beta_j
+over the O(log(max{1,eta/epsilon})) queries and union-bound with the embedding
+failures. Lanczos orthogonalization and a small Rayleigh-Ritz solve are absorbed
+by O(I q): for q<=a<=m, m q^2+q^3<=O(m^2 q)<=O(I q). If q reaches a, the
+Krylov space can be completed and the exact-arithmetic oracle terminates.
+
+5. Bisection decisions and the useful uncertain outcome
+
+Let mu=lambda_min(C_t), y the witness, x=L_t^(-T)y, and q its actual quotient.
+By congruence, K_t is PSD iff t>=lambda. On the successful oracle event:
+
+- q<0 implies mu<0 and lambda>t. Update the lower bound L=t.
+- q>=tau implies mu>=q-tau>=0 and lambda<=t. Update U=t.
+- 0<=q<tau is a useful stopping condition, not a failed sign test.
+
+For the third case, mu>=-tau gives K_t>=-tau W_t. Since W_t=K_t+Delta_t,
+(1+tau)K_t>=-tau Delta_t,
+hence lambda<=t+32tau eta t (using lambda_min(G)>=10/11).
+
+For the same witness, q<=tau and tau<=1/4 imply
+x^T K_t x <= tau(x^T K_t x+x^T Delta_t x),
+so its generalized Rayleigh quotient satisfies
+
+R_H(x):=x^T GQ'Gx/(x^T Gx)
+       >=t-43tau eta t.
+
+The inequality also holds if q<0, since then R_H(x)>t. Combining the two
+bounds and t<=3lambda/2 shows
+R_H(x)>=lambda-113tau eta lambda.
+
+For a requested Rayleigh error epsilon, take
+tau=min{1/4,epsilon/(256eta)}.
+An uncertain outcome then gives R_H(x)>=(1-epsilon)lambda with room to spare.
+
+If no uncertain outcome occurs, bisect until U-L<=epsilon L/4, then query t=L.
+Because L<=lambda, mu<=0 and q<=tau. The same witness inequality gives
+R_H(x)>=L-43tau eta L>=(1-epsilon)lambda.
+The total number of bracket queries is logarithmic in max{1,eta/epsilon}.
+The arithmetic action count is sqrt(eta/epsilon), not sqrt(eta)/epsilon.
+
+6. Rank-one spectral guarantee from a Rayleigh witness: one final action
+
+This conversion is necessary. A bare Rayleigh guarantee does not alone give the
+requested relative spectral rank-one residual.
+
+Let H_o=MM^T, lambda_1>=lambda_2 its leading eigenvalues, and z a unit vector
+with z^T H_o z>=(1-epsilon)lambda_1. The coefficient witness gives such a z by
+z=Zx/sqrt(x^T Gx). Set u=H_o z/||H_o z|| and return C=u u^T M.
+
+To prove the residual bound, define g=(lambda_1-lambda_2)/lambda_1.
+If g<=2epsilon, then
+||(I-u u^T)M||^2<=lambda_1<=lambda_2/(1-2epsilon).
+If g>2epsilon, the top-eigenvector overlap a=|<z,v_1>|^2 satisfies
+a>=1-epsilon/g>=1/2. After applying H_o once,
+sin^2 angle(u,v_1)<=(lambda_2/lambda_1)^2 (1-a)/a.
+Using H_o<=lambda_2 I+(lambda_1-lambda_2)v_1v_1^T gives
+
+||(I-u u^T)M||^2
+ <=lambda_2+(lambda_1-lambda_2)sin^2 angle(u,v_1)
+ <=lambda_2+2epsilon lambda_2^2/lambda_1
+ <=(1+2epsilon)lambda_2.
+
+Choose epsilon=theta/16. Both cases give
+||M-C||_2<=(1+theta)sigma_2(M).
+If lambda_2=0, the final H_o action eliminates every tail component exactly;
+the Rayleigh lower bound guarantees a nonzero top component. There is no
+log(lambda_1/lambda_2) term. Repeated top eigenvalues are covered by the first
+case. Compute H_o z and M^T u through A,B in O(I); explicit C costs O(np).
+
+7. Total arithmetic cost and exponent check
+
+SRHT sketches have s=~O(m/eta^2) rows and cost ~O(I) to apply. Form their
+Grams in T_MM(m,min(n,s),m)+T_MM(m,min(p,s),m). The independent source for the
+high-accuracy embedding is CNW, full version Appendix A.2:
+https://people.eecs.berkeley.edu/~minilek/publications/papers/stable_ammv2.pdf
+
+The complete rank-one construction and explicit-output bound is therefore
+
+~O(I*max{1,sqrt(eta/theta)}
+   +T_MM(m,min(n,s),m)+T_MM(m,min(p,s),m)+m^(omega+zeta)) +O(np).
+
+Logs include dimensions, 1/theta, 1/eta and confidence. This is not the original
+accuracy-logarithmic target; it is a concrete improved tradeoff if no stronger
+existing comparator subsumes it.
+
+For n=p=m^(9/8), theta=m^(-1/2), eta=m^(-3/50):
+s=~m^(28/25)<m^(9/8), asymptotically even with logs.
+I=m^(17/8), so input actions have exponent
+17/8+(1/2-3/50)/2=469/200=2.345.
+The sketched Gram exponent is
+1+28/25+1/(4*(28/25))=6561/2800=2.3432142857...
+The full output and square core have exponent 9/4=2.25.
+The exact Gram comparator has exponent 169/72=2.3472222222...
+Thus the displayed bound saves 1/450 in the exponent measured in m.
+With N=n=p, the exponents are 469/225 versus 169/81, a saving of 4/2025.
+Conventional Krylov's leading exponent is 19/8=2.375 in m.
+
+8. Remaining theorem boundaries / risks
+
+- This audit is for r=1. Sequential deflation to general r can introduce new
+  error and gap dependencies; do not assert the full rank-r target from this.
+- Keep eta distortion separate from the user's failure probability delta.
+- Support restriction and M=0 detection are part of the algorithm.
+- The preconditioner bounds are simultaneous for all bracket shifts on the
+  embedding event. Randomized Lanczos calls still require confidence allocation.
+- Finite-precision Cholesky, tiny cancellations, exact rank decisions, and the
+  last covariance action's preservation of a zero tail need a separate model and
+  stability analysis. No bit-complexity theorem is established here.
+- The setup/eigenvalue small-core model should be consistent with the existing
+  exact-real/SVD convention in the source notes. Approximate nu at eta accuracy
+  only widens constants; it must not be silently assumed exact at no cost.
+- The small asymptotic saving does not imply a practical finite-size speedup.
+- The earlier uniform negative-pole obstruction does not invalidate this method:
+  C_t uses data-dependent, generally noncommuting sketch preconditioners rather
+  than a fixed scalar function of MM^T.
+- Novelty against randomized PCA preconditioning and spectral-approximation
+  literature is being investigated separately; correctness is not a novelty claim.
+
+9. Adversarial audit of docs/sketch-preconditioned-spectral.tex
+
+The reviewed version uses h<=1/16, only (1-h)nu0<=nu<=nu0, the bracket
+[nu/(1+h)^2,nu/(1-h)^3], and F=(1+32h)tI-Q0. Its changed constants are
+valid, including the approximate coarse estimate:
+
+* t/lambda lies between (1-h)^3/(1+h)^2 and
+  (1+h)^2/(1-h)^3, hence between 2/3 and 3/2.
+* ||Q'||<=2t and nu0/t<=(1+h)^2/(1-h)<=1+4h.
+* With e=h/(1-h),
+  [e+2(2e+e^2+h)]/h <=7.476<10. Thus the claimed error 10ht,
+  22ht I<=Delta<=42ht I, and F>=28ht I follow.
+* Cholesky coordinates have spectrum in [-1/2,1].
+* With e_star=theta/8 and tau=e_star/(512h)<=1/4096, the claimed witness
+  loss 64 tau ht and uncertainty upper error 45 tau ht hold. Indeed
+  42(1+h)/(1-tau)<45<64 and 42(1+h)/(1+tau)<45.
+  The uncertain loss <=(3/2)*109 e_star lambda/512<e_star lambda.
+  At the final lower endpoint the loss is <=(e_star/4+e_star/8)ell.
+* The sign updates use the ACTUAL witness q, so they preserve the bracket.
+  A scalar estimate unaccompanied by its Rayleigh witness would not suffice.
+* Adaptivity is handled correctly by fresh random starts, conditioning on the
+  complete past, and a deterministic upper bound on the number of tests.
+* Orthogonalization a*k^2 and projected eigenprocessing k^3 are bounded by
+  m^2*k<=I*k because k<=a<=m and n,p>=m. No uncounted Krylov basis cost
+  changes the displayed exponent. Triangular inverses/factorizations per
+  threshold are absorbed by the logarithmic number of m^(omega+zeta) terms.
+
+The coarse nu estimate can also be justified using exactly Jiang et al.
+Lemma 1, without requiring the algorithm to know nu0. In the analysis set
+H=-Q0, U_H=nu0, epsilon=h*nu0. The lemma prescribes k=~O(1/sqrt(h))
+iterations on nu0 I+Q0. Ordinary Lanczos on Q0 has the SAME Krylov space
+and extremal Ritz vector, since scalar shifts preserve both. Therefore the
+unknown nu0 need never be computed to run these iterations, and the resulting
+actual Rayleigh nu has the desired relative guarantee. This should be said
+explicitly if the same lemma is used as the source for both coarse and
+threshold Krylov calls.
+
+The source is directly verified: Jiang-Yue-Zhou (2021), printed page 481,
+PDF page 11, Lemma 1, gives a unit-vector actual-Rayleigh additive minimum
+eigenvalue guarantee for arbitrary symmetric H with ||H||<=U_H, from a
+uniform-sphere random start, in min{dimension,~O(sqrt(U_H/epsilon))}
+Lanczos iterations. It applies with U_H=1 to each threshold matrix.
+https://rjjiang.github.io/papers/COAP2021.pdf
+
+One minor wording correction: the statement that the nonzero spectrum of
+MM^T equals the entire spectrum of G^(1/2)Q'G^(1/2), including zeros, is
+literally inaccurate when Q' is rank deficient. Say their nonzero spectra
+agree, with zeros added to the appropriate ambient dimensions.
+
+No substantive correctness gap was found in this reviewed real-arithmetic
+rank-one theorem. The rank-deficient support reduction, zero-product case,
+one-covariance-action finishing lemma, confidence bookkeeping, and example
+exponents are all valid as stated. Novelty and finite precision remain
+separate questions, as the manuscript already acknowledges.
+
+10. Stronger full-output-optimal parameter instance
+
+Independently verified by exact rational arithmetic:
+n=p=N, m=ceil(N^(50/59)), theta=m^(-25/59), h=m^(-7/100),
+and any fixed failure probability delta in (0,1), e.g. 1/100.
+In powers of m, outer dimension exponent a=59/50, sketch exponent
+k=1+2*(7/100)=57/50, and output exponent 2a=59/25.
+
+Term                     Exponent in m          Gap below output
+Input I                  109/50                 9/50
+Sketched Grams           3362/1425               1/1425
+Threshold actions        27811/11800             37/11800
+Square core              9/4                    11/100
+Coarse eigenestimate     407/200                 13/40
+Explicit output          59/25                  0
+
+The Gram exponent is 1+57/50+1/(4*(57/50))=3362/1425.
+The action exponent is 109/50+(25/59-7/100)/2=27811/11800.
+Every preprocessing term is strictly subquadratic in N. Choose the fixed
+fast-algebra exponent overhead smaller than 1/1425 in the m base (for
+example, allocate a total margin 1/10000 including all padding overhead).
+All logarithmic factors are absorbed by the remaining positive polynomial
+margin. Thus preprocessing is o(N^2), and full expansion takes O(N^2).
+The total is genuinely O(N^2), under the theorem's arithmetic convention;
+one need not weaken this particular instance to N^(2+o(1)).
+
+The SRHT row bound is ~m^(57/50) while n=p=Theta(m^(59/50)). The margin
+m^(1/25) absorbs the dimension, inverse-accuracy, and confidence logarithms.
+The adaptive union bound introduces only another logarithm of the number
+of calls, which also fits. For sufficiently large m, theta<=h<=1/16,
+so this is an admissible instance. Handling the finite initial range by a
+fallback does not change the asymptotic bound.
+
+Exact tall Grams and conventional rank-one Krylov have the SAME leading
+exponent for this choice:
+  1+59/50+1/(4*(59/50)) = 3528/1475,
+  109/50+(25/59)/2 = 3528/1475.
+Dividing by a=59/50 gives N^(7056/3481+o(1)), about N^2.027004.
+The exponent saving compared with these named routes is 94/3481.
+The relative accuracy is theta=Theta(N^(-1250/3481)).
+
+The named exact-product bound instead uses outer base N and inner exponent
+50/59, giving 1+50/59+59/200=25281/11800, about 2.142458 in N.
+Do not apply the tall-Gram base formula directly to this different shape.
+
+The specialization preserves the general theorem's scope: each fixed pair
+of arbitrary real factors A,B, including rank deficiency, cancellations,
+zero product, zero tail, and repeated leading singular values, has the
+stated success probability. No spectral-gap or condition-number promise is
+added. The embedding event is for each fixed input, not a single draw that
+works simultaneously for every possible A,B. This is the usual randomized
+algorithm quantifier. Novelty and finite-precision limitations are unchanged.
+
+11. Final sections 5-8 audit: Nyström finishing and general target rank
+
+The latest manuscript replaces the one-covariance-action/projector finishing
+step with right-side Nyström deflation. The new all-spectrum statement is
+correct. For H positive definite, subtracting Hz z^T H/s is a positive rank-one
+update, so its d-1 positive eigenvalues mu_j obey mu_j>=lambda_{j+1}(H).
+Their product is det(H)/s by the Schur determinant formula in a basis starting
+with the unit vector z. Consequently each ratio mu_j/lambda_{j+1}(H) is
+between 1 and their product lambda_1(H)/s. Continuity through H+epsilon I
+proves the semidefinite case; the H^(1/2)(I-ww^T)H^(1/2) representation
+proves positivity and the exact rank-one drop.
+
+The rank-one factors have correct dimensions: v=M^T z/sqrt(s) is a unit
+right vector, u=Mv, and C=uv^T=Mvv^T. Hence the residual Gram is exactly
+H-Hz z^T H/s. The claimed relative spectral bound follows immediately.
+No conditioning, gap, or nonzero-tail assumption has entered this step.
+
+For general rank, the following identities were checked independently:
+
+* V_i=B^T C_i, D_i=B V_i=Q C_i, and
+  R_i=I-D_i C_i^T give B_i=R_i B=B(I-V_i V_i^T).
+* Q_i=R_i Q R_i^T=Q-D_i D_i^T, because V_i is orthonormal.
+* c=R_i^T A^T z_i/sqrt(s_i) gives v=B^T c=M_i^T z_i/sqrt(s_i),
+  orthogonal to V_i. Thus c^T D_i=0 and c^T R_i=c^T.
+* With d=Qc=Bv, R_{i+1}=R_i-dc^T=(I-dc^T)R_i. Congruence by this
+  last factor yields exactly the manuscript's rank-two proxy update.
+* The initial Loewner event for Q is a deterministic matrix inequality and
+  remains valid after EVERY adaptive congruence R_i. No new sketches or
+  independent embedding event are needed. Sketch error does not accumulate.
+* Fixed W,L,G coordinates remain valid, and a zero residual is detected from
+  L Qtilde_i L^T=0 on that same embedding event.
+
+The eigenvalue induction is valid simultaneously for every index and yields
+lambda_1(H_r)<=(1-e)^(-r)lambda_{r+1}(H_0). With e=theta/(4r),
+(1-e)^r>=1-r e=1-theta/4, as required.
+
+The full arithmetic accounting also checks out. Q_i matvecs cost
+O(I+mi)=O(I), since i<=r<=m. Proxy updates and R_i/C_i/D_i bookkeeping
+cost O(m^2) per stage. Forming each L Qtilde_i L^T is a square-core
+operation covered by r*m^(omega+zeta). Initial Gram sketches are paid once;
+coarse estimation and threshold tests are paid r times, with the inner
+accuracy Theta(theta/r). True-vector formation, optional reorthogonalization,
+and final AD_r are covered by O(Ir), which is dominated by
+Ir*sqrt(h*r/theta). The final product is n-by-r times r-by-p. Allocating
+delta/(4r) to each stage's coarse estimate and delta/(4rK) to its fresh-start
+threshold calls, in addition to delta/4 for initial embeddings, suffices.
+Condition on all preceding randomness at each stage and test.
+
+Only two minor exposition/domain clarifications were sent to the parent:
+
+1. Explicitly define out-of-range singular/eigenvalues as zero, to cover
+   r=m=n (and the one-dimensional rank-one case) without an undefined
+   sigma_{r+1} or lambda_{r+1} index. The algorithm recovers exactly there.
+2. To retain the earlier primitive's exact stated domain tau<=1/4096, call it
+   with its theta parameter theta/r. Its guaranteed relative Rayleigh error
+   theta/(8r) is stronger than the required e=theta/(4r), and every displayed
+   bound remains unchanged. Alternatively one can explicitly broaden the
+   elementary primitive constants to the also-valid tau<=1/2048 range.
+
+The fixed-r quadratic-time corollary and both numerical comparison regimes
+remain correct. For every fixed r, all r and sqrt(r) factors and confidence
+logs preserve the strict construction margins; conventional output expansion
+costs O(N^2 r)=O(N^2). No substantive correctness, dimension, adaptive-sketch,
+confidence, or arithmetic-cost gap was found in sections 5-8.

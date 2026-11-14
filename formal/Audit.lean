@@ -1,0 +1,35 @@
+import HierarchicalAbsoluteSpectral
+
+/- Run `lake env lean Audit.lean` to inspect the exact exported statement
+and the foundational axioms used by its proof and the principal lemmas. -/
+
+#check HierarchicalAbsoluteSpectral.hierarchical_spectral_error
+#print HierarchicalAbsoluteSpectral.tailSingularValue
+#print axioms HierarchicalAbsoluteSpectral.hierarchical_spectral_error
+#print axioms HierarchicalAbsoluteSpectral.relative_perturbation
+#print axioms HierarchicalAbsoluteSpectral.weighted_young
+#print axioms HierarchicalAbsoluteSpectral.ideal_refinement_relaxation
+#print axioms HierarchicalAbsoluteSpectral.finite_relaxation_reset
+#print axioms HierarchicalAbsoluteSpectral.exact_carried_preimage
+#print axioms HierarchicalAbsoluteSpectral.true_cost_cancellation
+#print axioms HierarchicalAbsoluteSpectral.fine_cost_cancellation
+#print axioms HierarchicalAbsoluteSpectral.loglog_sq_isLittleO_log
+#print axioms HierarchicalAbsoluteSpectral.optimized_parameters
+#print axioms HierarchicalAbsoluteSpectral.inverseMetric_posDef
+#print axioms HierarchicalAbsoluteSpectral.weighted_error_from_floor
+#print axioms HierarchicalAbsoluteSpectral.inflated_coarse_invariant
+#print axioms HierarchicalAbsoluteSpectral.absoluteRootMatrix_defect
+#print axioms HierarchicalAbsoluteSpectral.idealMetric_defect
+#print axioms HierarchicalAbsoluteSpectral.constructed_ideal_refinement
+#print axioms HierarchicalAbsoluteSpectral.polynomial_inverseMetric_relative
+#print axioms HierarchicalAbsoluteSpectral.finite_refinement_invariant
+#print axioms HierarchicalAbsoluteSpectral.strong_action_dual_certificate
+#print axioms HierarchicalAbsoluteSpectral.physical_strong_action_certificate
+#print axioms HierarchicalAbsoluteSpectral.gram_projection_le_one
+#print axioms HierarchicalAbsoluteSpectral.physical_mass_bound
+#print axioms HierarchicalAbsoluteSpectral.physical_D_bound
+#print axioms HierarchicalAbsoluteSpectral.support_filter_spectral_error
+#print axioms HierarchicalAbsoluteSpectral.dyadicRoot_eq_exp
+#print axioms HierarchicalAbsoluteSpectral.dyadicNode_injective
+#print axioms HierarchicalAbsoluteSpectral.inverseRootInterpolant_at_node
+#print axioms HierarchicalAbsoluteSpectral.inverseRootInterpolant_degree

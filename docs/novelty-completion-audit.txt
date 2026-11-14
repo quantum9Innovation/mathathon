@@ -1,0 +1,376 @@
+Independent novelty and comparison completion audit
+2026-11-14. Scope: sketch-preconditioned-spectral.tex, especially its arbitrary
+two-factor, fixed-rank O(N^2) full-output consequence. No main/state edits.
+
+Conclusion
+----------
+The arithmetic gain against the named Gram, ordinary-Krylov, and exact-product
+routes survives this additional audit. I found no concrete published reduction
+that already establishes the same general-two-factor guarantee and total cost,
+and no concrete reduction invalidating the displayed output-optimal instance.
+That is a scoped search result, not a novelty or complete-SOTA certificate.
+
+The mechanism is substantially classical: full-subspace Gram sketches,
+whitening, preconditioned Lanczos on a shifted pencil, random-start additive
+eigenvalue approximation, Rayleigh recovery, and Schur/Nystrom deflation.
+The defensible candidate contribution is their particular two-factor assembly,
+global gap-free error accounting with h much larger than theta, and the
+resulting optimized total arithmetic bound. Do not call preconditioned
+Lanczos, sketch-refined eigenvectors, or Nystrom deflation new mechanisms.
+
+Carried-forward audits
+----------------------
+Read factor-pca-search.txt, oversampled-krylov-audit.txt, and
+product-literature-audit.txt before this search. Their checks already cover
+stable-rank AMM, product LELA/single-pass PCA, residual sampling/COD,
+generalized PCA from a supplied Gram, covariance-specific stochastic methods,
+and finite-Schatten/oversampled block-Krylov guarantees. Those conclusions
+are not computational lower bounds. In particular, scalar matvec lower bounds
+do not rule out arithmetic improvements through batching or factor sketches.
+
+Closest antecedents and the precise missing implications
+-------------------------------------------------------
+
+1. Classical preconditioned shifted-pencil Lanczos
+
+A. Knyazev, Preconditioned Lanczos Methods, Templates (2000).
+https://netlib.org/utk/people/JackDongarra/etemplates/node415.html
+The section explicitly applies Lanczos to T(B-mu A), with an SPD
+preconditioner and its induced inner product, then updates mu using the
+original pencil's Rayleigh quotient. It cites Scott (1981) and Knyazev
+(1986/1987) for the earlier method and convergence analysis.
+Thus shifting a pencil, preconditioning its zero eigenvalue, and recovering
+an original Rayleigh vector are old. The source does not construct the
+manuscript's two factor-Gram proxies or state its input/sketch/accuracy
+tradeoff. A new application/runtime corollary must be distinguished from
+a new eigenvalue iteration.
+
+2. EPSI: a particularly close randomized eigenvector antecedent
+
+R. Xu, Y. Lu (2025), What is a Sketch-and-Precondition Derivation for Low-Rank
+Approximation? Inverse Power Error or Inverse Power Estimation?, v2.
+https://arxiv.org/abs/2502.07993
+https://arxiv.org/pdf/2502.07993
+Theorem 2.2 assumes an additive shifted proxy
+X-3 eta I <= Xhat <= X-eta I and an already sufficiently accurate iterate;
+its displayed local linear coefficient is proportional to eta/(lambda1-lambda2).
+Theorem 2.4 explicitly assumes eta<(lambdak-lambda{k+1})/(3.5 sqrt(2)).
+These statements are prior art for sketch accuracy affecting convergence rather
+than the final accuracy floor. Their published estimates do not certify a
+global guarantee when eta dominates an arbitrarily small eigengap. The
+manuscript's h>>theta threshold wrapper cannot be replaced by merely citing
+EPSI's local estimate. This is a limitation of that implication, not proof that
+EPSI itself fails or cannot be analyzed more strongly.
+
+3. RLOBPCG: randomized whitening plus preconditioned eigensolving
+
+E. Epperly, T. Park, Y. Nakatsukasa (2026), Fast, High-Accuracy, Randomized
+Nullspace Computations for Tall Matrices.
+https://arxiv.org/abs/2602.16797
+Theorem 1.2 and Corollary 1.3 concern the smallest singular vector of a
+supplied tall matrix X. The theory ties embedding distortion to the relative
+gap between its two smallest squared singular values, and the runtime retains
+inverse-gap factors. It supplies no inexpensive tall Gram factor of the
+possibly indefinite complement tG-GQ'G. This is strong mechanism prior art,
+but not the general-product total-cost theorem under review.
+
+4. A new 2026 sketched-power spectral comparator
+
+S. Chenakkod, M. Derezinski, Accelerating Power Method with Fast Sketching
+for Stronger Low-Rank Approximation (May 2026).
+https://arxiv.org/abs/2605.09755
+https://arxiv.org/html/2605.09755v1
+Theorems 2.1/2.3 return width O(k), with squared spectral error at most
+(1+epsilon)*sigma{k+1}(X)^2 + (epsilon/l)*sum_{j>l}sigma_j(X)^2,
+using ~l/epsilon^2 sketch width and ~1/epsilon powering depth. They provide
+a valid stronger comparator than a generic unpowered range finder, but do not
+give the manuscript's exact rank-r near-optimal spectral guarantee directly.
+
+Concrete parameter audit of this possible reduction (my calculation): take
+k=1 and a rank-m product with sigma2=...=sigmam=1. For 1<=l<=m, the displayed
+bound becomes 1+epsilon*m/l. To certify error <=1+theta, it requires
+epsilon*m/l <= 2theta+theta^2. Consequently
+  l/epsilon^2 >= m^2/((2theta+theta^2)^2*l)
+               >= m/(2theta+theta^2)^2.
+At theta=m^(-25/59), this exceeds both inner rank m and the outer dimension
+N=m^(59/50). A direct invoke of that theorem therefore does not obtain the
+required reduced sketch. This calculation is about the published sufficient
+guarantee, not a lower bound on the algorithm. Also, width O(k) is not the
+same output-rank requirement as width exactly k.
+
+5. Generalized PCA and generalized eigenvector oracle reductions
+
+Sobczyk, Mladenovic, Luisier (NeurIPS 2024), PCA in matrix-multiplication time.
+https://proceedings.neurips.cc/paper_files/paper/2024/file/21f6bdb10b7e019543daf35012e79210-Paper-Conference.pdf
+Its Theorem 4.1 starts with a supplied covariance H=X^T X; covariance
+construction is not an input-linear preprocessing theorem. Applying the
+dense-pencil result to AB therefore still requires paying for true Grams
+or supplying a new equivalent representation.
+
+Allen-Zhu, Li (ICML 2017), Doubly Accelerated Methods for Faster CCA and
+Generalized Eigendecomposition.
+https://proceedings.mlr.press/v70/allen-zhu17b/allen-zhu17b.pdf
+Such oracle reductions are relevant alternate wrappers once appropriate
+linear-system oracles exist. They do not on their own construct the cheap
+fine-scale complement oracle from separate A,B. Treating that missing oracle
+as unit cost would be an invalid comparison. The manuscript's direct bounded
+Lanczos argument makes this cost explicit.
+
+6. Positive-shift PSD solvers and multilevel preconditioning
+
+Derezinski, Musco, Yang (SODA 2025), Faster Linear Systems and Matrix Norm
+Approximation via Multi-level Sketched Preconditioning.
+https://arxiv.org/abs/2405.05865
+Theorem 1.2 supplies ~O(d^2+d_lambda^omega) positive-regularized solves for
+an explicit PSD matrix X+lambda I, lambda>0. The more general theorem needs
+an outlier/average-condition-number parameter. Importantly, Theorem 3.1 and
+Algorithm 3 ALSO support supplied rectangular features X without forming
+X^T X. It would be incorrect to dismiss the work as only explicit-Gram
+algorithms. The missing implication here is access to a cheap positive Gram
+factor of tG-GQ'G (or its inflated fine approximation), a signed/noncommuting
+Gram expression. Forming its true dense matrix or such a factor is not free.
+Its spectral-sum applications do not return the required product low-rank
+factors. The nested-preconditioning mechanism is close prior art, but no
+checked theorem supplies the signed two-factor threshold cost directly.
+
+7. PSD/inertia testing with faster finite-Schatten query rates
+
+Needell, Swartworth, Woodruff, Testing Positive Semidefiniteness Using Linear
+Measurements (FOCS 2022; arXiv v4 2023).
+https://arxiv.org/abs/2204.03782
+Theorem 17 gives a one-sided tester for lambda_min(E)<=-epsilon*||E||_{S_p}
+using ~epsilon^(-p/(2p+1)) matvecs; a rejection can provide a negative witness.
+Its normalization matters. For a<=m and ||E||2<=1, the only general bound is
+||E||_{S_p}<=m^(1/p). To detect a spectral threshold -tau uniformly, the
+certified query count becomes ~m^(1/(2p+1))*tau^(-p/(2p+1)).
+Write tau=m^(-b), where here b=25/59-7/100<2. Its exponent exceeds b/2
+by (1-b/2)/(2p+1)>0 for every finite p. Thus this direct substitution does
+not improve the manuscript's tau^(-1/2) uniform guarantee. Nor does exact
+inertia factorization avoid paying to materialize the true pencil.
+
+Current exponent and arithmetic-model checks
+-------------------------------------------
+Amanov, van den Berg, Zuiddam (October 2026), Theorem 1.2 and Corollary 4.17:
+https://arxiv.org/abs/2610.30054
+https://arxiv.org/pdf/2610.30054
+They state the rectangular bound over EVERY field, hence directly over R:
+omega_R(1,k,1)<=1+k+1/(4k) for k>=1/2, and omega_R<=9/4.
+Theorem 1.2 also provides the general three-exponent shape bound; it is not
+restricted to square multiplication. Bounds mean algorithms with arbitrarily
+small fixed positive exponent overhead, not finite-size practical speed.
+The November all-fields exposition retains 9/4:
+https://arxiv.org/abs/2611.09716
+No verified improvement invalidating these comparison exponents was found.
+
+For N=m^(59/50), theta=m^(-25/59), h=m^(-7/100), fixed r, fixed delta:
+  input exponent:       109/50;
+  sketch row exponent:  57/50 < 59/50;
+  sketched-Gram cost:   3362/1425 < 59/25 by 1/1425;
+  threshold actions:    27811/11800 < 59/25 by 37/11800;
+  square-core cost:     9/4 < 59/25;
+  coarse estimate:      407/200 < 59/25;
+  output:              59/25, exactly N^2.
+With a sufficiently small fixed exponent overhead, all construction terms
+remain o(N^2), including their logarithmic factors. For fixed r all r and
+sqrt(r) multipliers are constants, and conventional expansion costs O(N^2r).
+The named Gram/Krylov exponent is 7056/3481 in N; exact product is
+25281/11800. These calculations match the manuscript.
+
+This is exact-real arithmetic with comparisons, roots, exact support/rank
+decisions, and exact factor actions. Bounded-norm Ritz problems need only
+additive numerical accuracy and logarithmic tolerance overhead. There is no
+finite-precision stability or bit-complexity guarantee for whitening, tiny
+tails, or exact recovery. In particular, do not rephrase the result as an
+unconditional fixed-precision O(N^2) implementation. The manuscript correctly
+distinguishes these models. The zero-tail theorem is compatible with its
+exact model because each right-side Nystrom step drops the true residual
+rank exactly, even though its Rayleigh vector is approximate.
+
+Recommended closest-antecedents conclusion
+-----------------------------------------
+The paper should describe a rigorously analyzed assembly of classical
+sketching and preconditioned-eigenvalue tools, with a candidate new
+separate-factor total-runtime corollary. The comparison against the checked
+Gram/Krylov/product bounds is established within the stated model. The
+additional primary-source checks above did not produce a subsuming theorem
+or a concrete counter-reduction, but they do not establish a first-ever or
+complete state-of-the-art claim. EPSI and classical shifted-pencil Lanczos
+are the closest antecedents for the iteration; full-subspace Gram sketching
+is the antecedent for setup; classical Nystrom/Schur identities are the
+antecedents for deflation. Independent specialist review should assess the
+novelty of their combined two-factor bound rather than of those components.
+
+Additional independent review: two-level matrix-free fine proxies
+---------------------------------------------------------------
+Read the saved docs/multilevel-proxy-audit.txt after the preceding completion
+audit. The proved two-level construction is mathematically sound under its
+stated exact-arithmetic model, with one harmless displayed-endpoint correction
+sent to its author. No shared mathematical source was changed here.
+
+Endpoint correction: section 3's upper t endpoint needs numerator (1+h)^2.
+Indeed section 4 gives lambda_h<=(1+h)^2 lambda and s_h<=lambda_h, so
+  t <= (1+h)^2 lambda / [(1-h/8)(1-h)^2].
+The proof only uses intersection with the original bracket t<=1.5 lambda,
+so dropping that fine upper endpoint is also sufficient. This correction
+does not change the algorithm, cost, or theorem.
+
+The fine-product bracket needs no true-factor refinement and is valid.
+P_H,Q_H are 2H-relative proxies for P_h,Q_h when h<=H/4 and H<=1/32.
+Their support and the whitening W,L are unchanged. Apply the original
+Rayleigh primitive to A_h,B_h with coarse distortion 2H and requested
+parameter h; its true actions now cost J_h. The returned s_h is between
+(1-h/8)lambda_h and lambda_h. Applying the two fine OSE inequalities gives
+the stated bracket for the true product, and its lower endpoint is at least
+(1-33h/8)lambda. The J_h sqrt(H/h) cost is absorbed by the final
+J_h sqrt(H/theta), since theta<=h. No fine dense Gram is formed.
+
+The fine complement MUST retain its fine mass matrix:
+  K_h=t G_h-G_h Q'_h G_h.
+In coarse whitening coordinates, ||G_h-G||<=h||G|| and
+||Q'_h-Q'||<=h||Q'||. A direct expansion gives
+  ||G_h Q'_h G_h-G Q'G||
+    <= ||G||^2 ||Q'|| [(1+h)^3-1].
+Together with the t(G_h-G) term, ||G||<=16/15, and ||Q'||<=2t,
+this is below 10ht. Consequently Delta_h=F_h-K lies in [22,42]ht I.
+The fine bracket implies K>=-5ht I, so F_h>=17ht I and the note's
+conservative 16ht I is safe. Since Delta_H-Delta_h=F_H-F_h,
+  0<=F_H-F_h<=42Ht I.
+This yields D=J_H^(-1)F_h J_H^(-T) in [h/(3H),1], using h/H<=1/4.
+
+The polynomial implementation is explicit and linear. Set a=h/(3H),
+rho=(1-sqrt(a))/(1+sqrt(a)), c=(1+sqrt(a))^2/4, and
+T=(1+a-2D)/(1-a). The Legendre generating function and |P_j(t)|<=1
+on [-1,1] give
+  D^(-1/2)=c^(-1/2) sum_{j>=0}rho^j P_j(T),
+with truncation error at most rho^(k+1)/sqrt(a). Thus degree
+O(a^(-1/2)log(1/(eta sqrt(a)))) suffices even for relative error eta.
+The standard three-term recurrence needs k D actions and O(k) scalar
+coefficient operations, using only arithmetic and sqrt(a). Repeated scalar
+comparison chooses k, so no logarithm/trigonometric evaluation oracle is
+required. Primary classical identities:
+https://dlmf.nist.gov/18.12.E11
+https://dlmf.nist.gov/18.14.E1  (Jacobi parameters alpha=beta=0).
+
+For eta=h/1000 the polynomial is positive on the whole interval, so
+R=J_H^(-T)p(D) is invertible and FIXED at a given threshold. The effective
+preconditioner is exactly
+  Fbar=R^(-T)R^(-1)=J_H p(D)^(-2) J_H^T.
+The relative polynomial guarantee implies
+(1+eta)^(-2)F_h<=Fbar<=(1-eta)^(-2)F_h. With ||F_h||<=6t, the
+note's error ||Fbar-F_h||<=24eta t is safe. Its conservative
+  21ht I<=Fbar-K<=43ht I, Fbar>=15ht I,
+  spectrum(R^T K R) subset [-2,1]
+then follows. Applying random-start Lanczos with norm bound 2 changes only
+constants. The witness-64 and uncertainty-46 bounds are safe, and their sum
+fits the existing tau=e_*/(512h), e_*=theta/8 choice. Actual Rayleigh values
+and congruence preserve the inertia signs exactly.
+
+Each outer action uses one O(I) true action plus
+~sqrt(H/h) fine-proxy actions, each O(J_h). Hence the displayed
+  I+G_H+m^omega+m^2/sqrt(H)
+    +I sqrt(h/theta)+J_h sqrt(H/theta)+np
+bound is correct. Replacing the polynomial by adaptively stopped inner CG
+would require a separate inexact/nonlinear-oracle analysis; the saved note
+does not make that substitution. Orthogonalization remains charged by the
+outer I actions, since inner polynomial evaluation stores only O(m) vectors.
+
+The new example checks exactly:
+N=m^(59/50), theta=m^(-11/25), H=m^(-7/100), h=m^(-17/200).
+Fine rows have exponent 117/100<59/50, and J_h has exponent 217/100.
+Construction exponents are 3362/1425, 943/400, 471/200, 9/4, and 407/200,
+all strictly less than output exponent 59/25. Thus total O(N^2), with
+construction o(N^2), remains valid. The existing one-level tradeoff cannot
+achieve this accuracy at these same dimensions: its input-action requirement
+forces distortion exponent at least .08, while its Gram setup then exceeds
+2.36. This is a genuine improvement of that optimized bound.
+
+The conditional further-level recurrence in section 7 has correct displayed
+arithmetic: a_j<=u/2+a_{j-1}/4 and a_L>=2(d-u) yield
+u>=(6d-3*4^(-L)a_0)/(8-2*4^(-L)). Its limiting 3d/4 value is only a
+candidate envelope; the note correctly leaves nested bracket/perturbation
+accounting unfinished rather than asserting a proved infinite-level theorem.
+
+Closest multilevel antecedent remains Derezinski-Musco-Yang. Its explicit
+feature-input theorem already keeps preconditioner Grams implicit and solves
+nested systems; those mechanisms are established. The precise missing
+reduction for this application is cheap positive feature access to
+F_h=tG_h-G_h Q'_hG_h+32ht I. The current data instead supply a signed
+operator via separate positive factor sketches. I found no primary theorem
+that automatically transfers the MSP runtime to this signed operator or
+already states the new two-factor spectral LRA consequence. This does not
+certify novelty of the resulting application-specific bound.
+
+Addendum: final fixed-depth recursion audit (2026-11-14)
+-------------------------------------------------------
+This supersedes the earlier paragraph calling Section 7 conditional. The
+revised, saved Section 7 now proves the fixed-L extension, including the
+nested bracket/perturbation accounting. I independently checked that version
+and found no further gap. An input-dependent growing-depth theorem remains
+outside the result.
+
+Take fixed L, h_0<=1/1024, h_j<=h_{j-1}/8, and theta<=h_L. Define
+F_j=K_j+128h_j tI, with K_0=tI-Q_0. On the validity window
+|t-lambda|<=16h_j lambda, the original metric satisfies
+||G||<=1024/1023, t>=(63/64)lambda, and ||Q'||<=2t. The direct proxy
+expansion gives ||K_j-K||<=10h_j t, including the coarse-whitening case.
+Therefore
+  K>=-17h_j tI, ||F_j||<=4t,
+  118h_j tI<=F_j-K<=138h_j tI, F_j>=100h_j tI.
+Validity at level j implies validity at all preceding levels. This uniform
+window statement is necessary when a fine product's norm search evaluates
+thresholds outside an earlier true-product bracket.
+
+If Fbar_{j-1}=R_{j-1}^{-T}R_{j-1}^{-1} satisfies
+  117h_{j-1}tI<=Fbar_{j-1}-K<=139h_{j-1}tI,
+  Fbar_{j-1}>=99h_{j-1}tI,
+then 0<=Fbar_{j-1}-F_j<=139h_{j-1}tI and
+  spectrum(R_{j-1}^T F_j R_{j-1})
+    is contained in [h_j/(2h_{j-1}),1].
+The same explicit Legendre inverse-root polynomial, with relative error
+h_j/1000, gives R_j=R_{j-1}p_j(D_j). Its effective Fbar_j differs from
+F_j by at most 16h_j t/1000, so the displayed [117,139] and 99 bounds
+reset at level j rather than accumulating over levels. The base case is
+the exact factorization of F_0. The resulting true preconditioned threshold
+operator has spectrum in [-1,1].
+
+For the norm of product A_j B_j, expand the preceding true-lambda bracket
+to [(1-h_j)^2 ell_{j-1},(1+h_j)^2 b_{j-1}]. Every threshold is within
+8h_{j-1}lambda of lambda. On this search, the difference Fbar_{j-1}-K_j
+lies in [115,141]h_{j-1}tI. Use the TRUE fine mass G_j, not G; its
+eigenvalues are between .99 and 1.01. Actual-Ritz-value Lanczos therefore
+has the stated witness and uncertainty bounds with conservative constants
+256 and 256. The choice tau=e/(2048h_{j-1}), e=h_j/8, leaves enough
+margin both for an uncertain witness and for the final lower-bracket call.
+Translating its actual fine-product Rayleigh value s_j by
+  ell_j=s_j/(1+h_j)^2,
+  b_j=s_j/[(1-h_j/8)(1-h_j)^2]
+gives a true-lambda bracket within (1+-5h_j)lambda. This closes the
+next validity window. The old witness-64 constant for inflation 32 is not
+being reused with inflation 128.
+
+The implementation recurrence and telescoping are correct for fixed L:
+  c_0=O(m^2),
+  c_j=~O((J_{h_j}+c_{j-1})sqrt(h_{j-1}/h_j)).
+Together with final sqrt(h_L/theta) threshold iterations this gives
+  ~O_L(I+G_{h_0}+m^omega+m^2/sqrt(h_0)
+       +I sqrt(h_L/theta)
+       +sum_{j=1}^L J_{h_j}sqrt(h_{j-1}/theta)+np).
+Each proxy-only norm refinement is absorbed in that displayed sum. Fresh
+Lanczos starts after conditioning on previous outcomes and a union bound
+over bounded call counts handle adaptive failures. Simultaneous OSE events
+handle the adaptive congruences; no fresh embedding is required for each
+threshold. Products of degree logarithms are still polylogarithmic for
+fixed L, which is the scope of the statement.
+
+The stronger explicit L=2 instance also checks:
+  N=m^(59/50), theta=m^(-56/125),
+  (h_0,h_1,h_2)=(m^(-7/100),m^(-17/200),m^(-89/1000)).
+The maximum construction exponent is 4719/2000=2.3595, versus output
+59/25=2.36. Hence construction is N^(2-1/2360+o(1)) and total explicit
+output costs O(N^2). Fine-level widths have exponents 1.17 and 1.178,
+strictly below ambient exponent 1.18, so the embedding logarithms fit.
+Constant-rank deflation leaves these exponents unchanged. All these claims
+remain exact-real arithmetic statements with sufficiently small fixed
+matrix-multiplication exponent slack, not finite-precision algorithms or
+practical crossover estimates. The closest-antecedent and unresolved
+novelty qualifications above remain unchanged.

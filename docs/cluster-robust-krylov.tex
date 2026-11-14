@@ -1,0 +1,669 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[colorlinks=true,urlcolor=blue,linkcolor=blue,citecolor=blue]{hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newcommand{\R}{\mathbb R}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\K}{\mathcal K}
+\newcommand{\range}{\operatorname{range}}
+\title{Direct cluster-robust bounds for randomized\\small-block Krylov spaces}
+\author{Working manuscript: proof and priority review in progress}
+\date{November 14, 2026}
+\begin{document}
+\maketitle
+\begin{abstract}
+We bound the actual fundamental matrix interpolation polynomials for
+independent Gaussian similarities of real diagonal blocks. For every block
+size $b$, number of blocks $d$, and fixed admissible spectra in an interval
+of length $L$, their simultaneous growth is at most
+\[
+ (1000d^8b^5\beta^{-4}L/\Delta)^{d-1}
+\]
+with probability at least $1-\beta$.
+Here $\Delta$ is the minimum cross-block gap; no within-block gap appears.
+A terminal block-Lanczos polynomial has a resolvent inverse bounded by the
+norm of the original Gaussian start. Conditioning on the other blocks then
+restores independent full-covariance Gaussian rows at a fresh block.
+Fractional moments along elimination paths keep the logarithm of the
+prefactor linear in $d$, up to logarithms. This proves a direct
+cluster-robust small-block Krylov angle bound and its scalar-filtered
+consequence. For positive target spectra we additionally prove uniform
+growth on the lower tail in terms of relative cross-block gaps, removing
+condition-number dependence. Analysis-only padding extends this to a
+sliding $b$th-order relative gap, at at most twice the startup depth.
+It does not prove the previously conjectured intermediate
+factor bounds, which have a known counterexample. No new matrix-product
+quadratic-time algorithm or finite-precision theorem is claimed.
+\end{abstract}
+
+\section{Statement and scope}
+For a matrix polynomial $P(z)=\sum_{j=0}^{s}z^j C_j$, always use
+\emph{left evaluation with right coefficients}:
+\[
+ P(B)=\sum_{j=0}^{s}B^j C_j.
+\]
+Scalar-variable products cannot generally be evaluated by substituting a
+matrix into each factor separately.
+
+Fix integers $b\geq1$, $d\geq2$. Let $\Lambda_1,\ldots,\Lambda_d$
+be fixed real diagonal $b$-by-$b$ matrices with pairwise disjoint spectra.
+Draw independent standard Gaussian $\Omega_i\in\R^{b\times b}$ and put
+$B_i=\Omega_i^{-1}\Lambda_i\Omega_i$. All inverses in the statements
+exist almost surely. Let $[a,c]$ contain the spectra, $L=c-a>0$, and
+\[
+ \Delta=\min_{i\ne j}\min_{\lambda\in\operatorname{spec}\Lambda_i,
+                 \eta\in\operatorname{spec}\Lambda_j}|\lambda-\eta|>0.
+\]
+Write $F_i$ for the degree-at-most-$d-1$ fundamental polynomials satisfying
+$F_i(B_j)=\delta_{ij}I_b$.
+
+\begin{theorem}[Direct interpolation growth]\label{thm:main}
+For every $0<\beta<1$ and every fixed admissible collection of spectra,
+\[
+ \Pr\left\{\max_i\sup_{z\in[a,c]}\norm{F_i(z)}_2
+ \leq\left(\frac{1000d^8b^5}{\beta^4}\frac L\Delta\right)^{d-1}
+ \right\}\geq1-\beta.
+\]
+The constant is independent of all eigenvalues and all within-block gaps,
+including zero within-block gaps. In particular, the logarithm of the
+spectrum-independent prefactor is $O(d\log(db/\beta))$.
+\end{theorem}
+
+The block partition is part of the hypothesis. Positive cross-block gap
+for a partition into equal-size blocks is not equivalent to saying only
+that each eigenvalue has multiplicity at most $b$.
+Probability is separate for every fixed input. The theorem does not say
+that one random draw works for every spectrum simultaneously.
+
+Shao's structural analysis \cite{shao} formulates the corresponding Krylov
+angle question using intermediate nonnormal factors. Their proposed
+spectrum-independent bounds were subsequently refuted \cite{stepaniants}.
+Theorem~\ref{thm:main} controls the actual interpolants instead. Its
+possible novelty and precise relationship to other cluster-robustness
+theorems are under independent review; none of the classical ingredients
+below is individually claimed new.
+
+\section{Two elementary preliminaries}
+\begin{lemma}[Independent Gaussian rows]\label{lem:rows}
+Let $N\in\R^{b\times b}$ have independent centered Gaussian rows whose
+covariance matrices are each at least $h^2I_b$, where $h>0$. Then
+\[
+ \Pr\{\sigma_{\min}(N)\leq ht\}\leq b^{3/2}t\qquad(t>0).
+\]
+The assertion also holds conditionally when the covariance lower bound is
+fixed by the conditioning.
+\end{lemma}
+\begin{proof}
+Conditioning on the other rows, a row's distance $D_i$ to their span has
+small-ball probability at most $\sqrt{2/\pi}\,u/h$ at radius $u$.
+The other rows have rank $b-1$ almost surely. For invertible $N$,
+$\norm{N^{-1}}_F^2=\sum_iD_i^{-2}$. If all $D_i>\sqrt b\,ht$, this
+sum is less than $(ht)^{-2}$. A union bound proves the claim. The same
+argument proves nonsingularity almost surely and covers $b=1$.
+\end{proof}
+
+\begin{lemma}[Generic interpolation]\label{lem:generic}
+For any nonempty subset $S$ of the blocks, let
+$A_S=\operatorname{diag}(\Lambda_i:i\in S)$,
+$\Gamma_S=\operatorname{col}(\Omega_i:i\in S)$, and $s=|S|$.
+Then
+\[
+ [\Gamma_S,A_S\Gamma_S,\ldots,A_S^{s-1}\Gamma_S]
+\]
+is nonsingular almost surely. Consequently the degree-at-most-$s-1$
+interpolation map on the matrices $(B_i:i\in S)$ is bijective.
+These assertions hold simultaneously for all subsets.
+\end{lemma}
+\begin{proof}
+The determinant is a polynomial in the Gaussian entries. At every
+$\Omega_i=I_b$, permutation of rows and columns splits it into $b$
+scalar Vandermonde determinants, each using one eigenvalue from each
+block. All are nonzero by cross-block disjointness. Thus its zero set
+has Gaussian probability zero. Multiplication of block row $i$ by
+$\Omega_i^{-1}$ identifies this matrix with the left-evaluation map.
+There are only finitely many subsets.
+\end{proof}
+
+\section{A terminal polynomial with a controlled resolvent inverse}
+We normalize all spectra to $[0,1]$ until the end of the proof.
+Consider a subset of $q\geq1$ blocks, and abbreviate $A=A_S$ and
+$\Gamma=\Gamma_S$. Choose a block orthonormal Krylov basis
+$V_0,\ldots,V_{q-1}$ by a fixed measurable Gram--Schmidt/QR rule applied
+to $[\Gamma,A\Gamma,\ldots,A^{q-1}\Gamma]$. This rule uses only the
+blocks in $S$. Lemma~\ref{lem:generic} rules out breakdown.
+There are right-coefficient polynomials $P_j$ of degree $j$ such that
+\[
+ V_j=\sum_{t=0}^j A^t\Gamma C_{t,j},\qquad
+ P_j(z)=\sum_{t=0}^jz^t C_{t,j},
+\]
+with nonsingular leading coefficient $C_{j,j}$.
+By symmetry of $A$, the terminal block-Lanczos recurrence is
+\[
+ A V_{q-1}=V_{q-2}E_{q-1}^{\mathsf T}+V_{q-1}D_{q-1}.
+\]
+The first term is absent for $q=1$. Here $\norm{D_{q-1}}_2\leq1$,
+$\norm{E_{q-1}}_2\leq1$, since $\norm A_2\leq1$.
+Define
+\begin{equation}\label{eq:R}
+ R(z)=zP_{q-1}(z)-P_{q-2}(z)E_{q-1}^{\mathsf T}
+                         -P_{q-1}(z)D_{q-1}.
+\end{equation}
+
+\begin{lemma}[Terminal resolvent identity]\label{lem:resolvent}
+The polynomial $R$ annihilates each $B_i$, $i\in S$, under left
+evaluation. For $z\notin\operatorname{spec}(A)$,
+\[
+ W(z):=V_{q-1}^{\mathsf T}(zI-A)^{-1}\Gamma,
+ \qquad W(z)R(z)=I_b.
+\]
+In particular $R(z)$ is invertible there and
+\[
+ \norm{R(z)^{-1}}_2\leq
+ \frac{\norm\Gamma_2}{\operatorname{dist}(z,\operatorname{spec}A)}.
+\]
+If $G_S=\max_{i\in S}\sup_{z\in[0,1]}\norm{F_i^S(z)}_2$ denotes
+the actual fundamental-polynomial growth on $S$, then
+\[
+ \sup_{z\in[0,1]}\norm{R(z)}_2
+       \leq3qG_S\max_{i\in S}\norm{\Omega_i^{-1}}_2.
+\]
+\end{lemma}
+\begin{proof}
+The terminal recurrence says $\sum_{\ell=0}^qA^\ell\Gamma C_\ell=0$
+for the coefficients of $R$. Its block rows imply $R(B_i)=0$.
+For every integer $\ell\geq1$,
+\[
+ (zI-A)^{-1}(z^\ell\Gamma-A^\ell\Gamma)
+       =\sum_{t=0}^{\ell-1}z^{\ell-1-t}A^t\Gamma.
+\]
+Multiply by $C_\ell$, sum, and use annihilation. Multiplication on the
+left by $V_{q-1}^{\mathsf T}$ kills every term with $t<q-1$.
+Only $\ell=q,t=q-1$ remains, and it equals $I_b$ because
+\[
+ V_{q-1}^{\mathsf T}A^{q-1}\Gamma C_q=I_b.
+\]
+Indeed $C_q=C_{q-1,q-1}$ and $V_{q-1}$ is its leading Krylov term plus
+terms orthogonal to $V_{q-1}$. This proves $WR=I$. A square matrix with
+a right inverse is invertible. The resolvent bound follows from symmetry
+of $A$ and $\norm{V_{q-1}}_2=1$.
+
+For the last claim, uniqueness of interpolation gives
+\[
+ P_j(z)=\sum_{i\in S}F_i^S(z)\Omega_i^{-1}(V_j)_i.
+\]
+Each block row $(V_j)_i$ has norm at most one. Thus
+$\sup\norm{P_j}\leq qG_S\max_i\norm{\Omega_i^{-1}}$.
+Apply \eqref{eq:R}, $|z|\leq1$, and the recurrence-coefficient bounds.
+This also proves the $q=1$ case with its absent previous block.
+\end{proof}
+
+\section{A fresh Gaussian block and the deterministic recursion}
+Let $T$ be a subset of at least two blocks and choose $k\in T$.
+Apply Lemma~\ref{lem:resolvent} on $S=T\setminus\{k\}$, independently
+of $\Omega_k$, and define
+\[
+ N_{T,k}=\Omega_k R(B_k),\qquad
+ \delta_{T,k}=\min_{i\in S}\operatorname{dist}
+                 (\operatorname{spec}\Lambda_i,\operatorname{spec}\Lambda_k).
+\]
+Conditional on $(\Omega_i:i\in S)$, row $\ell$ of $N_{T,k}$ is
+$\omega_{k,\ell}^{\mathsf T}R(\lambda_{k,\ell})$.
+The rows are independent centered Gaussians. Their covariance matrices
+are each at least $(\delta_{T,k}/\norm{\Gamma_S}_2)^2I_b$.
+Consequently $N_{T,k}$ is nonsingular almost surely and
+\begin{equation}\label{eq:fresh}
+ F_k^T(z)=R(z)N_{T,k}^{-1}\Omega_k.
+\end{equation}
+Its values are zero on $S$ and $I_b$ at $B_k$, so this is the actual
+fundamental polynomial, not a different interpolation convention.
+
+Define the random variable
+\[
+ Z_{T,k}=\frac{\delta_{T,k}\norm{N_{T,k}^{-1}}_2}
+                      {\norm{\Gamma_S}_2}.
+\]
+Lemma~\ref{lem:rows} proves the conditional tail and fractional moment
+\begin{equation}\label{eq:moment}
+ \Pr\{Z_{T,k}>z\mid(\Omega_i:i\in S)\}
+       \leq\min\{1,b^{3/2}/z\},\qquad
+ \mathbb E[Z_{T,k}^{1/2}\mid(\Omega_i:i\in S)]\leq2b^{3/4}.
+\end{equation}
+The second bound is the integral of the first, split at $z=b^{3/2}$.
+These are unconditional-on-success estimates: we do not condition them
+on other roots' good events or on Gaussian norm bounds.
+
+Let $\mathcal E$ be the simultaneous event
+\[
+ \norm{\Omega_i}_2\leq L_0=2b\sqrt{d/\beta},\qquad
+ \norm{\Omega_i^{-1}}_2\leq U_0=4db^{3/2}/\beta
+             \quad(1\leq i\leq d).
+\]
+Frobenius Markov bounds and Lemma~\ref{lem:rows} give
+$\Pr(\mathcal E^c)\leq\beta/2$.
+On $\mathcal E$, $\norm{\Gamma_S}_2\leq\sqrt qL_0$, $q=|T|-1$.
+Equations \eqref{eq:fresh} and Lemma~\ref{lem:resolvent} therefore give
+\begin{equation}\label{eq:recursion}
+ G_T\leq\frac{3q^{3/2}U_0L_0^2}{\Delta}
+                    \max_{k\in T}\{Z_{T,k}G_{T\setminus\{k\}}\}.
+\end{equation}
+For a singleton, $G_T=1$.
+
+\section{Fractional moments along elimination paths}
+For a permutation $\pi$ of the $d$ indices, put
+$T_j=\{\pi_j,\ldots,\pi_d\}$ and
+\[
+ Y_\pi=\prod_{j=1}^{d-1}Z_{T_j,\pi_j}.
+\]
+All factors after the first are measurable in the Gaussian matrices of
+$T_2$. Thus the tower property and \eqref{eq:moment}, successively
+integrating out $\Omega_{\pi_1},\Omega_{\pi_2},\ldots$, give
+\[
+ \mathbb E Y_\pi^{1/2}\leq(2b^{3/4})^{d-1}.
+\]
+No independence between the factors is asserted or required. Markov's
+inequality and a union bound over the $d!$ permutations show, with failure
+at most $\beta/2$, that
+\[
+ \max_\pi Y_\pi\leq
+ \left(\frac{2d!(2b^{3/4})^{d-1}}\beta\right)^2.
+\]
+Expand the deterministic recursion \eqref{eq:recursion} on $\mathcal E$.
+Every elimination path has the same product of the factors $q^{3/2}$.
+Combining the two events, with probability at least $1-\beta$,
+\begin{align*}
+ G_{\{1,\ldots,d\}}
+ &\leq4\beta^{-2}(d!)^2((d-1)!)^{3/2}
+       \left(\frac{192d^2b^5}{\beta^2\Delta}\right)^{d-1}\\
+ &\leq\left(\frac{768d^8b^5}{\beta^4\Delta}\right)^{d-1}.
+\end{align*}
+For the second inequality one may use
+$(d!)^2\leq d^{4(d-1)}$, $((d-1)!)^{3/2}\leq d^{3(d-1)/2}$,
+and $4\beta^{-2}\leq(4\beta^{-2})^{d-1}$ for $d\geq2$.
+The harmless round-up to $1000$ gives Theorem~\ref{thm:main} on $[0,1]$.
+Affine scaling from $[a,c]$ replaces $\Delta$ by $\Delta/L$ and preserves
+the left interpolation conditions. This completes its proof.
+
+\section{Krylov angles and standard scalar acceleration}
+Let $A\in\R^{n\times n}$ be fixed symmetric. Let $Q$ and $Q_\perp$ be
+orthonormal eigenvector matrices whose columns together form an orthogonal
+matrix. The target invariant subspace $\range Q$ has dimension $bd\leq n$,
+and its eigenvalues admit the block partition
+above. Let $L=\lambda_{\max}(A)-\lambda_{\min}(A)>0$ and
+$g=\Delta/L$. Draw a standard Gaussian $\Omega\in\R^{n\times b}$.
+Write $\Omega_H=Q^{\mathsf T}\Omega=\operatorname{col}(\Omega_i)$ and
+$\Omega_T=Q_\perp^{\mathsf T}\Omega$. These matrices have independent
+standard Gaussian entries in this fixed eigenbasis. Define
+\[
+ \K_s(A,\Omega)=\range[\Omega,A\Omega,\ldots,A^{s-1}\Omega].
+\]
+
+\begin{corollary}[Cluster-robust angle bound]\label{cor:angle}
+For $n>bd$ and $0<\beta<1$, with probability at least $1-\beta$,
+\[
+ \tan\angle(\range Q,\K_d(A,\Omega))
+ \leq\frac{8db^{3/2}}\beta
+       \sqrt{\frac{2db(n-bd)}\beta}
+       \left(\frac{16000d^8b^5}{\beta^4g}\right)^{d-1}.
+\]
+The angle is the largest principal angle. Within-block gaps do not enter.
+If $n=bd$, the angle is zero almost surely.
+\end{corollary}
+\begin{proof}
+Let $K_H=[\Omega_H,\Lambda_H\Omega_H,\ldots,
+\Lambda_H^{d-1}\Omega_H]$, and define $K_T$ analogously.
+For a partitioned unit head vector $y=\operatorname{col}(y_i)$,
+\[
+ p_y(z)=\sum_iF_i(z)\Omega_i^{-1}y_i
+\]
+is its unique interpolation polynomial. Its coefficients are $K_H^{-1}y$.
+For every tail row at eigenvalue $\lambda_\ell$,
+\[
+ |\omega_\ell^{\mathsf T}p_y(\lambda_\ell)|
+ \leq\norm{\omega_\ell}_2\sqrt d\,G_H
+                     \max_i\norm{\Omega_i^{-1}}_2.
+\]
+Thus $\norm{K_TK_H^{-1}}_2\leq
+\sqrt d\norm{\Omega_T}_F G_H\max_i\norm{\Omega_i^{-1}}_2$.
+The graph-subspace formula identifies this norm with the tangent.
+Use the combined event constructed in the proof of the head theorem
+at failure $\beta/2$, including its Gaussian norm and inverse bounds,
+giving inverse bound $8db^{3/2}/\beta$. Independently a tail Frobenius
+Markov bound gives $\norm{\Omega_T}_F\leq
+\sqrt{2b(n-bd)/\beta}$ except probability $\beta/2$.
+\end{proof}
+
+For any scalar polynomial $f$ of degree $t$ that is nonzero on the
+target spectrum, the same graph argument and
+$f(A)\K_d(A,\Omega)\subseteq\K_{d+t}(A,\Omega)$ give
+\begin{equation}\label{eq:filtered}
+ \tan\angle(\range Q,\K_{d+t}(A,\Omega))
+ \leq\frac{\max_{\lambda\in\operatorname{spec}\Lambda_T}|f(\lambda)|}
+              {\min_{\lambda\in\operatorname{spec}\Lambda_H}|f(\lambda)|}
+             \norm{K_TK_H^{-1}}_2.
+\end{equation}
+This uses ordinary block Krylov iteration, without constructing the
+interpolation polynomials in an implementation. Standard Chebyshev filters
+therefore convert the initialization estimate into an accuracy bound.
+For example, for the top $bd$ eigenvalues, write $\mu=\lambda_{bd+1}$,
+$\ell=\lambda_n<\mu$, and
+$\gamma=(\lambda_{bd}-\mu)/(\mu-\ell)>0$. The degree-$t$ Chebyshev
+polynomial on $[\ell,\mu]$ has ratio in \eqref{eq:filtered} at most
+$2\exp[-t\operatorname{arcosh}(1+2\gamma)]$.
+If $C_\beta$ denotes the displayed right side in
+Corollary~\ref{cor:angle}, a sufficient additional depth is
+$t\geq\log(2C_\beta/\varepsilon)/\operatorname{arcosh}(1+2\gamma)$.
+Its logarithmic numerator includes $\log(n/(\beta\varepsilon))$,
+$d\log(1/g)$, and $d\log(db/\beta)$, with no within-block separation
+cost. If the tail is a single eigenvalue, a
+degree-one scalar factor annihilates it instead.
+
+\section{Relative tail growth without condition-number dependence}
+The global interval in Theorem~\ref{thm:main} is unnecessary when only
+lower-tail evaluations are needed. Assume all target nodes are positive,
+and put
+\[
+ h=\min_i\lambda_{\min}(\Lambda_i)>0,\qquad
+ g_{\rm rel}=\min_{i\ne j}\min_{\lambda\in\operatorname{spec}\Lambda_i,
+                   \eta\in\operatorname{spec}\Lambda_j}
+              \frac{|\lambda-\eta|}{\max(\lambda,\eta)}>0.
+\]
+No ratio between the largest and smallest target eigenvalues will enter.
+
+\begin{lemma}[Normalized resolvent identity]\label{lem:relative}
+Use the terminal polynomial of Lemma~\ref{lem:resolvent} on any subset
+$S$ of $q$ blocks. For $z\notin\operatorname{spec}(A_S)$ and
+$\eta\notin\operatorname{spec}(A_S)$,
+\[
+ R(z)R(\eta)^{-1}
+ =\sum_{i\in S}F_i^S(z)\Omega_i^{-1}
+       (zI-\Lambda_i)(\eta I-\Lambda_i)^{-1}\Omega_i.
+\]
+In particular, if $0\leq z<h$ and $\eta$ belongs to a fresh target
+block, then
+\[
+ \norm{R(z)R(\eta)^{-1}}_2
+       \leq\frac{qG_S(z)}{g_{\rm rel}}
+                              \max_{i\in S}\kappa(\Omega_i),
+ \quad G_S(z)=\max_{i\in S}\norm{F_i^S(z)}_2.
+\]
+\end{lemma}
+\begin{proof}
+Let $A=A_S$, $\Gamma=\Gamma_S$, and
+$\mathcal L_z=R(z)V_{q-1}^{\mathsf T}(zI-A)^{-1}$.
+Polynomial division and $V_{q-1}\perp\K_{q-1}(A,\Gamma)$ give
+\[
+ \mathcal L_z A^t\Gamma=z^t I_b\qquad(0\leq t<q).
+\]
+Thus $\mathcal L_z$ is the exact evaluation-at-$z$ functional on the
+invertible raw Krylov matrix. Uniqueness of interpolation identifies its
+block row $i$ with $F_i^S(z)\Omega_i^{-1}$. Therefore
+\[
+ R(z)R(\eta)^{-1}
+   =\mathcal L_z(zI-A)(\eta I-A)^{-1}\Gamma,
+\]
+which is the displayed formula. The unscaled symmetric operator may be
+used here; alternatively affine rescaling of the preceding lemma cancels
+in the normalized identity. For a scalar target node $\lambda$,
+$0\leq z<h$ implies $|z-\lambda|\leq\lambda$, whereas
+$|\eta-\lambda|\geq g_{\rm rel}\max(\eta,\lambda)$.
+Diagonal similarity proves the norm bound.
+\end{proof}
+
+\begin{theorem}[Uniform relative-gap bound on the lower tail]
+\label{thm:relative}
+Under these positive-node assumptions, for every $0<\beta<1$,
+\[
+ \Pr\left\{\max_i\sup_{0\leq z\leq h}\norm{F_i(z)}_2
+ \leq\left(\frac{20000d^{12}b^5}{\beta^4g_{\rm rel}}\right)^{d-1}
+ \right\}\geq1-\beta.
+\]
+The good event can simultaneously include the Gaussian norm and inverse
+bounds $L_0,U_0$ used in the proof of Theorem~\ref{thm:main}.
+\end{theorem}
+\begin{proof}
+First fix a finite set $\mathcal Z\subset[0,h)$ of $N$ evaluation points.
+For each subset $T$, root $k$, and $z\in\mathcal Z$, construct the
+terminal $R$ on $S=T\setminus\{k\}$ as before, and now normalize by
+\[
+ \widetilde N_{T,k,z}=\Omega_k R(B_k)R(z)^{-1}.
+\]
+The fresh Gaussian rows remain conditionally independent. By
+Lemma~\ref{lem:relative}, their covariance matrices have the common
+lower bound
+\[
+ \left(\frac{g_{\rm rel}}{qG_S(z)\max_{i\in S}\kappa(\Omega_i)}\right)^2 I.
+\]
+Define $Z_{T,k,z}$ to be the norm of $\widetilde N_{T,k,z}^{-1}$
+times the scalar inside these parentheses. It obeys the same conditional
+tail and square-root moment bounds as \eqref{eq:moment}.
+Moreover $F_k^T(z)=\widetilde N_{T,k,z}^{-1}\Omega_k$.
+On the Gaussian norm event the deterministic recursion becomes
+\[
+ G_T(z)\leq\frac{qU_0L_0^2}{g_{\rm rel}}
+             \max_{k\in T}\{Z_{T,k,z}G_{T\setminus\{k\}}(z)\}.
+\]
+Here $G_S(z)>0$ because the fundamental polynomials sum to $I$.
+
+Apply the same conditional fractional-moment argument along every
+elimination path, at each of the $N$ fixed points. Unioning only at the
+\emph{final} Markov step over $Nd!$ possibilities gives, jointly with
+the Gaussian norm event and with total failure at most $\beta$,
+\begin{equation}\label{eq:relative-grid}
+ \max_{z\in\mathcal Z}G_{\{1,\ldots,d\}}(z)
+ \leq4N^2\beta^{-2}(d!)^2(d-1)!
+       \left(\frac{64d^2b^5}{\beta^2g_{\rm rel}}\right)^{d-1}.
+\end{equation}
+There is no division of the failure budget by $N$ at every depth.
+
+Finally put $p=d-1$, $N=\lceil4p^2\rceil+1$, and
+$z_j=jh/N$ for $0\leq j<N$. All points are strictly below $h$, so no
+normalization at a root was used. Scalar Markov's polynomial inequality,
+applied to $u^{\mathsf T}F_i(z)v$ for arbitrary unit $u,v$, gives
+\[
+ \sup_{[0,h]}\norm{F_i'}_2
+       \leq\frac{2p^2}{h}\sup_{[0,h]}\norm{F_i}_2.
+\]
+Every point of $[0,h]$ is within $h/N$ of a grid point. Thus
+$\sup\norm{F_i}\leq2\max_j\norm{F_i(z_j)}$.
+Multiply \eqref{eq:relative-grid} by two, use $N\leq5d^2$, and bound
+the factorials as before. The resulting constant is at most
+$(12800d^{11}b^5\beta^{-4}/g_{\rm rel})^{d-1}$, so the stated
+round-up is valid.
+\end{proof}
+
+For a PSD operator whose top $bd$ eigenvalues have this partition,
+all remaining eigenvalues lie in $[0,h]$. Repeating the graph proof of
+Corollary~\ref{cor:angle} with Theorem~\ref{thm:relative} yields
+\begin{equation}\label{eq:relative-angle}
+ \tan\angle(Q,\K_d(A,\Omega))
+ \leq\frac{8db^{3/2}}\beta
+       \sqrt{\frac{2db(n-bd)}\beta}
+       \left(\frac{320000d^{12}b^5}{\beta^4g_{\rm rel}}\right)^{d-1}
+\end{equation}
+with probability at least $1-\beta$. In particular the logarithm of
+this bound is
+\[
+ O\left(d\log\frac{db}{\beta g_{\rm rel}}+\log\frac n\beta\right),
+\]
+with no target condition number.
+
+\section{Sliding \texorpdfstring{$b$}{b}th gaps, packing, and analysis-only padding}
+Suppose the top $k>b$ eigenvalues of a PSD operator are positive and set
+\[
+ \gamma_b=\min_{1\leq i\leq k-b}
+                  \frac{\lambda_i-\lambda_{i+b}}{\lambda_i}>0.
+\]
+They need not admit a partition into exactly $k/b$ equal-size blocks.
+The following construction avoids that limitation.
+
+Connect adjacent ordered target eigenvalues whenever
+$(\lambda_i-\lambda_{i+1})/\lambda_i<\gamma_b/b$.
+Each connected component contains at most $b$ eigenvalues. Otherwise
+a chain of $b$ such steps would give
+\[
+ \lambda_{i+b}>(1-\gamma_b/b)^b\lambda_i
+                       \geq(1-\gamma_b)\lambda_i,
+\]
+contrary to the definition of $\gamma_b$.
+Pack whole consecutive components into blocks of size at most $b$ by
+the next-fit rule. Consecutive packed block sizes sum to more than $b$,
+so the number $D$ of packed blocks is at most
+$2\lceil k/b\rceil-1$. Every cross-block relative gap is at least
+$\gamma_b/b$: the smallest relative separation is attained at a
+boundary, and every such boundary is an unconnected adjacent pair.
+Pad each block to size $b$ by repeating a node already in that block.
+This preserves cross-block disjointness and all positive-node bounds.
+
+Padding is only an analysis device. Add the corresponding diagonal
+coordinates to $A$ and independent Gaussian rows to $\Omega$.
+The enlarged head has dimension $Db$, but the tail is unchanged.
+For any original head vector $y$, prescribe augmented head values
+$(y,0_{\rm dummy})$ and use the invertible augmented head Krylov matrix.
+Projection onto original coordinates produces a vector of the original
+$\K_D(A,\Omega)$ with original head $y$ and tail norm bounded by the
+augmented graph bound. Hence its largest principal angle is no larger.
+The resulting property depends only on the original Gaussian start;
+its marginal probability is therefore at least the joint success
+probability. No dummy samples or target partition are supplied to the
+actual algorithm.
+
+Consequently \eqref{eq:relative-angle}, with $d=D$,
+$g_{\rm rel}\geq\gamma_b/b$, and the enlarged dimension in its harmless
+prefactor, proves a startup angle whose logarithm is
+\begin{equation}\label{eq:packed-log}
+ O\left(D\log\frac{Db}{\beta\gamma_b}+\log\frac n\beta\right),
+ \qquad D\leq2\lceil k/b\rceil-1.
+\end{equation}
+The case $k\leq b$ is the usual Gaussian large-block initialization.
+
+For low-rank approximation of a rectangular matrix $M$ and
+$0<\varepsilon<1$, apply this to
+$A=MM^{\mathsf T}$, $\lambda_i=\sigma_i(M)^2$. The established
+good-start block-Krylov theorem \cite{mmm,chen} converts an initial
+angle $T$ into rank-$k$ relative spectral and Frobenius approximation
+after $O(\varepsilon^{-1/2}\log(n(1+T^2)/\varepsilon))$ further
+iterations. To see the exact good-start property for the possibly wide
+startup space, the graph construction supplies $Y=[I_k;X]$ in that
+space, with $\norm X_2\leq T$. Its orthonormalization
+$Y(I_k+X^{\mathsf T}X)^{-1/2}$ has inverse head-compression norm squared
+$1+\norm X_2^2\leq1+T^2$. This is the existence-based
+$(k,1+T^2)$-good property used in \cite[Definition 3.1]{chen}.
+The imported theorem applies to an orthonormal basis of the entire
+initial space; the number of its columns need not equal $k$.
+There is the exact span identity
+\[
+ \K_t(A,\operatorname{orth}\K_D(A,\Omega))
+                         =\K_{t+D-1}(A,\Omega).
+\]
+Thus ordinary randomized block Krylov has the sufficient depth
+\begin{equation}\label{eq:lra-depth}
+ O\left(\frac{D\log(Db/(\beta\gamma_b))
+                         +\log(n/(\beta\varepsilon))}{\sqrt\varepsilon}\right).
+\end{equation}
+This uses the sliding relative $b$th gap and no singular-value condition
+number. Matrix-vector count is $b$ times the depth. The usual
+gap-dependent good-start theorem similarly replaces $\sqrt\varepsilon$
+by $\sqrt{(\lambda_k-\lambda_\ell)/\lambda_k}$, with initialization
+through $\ell>k$ positive target eigenvalues and their sliding gap.
+When the optimal rank-$k$ tail is zero, multiplying the padded startup
+space by $A$ annihilates the zero tail and gives the whole range after
+one additional iteration, so this branch is exact.
+
+These are consequences for the existing orthogonalized algorithm, not a
+new expensive interpolation implementation. They address the
+condition-number-free convergence question in \cite[Section 5]{chen}
+up to additional logarithmic factors and the constant-factor startup
+padding. They do not prove its literal unnormalized monomial
+smallest-singular-value conjecture or assert the exact same quantitative
+formula without those extra logarithms.
+
+The zero-tail branch above uses this section's positive-top-$k$
+hypothesis, so zero tail means that the positive rank is exactly $k$.
+It is not a claim that an arbitrarily large repeated zero eigenspace can
+be recovered from a smaller block.
+
+\paragraph{Ordinary arithmetic realization.}
+These bounds concern the existing orthogonalized algorithm. With
+$w=bq$ raw basis columns, standard dense operations cost
+$O(npw+(n+p)w^2+w^3)$ for an explicit $n$-by-$p$ matrix, including
+orthogonalization and compressed SVD. For a factored matrix
+$M=A_1B_1$, of inner dimension $m\leq\min(n,p)$ and input size
+$I=m(n+p)$, factor actions replace $npw$ by $Iw$.
+When $w\leq m$, all displayed basis and core terms are at most $O(Iw)$.
+Expansion of the final rank-$k$ factors, if requested, additionally costs
+$O(npk)$. Larger bases may use the usual exact QR/core-SVD fallback.
+No asymptotically fast multiplication or new numerical primitive is
+needed. The generic $\varepsilon^{-1/2}$ accuracy dependence remains;
+the new assertion concerns clustering and condition-number dependence.
+
+\section{Why raw monomial conditioning is a different question}
+For completeness, a uniform lower bound for the smallest singular value
+of a raw monomial Krylov matrix cannot discard the condition number
+while keeping the stated exponential dependence on depth. Take $b=1$,
+a Gaussian start $g$, and
+\[
+ A=\operatorname{diag}(1,2^{-1},\ldots,2^{-(k-1)}).
+\]
+The polynomial
+\[
+ p(x)=\prod_{j=0}^{k-2}(x-2^{-j})
+\]
+has coefficient norm at least one. For
+$K=[g,Ag,\ldots,A^{k-1}g]$ its image has only a last coordinate, so
+\[
+ \sigma_{\min}(K)\leq|g_k|\,2^{-(k-1)(k-2)/2}.
+\]
+Yet the minimum relative gap is $1/2$. For fixed failure probability and
+arbitrarily large $k$, this contradicts a lower bound equal to a positive
+universal constant times $\operatorname{poly}(k)^{-1}c^{-k}$.
+It does not contradict any proved theorem in \cite{chen}, which retains
+the condition number, nor the relative convergence bound above.
+Subspace geometry can be well behaved when raw monomial coordinates
+are badly conditioned.
+
+\section{Limits and remaining review}
+This proves a direct bound with Shao's partition-specific gap and
+$d-1$ exponent. It does not make the refuted intermediate
+$\chi_{\rm mono}\chi_{\rm coef}$ constants bounded, nor remove the need
+for cross-block separation. Standard block Krylov, scalar filters,
+Gaussian anti-concentration and orthogonal polynomial recurrences are
+established tools. The proposed new ingredient is their direct
+terminal-resolvent and conditional-row composition, including the
+fractional-moment control of growing depth.
+
+No hardware performance claim, new multiplication exponent, unrestricted
+quadratic-time matrix-product algorithm, or backward-stability theorem
+follows from this manuscript. Numerical monomial Krylov matrices may be
+ill-conditioned; the actual algorithm is the usual orthogonalized block
+Lanczos method. The theorem is a theoretical convergence statement.
+Independent mathematical and primary-literature reviews remain necessary
+before a final novelty or significance claim.
+
+\begin{thebibliography}{9}
+\bibitem{shao} N. Shao.
+\emph{A structural bound for cluster robustness of randomized small-block
+Lanczos}. arXiv:2507.10144v2, 30 May 2026.
+\url{https://arxiv.org/abs/2507.10144}
+\bibitem{stepaniants} G. Stepaniants.
+\emph{KE-05: failure of spectrum-uniform probabilistic interpolation
+bounds}. OpenProblemsInNLA, September 2026.
+\url{https://github.com/ajt60gaibb/OpenProblemsInNLA/blob/main/randomized-and-low-rank-approximation/KE-05/solution.md}
+\bibitem{hmt} N. Halko, P.-G. Martinsson, J. A. Tropp.
+\emph{Finding structure with randomness: probabilistic algorithms for
+constructing approximate matrix decompositions}. SIAM Review 53(2), 2011.
+\url{https://arxiv.org/abs/0909.4061}
+\bibitem{mmm} R. A. Meyer, C. Musco, C. Musco.
+\emph{On the unreasonable effectiveness of single vector Krylov methods
+for low-rank approximation}. SODA 2024, pp. 811--845.
+\url{https://doi.org/10.1137/1.9781611977912.32}
+\bibitem{chen} T. Chen, E. N. Epperly, R. A. Meyer, C. Musco, A. Rao.
+\emph{Does block size matter in randomized block Krylov low-rank
+approximation?} SODA 2026, pp. 1026--1046.
+\url{https://doi.org/10.1137/1.9781611978971.42}
+Full version:
+\url{https://arxiv.org/abs/2508.06486}
+\end{thebibliography}
+\end{document}

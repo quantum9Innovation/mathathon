@@ -1,0 +1,970 @@
+Adaptive defect search: one-sided critical Schur complements
+===========================================================
+2026-11-14, cutoff. New research note; previous verified papers unchanged.
+
+STATUS. The unrestricted target remains OPEN. The construction below is a
+proved, conditional small-critical-core shortcut, not another claim that the
+original arbitrary-factor N^2 target has been achieved. Its useful feature is
+that it certifies a rank-one OUTPUT SPACE from any negative witness; it does
+not approximate the leading eigenvector. The missing obligation is to handle
+a large critical Schur complement at the target cost on every input. The
+Schur/inertia and Lorentzian identities themselves are classical.
+
+Target reread: docs/research-direction.typ and the authoritative beginning of
+docs/research-state.txt. Original hard dimensions are n=p=N=m^(9/8), r=1,
+theta=1/m, I=m(n+p)=m^(17/8), core/output budget m^(9/4+o(1)). Existing
+hierarchy papers do not settle this case. Arithmetic model here is their
+finite exact-real field/comparison/positive-square-root/Gaussian model,
+without a stable finite-word assertion or an exact spectral oracle.
+
+1. Any negative witness is sufficient once the index is at most one
+-----------------------------------------------------------------
+Lemma 1. Let K be real symmetric, n_-(K)<=1, and v^T K v=a<0. Then
+
+  R=K-(Kv)(Kv)^T/a >= 0.                                      (1)
+
+Proof. Extend v to an invertible basis [v,V]. The first scalar pivot of
+the congruence is a<0. Its Schur complement V^T R V has no negative
+eigenvalues, by inertia additivity. Also Rv=0, so R is PSD on the whole
+space. Consequently K is PSD on the Euclidean orthogonal complement of
+Kv. No gap, normalization, or lower bound on |a| is needed in exact
+arithmetic. For n_-(K)<=r, the analogous block formula applies to a
+negative-definite r-column pivot, but finding such a pivot is not free.
+
+The geometric distinction from PCA is substantial: v can be far from an
+eigenvector. What matters is that its image Kv specifies a positive
+hyperplane. Finding v and certifying n_-(K)<=1 remain computational tasks.
+
+Use the companion's constant-accuracy support reduction. On its good event,
+
+  M=Z R, G=Z^T Z approximately I, Q=RR^T,
+  B_m approximately_(e_m) G^-1,
+  K_t=t B_m-Q, D_t=tI+Q_0.                                    (2)
+
+Here B_m is ONE fixed even finite Neumann polynomial, e_m=theta/1e9,
+and Q_0 is explicit. All K_t actions are true-factor actions, not an
+accurately formed Gram. The represented target Hhat=B_m^-1/2 Q B_m^-1/2
+is analytical only. Its second eigenvalue approximates the physical
+lambda_2(G^1/2 Q G^1/2) to relative 1+O(e_m).
+
+If K_t is PSD on g^perp, output the physical left space range(Zg).
+Indeed every physical vector in range(Z) has the form x=Z G^-1 y,
+and x orthogonal to Zg iff y^Tg=0. Its norm squared is y^T G^-1 y,
+whereas x^T MM^T x=y^T Q y. Thus Q<=tB_m on g^perp gives
+
+  ||(I-P_range(Zg)) M||^2 <= (1+e_m)t.                        (3)
+
+The output is C=P_range(Zg)M, formed with ordinary factor products. If
+K_t>=0, output zero. Whole-support/zero-tail branches remain exactly as
+in the companion; this note considers k=rank(M)>1 and lambda_2>0.
+
+2. Certified far-positive elimination with no exact eigenbasis
+-------------------------------------------------------------
+Fix a SMALL CONSTANT coarse distortion H, say H<=1/1024. In the notation
+of the companion, with J_D J_D^T=D_t, form explicit
+
+  S0=J_D^-1 (tI-Q_0) J_D^-T,
+  Kbar=J_D^-1 K_t J_D^-T.
+
+The same coarse comparison used by the absolute-pencil construction gives
+
+  -I<=S0<=I, ||Kbar-S0||<=2H, ||Kbar||<=2.                    (4)
+
+Choose any tau in [8H,9H] avoiding the eigenvalues of S0. This is possible
+with probability one using a scalar Gaussian with an atom-free bounded
+transform. Apply the exact Gaussian-congruence LDL construction to the
+EXPLICIT matrix S0-tau I. Extract a positive subspace and orthonormalize
+it. Call its basis U_F. Complete it to an orthogonal [U_C,U_F]=U.
+
+Orientation check: if Y^T(S0-tau I)Y=L Delta L^T, the PRIMAL positive
+subspace is Y L^-T E_+, not Y^-T L E_+. Thus on range(U_F),
+S0>=tau I. No spectral projector of S0 is assumed. If d=width(U_C),
+
+  U^T Kbar U = [[C,B^T],[B,A]],
+  6H I<=A<=2I, ||B||<=2.                                    (5)
+
+All operations constructing U, including exact rank and orthogonal
+complement algebra, cost ~m^(omega+zeta). Define d= k-n_+(S0-tau I).
+This is the computable critical dimension for this threshold. It may be k.
+The off-diagonal B need not vanish: this is a congruence positive subspace,
+not an uncharged exact invariant-subspace computation.
+
+3. Finite ONE-SIDED inverse polynomials for the far block
+--------------------------------------------------------
+Set W=I-A/2. On (5), 0<=W<=1-3H. For l chosen so that
+(1-3H)^(l+1)/(6H)<=delta, the finite polynomial
+
+  T_-=(1/2) sum_{i=0}^l W^i
+
+satisfies 0<T_-<=A^-1 and ||A^-1-T_-||<=delta. Put
+T_+=T_-+delta I, so A^-1<=T_+<=A^-1+delta I. No solve or root of A
+is used. Degree O(H^-1 log(1/(H delta))) is O(log(1/delta)) at fixed H.
+A Chebyshev residual polynomial and a certified scalar correction can
+reduce H^-1 to H^-1/2; that improvement is not needed for the claim here.
+These constants are not proposed as a practical implementation.
+
+Form ONLY the d-column products needed for
+
+  S_-=C-B^T T_+ B, S_+=C-B^T T_- B.                          (6)
+
+They are explicit d-by-d matrices. A and its inverse are never formed.
+All polynomial actions can be batched on the d columns of B. In particular
+this is not d separate input scans or a hidden fine full Gram construction.
+
+For delta<=1/8, introduce analytical full surrogates
+
+  K_-=[[C,B^T],[B,T_+^-1]],
+  K_+=[[C,B^T],[B,T_-^-1]].                                  (7)
+
+Inversion order gives K_-<=U^T Kbar U<=K_+. Moreover
+
+  0<=A-T_+^-1<=4delta I,
+  0<=T_-^-1-A<=8delta I.                                    (8)
+
+For the first inequality, write T_+=A^-1+E, 0<=E<=delta I,
+and use I-(I+A^1/2 E A^1/2)^-1<=A^1/2 E A^1/2. For the second,
+T_-=A^-1-E, 0<=E<=delta I, and ||A^1/2 E A^1/2||<=2delta<=1/4;
+(I-X)^-1-I<=2X. Since ||A||<=2, the stated constants follow. Thus
+
+  Kbar-8delta I <= U K_- U^T <= Kbar
+       <= U K_+ U^T <= Kbar+8delta I.                        (9)
+
+Schur/inertia additivity gives n_-(K_-)=n_-(S_-) and likewise for +.
+The inverse symbols in (7) are used ONLY for this analysis. They are
+never applied in the actual construction. The input conditioning and
+lambda_1/lambda_2 never occur in the degree or precision of (6).
+
+4. Exact negative-witness lift from the SMALL Schur complement
+-------------------------------------------------------------
+Suppose n_-(S_-)<=1. If S_->=0, then K_->=0, hence Kbar>=0.
+If w^T S_- w<0, set v=[w;-T_+ B w]. Direct multiplication gives
+
+  K_- v=[S_- w;0].                                          (10)
+
+Lemma 1 says K_- is PSD on the orthogonal complement of this vector;
+so is U^T Kbar U, since K_-<=U^T Kbar U. Undoing the congruences,
+the physical output space is precisely
+
+  range(Z J_D U_C S_- w).                                   (11)
+
+This needs no T_+^-1, inverse of a fine matrix polynomial, or precise
+eigenvector. Equation (11) includes the far-block coupling through the
+Schur complement. Any claim that U_C alone is a valid output for d>1
+would be false. For d=1 its full critical span is of course sufficient.
+
+Negative count and witness of an explicit possibly singular S_- are
+computable in ~d^(omega+zeta) with exact rank revelation, a nonsingular
+principal support, and Gaussian-congruence LDL. A maximal independent
+column set of a symmetric rank-s matrix indexes a nonsingular s-by-s
+principal submatrix; pull back the witness by inserting zero coordinates.
+Do not invert a singular S_- or silently assume all pivots are nonzero.
+
+5. A threshold oracle and the ambiguous case
+-------------------------------------------
+Set epsilon=8delta. Undo (9) to obtain full physical-coordinate
+surrogates with
+
+ K-epsilon D <= Ktilde_- <= K <= Ktilde_+ <= K+epsilon D.     (12)
+
+Use D<=2(tB_m+Q), valid on the coarse event. Let
+rho=(1+2epsilon)/(1-2epsilon), epsilon<1/10. Two scalar inequalities are
+
+  K-epsilon D >= (1+2epsilon) K_(t/rho),
+  K+epsilon D <= (1-2epsilon) K_(t rho).                     (13)
+
+The following three-way oracle is rigorous.
+
+  BELOW: n_-(S_+)>=2. Then n_-(K)>=2 and t<lambda_2(Hhat).
+
+  ABOVE/WITNESS: n_-(S_-)<=1. Then n_-(K)<=1 and
+  t>=lambda_2(Hhat); Section 4 returns the actual rank<=1 output at t.
+
+  NEAR: n_-(S_+)<=1 but n_-(S_-)>=2. Monotonicity of the negative
+  index in Loewner order, (12), and (13) give
+       t/rho < lambda_2(Hhat) <= t rho.                     (14)
+
+In the NEAR branch run the construction once at t''=t rho^2. Its LOWER
+surrogate is >=(1+2epsilon)K_(t rho), whose negative index is <=1.
+Hence n_-(S_-(t''))<=1 and Section 4 gives an actual output. Its squared
+threshold obeys t''<rho^3 lambda_2(Hhat). Choose epsilon=theta/1000;
+together with e_m=theta/1e9, this is well inside the desired singular
+error factor 1+theta. Nothing depends on an unknown gap or tail scale.
+
+For global search, use the companion's positive polynomial-factor initial
+bracket from Q_0; bisect to relative theta/O(1), updating endpoints by
+BELOW/ABOVE, and return an ABOVE witness at the final upper endpoint if
+no NEAR branch occurs. The number of calls is O(log(m/theta)). Conditional
+small-core bounds must hold at every queried t, including the inflated
+NEAR exit. They do NOT follow from a dimension bound at just one t.
+All-outcome finite caps come from fixed polynomial degrees and fixed
+bisection counts. Failed coarse-event bounds invalidate correctness,
+not finiteness. LDL denominators are guarded as in the companion.
+
+6. Exact cost and the conditional original-target improvement
+-------------------------------------------------------------
+Let
+  Acal(b)=T_MM(n,m,b)+T_MM(p,m,b).
+Core maps on b columns are dominated by this up to m^(omega+zeta).
+Sections 2--5 at one threshold cost
+
+  ~O(m^(omega+zeta)+Acal(d)),                                (15)
+
+for constant H; theta and confidence add only logarithms. The cost
+includes polynomial true-factor mass B_m, applications of A to d RHS,
+forming C,B,S_+/-, explicit small inertia/witness, and the physical
+one-column output lift. Coarse sketches cost ~I+m^(omega+zeta), and
+their event is uniform over every adaptively chosen threshold. Exact
+Gaussian-congruence exceptional events have probability zero for each
+fixed conditional core; finitely many calls remain a null union.
+
+Thus if the computable critical dimensions on the full capped search
+are at most dmax, the build cost is
+
+  ~O(I+m^(omega+zeta)+Acal(dmax)),                            (16)
+
+and explicit rank-one expansion costs O(np). This is a conditional
+theorem for arbitrary factors satisfying the stated critical-profile
+condition, not the unconditional theorem requested by the user.
+
+For n=p=m^(9/8), dmax<=m^(17/20)=m^.85, the rectangular AV bound gives
+
+ exponent Acal(dmax)
+   <= [(9/8)*1+1*(17/20)+(17/20)*(9/8)]^2
+                        /[4*(9/8)*1*(17/20)]
+    = 2.246333... < 9/4.                                   (17)
+
+This is the sorted a>=b>=c branch (ab+bc+ca)^2/(4abc) of the
+already-audited AV rectangular theorem. Its input-optimal branch does
+not apply at c=17/20. The operative general condition is simply
+Acal(dmax)<=m^(9/4+o(1)).
+The conditional result therefore reaches the ORIGINAL theta=1/m accuracy
+and explicit output budget when the critical core is sufficiently small.
+It bypasses isotropic accuracy refinement in that class. The required
+critical bound can fail maximally, even with an index-one threshold.
+
+7. What has NOT been proved; raw-factor truncated-inertia obligation
+-------------------------------------------------------------------
+The dimension d can equal m: take a whole physical spectrum in a narrow
+coarse H-band around t. Such a matrix can be easy (flat bulk), so d=m is
+not a hardness proof, but (16) would then charge exact Gram-scale work.
+No universal accounting argument bounds the sum or maximum of d(t).
+
+A suggested dynamic LDL shortcut is to eliminate positive pivots until
+the first negative pivot, then invoke Lemma 1. It does NOT avoid the
+positive pivot cost: K=I-(1+gamma)uu^T, with a flat u, has every principal
+restriction of size s<m/(1+gamma) positive. Near theta=1/m and gamma
+of order theta, essentially every scalar pivot can be positive before
+the negative one appears. This is a decisive counterexample to early
+negative-pivot termination alone. In this particular example centering
+reveals rank one immediately, so the example does not rule out a
+combined centering/pivot algorithm.
+
+Likewise a random low-dimensional restriction can miss the Lorentz cone.
+For a uniform random s-dimensional subspace V and K=I-(1+gamma)uu^T,
+its restriction is negative iff ||P_V u||^2>1/(1+gamma), whereas its
+expected squared projection is s/m. Tiny gamma requires near-full
+dimension with high probability. This is a rejection of RANDOM
+RESTRICTION as the complete new mechanism, not a lower bound on raw
+factor access or on algorithms that identify the centered rank-one part.
+
+The live missing step is an input-optimal truncated-inertia construction
+that either (a) finds a useful negative witness without approximating all
+critical directions, or (b) certifies the critical bulk is flat enough
+and then handles its centered small variation, without doing theta^-2
+Gram sketching or theta^-1/2 full-input passes. Existing hierarchy tuning
+does not meet this obligation. No claim that this scoped obstruction
+completes the stronger research goal is intended.
+
+8. Literature/novelty scope
+---------------------------
+This note uses the already-audited support, core rank algebra, and initial
+bracketing from docs/absolute-pencil-spectral.tex and its primary refs.
+Schur complements, inertia additivity, and one-negative-direction
+hyperplane certificates are classical. A fresh literature search found
+Schur low-rank preconditioners and randomized indefinite pivoting, but
+not an inspected theorem that supplies the unrestricted factor-aware
+truncated inertia bound needed here. That is not an exhaustive novelty
+certificate. No new primary-source theorem is invoked without its stated
+local proof above. This is a research candidate with a proved conditional
+shortcut and explicit remaining obligation.
+
+9. Non-galactic constants: a coarse positive block of condition at most 8
+------------------------------------------------------------------------
+The tiny H of Section 2 is unnecessary for this mechanism. For this section
+and all subsequent sections take coarse distortion H=1/4 and e_m=theta/64,
+0<theta<=1. The standard support reduction now gives
+
+  (1-H)Q<=Q_0<=(1+H)Q,
+  I/(1+H)<=G<=I/(1-H),
+  (1-e_m)G^-1<=B_m<=(1+e_m)G^-1.
+
+The fixed even Neumann degree is O(log(1/theta)), with contraction <=1/3.
+In particular (1/2)I<B_m<(3/2)I. The slightly sharper direct mass bound
+||B_m-I||<=H+(1+H)e_m, together with the Q comparison, gives
+
+  ||Kbar-S0||<=1/2, ||Kbar||<=3/2<2,
+  D<=2(tB_m+Q).                                             (18)
+
+Use a coarse positive threshold gamma in [3/4,7/8] instead of [8H,9H].
+The same explicit LDL/orthogonalization gives the blocks (5), now with
+
+  (1/4)I<=A<=2I, ||B||<=2.                                  (19)
+
+Only this CONSTANT-conditioned far block is inverted approximately. There
+is no dependence on a small physical tail singular value. Standard scalar
+Chebyshev polynomials give finite one-sided inverses of degree roughly
+log_2(1/delta), rather than the pessimistic H^-1 degree of Section 3.
+
+Explicitly, for l>=1 put
+
+  r_l(x)=T_l((9-8x)/7)/T_l(9/7),
+  p_l(x)=(1-r_l(x))/x.
+
+Because r_l(0)=1, p_l is a polynomial, not a matrix solve. On [1/4,2],
+
+  |p_l(x)-1/x|<=8rho_c^l, rho_c=(sqrt(8)-1)/(sqrt(8)+1)<1/2.
+
+Thus l=ceil(log_2(16/delta)) gives error <=delta/2. Define
+
+  T_-=p_l(A)-(delta/2)I, T_+=p_l(A)+(delta/2)I.              (20)
+
+For delta<=1/8 these are positive and bracket A^-1, each within delta,
+with T_+-T_-=delta I. Polynomial coefficients, or an equivalent fixed
+Chebyshev semi-iteration, use field operations and positive scalar roots.
+Fixed degree and coefficients matter: arbitrary RHS-dependent early CG
+termination would NOT define the single linear self-adjoint Schur operator
+used below. Standard blocked fixed-degree Chebyshev is sufficient.
+
+The full comparisons (8)--(13) still hold, with unchanged constants 4,8
+because their proofs used only ||A||<=2. Moreover the MATRIX-FREE Schur
+
+  S=S_+=C-B^T T_- B                                         (21)
+
+satisfies ||S||<=2+4/(1/4)=18, and one action costs O(l) Kbar actions
+plus fixed core maps. No d-by-d matrix is formed. The near-flat Schur
+condition below is therefore on an operator with a known absolute bound,
+not an uncharged relative precision involving lambda_1/lambda_2.
+
+10. Large critical bulk: certify a scalar-plus-low-rank Schur surrogate
+----------------------------------------------------------------------
+Lemma 2 (compression transfer). Suppose an explicitly represented
+
+  S_tilde=a I_d+V C_s V^T, V^T V=I_s,
+  ||S_tilde-S||<=tau,
+
+has been constructed for (21). Define implicit scalar-plus-rank-s cores
+
+  Slo=S_tilde-(tau+4delta)I,
+  Shi=S_tilde+tau I.                                        (22)
+
+Then there exist analytical full surrogates Klo,Khi such that
+
+  Kbar-epsilon I<=U Klo U^T<=Kbar
+     <=U Khi U^T<=Kbar+epsilon I,
+  epsilon=2tau+8delta,                                      (23)
+
+and n_-(Klo)=n_-(Slo), n_-(Khi)=n_-(Shi). No dense critical matrix
+or inverse fine operator is needed to APPLY the resulting certificate.
+
+Proof. Let S_-=C-B^T T_+B=S-delta B^T B. Thus
+0<=S-S_-<=4delta I, and (22) gives Slo<=S_- and Shi>=S.
+Define the critical block of Klo as C+Slo-S_-, with the same off-diagonal
+B and far block T_+^-1. Define that of Khi as C+Shi-S, with far block
+T_-^-1. These are analytical definitions, not computational requirements.
+Their Schurs are EXACTLY Slo and Shi. The critical change in Klo is
+negative semidefinite with norm at most 2tau+4delta; its far change is
+negative semidefinite with norm <=4delta. The analogous changes in Khi
+are positive with norms <=2tau and <=8delta. This proves (23).
+
+If n_-(Slo)<=1 and w^T Slo w<0, a hypothetical full negative witness
+[w;-T_+Bw] maps under Klo to [Slo w;0]. Therefore (1) gives the actual
+physical output space
+
+  range(Z J_D U_C Slo w).                                   (24)
+
+The hypothetical far witness is NEVER formed. If Slo is PSD, output zero.
+This is the useful escape from needing to invert or diagonalize the full
+critical operator. Only its scalar-plus-low-rank approximation is used.
+
+Inertia is inexpensive and exact on the represented surrogate:
+
+ n_-(aI+VC_sV^T+zI)
+    =n_-(C_s+(a+z)I_s)+(d-s)1_{a+z<0}.                     (25)
+
+The zero case is handled exactly. Small-core LDL gives negative vectors
+in range(V). If a+z<0, missing negative directions come from ker(V^T),
+and fresh projected Gaussian vectors span the requested finite number
+almost surely; exact rank is checked. This does not require selecting
+precise small-core eigenvectors. A single direction is needed in (24).
+
+11. A finite adaptive surrogate algorithm and a BEST-center rank bound
+--------------------------------------------------------------------
+The next theorem describes the actual centered approximation construction.
+It is not necessary to assume that a useful scalar center is supplied.
+
+For the matrix S in (21) and nu>0, define the intrinsic centered rank
+
+  c_nu(S)=min{rank L: S=a0 I+L+E, L=L^T, ||E||<=nu}.         (26)
+
+Equivalently minimize, over real a0, the number of eigenvalues of S
+outside [a0-nu,a0+nu]. The algorithm need not compute this minimum.
+It uses a posteriori residual tests, and its cost is bounded by this
+quantity on the good event. In particular c_nu=0 for a flat bulk and
+c_nu<=ell for a flat bulk with ell arbitrary positive OR negative spikes.
+
+A naive ONE-Rayleigh center is insufficient: one O(1) spike biases a
+typical Rayleigh by O(1/d), which is already theta when d=m,theta=1/m.
+The additive target below is theta/constant, so that bias can make a truly
+flat bulk appear numerically full rank. The following median fix avoids
+that flaw.
+
+Lemma 3 (compressed-median centering). If S=a0I+L+E,
+rank(L)<=ell and ||E||<=nu, then for EVERY orthonormal W with b columns,
+b>=2ell+1, each middle eigenvalue of W^T S W is in [a0-nu,a0+nu].
+
+Proof. W^T L W has rank <=ell, so at most ell eigenvalues of this
+compression can lie above a0+nu and at most ell below a0-nu, by min--max.
+For b>=2ell+1 a middle index avoids both sets. This holds for any W,
+not just a favorable random compression. A median computed to additive
+nu therefore gives |a-a0|<=2nu. In particular S-aI has at most ell
+singular values larger than 3nu.
+
+Pseudocode for Surrogate(S,d,tau,beta):
+
+  (i) Try s=0 first, and then s=1,2,4,..., capped at d.
+      If 2s+1>=d, form S explicitly on the d coordinate RHS, use it
+      exactly as S_tilde, and exit. Its cost is within the final cap.
+
+  (ii) Otherwise form an orthonormal W with b=2s+1 columns (coordinate
+       columns suffice), compute W^T S W, and find its middle eigenvalue
+       to absolute nu=tau/512 by bounded bisection/inertia. The initial
+       bracket [-18,18] and a fixed O(log(1/tau)) cap suffice. Call it a.
+       Inertia/LDL is ordinary small dense linear algebra; no ordered
+       eigenvalue oracle or gap condition is assumed. Put E_a=S-aI.
+
+  (iii) If s>0, draw independent Gaussian Omega of width s, apply a fixed
+        power E_a^q to it, and orthonormalize to obtain V. Use exact rank
+        revelation if dependencies occur. Form C_s=V^T E_a V and set
+        S_tilde=aI+VC_sV^T. For s=0 use S_tilde=aI.
+
+  (iv) Draw a FRESH Gaussian g and run the norm test below on the actual
+       self-adjoint residual R=S-S_tilde. If its returned upper bound
+       Gamma<=tau, accept. Otherwise continue to the next trial width.
+       All trials, their powers and their failure allocations are capped.
+
+The median step uses an approximate numerical eigenvalue ONLY for a SMALL
+explicit core, with additive bounded-spectrum accuracy. Exact sign counts
+and field bisection implement it finitely, with logarithmic accuracy cost.
+It is not a hidden small-tail eigenvalue oracle for S itself.
+
+Norm test. Pick a power of two u at least
+
+  log_2(100 sqrt(d)/beta_test^(3/2)).
+
+Compute y=R^u g, and return
+
+  Gamma=(100 ||y||/beta_test)^(1/u),                         (27)
+
+using repeated positive square roots. For a top-absolute-eigenvalue unit
+vector v of the conditionally fixed R, Gaussian anticoncentration gives
+|v^T g|>=beta_test/100 except probability <=beta_test. Hence
+||R||<=Gamma on this event. Independently, Markov gives
+||g||<=sqrt(d/beta_test) except probability beta_test. Thus, simultaneously,
+
+  ||R||<=Gamma<=2||R||.                                    (28)
+
+When R=0 the test returns zero exactly. Scaled power iteration can avoid
+representational overflow, but (27) is the finite exact-arithmetic object.
+Freshness matters: a g reused to BUILD V would not justify this bound.
+
+Range-finding degree and proof. On the coarse event, |a|<=18 and
+||E_a||<=36. Let P_G=(100d/beta_range)^3, and choose
+
+  q >= log_2(16*36*P_G/tau).                                (29)
+
+The Gaussian argument from the companion can be proved directly. Let
+H0={|lambda(E_a)|>tau/64} and J={|lambda(E_a)|>tau/32}.
+If s>=|H0|, the Gaussian head has full row rank, with pseudoinverse
+norm at most C d^(3/2)/beta_range, while the Gaussian tail Frobenius
+norm is at most sqrt(ds/beta_range), except total probability O(beta_range).
+Use the inverse head to represent the strong eigenvectors in J EXACTLY
+in their head coordinates and zero out the weak head coordinates. The
+tail leakage after q powers is <=2^-q P_G. Therefore for P=VV^T,
+
+ ||(I-P)E_a|| <=36*2^-q P_G+tau/32 <tau/8,
+ ||E_a-P E_a P|| <=2||(I-P)E_a|| <tau/4.                    (30)
+
+This is an operator approximation, not a per-vector or Frobenius claim.
+Signs of eigenvalues do not matter because the argument uses absolute
+powers. Norms of intermediate powers may be extremely small or large;
+no finite-word stability is asserted. QR after each power leaves the
+represented range unchanged and is the natural conventional realization.
+
+If s>=c_nu(S), nu=tau/512, Lemma 3 ensures |H0|<=s, because 3nu<tau/64.
+Thus (30) and the independent norm test accept with high probability.
+Doubling then bounds the accepted width by O(c_nu(S)+1), unless the
+full-core branch is reached; in that case d<=4c_nu(S)+3, so the same
+bound holds. Allocate beta/(C(j+1)^2) over trials and independent range/
+norm events; there are at most 2+ceil(log_2 d) trials. All logarithms in
+(27)--(29) are dimension, theta and beta logarithms. The algorithm always
+terminates, using full formation at its final trial even on failures.
+
+12. A general adaptive threshold theorem, with conventional costs
+-----------------------------------------------------------------
+Set
+
+  tau=theta/64, delta=theta/512,
+  epsilon=2tau+8delta=3theta/64,
+  rho=(1+2epsilon)/(1-2epsilon).                             (31)
+
+At each threshold compute its coarse far/critical decomposition; call
+Surrogate; and use (22),(25) for the BELOW/ABOVE/NEAR oracle of Section 5.
+Use the initial bracket [rho0/(4k),4k rho0] from the explicit Q_0
+coefficient ratio rho0=e_2(Q_0)/e_1(Q_0). It is valid at H=1/4,e_m<=1/64.
+Bisect at most ceil(log_2(256k^2/theta))+1 times, or until b<=rho*ell.
+In a NEAR branch, inflate to t*rho^2 and make the final surrogate/witness
+call. At a final bracket exit, use t_out=b*rho^2. As in (13), its lower
+surrogate has index <=1, so the actual output (24) exists. Any larger
+coarse positive margin or smaller approximation residual may only help.
+
+Correctness. The full surrogate gap is epsilon D by (23), so Section 5
+applies verbatim. The final threshold is at most rho^3 lambda_2(Hhat).
+For theta in (0,1], direct expansion gives rho^3<=1+theta (with epsilon
+as in (31)). The physical mass factor is
+
+ (1+e_m)/(1-e_m)<=1+theta/31<=1+theta.
+
+Thus the squared residual is at most (1+theta)^2 lambda_2(H), giving
+the requested singular-error factor 1+theta. The same statement applies
+to arbitrary fixed inputs, with failure <=delta_total after allocation
+to coarse sketches and all capped fresh residual tests/range calls. The
+conditioned analysis at adaptive thresholds is legitimate: the norm-test
+and range randomness is fresh conditional on the entire preceding state.
+
+Cost. For each executed threshold t let c(t)=c_(theta/32768)(S_t).
+This is a diagnostic complexity measure, NOT an assumed rank bound. Put
+
+  c_* = max over all executed/final thresholds c(t).
+
+On the same event, the build bound is
+
+  ~O(I + m^(omega+zeta) + Acal(c_*+1) + Acal(1)),             (32)
+
+with padding at width m and dimension/confidence/accuracy logarithms.
+The full core threshold algebra and all orthogonalizations cost m^omega
+per call and hence only a logarithmic overhead in (32). The s RHS
+applications of the Schur use the SAME degree-l far inverse polynomial,
+so a block action costs ~Acal(s), not s separate adaptive solves. A full
+trial at width d is covered when c_* is comparable to d. The runtime
+on any failed event is capped by the full-core (exact-Gram-scale) route;
+only the instance-sensitive bound (32) is a high-probability bound.
+
+Using conventional arithmetic instead gives
+
+  ~O(I + m^3 + I(c_*+1)) build, plus O(np) rank-one expansion. (33)
+
+Here all m-by-s maps cost <=m^2 s, all thin QR steps cost <=m s^2,
+and s^3<=m^2 s; these are <=I s since n,p>=m and s<=m. The fixed
+Chebyshev far degree is ceil(log_2(8192/theta)). No fast MM, spectral
+function oracle, or asymptotically enormous exponent construction is
+needed for (33). The actual norm/capture constants still deserve a
+numerical-analysis treatment before calling this a stable algorithm.
+Standard QR/Cholesky/LDL, blocked matrix products, and fixed polynomial
+recurrences are the intended conventional operations.
+
+The adaptive theorem automatically handles:
+  * a small coarse critical block (c_*<=max d(t));
+  * an arbitrarily large critical block with a nearly flat Schur bulk;
+  * that bulk plus a few positive or negative Schur spikes.
+It does not need to identify which situation occurs in advance. It is
+correct for all other inputs too, but then (32) may have c_*=Theta(m).
+
+Original hard case: if c_*<=m^.85 throughout the capped search, (32)
+attains build m^(9/4+o(1)) and explicit output N^(2+o(1)) at theta=1/m.
+This is genuinely broader than the small-d condition of Section 6, but
+still an INSTANCE-SENSITIVE theorem. There is no proof that c_* is small
+for unrestricted AB. The original unpromised target is still open.
+
+13. A combined counterexample to the currently proposed easy exits
+-----------------------------------------------------------------
+The following family simultaneously defeats "low negative index implies
+small critical dimension", "few scalar-centered Schur spikes", and
+"a random small restriction finds the negative witness". It is NOT an
+algorithm lower bound, and raw-factor access might yet exploit it.
+
+Let D=V diag(d_i) V^T with 1<=d_i<=2 spread through the interval, and
+choose an independent uniform unit vector u. For eta much smaller than
+the coarse distortion, define
+
+  K=eta D^1/2 [I-(1+gamma)uu^T] D^1/2, gamma>0.             (34)
+
+It has exactly one negative eigenvalue, all positive bulk eigenvalues
+are spread on scale eta, and for theta<<eta a best scalar-centered
+approximation to error O(theta) can still have rank Theta(m). Taking
+eta below the coarse critical margin makes the whole block critical.
+For any s-dimensional subspace W independent of u conditional on D,
+its restriction has a negative vector exactly when
+
+  ||P_range(D^1/2 W) u||^2 > 1/(1+gamma).                    (35)
+
+The mean projection is s/m. For small gamma, a small random subspace
+misses the negative cone. Rank-one inertia alone therefore supplies no
+dimension or centered-rank bound. If V were the coordinate basis, one
+could exploit diagonal centering; take generic V to avoid mistaking that
+special algebraic representation for a universal shortcut.
+
+This can be realized by actual factors with no conditioning pathology:
+take physical target H=I-K, which is positive definite for eta small,
+choose an orthonormal tall A, and B with BB^T=H. Theta-scale negative
+curvature is obtained by gamma of order theta/eta, up to the bounded
+D congruence constants. Thus the unresolved case is compatible with
+well-conditioned factors, an arbitrarily flat-looking coarse spectrum,
+and only one truly needed output direction.
+
+NEXT OBLIGATION. Exploit raw factors to find or exclude that Lorentz-cone
+witness without constructing the broad positive Schur bulk. The new
+conditional/adaptive theorem does not settle this remaining class.
+
+14. Fixed rank-r extension and an explicit conventional algorithm
+----------------------------------------------------------------
+The one-negative-direction geometry extends without greedy deflation.
+If K has q<=r negative eigenvalues and W^T K W is negative definite of
+order q, inertia additivity gives
+
+ K-KW(W^T K W)^-1 W^T K >=0.                                (36)
+
+For the lower full surrogate of Lemma 2, take all q negative directions
+W_c of Slo and analytically extend to [W_c;-T_+B W_c]. Its dual images
+are [Slo W_c;0]. Thus the output space is
+
+ range(Z J_D U_C Slo W_c), width q<=r.                       (37)
+
+This is a simultaneous certificate, with NO r-fold greedy precision loss.
+Use j=r+1 instead of 2 in the initial coefficient ratio and compare each
+inertia count to r. The same scalar shift inequalities and final inflation
+apply unchanged. If k<=r the exact-support branch handles a zero tail.
+Every oracle failure or unexpected final count is guarded by returning
+zero on that outcome; it does not trigger an unbounded search or an
+uncontrolled division. This guard is irrelevant on the correctness event.
+
+The fast build bound becomes
+
+  ~O(I+m^(omega+zeta)+Acal(c_*+1)+Acal(r)),                   (38)
+
+plus np+T_MM(n,r,p) for all explicit output entries. Classical arithmetic
+gives ~O(I+m^3+I(c_*+r+1)) construction and O(npr) expansion. In (26),
+the scalar-plus-rank parameter is still the best centered rank of the
+whole critical Schur; it is NOT automatically bounded by the requested
+output rank r. In particular (38) is not the proposed unrestricted Ir
+theorem. It is a checkable instance-sensitive interpolation to exact cores.
+
+Conventional ThresholdSchur(A,B,r,theta,delta_total):
+
+  1. Form constant-distortion sketches of the two factors, support/whiten
+     the left factor, restrict to product support, form Q_0. If k<=r,
+     return the exact product factors. Store only core maps and raw A,B.
+
+  2. Fix the even inverse-mass polynomial B_m once, with relative error
+     theta/64. Obtain the initial positive bracket for lambda_(r+1)
+     from Q_0, using a characteristic coefficient ratio and core inertia.
+
+  3. At each capped bisection threshold t, factor D=tI+Q_0. Compute a
+     positive subspace of S0-gamma I, gamma in [3/4,7/8], by pivoted
+     symmetric LDL; orthogonalize it and its complement. Define the
+     Schur operator (21) using the FIXED Chebyshev inverse (20).
+
+  4. Use median-compression/rank-doubling Surrogate from Section 11.
+     Accept only after its fresh residual upper test is <=theta/64.
+     Count inertia of the scalar-plus-small-core Slo and Shi by (25).
+     If n_-(Shi)>r set the lower threshold; if n_-(Slo)<=r set the
+     upper threshold; otherwise use the inflated NEAR exit.
+
+  5. At the final inflated upper threshold, get all negative directions
+     W_c of Slo, form the physical vectors in (37), thin QR them, and
+     return C=P_physical AB via factor actions. Explicitly form its
+     n-by-p entries with classical or fast rank-r multiplication.
+
+All heavy operations here are ordinary matrix products, QR/Cholesky,
+symmetric pivoted LDL, Gaussian test vectors, and bounded-spectrum
+fixed-degree Chebyshev recurrences. Ordinary LDL/charpoly costs are cubic
+in the SMALL core; no fast matrix multiplication is required to state
+or run the conventional theorem. A tuned implementation could reuse
+coarse decompositions and reduce calls, but no such speedup is charged.
+
+Comparison with the GENERIC worst-case Krylov bound only:
+if c_*+r is bounded while theta decreases polynomially, (33)/(38) have
+only logarithmic accuracy factors, whereas the generic ordinary-Krylov
+construction contains I r/sqrt(theta). The error guarantee and output
+rank are the same. Exact QR/core-SVD still costs O((n+p)m^2+m^3), while
+this class uses input-linear factor processing plus m^3 and small-rank
+actions. These are comparisons of stated upper bounds in the indicated
+class, not an empirical hardware claim or a global SOTA certificate.
+Sections 18--19 give the stronger clustered-Krylov comparison hazard:
+they may MATCH this new profile cost. Thus this paragraph does not
+establish a new asymptotic frontier over adaptive classical methods.
+
+Finite precision limitation. Several operations need a separate robust
+analysis: inertia near a zero pivot, whitening a nearly rank-deficient
+factor, power-range QR, and one-sided inverse errors. The exact theorem
+does NOT authorize an implementation to label a floating-point eigenvalue
+as positive merely because it is numerically small. A stable version can
+use certified additive residual bounds and include those errors in tau,
+but such a theorem has not yet been supplied. The practical-theoretical
+claim is that the building blocks and degree growth are standard and
+moderate, not that all their finite-word certification is already proved.
+
+15. Prior-art correction and scope of possible contribution
+-----------------------------------------------------------
+The parent identified van der Veen's 1996 Schur low-rank approximation
+method (primary PDF https://sps.ewi.tudelft.nl/pubs/schur93.pdf), which
+explicitly uses negative/positive spaces and hyperbolic QR to parameterize
+spectral-error approximants. This reinforces that (1),(36), and the
+negative-space geometry are CLASSICAL; they are not a novelty claim here.
+
+The candidate contribution to audit is narrower: true-factor matrix-free
+constant-conditioned far elimination, one-sided finite Schur surrogates,
+and adaptive scalar-plus-low-rank compression certified by fresh norm
+tests, with the resulting critical-centered-rank cost (38). Randomized
+range finding and scalar-plus-low-rank algebra are themselves standard.
+No inspected primary source has yet been shown to contain or exclude
+this complete factored-product composition. Novelty remains unresolved,
+and the unrestricted N^2 theorem remains unproved.
+
+16. Optional fully classical far basis and surrogate diagonalization
+--------------------------------------------------------------------
+The parent suggested a clean replacement for the far positive-space LDL.
+It avoids sensitive exact pivot selection in the STANDARD-arithmetic
+version while retaining the fast exact-field theorem as a separate option.
+
+Lemma 4 (fixed-budget random-pair Jacobi). If S0 is symmetric with
+||S0||<=1, there is a finite O(k^3 log(k/beta)) field/square-root routine
+returning orthogonal Q_J and diagonal Lambda_J such that
+
+  ||Q_J^T S0 Q_J-Lambda_J||<=1/16                            (39)
+
+with probability >=1-beta. No eigenvalue gap or scale ratio is used.
+
+Proof. Let e be the squared off-diagonal Frobenius norm, initially <=k.
+A Jacobi rotation on a pair i<j zeros its off-diagonal entry and reduces
+e EXACTLY by 2 a_ij^2. For a uniform pair, conditional expectation is
+
+  E[e_next|current]=(1-2/[k(k-1)])e.
+
+After M>=k(k-1) log(256k/beta)/2 rotations, E[e_M]<=beta/256.
+Markov then gives e_M<=1/256 except probability beta, proving (39).
+Each rotation and update of Q_J cost O(k). For k=1 use the exact scalar.
+The 2-by-2 diagonalization uses only field operations and a positive
+square root; ties/zero off-diagonals have explicit identity branches.
+Uniform pairs can be generated with finite Gaussian draws if random bits
+are not primitive: draw k independent Gaussians and choose the index of
+the minimum, then draw k-1 fresh Gaussians on the remaining indices and
+choose the other minimum. Symmetry gives a uniform ordered distinct pair;
+draws/comparisons cost O(k), already within the rotation bound. Ties have
+probability zero and any deterministic tie rule keeps the cap finite.
+
+Select columns of Q_J whose diagonal Lambda_J entries are >=13/16.
+By (39), on their span S0>=3/4 I. All other columns form U_C. Thus (19)
+holds on the joint coarse/Jacobi event, without deciding any tiny true
+eigenvalue or factoring an almost singular S0-gamma I. The resulting
+critical profile c_*(t) refers to THIS actual random far basis; no claim
+is made that it equals the exact spectral-threshold critical dimension.
+Allocate beta over all capped threshold calls.
+
+The same fixed-budget Jacobi argument works on each bounded small core
+at absolute tolerance eta: replace beta/256 by beta*eta^2, and scale the
+initial Frobenius bound by its known dimension and norm. Its O(s^3)
+cost gains only logarithms in 1/eta and 1/beta. This can replace the
+compressed-median eigenvalue bisection, since sorted approximate diagonal
+entries differ from the true ordered eigenvalues by at most eta (Weyl).
+
+It can also replace small-core LDL for S_tilde. Apply Jacobi to
+C_s=V^T(S-aI)V to tolerance tau/32; let C_app=Q_c diag(c) Q_c^T be
+the ACTUAL matrix represented by the approximate diagonalization. Use
+
+  S_tilde=aI+(VQ_c)diag(c)(VQ_c)^T
+
+in the fresh norm test. Projection error <tau/4 from (30), plus the
+additional tau/32, leaves residual <9tau/32 and the norm upper test
+<=9tau/16<tau. Therefore the numerical-rank acceptance proof still holds.
+Inertia and negative basis of the represented Slo/Shi now use only the
+signs of a+c_i+z and the scalar bulk sign. No actual-eigenvalue sign
+approximation is asserted: these scalars define the NEW surrogate,
+and the residual test absorbs its discrepancy from the true operator.
+
+This classical variant uses standard QR, Cholesky, Jacobi and polynomial
+matrix actions throughout its numerical subspace stages. The initial
+condition-free bracket can still use exact characteristic coefficients
+as in the main theorem; their classical construction has O(m^3) arithmetic
+cost. The variant is NOT a stable finite-word theorem: QR/whitening near
+rank loss and reliable residual upper arithmetic remain separate issues.
+It merely removes an exact-eigenvector or tiny-LDL-pivot requirement from
+the adaptive approximation mechanism, at the same conventional bound (33).
+
+17. Strengthening the failure example; its first version is gap-easy
+-------------------------------------------------------------------
+The parent/independent reviewer correctly noted that (34) is NOT a hard
+Krylov instance: its sole negative eigenvalue is isolated from positive
+bulk on a CONSTANT fraction of the scale eta. Ordinary shifted Krylov
+can find its negative vector in logarithmic degree. Furthermore t=1 in
+that example is above the actual physical second eigenvalue by order eta,
+not theta. Section 13 disproves only the three implications explicitly
+listed there. It must not be used as evidence of a new runtime frontier.
+
+A stronger test for the CURRENT easy-exit criteria is a generically
+rotated matrix with spectrum
+
+  -3theta, theta, and a dense positive grid from theta to eta,
+  theta<<eta<<1.                                           (40)
+
+Take H_phys=I-K. It is SPD, its top two eigenvalues are 1+3theta and
+1-theta, and t=1 is now within O(theta) of the correct tail threshold.
+With a constant-distortion coarse proxy, ||S0||<=1/2+O(eta)<3/4 for
+small eta, so the exact coarse far-positive space of Section 9 can be
+empty. The broad grid prevents a best scalar-plus-low-rank approximation
+at tolerance O(theta) from having sublinear rank: for any bounded-
+condition D congruence, separated lower/upper positive spectral quantiles
+still force c_nu=Omega(m) (choose quantiles separated by more than that
+fixed condition factor). The negative unit eigenvector u obeys
+
+  K>=theta I-4theta uu^T.
+
+Consequently every restriction W with ||P_W u||^2<=1/4 is PSD.
+A small random subspace still fails to expose the negative witness.
+For eta=m^-1/2 and theta=1/m, the plain width/gap Krylov upper bound
+is sqrt(eta/theta)=m^1/4, above the target input-pass budget m^1/8.
+This is NOT a proof that every polynomial or factor-aware method needs
+that many actions. The displayed spectrum is a test family for future
+algorithms, not a query lower bound or a solution of the research goal.
+
+18. Strong novelty warning: clustered Krylov may match the new profile
+----------------------------------------------------------------------
+The parent's further audit points out a serious possible subsumption.
+If the exact critical Schur has S_exact=aI+rank-s+O(theta), then
+
+  Kbar=L diag(S_exact,A)L^T,
+  A in [1/4,2], ||L|| and ||L^-1|| bounded by absolute constants.
+
+For a>theta, the rank-zero positive bulk therefore has eigenvalues in
+two CONSTANT-MULTIPLICATIVE bands [c a,C a] and [c,C], up to rank-s
+outliers and O(theta) perturbation. If a<=O(theta), the small band is
+already within the allowed additive gray band; if a<0 with multiplicity
+larger than s+r, an r+1-negative-direction decision is easy in principle.
+
+There is a polylogarithmic-degree polynomial that suppresses both
+positive bands while remaining >=1 at every negative scalar. Normalize
+a low-band Chebyshev filter p_low at zero. Degree q=O(log(1/epsilon))
+suppresses [c a,C a], but its magnitude on the far band may grow as
+(C'/a)^q. Multiply a normalized far-band Chebyshev filter p_far. It is
+bounded by one between zero and the far band and exponentially small
+on [c,C]; degree O(q log(1/a)+log(1/epsilon)) offsets all p_low growth.
+For x<0 both normalized factors are >=1. All degrees are polylogarithmic
+in m/theta, and a Gaussian block of width O(s+r) can force the positive
+outlier head coordinates to zero while capturing strong negative modes.
+
+The last step turning such a clustered-spectrum Krylov span into an
+actual rank-r certified output still needs a precise standard theorem
+or a local robust extraction proof; a width-(s+r) projector cannot simply
+be returned as rank r. Nevertheless the construction already makes it
+unsafe to claim that (38) improves the strongest adaptive/clustered
+ordinary Krylov complexity on its own profile class. The new theorem is
+currently an ALTERNATE CERTIFIER with a precise computable diagnostic,
+not an established asymptotic frontier or a seminal breakthrough.
+
+The unrestricted original problem remains open after this note. Future
+work must exploit something beyond low index, scalar-centered rank,
+coarse positive-block elimination, and generic clustered-polynomial
+filtering, or prove a substantially stronger raw-factor truncated-inertia
+construction. No further parameter tuning of the old isotropic hierarchy
+is being offered as an answer to the stronger user goal.
+
+19. Rank-r extraction lemma strengthens the clustered-Krylov concern
+--------------------------------------------------------------------
+The parent supplied the following local lemma; its short proof closes
+the upper-threshold rank truncation issue left in Section 18.
+
+Let T be PSD, ||T||<=2, and lambda_(r+1)(T)<=1. Put B=T^2. Let E
+have orthonormal columns spanning the true B-eigenspace above 1+zeta,
+so width(E)<=r. Suppose Q is orthonormal and
+||(I-QQ^T)E||<=epsilon. Let U be the top-r Ritz space of Q^T B Q,
+lifted into the ambient space. Then
+
+  ||(I-P_U)T||^2 <=1+zeta+4(epsilon+4epsilon/zeta)^2.        (41)
+
+Proof. Write B E=E Lambda, Lambda>(1+zeta)I. If A_Q=Q^T B Q
+and X=Q^T E, then
+
+  A_Q X-X Lambda=-Q^T B(I-QQ^T)E,
+
+with norm <=4epsilon. The lower Ritz block after removing its top r
+eigenvalues has norm/eigenvalues <=1 by min--max, since the ambient
+(r+1)-st B eigenvalue is <=1. Project onto that lower block. The ordered
+Sylvester separation by zeta gives solution norm <=4epsilon/zeta.
+For completeness this follows by the semigroup integral solution:
+after shifting the lower spectrum to <=0 and the upper to >=zeta,
+the norm integrand is at most exp(-zeta t)||R||. Thus the true E space
+has leakage from U at most epsilon+4epsilon/zeta. Finally
+
+  B<=(1+zeta)I+4P_E,
+
+and restrict this inequality to U^perp. This proves (41). In particular
+epsilon<=c zeta^(3/2) makes the residual <=1+O(zeta). There is no
+unjustified monotonicity of a rank-r truncation of an enlarged basis.
+
+The two-band polynomial in Section 18 can achieve such capture with
+polylogarithmic degree and Gaussian width O(s+r). Thus even the RANK-r
+upper-threshold output of our profile theorem is likely achievable by
+ordinary clustered Krylov in the same arithmetic order. A complete
+global below/near threshold wrapper still needs to be written if this
+is to be used as a formal subsumption theorem; it is already enough to
+withdraw any frontier novelty claim for the current adaptive profile.
+
+20. Direct dual-space extraction without tiny surrogate eigenvalues
+------------------------------------------------------------------
+In the classical Jacobi variant the actual Slo has a KNOWN orthonormal
+negative eigenspace W_-. Since Slo maps this space invertibly onto itself,
+span(Slo W_-)=span(W_-). Therefore use
+
+  range(Z J_D U_C W_-)
+
+directly instead of scaling its columns by possibly tiny negative
+eigenvalues. This avoids dividing by or propagating a tiny negative
+Rayleigh pivot in the physical lift. A direct square completion proves
+the claim: for the lower full surrogate,
+
+  [x;y]^T Klo [x;y]
+    =x^T Slo x+(y+T_+ Bx)^T T_+^-1(y+T_+Bx).
+
+If x is orthogonal to W_-, both terms are nonnegative. No inverse T_+
+is computed in obtaining the output; it appears only in the identity.
+
+If weak negative modes of Slo in [-tau,0) are omitted, the same argument
+gives lower bound -tau||[x;y]||^2 on the corresponding complement.
+This charges an additional tau D weighted error, which the constants
+can absorb. This observation improves the numerical specification of
+the alternate certifier but does not change its complexity frontier.
+
+21. Further open escape: the dual cone and a resolvent dimension
+----------------------------------------------------------------
+For a NONSINGULAR symmetric index-one K, K is PSD on g^perp exactly when
+
+  g^T K^-1 g<=0, g!=0.                                     (42)
+
+This follows from inertia of the bordered form, or directly from a
+Lorentzian diagonalization. For K=diag(-a,b_2,...,b_m), a,b_i>0, a
+standard Gaussian g defines a valid hyperplane precisely when
+
+  g_1^2 >= a sum_{i=2}^m g_i^2/b_i.                         (43)
+
+The relevant difficulty can thus be a RESOLVENT effective dimension
+a tr(K_+^-1), rather than Euclidean eigenvector overlap. The dual cone
+can be wide while the primal negative-witness cone is narrow. However,
+at a valid tail threshold some positive b_i can be O(theta), so the
+dimension in (43) is not universally small. More importantly, selecting
+or certifying a successful random g requires the sign in (42), an
+indefinite inverse or equivalent certificate. No target-cost selector
+has been proved. Repeating untested random outputs is NOT amplification,
+and combining them would violate the requested rank-one width.
+
+This remains a possible route for a new raw-factor truncated-inertia
+method. It is recorded as a precise missing oracle, not a completed
+algorithm or another claimed solution of the original target.

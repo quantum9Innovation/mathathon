@@ -1,0 +1,1187 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[colorlinks=true,urlcolor=blue,citecolor=blue,linkcolor=blue]{hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newcommand{\R}{\mathbb R}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\MM}{T_{\rm MM}}
+\newcommand{\tO}{\widetilde O}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\range}{\operatorname{range}}
+\newcommand{\diag}{\operatorname{diag}}
+\title{Sketch-preconditioned thresholds\\for spectral approximation of a factored product}
+\author{Research candidate: independent novelty audit in progress}
+\date{November 14, 2026}
+\begin{document}
+\maketitle
+\begin{abstract}
+We develop algorithms that trade factor-sketch accuracy against the cost
+of a preconditioned spectral threshold test. A two-level variant retains
+the finer sketches as operators, avoiding their dense Gram matrices.
+For \(n=p=N\), \(m=\lceil N^{50/59}\rceil\), and
+\(\theta=m^{-56/125}\), a fixed-depth extension constructs a rank-one approximation in
+\(o(N^2)\) arithmetic operations and explicitly expands it in total
+\(O(N^2)\) time. The error is at most \((1+\theta)\sigma_2(AB)\)
+with any fixed prescribed confidence, for every fixed real factor pair.
+Schur-complement deflation extends the guarantee to general rank, and a
+stopping rule certifies absolute error without a supplied target rank.
+The strongest strict quadratic-time consequence holds for fixed rank.
+The bounds improve the audited general-product Gram and Krylov bounds;
+global novelty remains under review. The original \(\theta=1/m\) target
+and finite-precision stability remain open.
+\end{abstract}
+
+\section{Statement and arithmetic model}
+Let \(A\in\R^{n\times m}\), \(B\in\R^{m\times p}\),
+\(m\leq\min(n,p)\), \(M=AB\), and \(I=m(n+p)\).
+The algorithm returns \(u\in\R^n\), \(v\in\R^p\), and explicitly
+forms \(C=uv^\top\). All costs below are real arithmetic operations;
+square roots, inner products, comparisons, and standard numerical small-core
+eigenvalue computations are included in the usual arithmetic linear-algebra
+model. A stable floating-point/bit-complexity theorem is not claimed.
+Exponent slack \(\zeta>0\) absorbs fast-algebra overhead. Logarithms in
+dimensions, inverse accuracy, and inverse failure probability are suppressed.
+Singular values and eigenvalues beyond the matrix dimension are defined as zero.
+All query counts are capped in advance. Test required squared norms and
+denominators before normalization or inversion; a nonpositive required norm,
+singular auxiliary solve, or invalid bracket returns the current factors.
+These exits are absent on the good events proved below. They keep the
+algorithm well defined with bounded runtime on failure outcomes as well.
+
+For \(0<h\leq1/16\), let \(s_A,s_B\) be the dimensions of fast
+squared-norm \((1\pm h)\) embeddings for \(\range A\) and
+\(\range B^\top\), with joint failure probability at most \(\delta/4\).
+SRHT embeddings permit
+\[
+ s_A=\min\{n,\tO(m/h^2)\},\qquad
+ s_B=\min\{p,\tO(m/h^2)\},
+\]
+using the identity in a smaller ambient dimension. Padding to a power of two
+changes only constants. Define
+\[
+ G_h=\MM(m,s_A,m)+\MM(m,s_B,m).
+\]
+
+\begin{theorem}[Candidate rank-one bound]\label{thm:main}
+For \(0<\theta\leq h\leq1/16\) and \(0<\delta<1\), the
+algorithm below satisfies, for every fixed \(A,B\),
+\[
+ \Pr\{\norm{M-C}_2\leq(1+\theta)\sigma_2(M)\}\geq1-\delta
+\]
+with total arithmetic cost
+\begin{equation}\label{eq:cost}
+ \tO\!\left(I+G_h+m^{\omega+\zeta}
+              +\frac{m^2}{\sqrt h}
+              +I\sqrt{h/\theta}+np\right).
+\end{equation}
+The formula includes rank-deficient inputs and explicit output expansion.
+\end{theorem}
+
+The two-level bound in Theorem~\ref{thm:twolevel} strengthens this tradeoff.
+Corollaries~\ref{cor:twolevel} and~\ref{cor:multilevel} give increasingly
+accurate quadratic-output regimes.
+
+The proof uses standard randomized Krylov eigenvalue estimation \cite{jyz}
+and fast subspace embeddings \cite{cnw}. Preconditioned Lanczos for shifted
+generalized eigenvalue pencils is classical \cite{templates}; it is not claimed
+as a new mechanism. The potentially new contribution is the two-factor
+sketch construction, the global error-to-threshold accounting, and its optimized
+total cost. Sketch-preconditioned eigenvector refinement also has recent prior
+art, including EPSI \cite{epsi}; novelty of this bound is not yet settled.
+
+\section{Implicit coordinates, including rank deficiency}
+Write \(P=A^\top A\), \(Q=BB^\top\). Construct
+\(\widetilde P=(SA)^\top SA\) and
+\(\widetilde Q=(TB^\top)^\top TB^\top\), so on the good event
+\begin{equation}\label{eq:ose}
+ (1-h)P\preceq\widetilde P\preceq(1+h)P,\qquad
+ (1-h)Q\preceq\widetilde Q\preceq(1+h)Q.
+\end{equation}
+Let \(a=\rank\widetilde P=\rank P\). If \(a=0\), return zero.
+Small-core rank-revealing algebra supplies a full-column-rank matrix
+\(W\in\R^{m\times a}\) such that
+\(\range W=\range P\) and \(W^\top\widetilde P W=I_a\).
+Set \(L=W^\dagger=(W^\top W)^{-1}W^\top\). No exact spectral
+oracle is needed for this support reduction: choose independent columns
+\(W_0\) of \(\widetilde P\) by rank-revealing elimination, form the
+positive definite core \(W_0^\top\widetilde P W_0=R^\top R\), and set
+\(W=W_0R^{-1}\). These products, inversions, and Cholesky operations
+cost \(\tO(m^{\omega+\zeta})\) in the stated arithmetic model.
+
+The following objects are used implicitly:
+\[
+ Z=AW,\quad G=Z^\top Z=W^\top P W,\quad
+ Q'=LQL^\top,\quad Q_0=L\widetilde QL^\top.
+\]
+Since \(WL\) is the orthogonal projector onto \(\range P\),
+\(A=AWL\), so \(M=ZLB\) exactly. In particular,
+\[
+ \frac1{1+h}I_a\preceq G\preceq\frac1{1-h}I_a,
+ \qquad (1-h)Q'\preceq Q_0\preceq(1+h)Q'.
+\]
+The spectra of \(H=MM^\top\) and \(G^{1/2}Q'G^{1/2}\) agree
+after padding the latter with \(n-a\) additional zeros.
+Set \(\lambda_1=\norm H_2\).
+If \(Q_0=0\), then \(M=0\) on the good embedding event, so return zero.
+Every application of \(G\) or \(Q'\) takes \(O(I+m^2)=O(I)\)
+operations through the original factors. The algorithm never forms \(Z\)
+or \(LB\) with all \(a\) columns/rows.
+
+\section{A uniformly bounded threshold problem}
+Let \(\nu_0=\lambda_{\max}(Q_0)>0\). A standard randomized core
+Krylov computation obtains a Rayleigh value \(\nu\) satisfying
+\((1-h)\nu_0\leq\nu\leq\nu_0\), with failure probability at most
+\(\delta/4\), at cost \(\tO(m^2/\sqrt h)\). If the Krylov basis
+saturates, use its small dense eigenproblem.
+The unknown scale \(\nu_0\) is not required by the algorithm: run Lanczos
+on \(Q_0\), whose spaces and Ritz vectors agree with those of
+\(-Q_0\) after the sign change. Lemma 1 of \cite{jyz}, analyzed with
+norm bound \(\nu_0\) and additive error \(h\nu_0\), gives an iteration
+count depending only on \(h\), dimension and confidence. The scale cancels.
+The comparison \eqref{eq:ose} gives
+\((1-h)^2\lambda_1\leq\nu_0\leq(1+h)^2\lambda_1\).
+Consequently
+\begin{equation}\label{eq:bracket}
+ \ell_0=\frac{\nu}{(1+h)^2}\leq\lambda_1\leq
+ b_0=\frac{\nu}{(1-h)^3}.
+\end{equation}
+For all \(t\in[\ell_0,b_0]\), direct scalar estimates, using
+\(h\leq1/16\), yield
+\[
+ \tfrac23\lambda_1\leq t\leq\tfrac32\lambda_1,
+ \quad \norm{Q'}_2\leq2t,
+ \quad \nu_0/t\leq (1+h)^2/(1-h)\leq1+4h.
+\]
+
+For such a threshold \(t\), define
+\begin{equation}\label{eq:stiffness}
+ K_t=tG-GQ'G,\qquad
+ F_t=(1+32h)tI_a-Q_0,\qquad
+ \Delta_t=F_t-K_t.
+\end{equation}
+Here \(K_t\) can be indefinite. The preconditioner \(F_t\) is explicit
+and positive definite for every threshold in the initial bracket.
+
+\begin{lemma}[Uniform preconditioner bounds]\label{lem:precond}
+For every \(t\in[\ell_0,b_0]\),
+\[
+ \norm{K_t-(tI_a-Q_0)}_2\leq10ht,\qquad
+ 22htI_a\preceq\Delta_t\preceq42htI_a,\qquad
+ F_t\succeq28htI_a.
+\]
+If \(F_t=J_tJ_t^\top\) is a Cholesky factorization, then
+\(E_t=J_t^{-1}K_tJ_t^{-\top}\) has spectrum in \([-1,1]\).
+\end{lemma}
+\begin{proof}
+Put \(e=h/(1-h)\leq16h/15\). The preceding bounds give
+\begin{align*}
+ \norm{K_t-(tI_a-Q_0)}_2
+ &\leq t\norm{G-I_a}_2+
+          \norm{GQ'G-Q'}_2+\norm{Q'-Q_0}_2\\
+ &\leq te+(2e+e^2+h)\norm{Q'}_2\leq10ht.
+\end{align*}
+The claimed bounds on \(\Delta_t\) follow by adding \(32htI_a\).
+The bound on \(F_t\) follows from \(\nu_0\leq(1+4h)t\).
+Finally,
+\[
+ E_t=I_a-J_t^{-1}\Delta_tJ_t^{-\top},\qquad
+ 0\preceq J_t^{-1}\Delta_tJ_t^{-\top}\preceq\tfrac{42}{28}I_a.
+\]
+Thus its spectrum is even contained in \([-1/2,1]\).
+\end{proof}
+
+The preconditioner is allowed to depend on the threshold. A factorization
+and inverse of its triangular Cholesky factor cost
+\(\tO(m^{\omega+\zeta})\) per threshold, with only logarithmically
+many thresholds below. A matvec with \(E_t\) takes \(O(I)\)
+operations, using the implicit formula for \(K_t\) and small-core inverse
+applications. No square root of the true mass matrix \(G\) is needed.
+If an unexpected Cholesky failure or zero normalization occurs, the algorithm
+returns zero; neither occurs on the good events used in the proof. The number
+of iterations is bounded in advance, so failures do not create an unbounded
+runtime outside those events.
+
+\section{Global threshold testing and a Rayleigh vector}
+We use the standard randomized Krylov fact that a fixed symmetric matrix
+with spectrum in \([-1,1]\) admits, with failure probability \(\beta\),
+a unit vector \(y\) whose \emph{actual} Rayleigh value satisfies
+\begin{equation}\label{eq:ritz}
+ \mu_{\min}(E_t)\leq q=y^\top E_ty\leq\mu_{\min}(E_t)+\tau
+\end{equation}
+using \(\tO(\tau^{-1/2})\) matvecs. One can apply ordinary PSD
+Krylov iteration to \(I_a-E_t\succeq0\), whose norm is at most 2.
+Lemma 1 of \cite{jyz} gives this actual-witness additive guarantee directly;
+equivalent Chebyshev and per-vector analyses are in \cite{mm}.
+The dense Ritz problem need only be solved to half the requested additive
+tolerance; allocating the other half to Krylov convergence changes constants
+and logarithms, not the bound. Rayleigh values used in the tests are recomputed
+from the returned vectors.
+Orthonormalization and Ritz processing
+cost \(O(aq_*^2+q_*^3)\) for basis width \(q_*\leq a\), bounded by
+\(O(Iq_*)\). This is an eigenvalue/Rayleigh primitive, not an assumed
+relative-spectral low-rank oracle for the original product.
+
+Set
+\[
+ e_* =\theta/8,\qquad \tau=e_*/(512h).
+\]
+In our parameter range, \(0<\tau\leq1/4096\).
+Start with \([\ell,b]=[\ell_0,b_0]\). At its midpoint \(t\), compute
+\eqref{eq:ritz} with a fresh random start and form
+\(x=J_t^{-\top}y\). If \(q<0\), replace \(\ell\) by \(t\).
+If \(q\geq\tau\), replace \(b\) by \(t\). If
+\(0\leq q<\tau\), stop and return
+\(z=Zx/\sqrt{x^\top Gx}\).
+If the bracket first reaches \(b-\ell\leq e_*\ell/4\), make one final
+test at \(t=\ell\) and return the vector from that test.
+
+\begin{lemma}[Certified updates and final quality]\label{lem:rayleigh}
+On the event that all calls satisfy \eqref{eq:ritz}, the bracket always
+contains \(\lambda_1\). The returned vector has unit norm and
+\(z^\top Hz\geq(1-e_*)\lambda_1\).
+\end{lemma}
+\begin{proof}
+The inertia of \(K_t\), hence that of \(E_t\), shows that
+\(\mu_{\min}(E_t)\geq0\) precisely when \(t\geq\lambda_1\).
+Thus \(q<0\) implies \(t<\lambda_1\); and \(q\geq\tau\) implies
+\(\mu_{\min}(E_t)\geq q-\tau\geq0\). Both updates are valid.
+
+Whenever \(q\leq\tau\), the witness \(x\) satisfies
+\[
+ x^\top K_tx\leq\tau x^\top F_tx
+   =\tau x^\top K_tx+\tau x^\top\Delta_tx.
+\]
+Since \(G\succeq I_a/(1+h)\), Lemma~\ref{lem:precond} gives
+\begin{equation}\label{eq:witness}
+ \frac{x^\top K_tx}{x^\top Gx}\leq64\tau ht,
+ \qquad z^\top Hz=t-\frac{x^\top K_tx}{x^\top Gx}
+                  \geq t-64\tau ht.
+\end{equation}
+If the uncertain case occurs, \(q\geq0\) additionally implies
+\(\mu_{\min}(E_t)\geq-\tau\). Hence
+\(K_t\succeq-\tau F_t=-\tau(K_t+\Delta_t)\), and
+\[
+ \lambda_1\leq t+
+     \frac{42(1+h)\tau ht}{1+\tau}\leq t+45\tau ht.
+\]
+Combining with \eqref{eq:witness}, \(t\leq3\lambda_1/2\), and
+\(\tau=e_*/(512h)\) gives
+\(\lambda_1-z^\top Hz\leq(3/2)109 e_*\lambda_1/512<e_*\lambda_1\).
+
+If the final call is at \(t=\ell\), then
+\(\mu_{\min}(E_\ell)\leq0\), so \(q\leq\tau\) and
+\eqref{eq:witness} applies. Using
+\(\lambda_1-\ell\leq e_*\ell/4\) gives
+\(\lambda_1-z^\top Hz\leq(e_*/4+e_*/8)\ell<e_*\lambda_1\).
+Finally \(\norm{Zx}_2^2=x^\top Gx>0\), since \(G\succ0\) on the
+support coordinates. This also proves normalization is valid.
+\end{proof}
+
+There are \(O(1+\log(1/e_*))\) tests, since the initial bracket has a
+bounded ratio. Every adaptive test uses fresh randomness; condition on its
+past and apply the fixed-matrix guarantee with failure probability at most
+\(\delta/(4K)\), where a deterministic bound \(K\) on the number of
+tests is computed in advance. A union bound costs only logarithms. The total
+threshold-test work is \(\tO(I\sqrt{h/\theta}+m^{\omega+\zeta})\).
+
+\section{From a leading Rayleigh vector to spectral low rank}
+The following elementary consequence of rank-one interlacing and a Schur
+determinant identity avoids any condition number between successive eigenvalues.
+It also permits a general-rank extension. The identities themselves are
+classical; novelty of this lemma is not asserted.
+
+\begin{lemma}[Relative Nystr\"om deflation]\label{lem:finish}
+Let \(H\succeq0\) be \(d\times d\), \(\norm z_2=1\), and
+\(s=z^\top Hz>0\). Define
+\[
+ R=H-\frac{Hz z^\top H}{s}.
+\]
+Then \(R\succeq0\), \(\rank R=\rank H-1\), and, for
+\(1\leq j<d\),
+\[
+ \lambda_j(R)\leq\frac{\lambda_1(H)}s\lambda_{j+1}(H).
+\]
+\end{lemma}
+\begin{proof}
+First suppose \(H\succ0\). In an orthonormal basis starting with \(z\),
+write \(H=\left(\begin{smallmatrix}s&b^\top\\b&C\end{smallmatrix}\right)\).
+Then \(R=\diag(0,C-bb^\top/s)\). Its positive eigenvalues \(\mu_j\)
+satisfy \(\mu_j\geq\lambda_{j+1}(H)\) by rank-one interlacing, and
+the Schur determinant identity gives
+\[
+ \prod_{j=1}^{d-1}\frac{\mu_j}{\lambda_{j+1}(H)}
+ =\frac{\det(H)/s}{\prod_{j=1}^{d-1}\lambda_{j+1}(H)}
+ =\frac{\lambda_1(H)}s.
+\]
+Every factor is at least 1, so each is at most their product. This proves
+the eigenvalue bound. Replace \(H\) by \(H+\epsilon I\) and let
+\(\epsilon\downarrow0\) for the semidefinite case. Finally
+\(R=H^{1/2}(I-ww^\top)H^{1/2}\), where
+\(w=H^{1/2}z/\sqrt s\) is a unit vector in \(\range H\), proving
+positivity and the stated rank drop.
+\end{proof}
+
+For the returned \(z\), compute \(s=\norm{M^\top z}_2^2\),
+\(v=M^\top z/\sqrt s\), and \(u=Mv\), costing \(O(I)\).
+Then \(C=uv^\top=Mvv^\top\) and
+\[
+ (M-C)(M-C)^\top=H-Hz z^\top H/s.
+\]
+Since \(s\geq(1-e_*)\lambda_1(H)\), the lemma gives
+\(\norm{M-C}_2^2\leq\lambda_2(H)/(1-e_*)
+ \leq(1+\theta)^2\lambda_2(H)\).
+This also gives exact recovery when \(\lambda_2(H)=0\).
+Explicitly form \(C=uv^\top\) in \(O(np)\). This establishes the claimed error
+conditional on the good embedding and Krylov events. Their failure
+probabilities sum to less than \(\delta\). The embedding application,
+Gram formation, support/core work, coarse estimate, tests, final actions,
+and output give \eqref{eq:cost}.
+
+\section{General target rank with the same input sketches}
+\begin{theorem}[General-rank extension]\label{thm:rank}
+For \(1\leq r\leq m\), \(0<\theta\leq h\leq1/16\), there is a
+variant returning width at most \(r\), with error at most
+\((1+\theta)\sigma_{r+1}(M)\) with probability at least \(1-\delta\),
+at total cost
+\[
+ \tO\!\left(I+G_h+r m^{\omega+\zeta}
+       +\frac{r m^2}{\sqrt h}
+       +Ir\sqrt{hr/\theta}+\MM(n,r,p)\right).
+\]
+The algorithm reuses the same two initial embeddings; it does not form a
+new pair of tall Gram matrices at each deflation step.
+\end{theorem}
+\begin{proof}
+Maintain orthonormal right vectors \(V_i\), initially empty, and let
+\(M_i=M(I-V_iV_i^\top)=AB_i\). At step \(i\), run the threshold
+Rayleigh primitive with relative accuracy \(e=\theta/(4r)\) on
+\(H_i=M_iM_i^\top\), returning unit \(z_i\).
+Here \(e\) is an upper bound on the stage error: calling the original primitive
+with parameter \(\theta/r\leq h\) actually gives error
+\(\theta/(8r)\leq e\), within its stated parameter range.
+Then set
+\[
+ s_i=z_i^\top H_i z_i,\qquad
+ v_i=M_i^\top z_i/\sqrt{s_i},\qquad
+ V_{i+1}=[V_i\ v_i].
+\]
+The new right vector is unit and orthogonal to all previous ones. If the
+residual product is zero, detect that from its zero proxy and stop. Otherwise
+Lemma~\ref{lem:finish} gives, simultaneously for all \(j\),
+\[
+ \lambda_j(H_{i+1})\leq(1-e)^{-1}\lambda_{j+1}(H_i).
+\]
+After \(r\) steps,
+\[
+ \norm{M-MV_rV_r^\top}_2^2
+ \leq(1-e)^{-r}\lambda_{r+1}(H)
+ \leq\frac{\lambda_{r+1}(H)}{1-\theta/4}
+ \leq(1+\theta)^2\lambda_{r+1}(H),
+\]
+using Bernoulli's inequality. A zero residual gives exact recovery earlier.
+
+For the arithmetic and adaptive sketch claims, write \(V_i=B^\top C_i\),
+\(D_i=BV_i=QC_i\), and \(R_i=I_m-D_iC_i^\top\), so
+\(B_i=R_iB=B(I-V_iV_i^\top)\). The initial Loewner inequality for
+\(Q\) implies
+\[
+ (1-h)R_iQR_i^\top\preceq R_i\widetilde QR_i^\top
+                         \preceq(1+h)R_iQR_i^\top
+\]
+for every such adaptive \(R_i\), without another embedding failure event.
+At the next step put
+\(c=R_i^\top A^\top z_i/\sqrt{s_i}\),
+\(v=B^\top c\), and \(d=Bv=Qc\). Orthogonality gives
+\(c^\top D_i=0\), and hence
+\[
+ R_{i+1}=R_i-dc^\top=(I_m-dc^\top)R_i.
+\]
+The maintained Gram proxy therefore has the rank-two update
+\[
+ \widetilde Q_{i+1}
+ =\widetilde Q_i-dw^\top-wd^\top
+                    +(c^\top\widetilde Q_i c)dd^\top,
+ \qquad w=\widetilde Q_i c.
+\]
+This costs \(O(m^2)\), and \(d,v\) cost true input applications.
+The fixed support coordinates \(W,L,G\) for \(A\) still apply.
+True \(Q_i=Q-D_iD_i^\top\) actions cost \(O(I+mi)=O(I)\).
+Every Rayleigh step consequently has the preceding cost with
+\(\theta\) replaced by \(\Theta(\theta/r)\). Initial sketch formation
+is paid once; small-core factorizations and coarse eigenvalue estimates are
+paid \(r\) times. Allocate failure probability \(O(\delta/r)\) to
+each stage's Krylov calls. Finally form \(MV_r=AD_r\) in at most
+\(O(Ir)\) time and expand the two factors at cost \(\MM(n,r,p)\).
+\end{proof}
+
+The initial separate-factor sketches are additional information unavailable
+to a matrix-vector oracle for \(M\) alone. The reduced iteration count
+therefore does not contradict the matvec lower bounds in the original
+direction document.
+
+\section{Sharing the threshold cores across ranks}
+\begin{theorem}[One shared core]\label{thm:shared}
+The \(r m^{\omega+\zeta}\) term in Theorem~\ref{thm:rank} can be
+replaced by \(m^{\omega+\zeta}\). The other terms are unchanged.
+\end{theorem}
+\begin{proof}
+Maintain the explicit \(Q_{0,i}\) by its rank-two update, rather than
+reforming \(L\widetilde Q_iL^\top\). If \(a_i=Ld_i\),
+\(b_i=Lw_i\), and \(\gamma_i=c_i^\top\widetilde Q_i c_i\), then
+\[
+ Q_{0,i+1}=Q_{0,i}+
+ [a_i\ b_i]\begin{pmatrix}\gamma_i&-1\\-1&0\end{pmatrix}
+ [a_i\ b_i]^\top .
+\]
+Thus \(Q_{0,i}=Q_{0,0}+U_i S_iU_i^\top\), with \(2i\) columns in
+\(U_i\) and an invertible block-diagonal \(S_i\), maintained in
+\(O(m^2)\) work per stage. The columns need not be independent.
+
+Compute a Frobenius normal form of \(Q_{0,0}\), including its similarity
+transformation and inverse, once in \(\widetilde O(m^{\omega+\zeta})\)
+field operations \cite{npv}. For any nonpole \(\alpha\), a shifted
+companion block solves a new right-hand side by a backward row recurrence
+and one division by its characteristic polynomial, in linear work.
+Consequently \(B_0^{-1}V\), where \(B_0=\alpha I-Q_{0,0}\), costs
+\(O(\MM(m,m,k)+mk)\) for a known \(k\)-column block \(V\).
+
+At a threshold set \(\alpha=(1+32h)t\), \(X=B_0^{-1}U_i\), and
+\(J=S_i^{-1}-U_i^\top X\). The actual matrix
+\(F_i=B_0-U_iS_iU_i^\top\) is positive definite. The determinant lemma
+therefore makes \(J\) invertible whenever \(B_0\) is invertible, and
+\[
+ F_i^{-1}=B_0^{-1}+XJ^{-1}X^\top.
+\]
+One application costs \(O(m^2)\). Fix a feasible square exponent
+\(9/4<w<\min(5/2,9/4+\zeta)\). Square blocking bounds all preparation,
+including forming and inverting \(J\), by
+\(O(m^2(1+i)^{w-2})\) per threshold. Its sum over stages is
+\[
+ \widetilde O(m^2r^{w-1})\leq
+ \widetilde O(Ir\sqrt{hr/\theta}).
+\]
+
+Run generalized Lanczos on \(F_i^{-1}K_i\) in the \(F_i\) inner
+product. It is selfadjoint and analytically equivalent to symmetric
+Lanczos on \(F_i^{-1/2}K_iF_i^{-1/2}\), so no new Cholesky factor is
+needed. Start with a standard Gaussian \(g\). Since
+\(\kappa(F_i)\leq1/h\), its transformed start \(F_i^{1/2}g\)
+has normalized squared overlap at least \(h\beta^3/(8a)\) with any fixed unit
+minimum eigenvector, except with probability \(\beta\):
+use Gaussian anticoncentration for the numerator and
+\(\Pr\{\norm g_2^2>2a/\beta\}\leq\beta/2\) for the denominator.
+The usual deterministic Chebyshev proof then gives an actual Ritz
+quotient within \(\tau/2\) of the minimum eigenvalue in
+\(\widetilde O(\tau^{-1/2})\) actions. Only logarithms in \(1/h\)
+and \(1/\beta\) are added. All inner products and orthogonalization
+costs remain absorbed by the input-action bound.
+
+The auxiliary \(B_0\), unlike \(F_i\), can have poles in later
+residual brackets. Test \(a+1\) distinct thresholds in the middle third
+of the current bracket. Companion-polynomial evaluation costs \(O(a)\)
+per trial, and at most \(a\) trials are poles. Use any nonpole trial;
+bracket updates still shrink its width by at least a factor \(2/3\).
+This costs \(O(m^2)\) per threshold and introduces no random failure.
+For the final query tighten the bracket to
+\(b-\ell\leq e_*\ell/4096\), choose a nonpole trial there, and use
+Ritz accuracy \(\tau/2\), where \(\tau=e_*/(512h)\).
+Even if \(t>\lambda_1\), a top generalized eigenvector gives
+\[
+ \mu_{\min}\leq
+ \frac{\max(0,t-\lambda_1)\norm G_2}{28ht}<\tau/2.
+ \]
+The actual returned quotient is at most \(\tau\); the witness argument
+from Lemma~\ref{lem:rayleigh} gives loss less than
+\((1/4096+3/16)e_*\lambda_1<e_*\lambda_1\).
+The other sign decisions remain valid with the tighter Ritz tolerance.
+Fresh randomness, capped iteration counts, and the previous union bound
+complete the claim.
+\end{proof}
+
+\section{Adaptive rank and certified absolute error}
+The same witnesses permit a stopping rule for a supplied absolute tolerance,
+without knowing a suitable rank or any singular value in advance.
+
+\begin{theorem}[Adaptive absolute-error guarantee]\label{thm:absolute}
+Given \(\varepsilon>0\), \(0<\theta\leq h\leq1/16\), and
+\(0<\delta<1\), an adaptive variant returns factors of a discovered width
+\(R\leq m\) and their explicit product \(C\). With probability at least
+\(1-\delta\), simultaneously
+\[
+ \norm{M-C}_2\leq\varepsilon,\qquad
+ R\leq r_\varepsilon:=
+ \min\{0\leq r\leq m:\ \sigma_{r+1}(M)\leq
+                                    \varepsilon/(1+\theta)\}.
+\]
+For every realized stopping width, its arithmetic cost is
+\[
+ \tO\!\left(I+G_h+m^{\omega+\zeta}
+     +\frac{(R+1)m^2}{\sqrt h}
+     +I\sqrt{h/\theta}\,(R+1)^{3/2}
+     +np+\MM(n,R,p)\right).
+\]
+Here \(\MM(n,0,p)=0\); the separate \(np\) term includes writing
+the explicit zero output when \(R=0\). No rank-feasibility promise is
+needed for the absolute-error guarantee; the spectral counting threshold
+controls the returned width and the successful-run cost.
+\end{theorem}
+\begin{proof}
+Reuse the initial embeddings, exact adaptive proxy updates, and shared
+core from Theorems~\ref{thm:rank}--\ref{thm:shared}.
+At residual stage \(i\geq0\), set
+\[
+ k_i=\lfloor\log_2(i+1)\rfloor,\qquad
+ e_i=\frac{\theta}{32(i+1)(k_i+1)^2}.
+\]
+Dyadic grouping gives
+\[
+ \sum_{i\geq0}e_i
+ \leq\frac{\theta}{32}\sum_{k\geq0}\frac1{(k+1)^2}
+ <\frac{\theta}{16}.
+\]
+If the current proxy is zero, return the current factors. Otherwise call
+the Rayleigh primitive with parameter \(8e_i\leq\theta/4\leq h\).
+It returns a unit vector \(z_i\) whose actual quotient
+\(s_i=z_i^\top H_i z_i\) satisfies
+\[
+ (1-e_i)\lambda_1(H_i)\leq s_i\leq\lambda_1(H_i).
+\]
+Compute \(U_i=s_i/(1-e_i)\). If \(U_i\leq\varepsilon^2\),
+return \(C=MV_iV_i^\top\). Otherwise append
+\(v_i=M_i^\top z_i/\sqrt{s_i}\), exactly as before. On the good
+events the acceptance test certifies the desired residual norm. Every
+rejection removes one rank, so the process stops after at most \(m\)
+deflations, including exact-zero detection.
+
+Lemma~\ref{lem:finish} and \(s_i\leq\lambda_1(H_i)\) imply
+\[
+ U_i\leq
+ \frac{\lambda_{i+1}(MM^\top)}{\prod_{j=0}^{i}(1-e_j)}
+ \leq\frac{\sigma_{i+1}(M)^2}{1-\theta/16}.
+\]
+The product inequality follows from
+\(\prod_j(1-e_j)\geq1-\sum_j e_j\). If
+\(i=r_\varepsilon<m\), then
+\[
+ U_i\leq
+ \frac{\varepsilon^2}{(1+\theta)^2(1-\theta/16)}
+ \leq\varepsilon^2,
+\]
+so the algorithm has accepted by that stage. The case
+\(r_\varepsilon=m\) follows from rank drop. A zero proxy gives exact
+recovery on the common embedding event.
+An unexpected primitive failure or zero witness normalization returns the
+current factors; this branch is absent on the good events and preserves
+the claimed cost in terms of the number of completed deflations.
+
+Give stage \(i\)'s fresh core and threshold Krylov calls total failure
+budget at most \(\delta/[4(i+1)(i+2)]\). Conditioning on their past,
+the fixed-matrix guarantees and the common embedding event apply;
+the summed failure probability is below \(\delta\).
+The number of expensive primitive calls is at most \(R+1\), and
+\[
+ \sum_{i=0}^{R}\sqrt{h/(8e_i)}
+ =\widetilde O\!\left(\sqrt{h/\theta}\,(R+1)^{3/2}\right).
+\]
+All other costs follow from the preceding exact update and output
+accounting. The iteration caps also bound runtime on failure outcomes.
+\end{proof}
+
+\section{Two levels without forming the fine Gram matrices}
+For a distortion parameter \(x\), write \(s_A(x),s_B(x)\) for the
+embedding dimensions from Section 1 and define
+\[
+ \mathcal J_x=m\bigl(s_A(x)+s_B(x)\bigr)+m^2.
+\]
+This is the cost of applying the two sketched Gram operators and the
+small coordinate transformations.
+
+\begin{theorem}[Matrix-free fine proxies]\label{thm:twolevel}
+For \(1\leq r\leq m\), \(0<\theta\leq h\leq H/4\), and
+\(H\leq1/32\), there is an algorithm returning width at most \(r\)
+and the explicit product \(C\), such that
+\[
+ \Pr\{\norm{M-C}_2\leq(1+\theta)\sigma_{r+1}(M)\}\geq1-\delta.
+\]
+Its total arithmetic cost is
+\begin{equation}\label{eq:twolevel}
+ \tO\!\left(I+G_H+m^{\omega+\zeta}
+    +\frac{rm^2}{\sqrt H}
+    +Ir\sqrt{hr/\theta}
+    +\mathcal J_h r\sqrt{Hr/\theta}
+    +\MM(n,r,p)\right).
+\end{equation}
+Only the coarse \(H\)-accuracy sketches are multiplied into dense Grams.
+The finer \(h\)-accuracy sketches remain in factored form.
+\end{theorem}
+\begin{proof}
+First consider rank one. Form coarse \(P_H,Q_H\) and use the preceding
+support construction at distortion \(H\). It supplies the coordinate maps,
+the initial bracket \([\ell_0,b_0]\), and
+\begin{gather*}
+ F_H(t)=(1+32H)tI-Q_0,\\
+ 22HtI\preceq F_H(t)-K_t\preceq42HtI.
+\end{gather*}
+The coarse norm estimate costs \(\widetilde O(m^2/\sqrt H)\).
+Compute finer sketch factors
+\[
+ A_h=S_hA,\quad B_h=BT_h^\top,\quad
+ P_h=A_h^\top A_h,\quad Q_h=B_hB_h^\top,
+\]
+where the last two matrices are used only as operators. In these same
+coarse coordinates define
+\[
+ \widehat G=W^\top P_hW,\quad \widehat Q=LQ_hL^\top,\quad
+ \widehat K_t=t\widehat G-\widehat G\widehat Q\widehat G,\quad
+ F_h(t)=\widehat K_t+32htI .
+\]
+Every such action costs \(O(\mathcal J_h)\); neither a fine dense Gram
+nor a tall transformed factor is formed. The fine Loewner event implies
+\(\norm{\widehat G-G}_2\leq h\norm G_2\) and
+\(\norm{\widehat Q-Q'}_2\leq h\norm{Q'}_2\).
+Using \(\norm G_2\leq16/15\) and \(\norm{Q'}_2\leq2t\) gives
+\[
+ \norm{\widehat K_t-K_t}_2\leq10ht,\qquad
+ 22htI\preceq F_h(t)-K_t\preceq42htI.                 \tag{*}
+\]
+Keeping the mass matrix \(\widehat G\) in this formula is essential.
+
+\paragraph{A fine bracket using only fine-factor actions.}
+Let \(\lambda=\norm M_2^2\) and
+\(\lambda_h=\norm{A_hB_h}_2^2\). The fine embeddings give
+\((1-h)^2\lambda\leq\lambda_h\leq(1+h)^2\lambda\).
+The supplied \(P_H,Q_H\) are also \(2H\)-relative Gram proxies for
+the fine factors: their Loewner ratios lie between
+\((1-H)/(1+h)\) and \((1+H)/(1-h)\), within \([1-2H,1+2H]\).
+Apply the already proved Rayleigh primitive to \(A_h,B_h\), using
+these supplied cores, distortion \(2H\), and requested parameter \(h\).
+It needs no additional embedding or fine Gram. Its true-factor actions
+cost \(\mathcal J_h\), and it returns an actual quotient \(s_h\) with
+\((1-h/8)\lambda_h\leq s_h\leq\lambda_h\), at cost
+\[
+ \tO\bigl(\mathcal J_h\sqrt{H/h}+m^{\omega+\zeta}
+                                  +m^2/\sqrt H\bigr).
+\]
+Intersect \([\ell_0,b_0]\) with
+\[
+ \left[\frac{s_h}{(1+h)^2},
+       \frac{s_h}{(1-h/8)(1-h)^2}\right].
+\]
+On the good events this is a nonempty bracket for \(\lambda\), and its
+lower endpoint is at least \((1-33h/8)\lambda\).
+Every threshold in it satisfies \(K_t\succeq-5htI\), hence
+\(F_h(t)\succeq16htI\). Also, since \(h\leq H/4\), (*) gives
+\[
+ 0\preceq F_H(t)-F_h(t)\preceq42HtI,\qquad
+ F_H(t)\preceq\bigl(1+42H/(16h)\bigr)F_h(t).
+\]
+
+\paragraph{A fixed polynomial inverse root.}
+For the analysis, factor \(F_H(t)=JJ^\top\) and put
+\[
+ D=J^{-1}F_h(t)J^{-\top},\qquad
+ a=\frac{h}{3H},\qquad \eta=\frac h{1000}.
+\]
+The preceding comparison gives \(aI\preceq D\preceq I\).
+A polynomial \(p\) with
+\(\left|\sqrt{x}\,p(x)-1\right|\leq\eta\) on \([a,1]\)
+can be applied in \(\widetilde O(a^{-1/2})\) actions of \(D\).
+For completeness an explicit arithmetic construction is
+\[
+ \rho=\frac{1-\sqrt a}{1+\sqrt a},\quad
+ c=\frac{(1+\sqrt a)^2}{4},\quad
+ T=\frac{(1+a)I-2D}{1-a},\quad
+ p(D)=c^{-1/2}\sum_{j=0}^{k}\rho^j P_j(T),
+\]
+where \(P_j\) are the Legendre polynomials. Their generating function
+\cite{legendre} and \(\norm{P_j(T)}_2\leq1\) bound the tail by
+\(\rho^{k+1}/\sqrt a\). Choose
+\(\rho^{k+1}\leq\eta\sqrt a\), so
+\(k=O(a^{-1/2}\log(1/(\eta\sqrt a)))\).
+The three-term Legendre recurrence uses \(k\) operator actions,
+\(O(k)\) scalar operations, and \(O(km)\) vector work. Repeated
+multiplication by \(\rho\) finds \(k\); no logarithm, trigonometric,
+or coefficient-integration oracle is needed.
+
+Define analytically
+\[
+ R=J^{-\top}p(D),\quad E_t=R^\top K_tR,\quad
+ \overline F=R^{-\top}R^{-1}=Jp(D)^{-2}J^\top .
+\]
+Neither \(\overline F\) nor \(p(D)^{-1}\) is formed. Relative polynomial
+error implies
+\(-4\eta F_h\preceq\overline F-F_h\preceq4\eta F_h\).
+Since \(F_h\preceq F_H\preceq2tI\), it follows that
+\[
+ 21htI\preceq\overline F-K_t\preceq43htI,\qquad
+ \overline F\succeq15htI.
+\]
+Thus \(E_t\preceq I\); using \(K_t\succeq-5htI\) also gives
+\(E_t\succeq-I/3\). The old actual-witness threshold argument applies:
+for \(x=Ry\), a quotient \(q\leq\tau\) gives
+\(x^\top K_tx/(x^\top Gx)\leq64\tau ht\); an uncertain sign gives
+\(\lambda\leq t+45\tau ht\). The constants hold since \(H\leq1/32\).
+With \(\tau=e_*/(512h)\), \(e_*=\theta/8\), the returned original
+Rayleigh vector is \((1-e_*)\)-accurate. A single \(E_t\) action costs
+\(\widetilde O(I+\mathcal J_h\sqrt{H/h})\).
+The total action cost is consequently
+\[
+ \tO\bigl(I\sqrt{h/\theta}
+                  +\mathcal J_h\sqrt{H/\theta}\bigr).
+\]
+This absorbs the fine-bracket cost because \(\theta\leq h\).
+The Nystr\"om lemma supplies the spectral approximation and explicit output.
+
+\paragraph{Sharing and deflation.}
+There is no need to compute \(J\) in the algorithm. Use the shared exact
+\(F_H^{-1}\) from Theorem~\ref{thm:shared}, and let
+\(\mathcal T=F_H^{-1}F_h\), selfadjoint in the \(F_H\) inner product.
+Run generalized Lanczos on
+\[
+ p(\mathcal T)F_H^{-1}K_t p(\mathcal T)
+\]
+in that inner product. Its symmetric coordinates are exactly \(E_t\).
+For its \(F_H\)-unit witness \(x\), put \(w=p(\mathcal T)x\);
+its actual quotient is \(w^\top K_tw\), and the final original
+vector is \(Zw/\sqrt{w^\top Gw}\).
+Gaussian starts incur only the logarithmic penalty
+\(\kappa(F_H)=O(1/H)\) proved above.
+The nonpole query rule and tighter final bracket from the shared-core
+proof still work, now with \(\overline F\succeq15htI\).
+In particular their terminal minimum eigenvalue is below \(\tau/2\).
+
+For general rank, use stage error \(\theta/(8r)\) and the same
+Nystr\"om deflation. Both pairs of original embedding events survive
+every adaptive congruence \(Q\mapsto R_iQR_i^\top\).
+The coarse cores have the previous rank-two updates. Fine residual
+actions apply \(R_iQ_hR_i^\top\) through the stored fine factor and
+the rank-\(i\) transformations, still in \(O(\mathcal J_h)\) work.
+The same shared Frobenius form supports both the \(H\) and \(2H\)
+coarse-proxy threshold shifts. Its per-stage preparation is absorbed
+as in Theorem~\ref{thm:shared}. Summing the action and coarse-norm
+costs gives \eqref{eq:twolevel}. Fresh Krylov seeds conditional on the
+past, and a union bound over the four initial embeddings and all
+stage calls, give success probability \(1-\delta\).
+\end{proof}
+
+\begin{corollary}[More accurate quadratic output]\label{cor:twolevel}
+Let \(n=p=N\), \(m=\lceil N^{50/59}\rceil\),
+\[
+ \theta=m^{-11/25},\qquad H=m^{-7/100},\qquad
+ h=m^{-17/200},\qquad\delta=1/100.
+\]
+Take \(N\) sufficiently large for the parameter inequalities.
+For every fixed target rank \(r\) and every fixed real factor pair,
+the two-level algorithm returns the explicitly expanded \(C\) in total
+\(O(N^2)\) arithmetic operations, with error at most
+\((1+\theta)\sigma_{r+1}(M)\) with probability at least \(99/100\).
+Construction takes \(o(N^2)\).
+\end{corollary}
+\begin{proof}
+In powers of \(m\), the input has exponent \(109/50\), the output
+\(59/25\), the coarse sketch row count \(57/50\), and the fine row
+count \(117/100<59/50\). The three potentially leading construction
+terms have exponents
+\[
+ G_H:\ \frac{3362}{1425},\qquad
+ I\sqrt{h/\theta}:\ \frac{943}{400},\qquad
+ \mathcal J_h\sqrt{H/\theta}:\ \frac{471}{200}.
+\]
+Their margins below \(59/25\) are respectively \(1/1425\),
+\(1/400\), and \(1/200\).
+The core exponent \(9/4\) and coarse norm exponent \(407/200\)
+are also strictly smaller. Fix sufficiently small exponent slack;
+all logarithms are absorbed in these strict margins.
+For fixed \(r\), conventional output expansion costs \(O(N^2r)=O(N^2)\).
+\end{proof}
+
+At this accuracy the named exact-Gram bound is still
+\(N^{7056/3481+o(1)}\), and ordinary Krylov gives
+\(N^{120/59+o(1)}\). This also improves the optimized one-level
+tradeoff: a one-level distortion \(m^{-a}\) would need \(a\geq2/25\)
+for its true-action term to fit \(N^2\), but its Gram exponent would
+then be at least
+\[
+ \frac{54}{25}+\frac{25}{116}>
+ \frac{59}{25}.
+\]
+Larger sketch row counts only increase that setup bound; clipping at
+the original dimension restores the exact-Gram comparison.
+
+The absolute-error stopping rule from Theorem~\ref{thm:absolute}
+applies to the two-level primitive as well. Its cost replaces the
+two rank-dependent action terms in \eqref{eq:twolevel} by
+\[
+ \bigl(I\sqrt{h/\theta}+\mathcal J_h\sqrt{H/\theta}\bigr)(R+1)^{3/2},
+\]
+and \(r\) in the coarse-norm term by \(R+1\), with an additional
+\(np\) write term when \(R=0\). The width and error guarantees are
+unchanged. In the displayed regime, constant \(r_\varepsilon\) gives,
+on the same event of probability at least \(1-\delta\), adaptive
+absolute error and \(O(N^2)\) total time, without supplying that rank
+to the algorithm.
+
+\section{A fixed number of finer levels}
+The same polynomial construction can be nested. Uniform inflation constants
+and explicit validity windows control both the inverse applications and the
+intermediate norm brackets.
+
+\begin{theorem}[Fixed-depth tradeoff]\label{thm:multilevel}
+Fix an integer \(L\geq1\) independently of the dimensions and accuracy.
+Let \(h_0\leq1/1024\), \(h_j\leq h_{j-1}/8\) for \(1\leq j\leq L\),
+and \(0<\theta\leq h_L\). A rank-one approximation with the same
+\((1+\theta)\sigma_2(M)\) guarantee has total cost
+\[
+ \tO_L\!\left(I+G_{h_0}+m^{\omega+\zeta}+\frac{m^2}{\sqrt{h_0}}
+       +I\sqrt{h_L/\theta}
+       +\sum_{j=1}^L\mathcal J_{h_j}\sqrt{h_{j-1}/\theta}
+       +np\right).
+\]
+Constants and the exponent of the suppressed logarithms may depend on
+fixed \(L\). The statement makes no claim for input-dependent growing depth.
+\end{theorem}
+\begin{proof}
+Use the \(h_0\)-Gram support coordinates. Let \(K\) be the true
+threshold pencil, let \(K_j\) be its proxy using the level-\(j\)
+factored sketches, and set \(K_0=tI-Q_0\). Define
+\(F_j=K_j+128h_jtI\).
+Call a threshold level-\(j\) valid when
+\(\lvert t-\lambda\rvert\leq16h_j\lambda\), where
+\(\lambda=\norm M_2^2\). This condition is used in the analysis; the
+algorithm uses the brackets below.
+On such a window, \(\norm{Q'}_2\leq2t\), so the earlier proxy
+expansion still gives \(\norm{K_j-K}_2\leq10h_jt\). In particular
+\[
+ K\succeq-17h_jtI,\quad
+ 118h_jtI\preceq F_j-K\preceq138h_jtI,\quad
+ F_j\succeq100h_jtI,\quad \norm{F_j}_2\leq4t.
+\]
+These estimates hold on the full validity window, rather than just
+the original narrower bracket.
+The error estimate for a finer \(K_j\) also holds in every coarser
+validity window: its derivation only needs \(\norm{Q'}_2\leq2t\).
+
+Factor \(F_0=J_0J_0^\top\), set \(R_0=J_0^{-\top}\), and
+inductively maintain the analytical effective preconditioner
+\(\overline F_{j-1}=R_{j-1}^{-\top}R_{j-1}^{-1}\) with
+\[
+ 117h_{j-1}tI\preceq\overline F_{j-1}-K
+                      \preceq139h_{j-1}tI,\qquad
+ \overline F_{j-1}\succeq99h_{j-1}tI .
+\]
+At a level-\(j\) valid threshold, the separation of consecutive
+distortions gives
+\[
+ 0\preceq\overline F_{j-1}-F_j\preceq139h_{j-1}tI,\qquad
+ \frac{h_j}{2h_{j-1}}I\preceq
+       D_j:=R_{j-1}^\top F_jR_{j-1}\preceq I.
+\]
+Use the explicit Legendre polynomial with relative inverse-root error
+\(\eta_j=h_j/1000\) on this interval and set
+\(R_j=R_{j-1}p_j(D_j)\).
+Its effective preconditioner differs from \(F_j\) in norm by at most
+\(4\eta_j\norm{F_j}_2\leq16h_jt/1000\).
+Thus the displayed induction bounds hold at level \(j\), and
+\(\operatorname{spec}(R_j^\top K R_j)\subset[-1,1]\).
+The approximation errors are reset relative to \(F_j\) at every
+level; no unproved sum of nested solve errors is used.
+
+It remains to construct all required validity windows. The original
+coarse norm bracket lies within
+\([(1-6h_0)\lambda,(1+6h_0)\lambda]\).
+Suppose such a true-\(\lambda\) bracket is available at level \(j-1\).
+For \(\lambda_j=\norm{A_jB_j}_2^2\), expand its endpoints by
+\((1-h_j)^2\) and \((1+h_j)^2\), respectively.
+Every resulting threshold is within \(8h_{j-1}\lambda\) of
+\(\lambda\), hence is valid at level \(j-1\).
+Use \(R_{j-1}^\top K_jR_{j-1}\) to estimate \(\lambda_j\).
+Its effective-preconditioner difference is between
+\(115h_{j-1}tI\) and \(141h_{j-1}tI\), so its spectrum is in
+\([-1,1]\). The true mass in this step is the fine
+\(G_j=W^\top P_jW\), whose eigenvalues lie between \(0.99\) and \(1.01\).
+The threshold witness and uncertainty inequalities both hold with
+constant \(256\). Use tolerance
+\(\tau=e/(2048h_{j-1})\) and \(e=h_j/8\).
+The uncertain-case loss is at most
+\((3/2)(256+256)e/2048<e\).
+The final lower-endpoint query obeys the same witness bound.
+This produces an actual quotient \(s_j\) satisfying
+\((1-h_j/8)\lambda_j\leq s_j\leq\lambda_j\).
+Translate it to the true-\(\lambda\) bracket
+\[
+ \left[\frac{s_j}{(1+h_j)^2},
+       \frac{s_j}{(1-h_j/8)(1-h_j)^2}\right].
+\]
+It lies within \([(1-5h_j)\lambda,(1+5h_j)\lambda]\), establishing
+the induction. These refinements use only fine-product actions.
+Finally use \(R_L^\top K R_L\) on the last bracket, with
+\(e=\theta/8\), \(\tau=e/(2048h_L)\), and the same \(256\) bounds.
+Nystr\"om finishing gives the required spectral error.
+
+If \(c_j\) is the cost of applying \(R_j\) or its transpose at a
+fixed threshold, the polynomial degrees give
+\[
+ c_0=O(m^2),\qquad
+ c_j=\tO_L\bigl((\mathcal J_{h_j}+c_{j-1})
+                                     \sqrt{h_{j-1}/h_j}\bigr).
+\]
+Expanding this recurrence and multiplying by
+\(\widetilde O(\sqrt{h_L/\theta})\), the final true-operator count,
+gives the stated sum. Each intermediate norm-refinement cost is
+absorbed because \(\theta\leq h_L\leq h_j\).
+The propagated \(m^2\) cost is absorbed by the first sketch term.
+Only logarithmically many coarse factorizations are needed per level.
+All levels use fixed polynomials at each threshold; fresh random
+starts and a union bound over the fixed embedding pairs and adaptive
+calls give the stated confidence. The usual capped failure exits
+handle zero products and invalid normalizations.
+\end{proof}
+
+\begin{corollary}[Two finer sketch levels]\label{cor:multilevel}
+Let \(n=p=N\), \(m=\lceil N^{50/59}\rceil\), \(\delta=1/100\), and
+\[
+ \theta=m^{-56/125},\qquad
+ h_0=m^{-7/100},\quad h_1=m^{-17/200},\quad h_2=m^{-89/1000}.
+\]
+Take \(N\) sufficiently large for the parameter inequalities.
+For every fixed rank \(r\), every fixed factor pair admits the stated
+randomized \((1+\theta)\sigma_{r+1}(M)\) guarantee in total
+\(O(N^2)\) arithmetic operations, including explicit output.
+The construction cost is \(N^{2-1/2360+o(1)}\).
+\end{corollary}
+\begin{proof}
+For rank one the exponents in powers of \(m\) are
+\[
+ G_{h_0}:\frac{3362}{1425},\quad
+ \mathcal J_{h_1}\sqrt{h_0/\theta}:\frac{2359}{1000},\quad
+ \mathcal J_{h_2}\sqrt{h_1/\theta}:\frac{4719}{2000},\quad
+ I\sqrt{h_2/\theta}:\frac{4719}{2000}.
+\]
+Their maximum is \(4719/2000=59/25-1/2000\); converting to
+powers of \(N=m^{59/50+o(1)}\) gives \(2-1/2360\).
+The core and coarse-norm terms are smaller.
+Fix multiplication slack below \(23/114000\) in \(m\)-based exponents,
+the gap between \(4719/2000\) and \(3362/1425\).
+Output expansion is \(O(N^2)\).
+For any fixed \(r\), apply the proved Nystr\"om deflation with stage
+accuracy \(O(\theta/r)\), reusing every embedding by exact congruences.
+Stage counts, the finer precision, and coarse factorizations only change
+constants depending on \(r\). The exponent and the guarantee follow.
+\end{proof}
+
+The adaptive absolute-error rule also applies to this primitive.
+When \(r_\varepsilon\) is constant, with probability at least \(1-\delta\)
+both the absolute-error guarantee and the quadratic total cost hold,
+without a supplied rank. The strongest
+checked general-product Gram comparison remains
+\(N^{7056/3481+o(1)}\); ordinary Krylov here gives
+\(N^{601/295+o(1)}\). The theorem concerns real arithmetic and
+asymptotic cost; it does not establish a finite-size numerical speedup.
+
+\section{The one-level quadratic-output instance}
+\begin{corollary}[Explicit output in quadratic time]\label{cor:output}
+Let \(n=p=N\), \(m=\lceil N^{50/59}\rceil\),
+\(\theta=m^{-25/59}\), \(h=m^{-7/100}\), and \(\delta=1/100\).
+For every fixed pair of real factors of these dimensions, the algorithm
+returns \(C=uv^\top\), including every entry of \(C\), in total
+\(O(N^2)\) arithmetic operations with
+\[
+ \Pr\{\norm{M-C}_2\leq(1+\theta)\sigma_2(M)\}\geq99/100.
+\]
+Its construction takes \(o(N^2)\) time.
+\end{corollary}
+\begin{proof}
+In powers of \(m\), the outer dimension is \(m^{59/50+o(1)}\),
+the input has exponent \(109/50\), and the output has exponent
+\(59/25\). The sketch has \(\tO(m^{57/50})\) rows, strictly fewer
+than the outer dimension by a polynomial margin. Reference \cite{amanov}
+therefore gives
+\[
+ G_h\leq m^{3362/1425+o(1)},\qquad
+ I\sqrt{h/\theta}=m^{27811/11800+o(1)}.
+\]
+The margins below the output exponent are, respectively,
+\[
+ \frac{59}{25}-\frac{3362}{1425}=\frac1{1425},\qquad
+ \frac{59}{25}-\frac{27811}{11800}=\frac{37}{11800}.
+\]
+The square core has exponent \(9/4\), and the coarse eigenvalue estimate
+has exponent \(2+7/200=407/200\), also strictly below \(59/25\).
+Choose fixed multiplication exponent slack below \(1/1425\), leaving
+room to absorb all logarithms. Every construction term is \(o(N^2)\).
+The final rank-one expansion costs \(O(N^2)\).
+\end{proof}
+
+For every fixed target rank \(r\), Theorem~\ref{thm:rank} gives the same
+\(O(N^2)\) total-time consequence, with \(\sigma_2\) replaced by
+\(\sigma_{r+1}\). The factors \(r\) and \(\sqrt r\) do not change
+the exponent, and conventional expansion costs \(O(N^2r)=O(N^2)\).
+
+In \(N\)-based exponents, the two leading construction bounds are
+\[
+ N^{6724/3363+o(1)}\quad\text{and}\quad
+ N^{27811/13924+o(1)},
+\]
+both below 2. For the same dimensions and accuracy, the named exact-Gram
+and ordinary-Krylov comparison bounds both have exponent
+\[
+ \frac{7056}{3481}\approx2.027004.
+\]
+The named exact-product exponent is \(25281/11800\approx2.142458\).
+Thus the output-optimal bound saves \(N^{94/3481-o(1)}\) over those
+general-product Gram/Krylov bounds. It changes the parameter regime rather
+than proving the original \(m=N^{8/9},\theta=1/m\) target.
+
+For fixed absolute tolerance \(\varepsilon>0\), the same conclusion gives
+\(\norm{M-C}_2\leq\varepsilon\) with probability at least \(99/100\)
+whenever \((1+\theta)\sigma_2(M)\leq\varepsilon\). No factor-energy,
+conditioning, or spectral-gap promise is imposed. Without this rank-one
+feasibility promise, the relative guarantee still holds on every input;
+it does not assert that an arbitrary product admits rank-one absolute error
+\(\varepsilon\).
+
+\section{A comparison at the original inner dimension}
+Take \(n=p=N\), \(m=\lceil N^{8/9}\rceil\), but now choose
+\[
+ \theta=m^{-1/2},\qquad h=m^{-3/50},\qquad\delta=1/100.
+\]
+This differs from the direction document's harder \(\theta=1/m\) example.
+The rectangular bound in \cite{amanov} gives, in powers of \(m\),
+\[
+ I=m^{17/8+o(1)},\qquad s_A,s_B=m^{28/25+o(1)},\qquad
+ G_h\leq m^{6561/2800+o(1)},
+\]
+where \(6561/2800\approx2.343214\). Meanwhile
+\[
+ I\sqrt{h/\theta}=m^{469/200+o(1)}=m^{2.345+o(1)},\quad
+ np=m^{9/4+o(1)},\quad m^2/\sqrt h=m^{203/100+o(1)}.
+\]
+Thus the candidate total bound is
+\[
+ N^{469/225+o(1)}\quad(469/225\approx2.084444).
+\]
+The exact-Gram comparison remains
+\(N^{169/81+o(1)}\approx N^{2.086420}\); ordinary Krylov with this
+accuracy gives \(N^{19/9+o(1)}\), and exact rectangular multiplication
+gives \(N^{625/288+o(1)}\). The saving over the named Gram route is
+\(N^{4/2025-o(1)}\), a small positive exponent. Choose the fixed exponent
+slack sufficiently small to preserve it.
+
+The relative guarantee in this second example implies absolute error when
+\((1+\theta)\sigma_2(M)\leq\varepsilon\), exactly as in the original
+rank-one comparison. No factor-energy, spectral-gap, or conditioning promise
+has been added. These are comparisons against the audited general-product
+routes. Specialized covariance algorithms can be faster on
+\(B=A^\top\); for example, accelerated stochastic PCA \cite{garber}
+exploits explicit covariance samples unavailable at that cost for arbitrary
+two-factor products. We do not claim to dominate every structured subclass.
+A complete state-of-the-art novelty claim requires a broad prior-work review.
+The checks completed so far are summarized below. The theorem has not been
+machine formalized or subjected to an external referee review.
+
+\section{Scope of the prior-work comparison}
+The claimed new contribution is the analyzed product-specific tradeoff, not
+the invention of preconditioned Lanczos, embeddings, or Nystr\"om extraction.
+The following primary-source checks found no earlier theorem yielding the
+stated total bound on arbitrary two-factor inputs.
+
+\paragraph{Related eigenvalue methods.}
+Classical shifted-pencil Lanczos \cite{templates} supplies the mechanism.
+The general gap-free bounds of \cite{genev} retain the full inverse-square-root
+accuracy factor. EPSI \cite{epsi} is closer in spirit, but the checked
+convergence guarantees are local and gap dependent. RLOBPCG \cite{rlobpcg}
+treats smallest singular vectors of a supplied tall matrix under a gap
+condition; it does not supply a cheap factor for the indefinite threshold
+matrix \(tG-GQ'G\). The current survey \cite{survey} and its closest
+references were checked in addition to these original papers.
+
+\paragraph{Oversampling and fast rectangular multiplication.}
+Large-block finite-Schatten algorithms \cite{kw} and direct spectral
+oversampling bounds \cite{tropp}, including blocks wider than the target
+rank, require particular care. Our audit of their published guarantees
+found no uniform spectral improvement that subsumes the bound here: the
+certified pass count retains the inverse-square-root accuracy dependence,
+or a finite-Schatten conversion requires a full-width block. This is a
+comparison of proved guarantees, not a lower bound against every possible
+oversampled algorithm or a claim that every input realizes their worst case.
+
+\paragraph{Ridge and stochastic methods.}
+The multilevel methods in \cite{msp} include algorithms for supplied
+rectangular features that avoid forming their Gram matrices. Their
+positive-ridge systems nevertheless require access to those positive
+Gram features. The signed, noncommuting threshold pencil here has no
+supplied cheap positive Gram root; substituting such a root must include
+its construction cost. The checked theorems do not supply our threshold
+oracle or the resulting two-factor spectral bound. Recursive
+preconditioning itself is established prior art.
+Stochastic covariance methods \cite{garber} remain important stronger
+specializations when actual covariance samples are cheap. Extending those
+particular sample-cost bounds directly to general \(AB\) would omit
+feature formation or true-Gram work.
+
+Product-entry sampling, COD, stable-rank AMM, structured Gram recovery,
+and recent output-Frobenius algorithms were also audited in the supporting
+research records. Their stated promises or error terms do not supply the
+uniform relative spectral guarantee and total bound here. These non-findings
+support a candidate improvement over the located general-product literature;
+they are not a formal certificate of exhaustive novelty.
+
+\begin{thebibliography}{99}
+\bibitem{mm} C. Musco and C. Musco. \emph{Randomized Block Krylov Methods
+for Stronger and Faster Approximate Singular Value Decomposition} (2015).
+\url{https://arxiv.org/abs/1504.05477}.
+\bibitem{cnw} M. Cohen, J. Nelson, D. Woodruff. \emph{Optimal Approximate
+Matrix Product in Terms of Stable Rank} (2016), Appendix A.2.
+\url{https://arxiv.org/abs/1507.02268}.
+\bibitem{amanov} A. Amanov, M. van den Berg, J. Zuiddam.
+\emph{Multiplying Matrices via Polynomials: Exposition and Barriers}
+(2026 preprint), Theorem 1.2.
+\url{https://arxiv.org/abs/2610.30054}.
+\bibitem{epsi} R. Xu, Y. Lu. \emph{What Is a Sketch-and-Precondition
+Derivation for Low-Rank Approximation? Inverse Power Error or Inverse Power
+Estimation?} (2025 preprint).
+\url{https://arxiv.org/abs/2502.07993}.
+\bibitem{jyz} R. Jiang, M.-C. Yue, Z. Zhou.
+\emph{An Accelerated First-Order Method with Complexity Analysis for Solving
+Cubic Regularization Subproblems}. Computational Optimization and Applications
+79 (2021), Lemma 1.
+\url{https://rjjiang.github.io/papers/COAP2021.pdf}.
+\bibitem{templates} A. Knyazev. \emph{Preconditioned Lanczos Methods}, in
+\emph{Templates for the Solution of Algebraic Eigenvalue Problems} (2000).
+\url{https://netlib.org/utk/people/JackDongarra/etemplates/node415.html}.
+\bibitem{garber} D. Garber et al. \emph{Faster Eigenvector Computation via
+Shift-and-Invert Preconditioning} (2016).
+\url{https://arxiv.org/abs/1605.08754}.
+\bibitem{genev} Z. Allen-Zhu, Y. Li. \emph{Doubly Accelerated Methods for
+Faster CCA and Generalized Eigendecomposition} (2017).
+\url{https://arxiv.org/abs/1607.06017}.
+\bibitem{rlobpcg} E. Epperly, T. Park, Y. Nakatsukasa.
+\emph{Fast, High-Accuracy, Randomized Nullspace Computations for Tall Matrices}
+(2026 preprint).
+\url{https://arxiv.org/abs/2602.16797}.
+\bibitem{survey} E. Epperly, D. Kressner, Y. Nakatsukasa.
+\emph{Randomized Algorithms in Numerical Linear Algebra for Scientific Computing}
+(2026 preprint).
+\url{https://arxiv.org/abs/2610.38157}.
+\bibitem{kw} P. Kacham, D. Woodruff. \emph{Faster Algorithms for Schatten-p
+Low Rank Approximation} (2024).
+\url{https://arxiv.org/abs/2407.11959}.
+\bibitem{tropp} J. Tropp. \emph{Analysis of Randomized Block Krylov Methods},
+Theorem 2.5.
+\url{https://tropp.caltech.edu/reports/Tro18-Analysis-Randomized-TR.pdf}.
+\bibitem{msp} M. Derezi\'nski, C. Musco, J. Yang. \emph{Faster Linear
+Systems and Matrix Norm Approximation via Multi-level Sketched Preconditioning}
+(2025).
+\url{https://arxiv.org/abs/2405.05865}.
+\bibitem{npv} V. Neiger, C. Pernet, G. Villard.
+\emph{Computing Krylov Iterates in the Time of Matrix Multiplication}
+(2024), Corollary 5.2.
+\url{https://arxiv.org/abs/2402.07345}.
+\bibitem{legendre} NIST Digital Library of Mathematical Functions.
+Legendre generating function, Equation 18.12.11.
+\url{https://dlmf.nist.gov/18.12.E11}.
+\end{thebibliography}
+\end{document}

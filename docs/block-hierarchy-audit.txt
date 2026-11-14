@@ -1,0 +1,1056 @@
+Hierarchical regularized absolute pencils: finite invariant and scoped limit
+Independent exact-arithmetic derivation, 2026-11-14
+
+STATUS
+
+There is a positive two-level construction, and a fixed-depth extension,
+that preserves the alpha*h strong-block transfer. The right invariant is
+RELAXED: F-kappa K F^(-1)K<=C h D for a fixed kappa>1, together with
++-K<F and a positive hD floor. Requiring the original kappa=1 weighted
+defect at every level is unnecessarily restrictive.
+
+The direct uniform polynomial refinement costs ~H/h, rather than the
+desired ~sqrt(H/h). An elementary degree lower bound proves that the
+square-root ratio cannot hold for this class of uniform polynomial
+congruences, even on a commuting, realizable coarse-proxy family. This
+is a scoped obstruction, not a lower bound for rational, adaptive, or
+other factor-access algorithms.
+
+Despite the worse ratio, the proved hierarchy expands the growing-rank
+output-optimal accuracy regime. A concrete two-level example below uses
+N=m^(59/50), theta=m^(-11/25), and every r<=m^(14/25), and still has
+construction N^(6724/3363+o(1)) and explicit total N^(2+o(1)). The
+original N=m^(9/8), theta=m^(-1) target remains out of reach of this
+isotropic-sketch hierarchy, even under the more optimistic desired ratio.
+
+No manuscript/state file was edited. All claims are in the same model as
+docs/absolute-pencil-spectral.tex: exact field operations, positive scalar
+square roots, comparisons, and Gaussian sampling. There is no finite-word
+stability or global novelty claim.
+
+
+1. FIXED TRUE PENCIL AND MATRIX-FREE FINE PROXIES
+
+Use the coarse H-accurate product support from the verified manuscript:
+
+  M=Z L B_orig, Z=A W, G=Z^T Z,
+  Q=L B_orig B_orig^T L^T, Q0=L Qbar_0 L^T,
+  I/(1+H)<=G<=I/(1-H), (1-H)Q<=Q0<=(1+H)Q,
+  D(t)=tI+Q0.
+
+Fix 0<theta<=h<=H/64 and H<=1/64. Choose the EVEN true-factor Neumann
+polynomial B_m approximating G^(-1) relatively to
+epsilon_m=theta/10^9. It is fixed at every threshold. Define
+
+  K(t)=tB_m-Q.
+
+The analytical target is Hhat=B_m^(-1/2)Q B_m^(-1/2), with eigenvalues
+within factors 1+-O(epsilon_m) of the true squared singular values.
+No true Gram or true matrix root is formed.
+
+At fine accuracy h, store only the sketched factors A_h=S_h A and
+B_h=B_orig T_h^T. Their simultaneous Loewner event yields operators
+
+  G_h=W^T A_h^T A_h W, Q_h=L B_h B_h^T L^T,
+  (1-h)G<=G_h<=(1+h)G,
+  (1-h)Q<=Q_h<=(1+h)Q.
+
+Coarse whitening gives ||I-G_h||<=2H<1. A fixed EVEN Neumann polynomial
+B_hmass=sum_{i=0}^{l_h}(I-G_h)^i approximates G_h^(-1) relatively to
+h/100, with l_h=O(log(1/h)). It is applied through the fine factors,
+not through A or B_orig. Set
+
+  K_h(t)=t B_hmass-Q_h.
+
+Inverse Loewner comparison and the Neumann errors give, conservatively,
+
+  -8hD<=E:=K_h-K<=8hD.                                  (1)
+
+For detail, B_hmass differs from G^(-1) relatively by at most 2h, and
+B_m differs relatively by epsilon_m<<h; since G^(-1)<=1+H, their
+Euclidean difference is bounded by a small constant times hI.
+The right-proxy error is bounded by hQ<=hQ0/(1-H)<=2hQ0.
+These imply (1) with substantial slack. All comparisons hold uniformly
+for EVERY t>0. There is no fine true-factor norm/bracket computation.
+
+Write
+
+  Acal(b)=T_MM(n,m,b)+T_MM(p,m,b),
+  J_h(b)=T_MM(s_A(h),m,b)+T_MM(s_B(h),m,b),
+  s_A(h)=min(n,~O(m/h^2)), s_B(h)=min(p,~O(m/h^2)).
+
+The smaller core products are bounded by these costs, since n,p and
+the sketch dimensions are at least m. K_h block actions cost ~J_h(b);
+K block actions cost ~Acal(b). Fine embeddings cost ~I to apply, but
+NO fine Gram is formed. The identity fallback is explicit in J_h.
+
+
+2. THE RELAXED QUADRATIC INVARIANT IS SUFFICIENT
+
+Let F be any SPD actual effective metric satisfying
+
+  -F<K<F,
+  F-kappa K F^(-1)K<=C hD,                               (2)
+
+with fixed kappa>=1 and C>0. The second left side need not be PSD.
+The ordinary defect Delta=F-KF^(-1)K is PSD, but may be much larger
+than hD on directions far from the threshold. This is allowed.
+
+2.1 Strong-action transfer
+
+For any inverse factor R with F=R^(-T)R^(-1), set
+C_F=R^T K R and T=I-C_F. Suppose U is orthonormal and
+
+  ||(I-UU^T)T||<=1+c_alpha alpha,
+  b=(1+c_alpha alpha)^2-1,
+  kappa*b<=1.
+
+For w perpendicular to U, symmetry gives
+w^T(C_F^2-2C_F)w<=b||w||^2. Writing w=R^(-1)y,
+
+  2y^T K y>=y^T K F^(-1)K y-b y^T F y
+    >=(1-kappa b)y^T K F^(-1)K y-b C h y^T D y
+    >=-b C h y^T D y.                                   (3)
+
+Thus the alpha*h gain survives, with constants depending on kappa,C.
+The physical dual subspace is range(Z R^(-T)U); the inverse factor in
+this lift is a genuine computational obligation addressed in Section 6.
+
+2.2 Quantile min--max also survives
+
+For alpha sufficiently small relative to kappa, put
+beta_alpha=alpha/(1-kappa alpha^2). Then
+
+  c<=beta_alpha(1-kappa c^2) for every c in [-1,alpha].    (4)
+
+Proof: beta_alpha*kappa*c^2+c-beta_alpha is convex, vanishes at c=alpha,
+and is nonpositive at c=-1 when beta_alpha(kappa-1)<=1. For example
+alpha<=min(1/10,1/(4kappa)) suffices. Apply (4) on the bottom-j C_F
+eigenspace if its j-th increasing eigenvalue is <=alpha. Undoing R and
+using (2) gives K<=beta_alpha*C*hD on a dimension-j subspace.
+Since D<=2(tB_m+Q), generalized min--max bounds lambda_j(Hhat) below
+by t times 1-O(C alpha h). The opposite side follows similarly if
+needed. The global bisection wrapper and its uncertain exit therefore
+still work at resolution alpha=Theta(theta/h). No spectral gap or
+lambda_1/lambda_j ratio is introduced.
+
+2.3 Finite relative perturbations preserve (2), without commutation
+
+If (1-delta)F_*<=Fbar<=(1+delta)F_* and
+F_*-kappa K F_*^(-1)K<=C hD, then
+
+  Fbar-kappa(1+delta)^2 K Fbar^(-1)K
+    <=(1+delta)[F_*-kappa K F_*^(-1)K]
+    <=(1+delta)C hD.                                    (5)
+
+This follows only from inversion order and congruence; K,F_*,Fbar need
+not commute. If BOTH F_*-K>=c hD and F_*+K>=c hD, and F_*<=B D,
+taking delta=O(h/B) preserves domination and the floor. No inference
+F_*>|K| is made for noncommuting K and F_*.
+Equation (5) is the required finite relative/quadratic invariant.
+
+
+3. A COMPLETE TWO-LEVEL PRECONDITIONER LEMMA
+
+Assume the explicit coarse F0=J0 J0^T from the verified absolute-pencil
+construction has, at every t>0,
+
+  8HD<=F0<=2D, +-K<F0,
+  0<=F0-KF0^(-1)K<=36HD.                                (6)
+
+Put eps=h/H<=1/64 and P=(1+eps)F0=J_P J_P^T. By (1), +-K_h<P.
+The normalized fine operator C_h=J_P^(-1)K_h J_P^(-T) is symmetric
+with spectrum in [-1,1]. This is the ONLY scalar-functional commutation
+used below: functions of C_h commute with C_h. No D/error commutation
+is assumed.
+
+3.1 A Young inequality controls the noncommuting fine-proxy error
+
+Since F0>=8HD and -8hD<=E<=8hD,
+
+  E F0^(-1)E<=8 h^2/H D.
+
+The quadratic Young inequality with parameter eps gives
+
+  K F0^(-1)K
+   <=(1+eps)K_h F0^(-1)K_h
+      +(1+1/eps) E F0^(-1)E.
+
+Combining this with (6) yields
+
+  P-kappa_P K_h P^(-1)K_h<=50HD,
+  kappa_P=(1+eps)^3<=2.                                (7)
+
+The weighted constant is safely below 50: the error term before the
+outer factor 1+eps is 8(eps+eps^2)H, added to 36H. This handles the
+otherwise dangerous cross terms without replacing them by a spurious
+O(h/sqrt(H))D norm error.
+
+3.2 An ideal function, used only to prove the actual finite approximation
+
+Set eta=8eps and f_eta(c)=sqrt(c^2+eta^2)+eta. Define analytically
+
+  F_*=J_P f_eta(C_h)J_P^T.
+
+For eta<=1/8, f_eta>=|c|+eta, min(f_eta)=2eta, and f_eta<=1+2eta<=5/4.
+Consequently
+
+  F_*>=128hD, F_*<=3D, F_*+-K>=56hD.                    (8)
+
+The exact scalar identity f_eta-c^2/f_eta=2eta gives
+
+  F_*-K_hF_*^(-1)K_h=2eta P.
+
+By (7) and F_*<=5P/4, this implies
+
+  F_*-2K_hF_*^(-1)K_h<=800hD.
+
+Use K_h=K+E, quadratic Young with parameter one, and
+E F_*^(-1)E<=hD/2 from (8). It follows that
+
+  F_*-4KF_*^(-1)K<=802hD.                              (9)
+
+The original kappa=1 weighted defect is generally NOT small here:
+2eta P is of order (h/H)F0, and F0 can be order D on far-spectrum
+directions. Equation (9), rather than a false O(hD) claim for that
+defect, is the point of the relaxed invariant.
+
+3.3 The actual finite polynomial metric
+
+Compute a real polynomial p with
+
+  |p(c)*sqrt(f_eta(c))-1|<=tau, tau=h/10^6,
+  c in [-1,1].
+
+Section 4 gives a finite construction of degree ~eta^(-1). Apply
+
+  R=J_P^(-T)p(C_h), Fbar=R^(-T)R^(-1)
+
+only as operators. Neither Fbar nor p(C_h)^(-1) is formed. Functional
+calculus gives (1-4tau)F_*<=Fbar<=(1+4tau)F_*. Equations (5),(8),(9)
+therefore prove ACTUAL finite inequalities
+
+  100hD<=Fbar<=4D, Fbar+-K>=55hD,
+  Fbar-5K Fbar^(-1)K<=1000hD.                           (10)
+
+All constants are deliberately loose. This is a full two-level lemma,
+uniform in every positive threshold and all multiplicities. It does not
+assume an exact absolute value or matrix square root.
+
+
+4. FINITE POLYNOMIAL CONSTRUCTION AND ITS TRUE DEGREE
+
+The needed scalar function is g_eta(z)=(sqrt(z^2+eta^2)+eta)^(-1/2).
+Take the positive branches on the real interval. On the Bernstein ellipse
+with parameter rho=1+eta/4, the imaginary part has magnitude at most
+eta/4. There Re(z^2+eta^2)>=15eta^2/16>0, so both principal branches
+are analytic and |g_eta(z)|<=eta^(-1/2).
+
+The Laurent representation under z=(w+w^(-1))/2 and Cauchy's estimate
+bound the Chebyshev coefficients by 2 eta^(-1/2)rho^(-k). Interpolate
+at N dyadic Gauss--Chebyshev nodes, with N a power of two. Chebyshev
+aliasing and the geometric tail give uniform interpolation error at most
+
+  24 eta^(-3/2)rho^(-N).
+
+Choose N by repeated squaring of rho^(-N) until it is at most
+tau*eta*sqrt(eta)/1000. Then N=O(eta^(-1)log(1/(tau*eta))). The error
+is at most tau/2 and min_{[-1,1]}g_eta>=1/sqrt(1+2eta)>0.8, so the
+desired relative tau guarantee holds and p is positive.
+
+The interpolation polynomial is an ACTUAL finite arithmetic object:
+N is dyadic; its Chebyshev nodes are real parts of dyadic roots of unity,
+constructed by positive half-angle square roots and complex-pair field
+operations. Each node value uses two positive scalar square roots and
+division. A dyadic DCT, implemented by the usual divide-and-conquer DFT
+recurrence, computes coefficients in O(N log N) real operations once
+those roots are available. Equivalently, the elementary quadratic DCT
+could be charged explicitly, but the divide-and-conquer algorithm removes
+that unnecessary scalar cost. No cosine, integration, eigenvalue, exact
+matrix-root, or coefficient oracle is invoked.
+
+Chebyshev recurrence applies p(C_h) using N fine-operator actions on a
+block. In this model the cost is therefore
+
+  degree(p)=~O(H/h), NOT ~O(sqrt(H/h)).                   (11)
+
+The function has complex branch points at +-i eta, an interior absolute-
+value smoothing scale. Section 9 proves that the loss in (11) is
+unavoidable for the stated class of uniform polynomial congruences.
+
+
+5. THE GLOBAL THRESHOLD WRAPPER WITH THE RELAXED INVARIANT
+
+Use the same positive constant-factor bracket for lambda_j(Hhat), j=r+1,
+from coarse Q0 and B_m bounds. The earlier audited coefficient-power
+quantile procedure gives q in [mu_j,mu_j+alpha]. The current manuscript's
+audited exact-inertia replacement gives the equivalent three-way output:
+safe lower sign, safe upper sign, or |mu_j|<=alpha. Either suffices here.
+Set alpha=theta/(10^9 h). All thresholds use the same B_m and fine
+inverse-mass polynomial; Fbar(t) is uniformly valid for every t>0.
+
+At each query run the symmetric operator
+
+  T=I-R^T K R.
+
+By (10), 0<T<2I. Standard Gaussian starts apply literally to this
+symmetric coordinate operator. The gap-free Musco per-vector quantile
+proof and its minimum-over-runs probability amplification are unchanged.
+Only the constants in the uncertain min--max differ: use kappa=5,
+C=1000 in (4). It gives
+
+  lambda_j(Hhat)>=(1-8000 alpha h)t
+
+at an uncertain exit. At the final upper endpoint of a bracket with
+width alpha*h*ell, lambda_j(T)<=1 and t<=(1+alpha h)lambda_j(Hhat).
+The coarse initial bracket has dimension-independent ratio sixteen
+(or polynomial ratio if the optional no-power initialization is used),
+so only allowable dimension/accuracy logarithms enter the query count.
+
+The final strong certificate ||(I-UU^T)T||<=1+3alpha, together with
+(3), gives K>=-3500alpha hD on its dual complement. The physical
+transfer from the main manuscript then gives
+
+  ||(I-P_output)M||^2
+    <=[(1+7000alpha h+epsilon_m)/(1-7000alpha h)]t.
+
+With epsilon_m=alpha*h=theta/10^9, combining threshold and mass comparison
+is strictly below the required (1+theta)^2 optimal squared tail. For
+example the three factors can be bounded by 1+20000nu, 1+16000nu,
+and 1+2nu, with nu=theta/10^9; their product is below 1+50000nu<1+theta.
+No true spectral-scale ratio is used.
+
+
+6. THE DUAL LIFTING OBLIGATION AND ITS EXACT PREIMAGE SOLUTION
+
+Naively copying the rank-one inverse-root hierarchy leaves a real gap:
+R=J_P^(-T)p(C_h), but the physical strong-certificate lift is
+Z R^(-T)U=Z J_P p(C_h)^(-1)U. An approximate inverse polynomial in
+that output can destroy the exact dual complement and can introduce a
+leading-to-tail sensitivity. One may NOT omit or silently approximate it.
+
+There is an exact algebraic solution that uses only forward polynomials.
+Put Pp=p(C_h), A0=J_P^(-1)K J_P^(-T), so T=I-Pp A0 Pp.
+For the FINAL projection filter take a fresh standard Gaussian Xi and
+use the elliptical start Omega=Pp Xi. Define
+
+  S0=I-A0 Pp^2,
+  Wout=filter(S0)Xi.
+
+The intertwining T Pp=Pp S0 proves EXACTLY
+
+  Yout=filter(T)Omega=Pp Wout.
+
+Thus the desired physical dual space is exactly
+
+  range(Z J_P Pp^(-1)Yout)=range(Z J_P Wout).              (12)
+
+No inverse Pp is computed. Select any independent columns of Wout by
+core CUP and orthonormalize their physical lift by fast Gram--Cholesky.
+The orthogonal projector onto range(Yout) exists for the proof but need
+not be explicitly constructed by the algorithm.
+
+The nonuniform start changes only logarithms in the elementary filter
+lemma. Uniform scalar approximation gives
+
+  kappa(Pp)=O(eta^(-1/2))=O(sqrt(H/h)).
+
+In a T eigenbasis, any head row covariance of Omega=Pp Xi has eigenvalues
+between sigma_min(Pp)^2 and sigma_max(Pp)^2. The square-head least singular
+value is therefore at least sigma_min(Pp) times that of a standard
+Gaussian square matrix. The tail Frobenius norm is bounded using
+sigma_max(Pp)||Xi||_F. A union bound, with no independence assumption
+between these blocks, gives
+
+  ||Omega_tail Omega_head^dagger||
+     <=poly(k,kappa(Pp),1/beta)
+
+with failure at most beta. This only changes the logarithm in the
+Chebyshev degree. The quantile procedure still uses independent STANDARD
+Gaussian starts on T; only this final filter uses the carried preimage.
+
+S0 can be nonnormal, but is similar to T through Pp. The exact recurrence
+and identity (12) are the proof, rather than an unjustified symmetric-
+Lanczos claim for S0. Its actions cost the same two Pp polynomials and
+one true A0 action as the symmetric T action. Its norm/recurrence growth
+may depend on eta, but not on an input singular-value ratio. No numerical
+stability claim is made.
+
+
+7. TWO-LEVEL COST THEOREM AND A NEW GROWING-RANK EXAMPLE
+
+Let q=~O(sqrt(h/theta)) and raw Krylov width Lraw=(2q+1)(r+1).
+If Lraw<=m, all core rank revelation, compressed Grams, coefficient/
+inertia computations, and exact physical range algebra use ~m^omega
+as in Sections 9--10 of block-threshold-audit.txt. Each outer T action
+costs ~[Acal(b)+(H/h)J_h(b)], b=r+1. The carried-preimage final filter
+has the same cost with b=r. Hence construction costs
+
+  ~O(I+G_H+m^(omega+zeta)
+      +Acal(r+1)sqrt(h/theta)
+      +J_h(r+1)H/sqrt(h*theta)),                         (13)
+
+plus np+T_MM(n,r,p) for output. If Lraw>m, retain the explicitly charged
+conservative m Lraw^2 range-algebra term. All polynomial coefficient
+preparation and recurrence arithmetic are bounded by the displayed
+fine-operator costs. The scalar polynomial can be reused over thresholds.
+
+Joint coarse/fine Loewner events cover every fixed congruence and every
+adaptive threshold. Fresh conditional quantile and final-filter budgets,
+with deterministic caps, give success 1-delta. On failed events finite
+polynomials and the carried output preimage avoid any inverse of p(C_h).
+Rank and coefficient checks remain before divisions. The positive coarse
+core is always well defined. Degrees and dimension caps depend only on
+supplied parameters and computed support, so arithmetic cost is capped
+on every outcome. Exact zero tails take the whole-support branch before
+threshold search, unchanged from the verified manuscript.
+
+Example. Set
+
+  n=p=N=m^(59/50+o(1)), H=m^(-7/100), h=m^(-1/12),
+  theta=m^(-11/25), 1<=r<=ceil(m^(14/25)).
+
+At the endpoint, in powers of m,
+
+  q exponent                 107/600,
+  degree(p) exponent         1/75,
+  raw width exponent         443/600 <1,
+  Acal(r+1) exponent         9006001/4130000,
+  J_h(r+1) exponent          867/400,
+  true-factor work           29227553/12390000 =2.3589631154...,
+  fine-proxy work            2831/1200 =2.3591666667...,
+  coarse Gram                3362/1425 =2.3592982456...,
+  output                     59/25 =2.36.
+
+These multiplication exponents use the full sorted-dimension formula
+already checked in the manuscript. In particular the fine block is
+slightly outside the input-optimal range, so J_h is NOT incorrectly
+charged as just the fine input size. The exact fine-work gap below
+the coarse Gram is 1/7600. The fine sketch row exponent 7/6 is below
+the ambient 59/50 by 1/75, so no fine true Gram is hidden. All constant
+ratio requirements hold for sufficiently large m, with strict exponent
+margins accommodating logarithms and small multiplication slack.
+
+Thus (13) gives construction N^(6724/3363+o(1)) and total explicit
+output N^(2+o(1)), uniformly for these growing ranks. Output rank is
+at most N^(28/59+o(1))<N^(1/2), so expansion has exponent two.
+
+This extends the ACCURACY regime of the optimized one-level bound.
+At theta=m^(-11/25), even its rank-one true-factor term would require
+a one-level distortion m^(-a) with a>=2/25=.08 to fit output. Its
+sketched-Gram exponent would then be at least
+
+  54/25+25/116 >59/25,
+
+and grows with a until the exact-Gram fallback, also above output.
+For the growing-rank endpoint the requirement is stronger. This is a
+comparison of available upper-bound tradeoffs, not a lower bound for
+all one-level algorithms. The scalar stochastic linear-r bound also
+exceeds output at these growing ranks. Fixed-rank stochastic methods
+already reach the limiting accuracy envelope; no dominance over them
+is claimed at fixed rank.
+
+
+8. FIXED-DEPTH EXTENSION: PRECISE INDUCTIVE INVARIANT
+
+For any FIXED depth ell, suppose 0<h_ell<...<h_0<=1/64,
+h_j/h_(j-1)<=1/1024, and theta<=h_ell. Fine inverse-mass/proxy
+construction in Section 1 gives the same error +-8h_jD at every level.
+The mass B_m is the ONE true-factor polynomial throughout all levels.
+
+An inductive sufficient invariant for actual finite F_j is
+
+  8h_jD<=F_j<=B_jD, +-K<F_j,
+  F_j-kappa_j K F_j^(-1)K<=C_j h_jD,
+  kappa_0=1, kappa_j=5 for j>=1,
+  B_0=2, C_0=36,
+  B_j=2 B_(j-1), C_j=100(C_(j-1)+1).                    (14)
+
+Here constants depend only on fixed depth. To prove the induction use
+P=(1+eps)F_(j-1), eps=h_j/h_(j-1), eta=8eps. Young's inequality gives
+
+  P-kappa_P K_j P^(-1)K_j<=C_P h_(j-1)D,
+  kappa_P=kappa_(j-1)(1+eps)^3<=6,
+  C_P<=2(C_(j-1)+1).
+
+With eps<=1/1024, 2eta*kappa_P*max(f_eta)<1, so the ideal function
+again gives F_*-2K_jF_*^(-1)K_j<=16 C_P h_jD. The proxy-to-true Young
+step adds at most 2h_jD and resets kappa to four. Relative polynomial
+accuracy
+
+  tau_j=h_j/[10^6(1+B_(j-1))]
+
+and equation (5) reset kappa to five and fit the C_j constant in (14).
+The ideal h_jD floor/margin are the same as Section 3, while its upper
+bound is below 2B_(j-1)D. The chosen tau_j preserves the floor and margin
+independently of whether any error commutes. Thus (14) is a genuine
+finite invariant for every level, not a formal recurrence assuming
+exact absolute values. Choose the outer alpha=theta/(A_ell h_ell), with
+fixed A_ell sufficiently large for C_ell,kappa_ell; Sections 2 and 5
+then give the same gap-free spectral target.
+
+Let R_j be the ACTUAL inverse factor, so F_j=R_j^(-T)R_j^(-1).
+Starting from explicit R_0=J0^(-T), set
+
+  R_P=R_(j-1)/sqrt(1+eps),
+  A_j=R_P^T K_j R_P,
+  R_j=R_P p_j(A_j).
+
+No R_j inverse is applied. For a block of width b, action costs obey
+
+  c_j(b)=~O_ell((h_(j-1)/h_j)[c_(j-1)(b)+J_(h_j)(b)]).
+
+Products of ratios telescope to h_0/h_ell, and products of logs remain
+polylogarithmic because ell is FIXED. Under the same raw-width core
+condition, the total construction bound is
+
+  ~O_ell(I+G_(h_0)+m^(omega+zeta)
+    +Acal(r+1)sqrt(h_ell/theta)
+    +sum_{j=1}^ell J_(h_j)(r+1) h_(j-1)/sqrt(h_ell*theta)). (15)
+
+The explicit-core action term is absorbed into j=1, since J_(h_1)
+already dominates the smaller core multiplication. No intermediate
+spectral-norm searches are needed: all preconditioners are valid at all
+positive thresholds.
+
+The multiple-level dual output also has an exact preimage solution.
+Let S=R_0^(-1)R_ell, so R_ell=R_0 S, and A0=R_0^T K R_0. Each factor
+p_j(A_j) has condition O(sqrt(h_(j-1)/h_j)), hence
+
+  kappa(S)<=O_ell(sqrt(h_0/h_ell)).
+
+No commutation is needed for this product bound. Use the final start
+Omega=S^T Xi, T=I-S^T A0 S, and carry
+Wout=filter(I-A0 S S^T)Xi. Then Yout=S^T Wout exactly, so the
+physical dual span is range(Z R_0^(-T)Wout). Only the explicit COARSE
+inverse is used in that lift. Applying S,S^T uses R_ell plus explicit
+coarse matrices, at the already charged cost. Elliptical Gaussian
+capture adds only the logarithm of kappa(S), a parameter ratio rather
+than an input condition number.
+
+For N=m^(1+d), rank blocks inside the relevant input-optimal ranges,
+theta=m^(-b), h_j=m^(-a_j), the true-input bound fits output if
+a_ell>b-2d. Intermediate constraints from (15) are
+
+  2a_j-a_(j-1)<3d-b,
+
+after taking a_ell close to b-2d. The maximal recurrence approaches
+3d-b with contraction 1/2. Thus for d=.18 and suitable coarse a_0
+near .07, any b<.45 is feasible at sufficiently large FIXED depth,
+provided one keeps all finest sketch rows strictly below ambient.
+For example growing ranks m^.1 remain in every required input-optimal
+block range. This matches the limiting scalar-stochastic accuracy
+envelope but retains factor-block batching for growing rank. No theorem
+for dimension- or accuracy-dependent growing depth is asserted.
+
+
+9. A SCOPED DEGREE LOWER BOUND FOR UNIFORM POLYNOMIAL CONGRUENCES
+
+Let p be a real polynomial of degree n, and assume
+
+  |x|p(x)^2<=1 for every x in [-1,1],
+  p(0)^2>=1/(C eps), 0<eps<=1/(16C).                    (16)
+
+Then n>=1/(20C eps). Here is a direct Bernstein proof. Let
+M=max_{[-1,1]}|p|, attained at x_*. Domination gives |x_*|<=1/M^2.
+Take y=4/M^2. Then |p(y)|<=M/2, |x_*-y|<=5/M^2, and both points
+are in a fixed interior subinterval when M^2>=16. Bernstein's inequality
+there gives |p'|<=2nM. Thus
+
+  M/2<= (5/M^2) 2nM,
+  n>=M^2/20>=1/(20C eps).
+
+These assumptions are exactly necessary for a scalar uniform polynomial
+inverse congruence F_new=F_prev p(C)^(-2): domination +-K<=F_new means
+|c|p(c)^2<=1, while at K=0 the relaxed fine invariant forces
+F_new<=C hD, hence p(0)^2=Omega(H/h) when F_prev=Theta(H D).
+
+The obstruction is realizable inside the coarse Gram model, rather than
+an arbitrary inconsistent pencil. Take G=I, Q0=tI, Q=t(I-Hx/2) on a
+commuting spectral band x in [-1,1]. Q0 is a valid H-relative proxy.
+The finite coarse F0 at S0=0 is gamma*H*t I, with gamma between 32 and
+48 for the existing a=8 construction. Thus C=K/F0=x/(2gamma)=b0 x,
+where b0 is a fixed constant band width. With q(x)=sqrt(b0)p(b0x),
+domination gives |x|q(x)^2<=1, and the fine invariant at x=0 gives
+q(0)^2>=1/(4C eps), eps=h/H. The same proof yields degree Omega(H/h).
+
+The scope is UNIFORM polynomial matrix-function congruences constructed
+from interval bounds, as in the old inverse-root hierarchy. It does not
+rule out adaptive data-specific interpolation, rational filters with
+independently fast shifted solves, nonpolynomial updates, or a different
+factor-access mechanism. The contrast with the old positive hierarchy
+is specific: its difficult point is an endpoint, allowing the n^2
+Markov derivative scale; the absolute-value zero is an INTERIOR point,
+where Bernstein gives scale n. One cannot silently reuse the old
+sqrt(H/h) degree with the new absolute-value congruence.
+
+
+10. WHY THIS HIERARCHY STILL DOES NOT SOLVE THE ORIGINAL HARD TARGET
+
+For rank one set N=m^(1+d), theta=m^(-b). An isotropic fine sketch reaches
+the ambient row dimension at accuracy h_cap=m^(-d/2). There are two cases.
+If all h_j are at least h_cap, the true-input work alone is at least the
+displayed schedule's
+
+  I sqrt(h_cap/theta)=m^(2+3d/4+b/2).
+
+If a first fine level crosses the cap, its proxy action is a full-input
+action. In (15) its exponent is bounded below by the same expression:
+with a_j>=d/2, a_(j-1)<=d/2, a_ell>=a_j,
+
+  2+d+(a_ell+b)/2-a_(j-1)>=2+3d/4+b/2.
+
+Even the desired optimistic square-root-ratio recurrence has the same
+cap obstruction. If the COARSE sketch already crosses the cap, its
+setup uses true Grams, restoring the available exact-Gram bound.
+
+At the original d=1/8,b=1, the full-input term is m^(83/32), above
+output m^(9/4), and worse than the named exact-Gram m^(169/72) bound.
+This is an obstruction to the DISPLAYED isotropic-sketch hierarchy
+tradeoff/schedule, not a lower bound against all algorithms or faster
+unknown exact-Gram multiplication. The original research target still
+needs another mechanism.
+
+
+11. SOURCES, FAILURE EVENTS, AND LIMITS
+
+The support, coarse weighted-defect, Musco per-vector quantile, fast CUP
+range algebra, and scalar Gaussian bounds are those already audited in
+docs/absolute-pencil-spectral.tex and block-threshold-audit.txt. The new
+steps here are the relaxed invariant, its noncommuting Young/relative
+perturbation proof, and the exact preimage dual lift. No claim is made
+that their global combination is novel without a separate literature audit.
+
+All fine/coarse embedding events are sampled once and union-bounded at
+fixed depth. All threshold and final-filter Gaussians are fresh conditional
+on the past. Quantile amplification takes minima of scalar bounds in
+the earlier audited wrapper, or uses the equivalent current exact-inertia
+classification. The final elliptical Gaussian proof uses
+only a parameter-bounded covariance condition. Degrees, scalar interpolation
+loops, threshold counts, source-run repetitions, rank tests, and every
+dimension are capped from supplied parameters and computed support.
+The matrix-function output never asks for an inverse fine polynomial,
+so bad fine-embedding events do not create a hidden iterative solve.
+
+Exact characteristic coefficients, roots of unity, Gram--Cholesky algebra,
+and field cancellation can require arbitrarily large representations.
+Polynomial recurrences can grow exponentially in degree. All finite
+algorithms above therefore remain exact-real-arithmetic theorems only.
+No input-dependent bit cost, stable floating-point implementation, or
+accuracy-dependent growing-depth theorem is supplied.
+
+
+12. GROWING DEPTH WITH ALL DEPENDENCES UNFOLDED
+
+Verdict: the endpoint family is VALID in the exact-real-arithmetic model,
+with the explicit square-root schedule below. This section replaces the
+fixed-depth-only restriction for this PARTICULAR controlled schedule.
+It does not permit arbitrary input-dependent depth or suppress an O_L
+constant. Confidence is fixed or inverse polynomial in m; more extreme
+confidence dependence must remain explicit instead of being called m^o(1).
+
+12.1 The statement and scalar-computable schedule
+
+Fix d in (1/8,(sqrt(2)-1)/2), take N=m^(1+d+o(1)), n=p=N, and
+1<=r<=floor(sqrt(m)). Let rho=m/N and theta=rho^2*sqrt(rho). Thus
+theta=m^(-5d/2+o(1)). All these parameters are computed by division,
+multiplication, and a positive square root, without a fractional-power
+or logarithm oracle. Set
+
+  h0=1/1024, hstar=h0*sqrt(rho), current=h0.
+
+Accept hnext=sqrt(current*hstar) ONLY while
+hnext<=current/1024; replace current by hnext when accepted. Denote
+the accepted accuracies by h1,...,hL. This depth is determined before
+any random embeddings are drawn.
+
+If at least one level is accepted, the EXACT terminal bounds are
+
+  sqrt(rho)<=hL<1024sqrt(rho).                           (17)
+
+Indeed g_j=ln(h_j/hstar) is halved at each step. Acceptance is equivalent
+to g_current>=2ln1024, and stopping gives
+ln1024<=g_L<2ln1024. Multiplying hstar by exp(g_L) proves (17).
+All ratios meet h_j/h_(j-1)<=1/1024 exactly, so the finite induction
+in Section 8 applies at every level.
+
+If NO level is accepted, (17) need not hold. This happens when
+rho>1024^(-4). For each fixed d>0 it occurs only for finitely many m;
+use the verified one-level companion algorithm at internal accuracy
+min(theta,h0), including its conservative raw-width cost. It still
+returns width at most r and the requested error. Its finite cost is
+absorbed by a constant depending on d in the asserted asymptotic family.
+Merely returning the exact product would not satisfy the rank cap when
+rank(M)>r. Do not apply the terminal lower bound to this branch.
+
+When levels are accepted,
+
+  L=log_2 log(N/m)+O(1)=O_d(loglog m),
+  2^L=Theta(log(N/m))=Theta_d(log m).                    (18)
+
+These formulas analyze the finite square-root loop; the algorithm does
+not evaluate the logarithms.
+
+The conclusion is total explicit-output time N^(2+o(1)), with success
+1-delta for constant delta or delta>=m^(-c_delta) for a fixed c_delta.
+No smaller fixed-exponent construction margin is claimed at this endpoint.
+
+12.2 Explicit invariant constants and accuracy budget
+
+Use precisely the induction in (14), not a new unspecified O_L lemma:
+
+  B_j=2^(j+1),
+  C_j=100 C_(j-1)+100, C_0=36,
+  kappa_j=5 for j>=1.
+
+Thus C_j=(36+100/99)100^j-100/99, so by (18),
+B_L and C_L are fixed powers of log m. The induction's ratio condition
+is UNIFORM in C_j: kappa resets to five, and eps<=1/1024 suffices.
+Only the scalar polynomial tolerance uses the upper constant B_(j-1).
+This absence of a ratio condition shrinking with C_j is essential.
+
+Set
+
+  A_L=10^6(C_L+1), alpha=theta/(A_L hL),
+  epsilon_m=theta/10^9.
+
+Keep epsilon_m separate: it is NOT alpha*hL once A_L grows. The true
+inverse-mass polynomial still has O(log m) degree. Fine inverse masses
+have relative error h_j/100 and O(log m) degree, uniformly in j.
+
+The final transfer remains safe with these choices. Equation (3) gives
+K>=-(7/2)C_L alpha hL D. Physical transfer has
+u=7 C_L alpha hL<=7theta/10^6, plus epsilon_m. The uncertain min--max
+has x<=4 C_L alpha hL<=4theta/10^6. Their squared-error factors are
+bounded respectively by 1+3u+2epsilon_m and 1+4x, with another
+1+2epsilon_m for true/represented eigenvalues. Their product is strictly
+below (1+theta)^2. Neither B_L nor the depth adds an uncharged physical
+factor: D<=2(tB_m+Q) still uses the ORIGINAL coarse metric.
+
+12.3 Uniform interpolation and recursive action costs
+
+Choose the ACTUAL finite interpolation tolerances
+
+  tau_j=h_j/[10^6(1+B_(j-1))], eta_j=8h_j/h_(j-1).
+
+For every accepted level, Section 4 applies with constants independent
+of j. Since log(1/h_j)=O_d(log m), log B_j=O(loglog m), and
+log(1/eta_j)=O_d(log m), its degree n_j obeys
+
+  n_j<=C_d (h_(j-1)/h_j) log(2m).                       (19)
+
+This is a concrete common bound, not an O_L constant. The fine Neumann
+mass inside K_j adds another O(log m) factor. With ell_m=log(2m), a
+uniform action-cost recurrence is therefore
+
+  c_j(b)<=C ell_m^2 (h_(j-1)/h_j)
+                     [c_(j-1)(b)+Jleaf_j(b)],            (20)
+
+where Jleaf is the cost of a constant number of products with the stored
+fine factors and explicit cores. Scalar recurrence/addition work is
+bounded by the same expression. Unrolling (20) multiplies all terms by
+at most
+
+  E(m)=(C ell_m^2)^L
+       =exp(O_d((loglog m)^2))=m^o(1).                  (21)
+
+The remaining degree ratios telescope exactly. The constants 2^L and
+100^L do not exponentiate this bound again: B_j enters only log(1/tau_j),
+and C_L enters only the polynomial outer accuracy factor A_L.
+
+Dyadic node generation and FFT/DCT coefficient preparation are also
+bounded uniformly. The largest h_(j-1)/h_j occurs at j=1 and is
+rho^(-1/4). Thus sum_j n_j log n_j is at most
+O_d(L rho^(-1/4)(log m)^2), before any repeated threshold reuse. This
+is smaller than the asserted total cost. No fine polynomial matrix is
+formed. Its coefficient representations can be enormous, as allowed
+by the exact-field model; there is no bit bound.
+
+12.4 One fixed rectangular kernel gives a uniform bound for every level
+
+Let chi(m) be an actual cost overhead for the ONE fixed shape
+
+  T_MM(m,m,ceil(sqrt m))<=m^2 chi(m), chi(m)=m^o(1),
+
+using the same adopted rectangular multiplication theorem. Pad every
+rank block b<=r+1 to at most two blocks of width ceil(sqrt m). For an
+s-by-m factor with s>=m, split rows into m-row blocks and apply this
+fixed kernel. Transpose actions are obtained by tensor permutation or
+splitting the inner row dimension and adding the products. Uniformly,
+
+  block-action cost<=C s m chi(m).                      (22)
+
+All smaller core products have the same bound. There is no use of a
+different asymptotic rectangular exponent at each changing level.
+The chi(m) factor occurs ONCE per expanded leaf cost, not as chi(m)^L:
+the action recurrence is linear and simply counts leaf products.
+
+If a chosen fast embedding has a fixed logarithmic row overhead
+(log(mN L/delta))^gamma, its stored row count is
+s_j<=min(N,C m h_j^(-2)(log m)^gamma). The identity fallback only
+decreases this count. Consequently
+
+  Acal(b)<=C mN chi(m),
+  Jleaf_j(b)<=C m^2 h_j^(-2)chi(m)(log m)^gamma,           (23)
+
+uniformly in j. No assumption that every fine sketch stays strictly
+below ambient is needed. All stored factors together occupy at most
+O(L mN) entries, since each row count is capped at N; identity factors
+may simply reference the original input. Applying all embeddings costs
+mN times a fixed polynomial in log m and L. The coarse row count is
+O(m polylog m), so coarse Gram/support setup costs
+m^(omega+zeta)polylog m. None of these statements hides a fine Gram.
+
+12.5 Exact cancellations make every unrolled term quadratic
+
+The schedule has the algebraic identity
+
+  h_j^2=h_(j-1) h0 sqrt(rho).
+
+From (17) and theta=rho^(5/2),
+
+  mN sqrt(hL/theta)<=32N^2,
+
+and EACH fine term in the unfolded action cost satisfies
+
+  m^2 h_j^(-2) h_(j-1)/sqrt(hL*theta)
+    =m^2/[h0 sqrt(rho) sqrt(hL*theta)]
+    <=N^2/h0.                                         (24)
+
+These are uniform algebraic bounds, not limiting exponent substitutions.
+Multiplying by (21),(23), outer A_L^(1/2), source/filter logarithms,
+and O(log m) threshold/repetition counts gives at most
+
+  N^2 chi(m) exp(O_d,c_delta((loglog m)^2))
+       +m^(omega+zeta)polylog m.                        (25)
+
+For fixed d>1/8 choose fixed multiplication slack below
+2+2d-9/4. Then the second term is o(N^2) and the first is N^(2+o(1)).
+The output can use the SAME fixed kernel: tile the N-by-N output into
+m-by-m blocks, pad inner rank r to ceil(sqrt m), and use tensor-permuted
+MM(m,m,ceil sqrt m). This costs O(N^2 chi(m)), including every entry.
+The physical Gram--Cholesky lift is handled by (22) plus m^omega.
+
+12.6 Raw widths, confidence, elliptical capture, and caps
+
+Since A_L is polylogarithmic, (17) gives
+
+  alpha^(-1/2)<=C (N/m) sqrt(A_L),
+  q<= (N/m) polylog m=m^(d+o(1)).                       (26)
+
+The q bound includes the final-filter logarithm. In fact
+kappa(S)<=c^L sqrt(h0/hL), so log kappa(S)=O_d(log m); no hidden
+input-conditioned Gaussian initialization appears. Source quantiles
+use standard Gaussian starts on the actual symmetric T. Only the
+carried-preimage final filter uses S^T Xi and the proven covariance
+bound. Its nonnormal carried operator is used by an exact polynomial
+identity, never by an unproved nonsymmetric Lanczos guarantee.
+
+Thus the ACTUAL capped raw outer width is
+
+  (2q+1)(r+1)<=m^(1/2+d+o(1))<m,
+
+because the fixed d here is below (sqrt(2)-1)/2<1/2. All core range
+algebra and compressed sign counts therefore use the fast m^omega
+bound. Gaussian repetitions have separate bases. Intermediate p_j
+recurrences retain only constant-width blocks; their internal degrees
+do not enlarge this outer raw width.
+
+Allocate delta/2 across the 2(L+1) embedding events, and the remaining
+budgets across the capped conditional threshold and final-filter calls.
+Use explicitly
+
+  Qmax=ceil(log_2(16 m^2 A_L/theta))+1.
+
+This bounds a plain coefficient-ratio bracket of ratio 16k^2 down to
+relative width alpha hL. Scalar halving computes the bound without a
+log oracle. Qmax=O_d(log m); log(L/delta), all per-query failure logs,
+and all logarithms used above are O(log m) under the stated confidence
+range. The finite interpolation and recursive applications have NO
+additional randomized failures. Exact zero tails still take the coarse
+whole-support branch before threshold search. All dimensions, layers,
+degrees, rank checks, and repetition counts are capped before execution.
+Failed fine embeddings may make an effective factor singular, but the
+algorithm executes only its FORWARD polynomials and the carried output
+preimage; no inverse fine polynomial is taken on those outcomes.
+
+12.7 Scope of the named-baseline endpoint comparison
+
+For r<=sqrt m the fixed-shape kernel makes ordinary width-r factor
+actions input optimal. Its named gap-free factor-pass exponent at
+theta=m^(-5d/2) is 2+9d/4 in powers of m. The exact-Gram exponent is
+2+d+1/[4(1+d)]. Relative to output, their N-exponent gaps are
+
+  g_K(d)=d/[4(1+d)],
+  g_G(d)=1/[4(1+d)^2]-d/(1+d).
+
+Both are positive on the stated d interval. Optimizing the smaller of
+these named comparisons gives 5d(1+d)=1, namely
+d=(3sqrt(5)-5)/10 and
+
+  min(g_K,g_G)=(7-3sqrt(5))/8.
+
+This is an optimization of the checked Gram/Krylov comparison envelope,
+not a lower bound or an exhaustive SOTA claim. Root/research-runs are
+separately checking the exact baseline scope and may state it in the
+manuscript with their reviewed postprocessing accounting.
+
+
+13. REVIEW OF THE AMENDED ACTUAL HIERARCHY MANUSCRIPT
+
+Read the actual docs/hierarchical-absolute-spectral.tex after the root's
+specification edits and additions. Source SHA after the final local
+clarifications, re-read and confirmed:
+5f491bbc0000845d8271a9dfd97a1a9bdf4c5bc47a63fae178b5fabc80006508.
+The reviewed additions are the optimized comparison corollary, adaptive
+absolute-error corollary, and Appendix A's exact-field Gram comparator.
+No source edit was made by this reviewer.
+
+Verdict: PASS in the stated exact-real-arithmetic model. No substantive
+mathematical or runtime correction is required. The local inertia
+pronoun clarification reported to root is now fixed, as recorded below.
+
+13.1 All statements and specification changes read
+
+Read the actual fixed-depth tradeoff theorem, growing-depth endpoint
+theorem, Relative perturbation lemma, Finite inverse-root polynomial
+lemma, One finite refinement lemma, Relaxed min--max and strong transfer
+lemma, optimized comparison corollary, Absolute error without a supplied
+rank corollary, two-level example corollary, and the complete Appendix A.
+Re-read the shared-ingredient statements, carried-preimage section,
+fixed-depth caps, and unfolded growing-depth cost section as well.
+
+The explicit integer-rank convention and zero extension remove no valid
+case. Added SPD, delta<1, kappa>=0 assumptions make the relative-metric
+lemma's inversion step explicit. The local transfer bounds
+alpha<=1/(100kappa) and 7C alpha h<1/4 hold with A_L=10^6(C_L+1),
+and ensure all denominators and scalar endpoint inequalities have their
+claimed signs. R0=J0^(-T) is now explicit and matches every later
+carried-preimage identity.
+
+The computable bound U_S=2^L sqrt(h0/hL) is safe: each scalar polynomial
+has condition at most 2sqrt(hprev/h), even after its finite relative
+approximation. Condition numbers multiply without commutation.
+The Gaussian cap R_G=(100k U_S/beta)^3 dominates the elementary
+head-inverse/tail-Frobenius bound and is computed from parameters only.
+Its logarithm remains O(logm) at the specified growing depth.
+The rank-cap, identity-proxy, and explicit C-dependence qualifications
+preserve the prior theorem and improve its specification.
+
+13.2 Optimized comparison corollary
+
+The parameter identities are exact:
+
+  d*=(3sqrt5-5)/10,
+  alpha*=(3sqrt5-5)/2=1/(1+d*),
+  s*=(7-3sqrt5)/8,
+  (5/2)d*/(1+d*)=10s*.
+
+For all r<=sqrtm, width-r factor actions are input optimal. The ordinary
+factor-pass bound has exponent 2+9d/4. Its full raw basis has exponent
+ell=1/2+5d/4<1. The copied fast tall range-algebra exponent is correctly
+13/8+41d/16, below 2+9d/4. The compressed Gram exponent
+1+d+ell+ell^2/[4(1+d)] is below the tall charge because ell<1+d.
+The conventional cubic charge 3ell=3/2+15d/4 is below the factor term
+for d<1/3, covering the stated interval. Computing full-basis factor
+actions in width-r chunks costs at most the same iteration term.
+
+The text appropriately adds a uniform exact-field realization of this
+scaling using the companion at constant distortion. This requires no
+numerical Ritz/SVD oracle: its raw width still has exponent ell<1 and
+its input term dominates m^omega. It is described as a realization of
+the same scaling, rather than silently asserting an exact SVD primitive.
+
+The exact-Gram exponent 2+d+1/[4(1+d)] is correct, and Appendix A below
+supplies the missing exact-field core/lift realization. Thus after
+conversion to N, the two gaps are exactly
+
+  gK=d/[4(1+d)],
+  gG=1/[4(1+d)^2]-d/(1+d).
+
+gK increases and gG decreases; their intersection is 5d(1+d)=1.
+The optimized value is s*. The corollary's exponent-two wording is
+correct: it does not assert literal O(N^2), strict subquadratic
+construction, a lower bound, or universal dominance of scalar methods.
+
+13.3 Adaptive absolute error and its cap/fallback
+
+At fixed t=e^2/(1+theta/4), both the hierarchical invariant and its
+application costs are uniform in t, so no logarithm of e or of an input
+spectral scale is introduced. Trying widths 0,1,2,4,... and advancing
+only when a compressed beta_(r+1)>1 is sound. If no repetition exceeds
+one, any successful Musco repetition gives tau_(r+1)<=1+alpha, sufficient
+for the fresh carried filter and the physical residual bound. The factor
+1+3u+2epsilon_m is strictly below 1+theta/4, so accepted squared error
+is at most e^2.
+
+The rank-zero branch is legitimate: acceptance controls ||T|| itself,
+and the empty space already has the strong action certificate. It writes
+zero, with no width-zero Gaussian inverse or nonzero normalization needed.
+For every attempted r>=r_e below support dimension,
+
+  lambda_(r+1)(Hhat)
+    <=e^2/[(1+theta)^2(1-epsilon_m)]<t.
+
+Hence tau_(r+1)<=1, and deterministic compression min--max forbids a
+beta_(r+1)>1 even when every per-vector run has poor quality. Stopping
+by the first dyadic width at least r_e therefore needs only the embedding
+event. This width is at most 2r_e, including r_e=0. A support branch
+can only reduce width.
+
+If r_e<=floor(sqrtm)/2, that first dyadic width is at most floor(sqrtm).
+All processed blocks are at most sqrtm+1 and the unfolded quadratic
+bound applies; the logarithmic number of attempts changes only m^o.
+Thus the high-probability time and width/error claims use one common
+event, with no claim of the small-width cost on all failed outcomes.
+Reserving half the confidence for a fresh globally capped companion
+fallback is valid. Decreasing its internal relative accuracy increases
+e/(1+theta_internal), so its slack rank can only decrease; its width is
+therefore still at most 2r_e on its own success event. The finite no-level
+branch uses that rank-capped companion algorithm rather than returning
+an unrestricted-rank exact product. These statements match the actual
+companion absolute-error proof, which was also read for this review.
+
+13.4 Appendix A's exact-field Gram comparator
+
+True Grams and exact support/whitening give an implicit Z with Z^T Z=I
+and explicit SPD core Hc on the product support. Computing its plain
+coefficient bracket and exact shifted inertia reaches a relative upper
+endpoint u in O(log(m/theta)) field calls, independent of any singular-
+value ratio. If rank<=r, the exact-support branch precedes this step.
+
+The Gaussian perturbation t=u[1+(theta/100)g^2/(1+g^2)] has a nonatomic
+distribution inside the stated interval, so Kc=tI-Hc is nonsingular
+almost surely. It still has at most r negative eigenvalues, and
+t<=(1+theta/100)^2 lambda_(r+1)(Hc).
+
+Conditional on this Kc, every leading principal minor of S^T Kc S is
+a nonzero polynomial in an independent Gaussian S. A Kc eigenbasis
+witness makes them all nonzero, including repeated eigenvalues.
+Therefore S is invertible and unpivoted recursive LDL^T has nonzero
+diagonal pivots almost surely. The leading-minor condition propagates
+to the Schur complement. Its 2T(k/2)+O(k^omega) recurrence and the two
+Gaussian core multiplications/inverse have the claimed field cost.
+
+The OUTPUT ORIENTATION is correct: V=range(Z S^(-T)L E_negative).
+For x perpendicular to it, w=L^T S^(-1)Z^T x has zero negative-D
+coordinates, and y^T Kc y=w^T D w>=0. Thus the physical squared residual
+is at most t, and its norm is at most
+(1+theta/100)sigma_(r+1). Its width is the negative count, at most r.
+Physical lifting/range algebra is Acal(r)+m^omega plus the charged
+output multiplication and np writing. Exact signs, random congruence,
+and LDL introduce neither a spectral-decomposition oracle nor a hidden
+condition logarithm. Zero-pivot exits have probability zero and finite
+cost. No numerical stability claim is made.
+
+13.5 Minor local clarification reported
+
+The sentence after defining C_F=R^T K R and T=I-C_F says 'Its inertia
+is that of K.' The intended and used statement is that C_F has K's
+inertia; T is SPD. Replacing the pronoun by 'The congruent matrix C_F'
+makes the local statement unambiguous. All actual sign decisions and
+the proofs already use C_F correctly. This is not a substantive proof gap.
+Root applied that correction. The root also made the physical-spectrum
+sentence explicit: H has the exact physical squared spectrum, while
+Hhat satisfies its stated relative comparison. Both final edits were
+re-read at the frozen SHA above. No issue remains open in this audit.

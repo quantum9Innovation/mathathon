@@ -1,0 +1,282 @@
+Independent audit: all-depth direct block interpolation
+======================================================
+2026-11-14, research_runs. Reviewed the ACTUAL Sections 7--8 of
+docs/block-interpolation-search.txt. No shared manuscript edited.
+
+Conclusion
+----------
+The saved direct all-depth proof passes this independent mathematical,
+probability and convergence-scope audit. In particular the stronger
+fractional-moment argument genuinely gives a prefactor with logarithm
+O(d log(db/beta)), not the weaker O(d^2 log d) confidence recursion.
+The supplied-partition gap is exactly Shao's equation (1), subject to
+the normalization stated below. The result bypasses the false chi-product
+conjecture and proves its intended DIRECT convergence corollary on that
+partition class. It does not prove the false original KE-05 statement.
+
+The closest inspected primary theorems do not supply this same parameter
+and depth simultaneously: MMM2024 has a b-th-order gap but a longer
+small-block startup; Chen et al. 2026 has k/b startup with an individual
+eigenvalue-gap parameter. This is a bounded primary-source assessment,
+not an exhaustive global novelty certification. The contribution is
+analysis of standard block Krylov, not a new cheaper construction of a
+raw long Krylov matrix or an unrestricted N^2 product algorithm.
+
+1. Exact theorem and quantifiers audited
+---------------------------------------
+Fix integers b>=1,d>=2 and deterministic real diagonal b-by-b blocks
+Lambda_i with pairwise disjoint spectra. All b-by-b Omega_i are mutually
+independent standard REAL Gaussian matrices. Let B_i=Omega_i^{-1}
+Lambda_i Omega_i and let F_i be the unique degree-(d-1) right-coefficient
+fundamental polynomials under LEFT evaluation:
+
+  P(z)=sum_l z^l C_l,  P(B)=sum_l B^l C_l,
+  F_i(B_j)=delta_ij I.
+
+If [a,c] contains all scalar nodes, L=c-a, and Delta is the minimum
+CROSS-BLOCK scalar gap, the audited theorem is
+
+ Pr{max_i sup_(z in[a,c])||F_i(z)||
+       <=[768 d^8 b^5 beta^{-4} L/Delta]^{d-1}} >=1-beta.  (A)
+
+For d=1 use F_1=I and omit Delta. There is no restriction on within-
+block spacings or repetitions. The probability is for EACH FIXED
+deterministic input; the same sample is not claimed to work for every
+possible spectrum simultaneously. Input nodes must not adapt to Omega.
+
+All finite b,d satisfy the proof, including growing b,d. No algorithm
+enumerates the d! paths used in the probability union bound.
+
+2. Terminal polynomial and resolvent: orientations checked
+---------------------------------------------------------
+For any selected q blocks, A0=diag(Lambda_i) is symmetric of order qb
+and Gamma is their raw Gaussian stack. The square raw Krylov matrix
+[Gamma,A0 Gamma,...,A0^{q-1}Gamma] is generically invertible: at all
+Omega_i=I it permutes to b scalar q-node Vandermonde matrices. Cross-
+block disjointness makes those nodes distinct. Polynomial null-set
+reasoning and a finite union over subsets justify every required basis.
+It also implies every earlier block Krylov rank increases by b, so no
+unaccounted early block-Lanczos breakdown occurs.
+
+Take fixed measurable QR sign choices. Write the resulting orthonormal
+blocks as V_j=sum_l A0^l Gamma C_(l,j), with right polynomial P_j.
+The leading coefficient is invertible. In the complete orthogonal
+basis, symmetry gives the last recurrence
+
+  A0 V_(q-1)=V_(q-2) H+V_(q-1) T.
+
+The order in
+
+  R_q(z)=z P_(q-1)(z)-P_(q-2)(z)H-P_(q-1)(z)T
+
+is correct. Its raw realization vanishes, so it annihilates all selected
+B_i by left evaluation. It is NOT justified by evaluating an arbitrary
+noncommutative product of scalar-variable factors.
+
+Let R_q(z)=sum_l z^l C_l. Polynomial division gives
+
+ (zI-A0)^{-1}Gamma R_q(z)
+   =sum_(l=1)^q sum_(t=0)^(l-1) z^(l-1-t) A0^t Gamma C_l.
+
+After multiplying by V_(q-1)^T, every t<q-1 term vanishes. The only
+remaining term is I, because
+V_(q-1)^T A0^(q-1)Gamma C_q=V_(q-1)^T V_(q-1)=I.
+Hence W_q(z)R_q(z)=I for W_q=V_(q-1)^T(zI-A0)^{-1}Gamma.
+Both matrices are square, so this proves R_q^{-1}=W_q and
+
+  ||R_q(eta)^{-1}||<=||Gamma||/dist(eta,spec A0).           (B)
+
+The q=1 normalization also checks: the initial QR factor is incorporated
+in P_0, and no missing leading-coefficient or transpose factor remains.
+
+3. Conditional Gaussian step and direct interpolation
+----------------------------------------------------
+For a fresh root block k, R_(S\k) depends only on OTHER original
+Gaussian blocks. Left evaluation gives
+
+  N=Omega_k R(B_k),   row_l(N)=omega_(k,l)^T R(eta_(k,l)).
+
+Conditional on the other blocks these rows are independent Gaussians,
+with covariance R(eta)^T R(eta)>=delta_k^2/||Gamma||^2 I by (B).
+Within-row entries need not be independent, and repeated eta values do
+not destroy independence between rows. The elementary row-distance
+lemma therefore applies without a hidden dependence assumption.
+
+With F_k(z)=R(z)N^{-1}Omega_k, evaluation at all other blocks is zero;
+at B_k it is I since N=Omega_k R(B_k). Constructing all these polynomials
+proves surjectivity of the square interpolation map and hence uniqueness.
+The induction identity P_j(z)=sum_i F_i(z)P_j(B_i) is consequently valid:
+the right factors are constants, so left evaluation preserves this sum.
+
+On spectrum [0,1], ||H||,||T||<=1 and ||(V_j)_i||<=1. Thus
+sup||R_q||<=3q G_q max||Omega_i^{-1}||, as used in the note.
+
+4. Probability constants, including the stronger path bound
+----------------------------------------------------------
+The Section 7 recursion constant 324 q^{3/2}d^3 b^5 beta^{-3}
+checks exactly. Its three event collections have total failures at most
+beta/3 each. Crucially a fresh-root conditional tail is integrated before
+unioning with good events for OTHER roots; one must not condition on all
+those events and then assert unchanged Gaussian laws.
+
+Section 8 avoids that confidence recursion. With
+
+  Z_(S,k)=delta_(S,k)||N_(S,k)^{-1}||/||Gamma_(S\k)||,
+
+the conditional tail is min(1,b^{3/2}/z). Integrating it yields
+E[sqrt(Z)|other blocks]<=2b^{3/4}. For each fixed nested deletion path,
+the next Z depends only on the remaining blocks. Tower conditioning
+therefore bounds the half moment of its PRODUCT by
+(2b^{3/4})^{d-1}; no independence between Z factors is claimed.
+
+Markov and a union over at most d! paths give the displayed product
+bound (25). The common norm event has failure beta/2 with
+L0^2=4d b^2/beta and U0=4d b^{3/2}/beta. It is unioned afterward,
+not conditioned on in the moment calculation. Combining factors gives
+
+ G_d<=4 beta^{-2}(d!)^2((d-1)!)^{3/2}
+            [192 d^2 b^5 beta^{-2}/Delta]^{d-1},           (C)
+
+since 3U0 L0^2=48d^2 b^{7/2}beta^{-2} and the squared half-moment
+factor contributes 4b^{3/2} per elimination. The simplification of (C)
+to (A) is valid and deliberately loose. Its log-prefactor is
+O(d log(db/beta)), so no hidden quadratic-in-d depth remains.
+
+5. Graph angle and standard Krylov consequences
+-----------------------------------------------
+For a fixed symmetric n-by-n A and a target invariant subspace Q of
+dimension k=db, rotate the Gaussian start into its eigenbasis. Its k
+head rows split into the required independent Omega_i. The head raw
+Krylov matrix is invertible almost surely, so the full initial Krylov
+space is a graph with tangent norm ||K_tail K_head^{-1}||.
+
+For a head vector y=(y_i), use p_y(z)=sum_i F_i(z)Omega_i^{-1}y_i.
+Each tail row is bounded by sqrt(d)*G_d*M*||omega_tail_row||*||y||,
+where M=max_i||Omega_i^{-1}||. Thus
+
+  tan angle(Q,K_d(A,Omega))
+    <=sqrt(d)||Omega_tail||_F M G_d.                      (D)
+
+One explicit confidence allocation is (A) at beta/3, M<=
+3d b^{3/2}/beta except beta/3, and
+||Omega_tail||_F<=sqrt(3b(n-db)/beta) except beta/3. This proves (D)
+with a spectrum-independent angle prefactor whose logarithm is
+O(d log(db/beta)+log(n/beta)). If n=db the tail is empty and the angle
+is zero; n need not be a multiple of b. The theorem is an INITIAL
+angle statement, and does not need a target/tail eigenvalue gap.
+
+For a TOP invariant subspace and positive external gap g_ext, standard
+Chebyshev acceleration subsequently gives depth
+
+ d+O([d log(db/(beta*relgap_b))+log(n/(beta*epsilon))]
+                                                   /sqrt(g_ext)).
+
+For spectral/Frobenius LRA use the deterministic good-start theorem
+rather than requiring an external gap. Let H=X X^T and let Q0 be an
+orthonormal basis of the WHOLE K_d(H,Omega), which has k columns. Its
+good-start parameter is 1+tan^2(angle), by principal-angle identities.
+There is exact span equality
+
+  K_t(H,Q0)=K_(t+d-1)(H,Omega).
+
+Indeed multiplying the full initial raw Krylov basis by powers produces
+every contiguous power, so there is no unsupported monotonic-Ritz step.
+The usual good-start block-Krylov result yields relative spectral and
+Frobenius LRA after additional depth O(theta^{-1/2}log(n*Lgood/theta)).
+Consequently the total scalar matvec count is linear in k, up to the
+displayed accuracy and logarithmic gap/dimension/confidence factors,
+for the supplied-partition class. Orthogonalization, storage, extraction
+and explicit product-output work still have to be counted separately.
+
+This is exact-arithmetic convergence analysis. It is not a theorem
+asserting the same behavior of finite-precision unreorthogonalized
+Lanczos, nor an input-optimal raw-factor implementation.
+
+6. Exact primary-source comparison and bibliographic correction
+--------------------------------------------------------------
+Nian Shao, A structural bound for cluster robustness of randomized
+small-block Lanczos, arXiv:2507.10144v2, revised 30 May 2026.
+https://arxiv.org/abs/2507.10144
+https://arxiv.org/pdf/2507.10144v2
+
+Its equation (1) uses the MINIMUM CROSS-GAP OF THE SUPPLIED b-by-b
+TARGET BLOCKS, divided by the FULL matrix spectral diameter. Setting
+L to that full diameter in (A) gives exactly this relgap_b. Theorem 3
+also assumes the target lies in an interval with tail outside it; the
+new global scalar-evaluation proof does not need that extra restriction.
+The direct angle corollary proposed after Conjecture 1 is the intended
+claim proved here. The source's intermediate chi-product claim is a
+different statement and is already false. [Source summary: 87 words.]
+
+Raphael A. Meyer, Cameron Musco, Christopher Musco, On the Unreasonable
+Effectiveness of Single Vector Krylov Methods for Low-Rank Approximation,
+SODA 2024, pp. 811--845, DOI 10.1137/1.9781611977912.32,
+arXiv:2305.02535v3.
+https://arxiv.org/abs/2305.02535
+https://arxiv.org/pdf/2305.02535
+
+Shao's reference [20], Theorem 4.5, is THIS paper, not Li--Zhang. In
+the arXiv copy, Definition 2 and Theorems 10--11 give the small-block
+analysis; their startup depth is k-b+1, and their gap excludes each
+eigenvalue's b-1 nearest relative neighbors. Definition 1/Imported
+Theorem 2 provide the deterministic good-start LRA transfer used above.
+The new theorem reduces the startup exponent/depth to d=k/b on its
+admissible partition class. [Source summary: 81 words.]
+
+Tyler Chen, Ethan N. Epperly, Raphael A. Meyer, Christopher Musco,
+Akash Rao, Does block size matter in randomized block Krylov low-rank
+approximation?, SODA 2026, pp. 1026--1046,
+DOI 10.1137/1.9781611978971.42, arXiv:2508.06486.
+https://arxiv.org/abs/2508.06486
+https://arxiv.org/pdf/2508.06486
+
+Theorem 4.1 gives a square Gaussian block-Krylov conditioning estimate
+at depth k/b, using a minimum INDIVIDUAL target-eigenvalue gap (with
+the stated relative-gap/condition-number normalization, or its additive
+version in Remark 3.6). It requires distinct target eigenvalues, and its
+bound degenerates as within-block target gaps vanish. It is therefore
+the closest depth-sharp published comparator, not a subsumption of (A).
+[Source summary: 65 words.]
+
+Ren-Cang Li, Lei-Hong Zhang, Convergence of the block Lanczos method
+for eigenvalue clusters, Numerische Mathematik 131(1):83--113, 2015,
+DOI 10.1007/s00211-014-0681-6.
+https://archive.ymsc.tsinghua.edu.cn/pacm_download/278/9151-lizh2015.pdf
+
+This is Shao reference [19], not [20]. Theorem 8.1 assumes a preceding
+Krylov space already has finite angle with the relevant larger invariant
+space and proves subsequent cluster convergence. The inspected result
+does not give the new spectrum-uniform random initial-angle estimate.
+[Source summary: 43 words.]
+
+George Stepaniants, KE-05: failure of spectrum-uniform probabilistic
+interpolation bounds, 12 September 2026, primary project manuscript.
+https://github.com/ajt60gaibb/OpenProblemsInNLA/blob/main/randomized-and-low-rank-approximation/KE-05/solution.md
+https://github.com/ajt60gaibb/OpenProblemsInNLA/blob/main/randomized-and-low-rank-approximation/KE-05/README.md
+
+That source refutes the exact canonical chi_mono*chi_coef probability
+conjecture. It expressly does not refute cluster-robust Lanczos itself.
+The present direct-polynomial result is compatible with it. The new
+proof has no formal-verification or external-human-review claim.
+
+7. Partition caution and a separately proposed padding extension
+---------------------------------------------------------------
+The partition-specific relgap_b must not be silently identified with
+a b-th-nearest gap or with the sole condition max multiplicity<=b.
+For b=3,k=6 with three distinct values each repeated twice, no two
+size-three blocks can keep every repeated pair intact; every supplied
+two-block cross-gap is zero. Yet multiplicity is at most b and the
+ordinary b-th-nearest gap is positive.
+
+A possible extension was sent to the parent and is being independently
+audited by alternatives: for the ADDITIVE b-th-nearest distance g_b,
+connect consecutive target nodes across gaps<g_b/b. Every component
+has size<=b, since b+1 linked points would have diameter<g_b. Pack whole
+components greedily into blocks of size<=b, then pad each block by
+duplicating one of its own eigenvalues and adding independent Gaussian
+rows. At most 2ceil(k/b)-1 blocks are needed; cross-gap stays>=g_b/b
+and full spectral diameter is unchanged. Apply (A) to this augmented
+system and prescribe zero dummy head values before projecting its
+graph vectors to the original coordinates. This is not yet incorporated
+in the audited exact-copy theorem. Relative nearest-neighbor gaps with
+varying denominators need their own translation; no equality is asserted.

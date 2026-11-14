@@ -1,0 +1,765 @@
+Frontier reduction audit -- 2026-11-14
+====================================
+
+Current finding
+---------------
+A concrete stochastic reduction now appears to improve and simplify the
+fixed-depth matrix-free threshold bound. It constructs an unbiased symmetric
+estimator of the signed product pencil in O(m^2) arithmetic, with uniformly
+bounded second moment after constant-distortion whitening. The literal
+variance-oracle assumptions of Garber et al. (2016), Theorem 9, then give a
+linear solver; the generic accelerated approximate proximal point theorem of
+Frostig et al. (2015), Theorem 1.1, accelerates it. The sampler construction
+and solver reduction below are proved here. The independent generalized
+AppxPCA wrapper audit now closes the fixed-rank spectral-AMM implication;
+see the completion addendum in Section10 for its explicit assumptions.
+
+The resulting total rank-one bound is
+
+  ~O(I + m^(omega+zeta) + I^(3/4)m^(1/2)/sqrt(theta) + np),
+  I=m(n+p).
+
+The optimization ingredients are published black boxes. Whether the explicit
+two-factor stochastic-pencil sampler or its total-cost corollary is new
+remains a separate literature question. This is a concrete stronger route,
+not an absence-based novelty certificate.
+
+Reading scope
+-------------
+Read the current main manuscript, research-state.txt, factor-pca-search.txt,
+novelty-completion-audit.txt, and the relevant sections of
+product-literature-audit.txt, oversampled-krylov-audit.txt and
+shared-threshold-audit.txt before searching. Did not repeat the already
+completed EPSI, MSP, general covariance-root, COD or oversampled-Krylov audits.
+Only this dedicated file is modified for the present task.
+
+1. Constant-distortion support coordinates and row probabilities
+--------------------------------------------------------------
+Use the main paper's constant-distortion sketches, exact support reduction
+and whitening coordinates. Thus A is n-by-m, B is m-by-p,
+
+  W is m-by-a, L=W^dagger is a-by-m, a=rank(A),
+  G=W^T A^T A W, Q'=L BB^T L^T,
+  (1+xi)^(-1)I <= G <= (1-xi)^(-1)I,
+  lambda=||AB||_2^2=||G^(1/2)Q'G^(1/2)||_2.
+
+Take fixed xi<=1/16. At a safe shift s>=lambda, ||G||<=2 and
+||Q'||<=2s. The normalized positive-definite pencil is
+
+  K_s/s = G-GQ'G/s.
+
+It has minimum eigenvalue at least
+(1+xi)^(-1)(s-lambda)/s and norm O(1).
+All exact pencil actions cost O(I), including the small-coordinate products.
+Constant-distortion setup costs ~O(I+m^(omega+zeta)). The extra
+coarse-norm estimate may use constant relative precision, hence O(m^2)
+actions in the already formed core, not m^2/sqrt(theta).
+
+Let a_i be column i of A^T (the transpose of row i of A), and let b_j be
+column j of B. Define analytical feature vectors
+
+  u_i=W^T a_i, i=1,...,n; v_j=L b_j, j=1,...,p.
+
+Then G=sum_i u_i u_i^T and Q'=sum_j v_j v_j^T. Neither transformed
+feature matrix is formed. Independent Gaussian JL matrices with
+k=O(log((n+p)/delta)) columns estimate all their squared row lengths to
+within, say, [1/2,2], by first computing W*Omega and L^T*Omega and then
+
+  A(W*Omega), B^T(L^T*Omega).
+
+This costs O((I+m^2)k), including all probability setup. Alias tables cost
+O(n+p). On the simultaneous good JL event the resulting distributions obey
+
+  p_i >= ||u_i||^2/(4 tr(G)),
+  q_j >= ||v_j||^2/(4 tr(Q')).
+
+Zero analytical features have zero contribution. Kernel preservation and
+the zero-product exit are as in the main paper. Bad setup events are charged
+to the declared failure probability; all sample/iteration budgets are capped.
+
+2. Raw-row minibatches and exact second moments
+---------------------------------------------
+Draw b=m independent indices i_l from p, and define
+
+  Ghat=(1/b) sum_l u_{i_l}u_{i_l}^T/p_{i_l}.
+
+Writing R=u_i u_i^T/p_i gives
+
+  E[R^2]=sum_i (||u_i||^2/p_i) u_i u_i^T
+        <=4 tr(G) G,
+  E[Ghat^2]=(1-1/b)G^2+(1/b)E[R^2] <=20I.
+
+The last constant uses ||G||<=2, tr(G)<=2m and b=m. Similarly an
+independent Qhat from b=m q-samples satisfies
+
+  E[Qhat]=Q', E[Qhat^2]<=20s^2 I.
+
+These are uniform Loewner/second-moment inequalities, hence apply to any
+fixed vector and conditionally to an independent random vector.
+
+One Ghat action costs O(m^2), not m^3: first compute W*x once, sum
+the b raw-row outer-product actions a_i(a_i^T W*x)/p_i in the ORIGINAL
+m coordinates, then apply W^T once. Qhat uses L^T*x, b raw B-column
+outer products, and L once. Sample generation and raw-row retrieval cost
+O(bm), which is included. It is incorrect to transform each sampled row
+separately and charge m^2 for every row; that is unnecessary here.
+
+3. An unbiased symmetric signed-pencil estimator
+------------------------------------------------
+Draw independent Ghat_0,Ghat_1,Ghat_2,Qhat and set
+
+  Khat_s=s Ghat_0
+          -(Ghat_1 Qhat Ghat_2+Ghat_2 Qhat Ghat_1)/2.
+
+Each realization is symmetric and linear, and E[Khat_s]=K_s. Conditioning
+successively on independent factors gives
+
+  E||Ghat_1 Qhat Ghat_2 x||^2 <=20^3 s^2 ||x||^2.
+
+The reversed product has the same bound; convexity of squared norm handles
+their average even though the two products reuse those same batches. Thus
+
+  E||Khat_s x||^2 <=2(20+20^3)s^2||x||^2=16040s^2||x||^2.
+
+Consequently Khat_s/s is an unbiased symmetric oracle with a UNIVERSAL
+second-moment constant V=16040. It costs O(m^2) per action. The constants
+can be improved or reduced using larger constant-size batches; no such
+optimization affects the exponents.
+
+Sampling distributions are fixed after setup; fresh batches are independent
+of the current SVRG iterates and past random outcomes. Symmetrization is
+essential for viewing individual samples as Hessians of scalar quadratics.
+
+4. Literal published nonconvex-component SVRG implication
+-------------------------------------------------------
+Primary: Garber et al., Faster Eigenvector Computation via Shift-and-Invert
+Preconditioning, full version, Theorem 9, Section 4.1, page 16.
+https://arxiv.org/pdf/1605.08754
+Published conference paper:
+https://proceedings.mlr.press/v48/garber16.pdf
+
+The full theorem permits nonconvex component functions. Its hypotheses are
+strong convexity of their SUM and a gradient-difference second-moment
+inequality (equation (7)), not positivity or a constant maximum norm for
+each sampled Hessian. The supplied oracle fits this exact condition.
+
+In detail, let D=K_s/s be SPD, mu I<=D<=O(1)I, and
+f(x)=x^T D x/2-c^T x. For each possible finite batch outcome sigma of
+probability p_sigma, use component
+
+  psi_sigma(x)=p_sigma[x^T(Khat_sigma/s)x/2-c^T x].
+
+Then sum_sigma psi_sigma=f. No enumeration of outcomes or evaluation of
+their probability products is needed: the sampled, rescaled component
+gradient difference is exactly (Khat_sigma/s)(x-w), and the full gradient
+is D*w-c. If x_* minimizes f, then
+
+  sum_sigma (1/p_sigma)||grad psi_sigma(x)-grad psi_sigma(x_*)||^2
+    =E||(Khat_s/s)(x-x_*)||^2
+    <=V||x-x_*||^2 <=(2V/mu)[f(x)-f(x_*)].
+
+Thus the theorem's variance parameter is S=V/mu. A constant expected
+function-gap contraction costs ~O(I+m^2/mu^2). All scalar/vector updates
+are included. Repeating logarithmically many epochs gives arbitrarily small
+expected relative error. Markov's inequality converts this to prescribed
+failure probability with only logarithmic overhead. No gap in AB or condition
+number of A or B enters this normalized estimate.
+
+Use the standard DESCENT update explicitly:
+  g=(Khat_s/s)(x-w)+(D*w-c), x_next=x-eta*g.
+Do not copy the sign in the paper's displayed update literally: its printed
+full-gradient term/explanatory sign is inconsistent with descent. The
+variance assumption and claimed convergence are the relevant source facts;
+the following direct argument independently verifies the correct algorithm.
+Writing gap(x)=f(x)-f(x_*), unbiasedness gives
+  E||g||^2<=4S[gap(x)+gap(w)].
+Consequently
+  E||x_next-x_*||^2
+    <=||x-x_*||^2-2eta(1-2eta*S)gap(x)+4eta^2*S*gap(w).
+Sum this recurrence over an epoch, use
+||w-x_*||^2<=2gap(w)/mu, and return the average of its T iterates.
+With eta=1/(8S), T=ceil(64S/mu), the expected function gap is at most
+one half its starting value. This directly proves the needed solver lemma.
+
+The exponentially large formal outcome index set causes no hidden exponent:
+the displayed epoch bound has no dependence on its cardinality, and the
+implementation samples its O(m) raw indices directly. In particular, no
+log(number of all batch outcomes) is silently treated as polylog(m).
+
+As an independent direct check, an SVRG distance recurrence with step
+eta=mu/(8V) has
+
+  E||e_{k+1}||^2
+    <=(1-2eta mu+2eta^2 V)E||e_k||^2
+       +2eta^2 V||w-x_*||^2.
+
+Its limiting snapshot ratio is 1/7, and O(V/mu^2) steps give a constant
+contraction. Function-gap conversions add only logarithms in 1/mu.
+
+5. Published acceleration and the optimized solve cost
+-----------------------------------------------------
+Primary: Frostig, Ge, Kakade, Sidford, Un-regularizing: Approximate Proximal
+Point and Faster Stochastic Algorithms for Empirical Risk Minimization,
+full version Theorem 1.1 (Accelerated Approximate Proximal Point Algorithm).
+https://arxiv.org/pdf/1506.07512
+https://proceedings.mlr.press/v37/frostig15.html
+
+This generic theorem assumes only a strongly convex objective and an oracle
+that linearly reduces regularized objective error. It does not impose
+convexity of an underlying component representation. Applied to f with
+regularization rho>=2mu, its outer cost is ~sqrt(rho/mu) times the cost
+of reducing the regularized problem to the required polynomial accuracy.
+The regularized sample Hessian is Khat_s/s+rho I, whose second moment
+is still an absolute constant when rho<=O(1). Therefore
+
+  T_solve(mu,rho)
+    =~O(sqrt(rho/mu)[I+m^2/rho^2]).
+
+Choose rho=Theta(max{mu,sqrt(m^2/I)}), adjusting constants to satisfy
+rho>=2mu. Since I>=2m^2, this lies in a bounded range. This gives
+
+  T_solve(mu)=~O(I+I^(3/4)m^(1/2)/sqrt(mu)).
+
+Only logarithms in dimension, inverse mu, requested relative solve accuracy
+and inverse failure probability are suppressed. In particular, no polynomial
+factor in an original factor condition number is being hidden. The outer
+Rayleigh wrapper must still guarantee that every true system is SPD with
+mu>=c*theta, or supply the appropriate sum over its safer intermediate
+shifts. Independent verification of that wrapper is in progress elsewhere.
+
+6. Exact frontier consequences, with the Section10 global wrapper
+----------------------------------------------------------------
+At N=n=p=m^(59/50), theta=m^(-56/125), the accelerated action exponent is
+
+  (3/4)(109/50)+1/2+(1/2)(56/125)=2359/1000=2.359,
+
+below output 59/25=2.36 by 1/1000. The fixed-depth construction's leading
+exponent was 4719/2000=2.3595. Constant-sketch core setup has exponent9/4,
+and input is109/50; both are smaller. Thus the prospective construction
+bound is N^(2-1/1180+o(1)), with explicit total O(N^2) and logarithmic
+factors absorbed by strict slack. Constant-rank Nystr\"om deflation changes
+only constants: one can explicitly maintain each residual B_i and rebuild
+row probabilities/coarse sketches for O(I+m^omega) per fixed stage.
+
+More generally, at N=m^(1+d), theta=m^(-b), the action exponent is
+2+3d/4+b/2. This is exactly the infimum envelope reached by the earlier
+fixed-depth hierarchy, without needing increasingly many nested levels.
+Output dominance requires b<5d/2 for a strict gap absorbing logarithms.
+At the original d=1/8,b=1, the exponent83/32 still exceeds exact Gram;
+the original stronger target remains unsolved.
+
+7. Two qualifications found while auditing published stochastic comparators
+--------------------------------------------------------------------------
+Jin, Karmarkar, Sidford, Wang (ALT2026), Reusing Samples in Variance Reduction,
+Section7, Theorems73/74, Algorithms2/3, and Section3.1:
+https://proceedings.mlr.press/v313/jin26a.html
+https://raw.githubusercontent.com/mlresearch/v313/main/assets/jin26a/jin26a.pdf
+
+Their reduced row-query count counts reusable input retrieval, not all the
+arithmetic of revisiting those rows in every APP subproblem. Algorithm3
+still executes the inner SVRG loop for each outer iteration, now using the
+same cached seed. A runtime formula charging the unique row count only once
+needs an additional arithmetic implementation. The schematic formula in
+the older product-literature-audit Section9 is a favorable query/retrieval
+accounting, not by itself a proved arithmetic bound. The present construction
+charges every raw-row action and requires no sample reuse.
+
+For the covariance specialization alone, the published accelerated Garber
+bound already gives I^(3/4)(m*sr(X))^(1/4)/sqrt(theta). Taking sr(X)<=m
+gives the same m^2.359 action exponent in the CURRENT output-optimal regime.
+This reinforces the existing disclaimer against claiming covariance
+dominance. The new issue is supplying a controlled signed-product oracle
+from arbitrary separate factors, not inventing stochastic acceleration.
+
+8. Why generic centering or native product sampling is insufficient
+------------------------------------------------------------------
+These are audit calculations, not lower bounds against all stochastic
+methods. If G=I and a length-squared sampled row outer product is
+T=m e_j e_j^T with uniform j, then E[T]=I but
+
+  E||(T-I)x||^2=(m-1)||x||^2.
+
+Even an exact deterministic coarse proxy I does not reduce this variance
+merely by centering: Var(T-C)=Var(T). A useful control variate needs a
+correlated sample-level proxy, not just a norm approximation to the mean.
+The O(m)-row batches above pay explicitly to reduce this variance.
+
+Likewise native Hermitian-dilation sampling of AB=sum_i a_i b_i^T has
+component norm envelope sum_i ||a_i||||b_i||. This may be arbitrarily
+large relative to ||AB||: with a_1=a_2=u, b_1=K v and b_2=(1-K)v,
+the product is u v^T while that envelope is approximately2K||u||||v||.
+Invoking stochastic negative-curvature bounds with a constant component
+smoothness parameter on this representation would be invalid. Coarse
+whitening plus sampled FACTOR Grams resolves precisely that difficulty.
+
+9. Other newly inspected primary methods and remaining novelty status
+--------------------------------------------------------------------
+Allen-Zhu--Li, NEON2 (NeurIPS2018), full Sections4/5:
+https://arxiv.org/pdf/1711.06673
+Its deterministic negative-curvature routine is a first-order realization
+of Chebyshev/Lanczos. Its finite-sum routine needs component smoothness or
+equivalent stochastic-Hessian control; it does not make the native product
+envelope above disappear. The more general variance-based SVRG Theorem9
+is the cleaner exact match for our constructed estimator.
+
+Simoncini (2005), Theorem3.1 and Sections3/6:
+https://www.dm.unibo.it/~simoncin/eig_inexact1.pdf
+https://doi.org/10.1137/040605333
+The variable-accuracy eigencomputation theorem controls the gap between
+computed and true residuals under residual/separation-dependent inner
+tolerances. It does not establish a global gap-free convergence or a factor
+sketch cost. This is prior art for inexact eigencomputation, not a substitute
+for the new oracle or wrapper.
+
+Gupta--Sidford (NeurIPS2018), numerical-sparsity covariance results:
+https://arxiv.org/pdf/1811.10866
+Its row numerical sparsity parameters can improve covariance arithmetic.
+For unrestricted dense rows their worst-case values recover the ordinary
+variance-reduced covariance scale; the paper does not itself supply cheap
+positive features for our signed noncommuting pencil. It is a stronger
+specialized comparator where those numerical promises hold.
+
+Control-variate AMM located, but only publisher abstract/introduction and
+author metadata were accessible in this pass:
+Verma et al. (Information Processing Letters2024), Improving Compressed
+Matrix Multiplication Using Control Variate Method.
+https://www.sciencedirect.com/science/article/abs/pii/S0020019024000474
+https://bhisham123.github.io/bhisham/publications.html
+That accessible text describes reduced variance for Pagh's hashed compressed
+outer-product estimator. It does not state a uniform relative spectral-tail
+or factor-access generalized-eigenvalue runtime. Full theorem text was not
+read, so no exhaustive exclusion of this paper is asserted.
+
+No explicit previously published TWO-FACTOR theorem with the final candidate
+cost was located. Nevertheless, literal generic variance-oracle optimization
+theorems do apply once the proved raw-row minibatch construction is supplied.
+That is materially closer prior art than the earlier assertion that all
+stochastic routes require a positive Gram root. This file supplies a concrete
+reduction beyond that assertion. Specialist novelty review should focus on
+the sampler/reduction and the product-specific total bound, while preserving
+clear credit for the published SVRG, acceleration and inverse-power machinery.
+
+10. Global-wrapper completion from independent audit
+----------------------------------------------------
+The remaining wrapper in the opening status has now been checked by cutoff
+against the PRIMARY AppxPCA theorem; its full derivation is being saved to
+docs/block-threshold-audit.txt. Root independently derived the same stochastic
+estimator and reviewed the SVRG/APPA sources. The following closes the fixed-rank
+runtime implication without an expensive accurate initial spectral estimate.
+
+Primary: Allen-Zhu--Li, LazySVD, Theorem3.1 (AppxPCA), PDF page5.
+https://arxiv.org/pdf/1607.03463
+
+A constant-relative-accuracy coarse norm computation gives
+lambda<=b_0<=1.5lambda. Apply AppxPCA to the CONCEPTUAL symmetric operator
+S/b_0, S=G^(1/2)Q'G^(1/2); its leading eigenvalue lies in[2/3,1].
+The theorem needs only logarithmically many approximate shifted inverses,
+and every shifted system alpha I-S/b_0 is positive definite with
+
+  alpha/(alpha-lambda/b_0)<=12/gamma.
+
+Thus s=alpha*b_0 has normalized pencil minimum eigenvalue at least
+c*gamma. In coefficients, an inverse application to input v is implemented
+by solving
+
+  (K_s/s)x=Gv/alpha.
+
+All AppxPCA inner products and normalizations are computed in the exact
+G metric; each costs O(I). The algorithm never forms G^(1/2). The conceptual
+Euclidean inverse error equals ||G^(1/2)(x-x_*)||, which differs from
+coefficient Euclidean error by absolute factors. Initializing with a
+coefficient Gaussian and G-normalizing gives an elliptical conceptual start
+of condition number<2; the normalized Gaussian-overlap lemma changes the
+source iteration constants only. It must not be described as literally a
+uniform conceptual-sphere start.
+
+A cleaner alternative preserves the source's literal initialization law up
+to a separately budgeted total-variation error. Apply a fixed polynomial
+J_G approximating G^(-1/2) to relative eta_0=p/(100a), draw g~N(0,I),
+and start with c=J_G*g, normalized in G. Before normalization the conceptual
+G^(1/2)c has Gaussian covariance eigenvalues in
+[(1-eta_0)^2,(1+eta_0)^2]. Its KL divergence to N(0,I) is at most
+4a*eta_0^2, hence Pinsker's inequality gives TV<=sqrt(2a)*eta_0<p/10.
+Normalization and the whole future randomized algorithm cannot increase
+TV. Since G is uniformly conditioned, the explicit Legendre polynomial
+needs only O(log(a/p)) original-factor actions, costing ~O(I). No exact
+root, spectrum oracle or theta-dependent power is required. This is the
+recommended version of the start for a literal invocation of AppxPCA.
+
+The source inverse tolerances have logs bounded by polynomials in
+log(a), log(1/gamma), log(1/leakage) and log(1/failure). For example its
+phase tolerances include (gamma/6)^m1/(64m1) and
+leakage*(gamma/6)^m2/(8m2), with m1,m2 logarithmic. Therefore absolute
+solver precision costs only polylogarithmic factors. Since RHS norms are
+allowed to grow during each UNNORMALIZED inverse-power phase, they must
+not be treated as absolute constants. Each inverse has norm O(1/gamma),
+and a phase has O(log(a/(p^2*leakage))) calls. Therefore
+log(1+||RHS||) is still polylogarithmic in the stated parameters. A zero-start
+function gap is O(||RHS||^2/gamma); reducing it to
+O(gamma*tolerance^2) suffices for the required inverse error, with only
+polylogarithmic overhead. No product singular-value ratio is needed in
+this argument.
+
+For fixed rank, choose gamma and leakage of order theta/r and use the
+already proved Rayleigh-to-Nystr\"om lemma and r right-deflation steps. Then
+r is a constant, all calls have mu>=c_r*theta, and the bound at the top of
+this file follows fully. Cutoff also supplies a stronger cPCA tail-mass
+argument for growing rank, using gamma=theta/2 and leakage=theta/(2r);
+that improvement is documented separately and is not needed for the
+fixed-rank conclusion here. Rebuild raw B residuals and row tables per stage
+if needed; O(rI+r m^omega) is harmless for fixed r. Fresh oracle randomness,
+per-call failure budgets, and finite preset epoch/call counts give bounded
+runtime on all outcomes and the prescribed confidence on the good event.
+
+Additional related PRIMARY AMM application:
+Okuyama et al., Acceleration of Approximate Matrix Multiplications on GPUs,
+Entropy2023, Section3/Algorithm5.
+https://pmc.ncbi.nlm.nih.gov/articles/PMC10453036/
+It combines sampled AMM with exact snapshot products in a variance-reduced
+power iteration. Its switching criterion is a tuned iterate-overlap threshold
+and its eigenvector convergence comparison is empirical. The mathematical
+theorems inspected there concern preprocessing the AMM expected squared
+error. They do not establish the global arbitrary-factor relative-spectral
+bound or the accuracy-dependent total cost derived above. Nonetheless it is
+additional prior art for mixing exact anchors with sampled matrix actions.
+
+Independent verification status
+-------------------------------
+Root independently derived the same batched signed estimator and inspected
+the SVRG/APPA primary theorems. Alternatives' independent sampler/variance/
+cost/acceleration audit passes; see positive-feature-audit.txt Section6.
+Cutoff checked the global generalized AppxPCA wrapper and supplied the
+polynomial-TV initialization argument. This writer independently checked
+the source theorem's safe-shift and tolerance inequalities, the TV argument,
+and RHS norm-growth accounting. These are in-session proof audits; they do
+not replace external review or certify global novelty.
+
+The same sampled Hessian must act on x-w in an SVRG step. Independent
+resampling for Khat*x and Khat*w would discard the variance-reduction
+identity. For deflated stages, recompute B-side row probabilities (or
+explicitly rebuild the residual B_i); do not assume that an oblique
+coefficient update contracts each individual feature length. Fresh JL
+probability setup costs ~O(I) per stage and preserves the fixed-rank bound.
+
+11. General-rank cost and the exact gain supremum
+-----------------------------------------------
+Read the saved block-threshold-audit.txt Sections1,2,5. The tail-mass
+determinant argument and moving-threshold induction pass an independent
+check, including repeated eigenvalues, vanishing coordinates, zero tails
+and early zero-residual exits. For the proposed gamma=theta/4 and
+leakage epsilon=theta/(4r), Bernoulli gives
+
+  (1-epsilon)^r>=1-theta/4,
+  ||residual||_2<=sigma_{r+1}(M)/(1-theta/4)
+                 <=(1+theta)sigma_{r+1}(M), 0<theta<=1.
+
+Every inverse has normalized strong convexity at least c*theta, uniformly
+in r. Only its requested leakage precision depends on r, logarithmically.
+Thus the proposed full cost, for 1<=r<=m, is
+
+  ~O(I*r+m^(omega+zeta)
+       +r*I^(3/4)*m^(1/2)/sqrt(theta)+T_MM(n,r,p)).
+
+One-time W,L whitening and initial coarse Grams account for m^omega.
+The true mass G remains fixed at every stage. Each right Nystrom vector
+belongs to the original B row space, so the residual B_i can also be
+written R_i B. Consequently all initial B-side embedding guarantees remain
+valid under these adaptive left congruences. The dense coarse proxy updates
+are rank-two congruences and cost O(m^2) per stage, not m^omega.
+
+Explicitly storing B_i and applying its rank-one right update costs O(mp)
+per stage. Fresh B_i row-length JL estimates, constant-relative coarse
+norm estimates, true-G metric operations, and physical z,v,u extraction
+cost ~O(I) per stage. A-side probabilities remain valid because A,W,G are
+fixed. The requirement to refresh B-side probabilities is included, rather
+than hidden by an unjustified contraction of oblique coefficient features.
+The resulting v_i are orthonormal in exact arithmetic, u_i=M v_i, and
+C=UV^T; its full explicit expansion is charged by T_MM(n,r,p).
+
+For the parameter envelope write N=n=p=m^(1+d), theta=m^(-b). Ignoring
+logarithms and arbitrarily small multiplication slack, the new action
+exponent is2+3d/4+b/2 and output is2+2d. The named Gram exponent is
+2+d+1/[4(1+d)], and ordinary Krylov is2+d+b/2. Quadratic total output with
+strictly cheaper construction requires b<5d/2 and d>1/8. At the limiting
+largest saving, both named routes agree and the action/output boundary is
+met:
+
+  d_*=(3sqrt(5)-5)/10,
+  b_*=5d_*/2,
+  saving in N exponent=d_*/[4(1+d_*)]=(7-3sqrt(5))/8.
+
+The numerical saving is approximately.0364745. It is a SUPREMUM, not an
+attained strict O(N^2) theorem at its boundary. Arbitrarily close savings
+follow by taking d>d_* and b=1/[2(1+d)], so the named routes still tie
+while the new construction is strictly below output. The limiting inner
+dimension is m=N^((3sqrt(5)-5)/2), and accuracy is
+theta=N^(-(35-15sqrt(5))/4). Core and input exponents are then smaller;
+the exact-product bound is worse than the Gram bound for d>0.
+
+12. Targeted covariance-polynomial / CCA / kernel novelty addendum
+----------------------------------------------------------------
+This pass specifically searched for an earlier cheap unbiased matrix-
+polynomial oracle that would make the new bound a direct application of an
+already stated product theorem. The important positive finding is that
+independent-copy unbiasing is explicit prior art, including for signed
+covariance polynomials. It must not be described as a newly invented
+mechanism. The following inspected PRIMARY sources delimit that statement.
+
+Li--Jordan, Nonconvex Stochastic Scaled Gradient Descent and Generalized
+Eigenvector Problems, UAI2023, equations7--8 and Theorem2/Corollary4.
+https://proceedings.mlr.press/v216/li23b/li23b.pdf
+Their generalized-Rayleigh update uses mutually independent unbiased A,B
+samples in (v^T Bhat v)Ahat v-(v^T Ahat v)Bhat v. The expectation equals
+a scaled true gradient. The paper explicitly relates this to earlier doubly
+stochastic kernel sampling. Its finite-sample estimate is an angular local
+convergence rate with a positive local Hessian-curvature parameter and
+sub-Weibull noise control; the global extension uses strict-saddle hypotheses.
+It does not state a gap-free spectral-tail product approximation or the
+separate-factor arithmetic bound proved here. My inference: the unbiasing
+principle is established; the exact uniform product-norm bound, cheap
+probability setup and O(m^2) raw-coordinate implementation remain work to
+verify for our particular input representation, as done in Sections1--3.
+
+Gemp--Chen--McWilliams, The Symmetric Generalized Eigenvalue Problem as a
+Nash Equilibrium, ICLR2023, equation3, Section3 and Algorithm2.
+https://arxiv.org/pdf/2206.04993
+This is particularly pertinent higher-order-covariance prior art: equation3
+uses the signed matrix polynomial
+  A=E[||x||^2 xx^T]-tr(B)B-2B^2, B=E[xx^T].
+Section3 explicitly constructs unbiased products of expectations by drawing
+independent minibatches; Algorithm2 uses independent A,B estimates. Its
+Theorem2 is deterministic/full-batch asymptotic convergence with positive
+top-k gaps, while AppendixE gives only a partial stochastic convergence
+argument. Thus it is direct evidence against a generic novelty claim for
+unbiased signed covariance-polynomial actions, but does not supply our
+finite, gap-free, arbitrary-factor runtime consequence.
+
+Chapman et al., A Generalized EigenGame with Extensions to Multiview
+Representation Learning, equations10--11 and Algorithms1--2, Section2.3.
+https://arxiv.org/pdf/2211.11323
+It likewise uses independent unbiased estimates of A,B in polynomial updates,
+and accounts for minibatch low-rank products. Its stated O(b*d*k^2) serial
+per-iteration cost and O(d*k) parallel complexity concern that stochastic
+representation; they are not a finite total arithmetic bound for AB in the
+current guarantee. The paper does not provide the missing uniform sampler
+lemma after coarse support whitening. The exact attribution should be to
+product-specific access-cost accounting, not to the general possibility of
+unbiased product updates.
+
+Xie--Liang--Song, Scale Up Nonlinear Component Analysis with Doubly
+Stochastic Gradients, NeurIPS2015, Section5.1/Theorem1 (published version).
+https://proceedings.neurips.cc/paper_files/paper/2015/file/79a49b3e3762632813f9e35f4ba53d6c-Paper.pdf
+https://arxiv.org/pdf/1504.03655
+It includes kernel PCA/CCA/SVD stochastic updates. The inspected theorem
+assumes a good initial subspace and minibatch operator error below one eighth
+of the eigengap; its O(1/t) angular rate treats the gap as a constant. Those
+conditions do not give our global near-top leakage accuracy at arbitrary
+tiny gaps. Dai et al.'s original doubly stochastic kernel gradients already
+appear in NeurIPS2014:
+https://proceedings.neurips.cc/paper_files/paper/2014/file/c6cc81e8589ebb6accf27b78afad82d9-Paper.pdf
+
+Han--Avron--Shin, Stochastic Chebyshev Gradient Descent for Spectral
+Optimization, NeurIPS2018, Section3/Lemma1.
+https://papers.nips.cc/paper_files/paper/2018/file/898aef0932f6aaecda27aba8e9903991-Paper.pdf
+It builds unbiased spectral-sum gradients through randomized trace probing
+and random polynomial truncation. The implementation still charges actions
+of the actual matrix and its derivatives. It is another reason not to claim
+unbiased stochastic matrix-polynomial estimation in general as new; it does
+not provide the present separate-factor pencil's action cost or cPCA result.
+
+Very recent related sampling result, inspected at Theorems1/4 and Section8:
+Wang--Li, Protected Unbiased Sparsification: A Sharp Loewner Curve,
+November11,2026.
+https://arxiv.org/html/2611.15247v1
+It produces unbiased sparse probability weights with exact protected linear
+statistics and a sharp all-response covariance factor, using an exact
+rational sampler of expected polynomial time. This is not an input-linear
+time claim. Invoking it for row Gram atoms would still require choosing and
+constructing the protected statistics and paying for the sampler. Its
+unprotected factor is approximately1/b when batch size b is small relative
+to population, the same order used above; no automatic better exponent for
+the unrestricted product follows. This is a scope check, not an exclusion of
+future instance-adapted use or an audit of the entire recent paper.
+
+Classification after these checks
+---------------------------------
+The new theorem is most accurately presented as an explicit separate-factor
+access-cost construction followed by a corollary of established SVRG,
+accelerated proximal point and gap-free inverse-power machinery. Importance
+sampling, independent-copy unbiasing, symmetrization and finite-degree
+moment composition are standard. The new proof obligation that was not
+discharged by earlier covariance-only citations is the uniform O(m^2)
+signed-pencil oracle from raw arbitrary A,B, including cheap probability
+setup and product-relative scale. This note supplies that obligation.
+
+The targeted primary sources above do not explicitly state the resulting
+AB spectral-tail total bound. Whether this application-specific corollary
+was previously known remains unconfirmed; a modest elementary reduction
+can yield a new upper bound without constituting a new optimization method.
+The search is not a global novelty certificate, and the improvement over
+the named Gram/Krylov bounds alone must not be promoted to one.
+
+13. Independent audit of the completed stochastic manuscript
+------------------------------------------------------------
+Reviewed docs/stochastic-product-spectral.tex from its theorem through its
+bibliography, including the subsequent support-rank and fair growing-rank
+revisions. This section supersedes the earlier full-m-rank action count
+where the newer exact support compression is available. No mathematical
+gap was found in the stated successful-event theorem. The claims concern
+exact real arithmetic, not floating-point stability or bit complexity.
+
+Support rank and oracle costs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The initial compression first whitens range(A^T A), then restricts to the
+range of the sketched reduced B Gram. If the computed dimension is k_hat,
+then k_hat=rank(AB)=k on the simultaneous embedding event. Deterministically
+k_hat<=k even outside that event: range(W0) is contained in range(A^T A),
+and rank(L0 B T^T)<=rank(Pi_range(A^T A) B)=rank(AB). The identity required
+after the second compression is AB=Z L B; A=ZL need not hold. The current
+manuscript uses only the correct product identity.
+
+Its implementation now explicitly uses k_hat in every dimension, batch
+size, regularization choice and rank cap. Writing k=k_hat in the good-event
+analysis is therefore legitimate. A batch of k raw rows or columns costs
+O(mk), including the W/L transforms. With JL probabilities bounded below
+by squared feature length divided by four times its total, the batch
+second moments are at most 20I for G and Q/c. Independent-copy composition
+and symmetric averaging yield E||Dhat_s x||^2 <= 20000||x||^2 for s<=2.
+The support-aware raw-factor cost is consequently O(mk), not O(k^2)
+unless the transformed features have actually been materialized.
+
+The latest norm scale c=nu/[0.9(1-xi)^2], where nu is an actual core
+Rayleigh quotient in [0.9||Qbar_c||,||Qbar_c||], is valid. It gives
+0.9((1-xi)/(1+xi))^2 <= lambda/c <= 1, with lower endpoint above 1/2
+for xi=1/64. Thus the literal normalized AppxPCA assumptions hold.
+
+SVRG, acceleration, accuracy, and all outcomes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The direct descent update is correct and avoids the printed sign problem
+in Garber et al.'s displayed full-gradient update. If S=V/mu, its proved
+recurrence is
+
+ E||e_next||^2 <= ||e||^2
+   -2 eta(1-2 eta S)(f(x)-f*)+4 eta^2 S(f(w)-f*).
+
+At eta=1/(8S), averaging ceil(64S/mu) iterates gives factor 1/2 in
+expected objective gap. Regularized sample Hessians Dhat_s+rho I still
+have bounded second moment for bounded rho. Frostig et al.'s Theorem1.1
+requires a strongly convex aggregate objective and its regularized solver,
+not convexity of each sampled component. Choosing rho a sufficiently large
+constant multiple of sqrt(mk/I), or using the base solver when mu is larger,
+gives the stated ~O(I+I^(3/4)(mk)^(1/4)/sqrt(mu)) solve bound.
+
+Arbitrarily small row probabilities do not add an operation-count penalty
+in the stated real-arithmetic model. Component outcomes need not be
+enumerated; probabilities cancel in sampled gradient differences.
+Zero-start gap <= ||b||^2/(2mu), so Euclidean precision and confidence cost
+only logarithmic repetitions and logarithmic dependence on ||b||.
+
+The AppxPCA inverse equation is exactly D_s x=Gv. The G-metric simulation,
+fixed-condition polynomial inverse-root initialization, Gaussian KL/TV
+coupling, and conditional union bound are valid. Inverse iterates are
+unnormalized; the manuscript correctly bounds RHS growth by a deterministic
+(C/gamma)^polylog expression rather than assuming RHS norms stay constant.
+It now uses this bound to preset solver epochs and abort on an exceeded
+bound. This is necessary for the advertised operation cap on failed random
+outcomes. All good-event oracle errors fit within those caps. No hidden
+singular-value-ratio logarithm was introduced by this initialization.
+
+Rank-r and adaptive-error finishing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The Schur-inverse/min-max proof of the all-spectrum Nystrom lemma is
+dimensionally correct: the constructed bottom-space image has dimension
+d-j inside z-perp, so inverse compression controls the j-th largest
+residual eigenvalue. PSD limits cover singular H, and the update drops
+rank by one whenever z^T H z>0.
+
+The leakage-sensitive counting induction gives
+
+ lambda_1(H_r) <= lambda_(r+1)(H_0) /
+                 ((1-gamma)(1-eps)^r).
+
+With gamma=theta/4 and eps=theta/(4r), this implies the stated (1+theta)
+spectral approximation. Leakage enters AppxPCA only through logarithms;
+replacing it by Rayleigh approximation alone would lose a sqrt(r) factor.
+
+The oblique coefficient updates S_new=(I-d c^T)S are correct, as are
+the rank-two congruence updates of Qbar. Initial sketch validity survives
+all adaptive congruences. Fresh B-side JL scores after each oblique update
+are required and explicitly charged O(I); reusing their initial scores
+without a separate featurewise domination lemma would be unjustified.
+Applying S costs O(ki)<=O(mk) because i<=k. Thus the main sum
+
+ ~O(I(1+ell)+m^(omega+zeta)
+    +ell I^(3/4)(mk)^(1/4)/sqrt(theta)
+    +np+TMM(n,ell,p)), ell=min(r,k),
+
+accounts for the oracle, core updates, fresh score setup, true metrics,
+construction, and explicit output. The adaptive absolute-error theorem
+correctly includes one additional cutoff query, summable confidence and
+leakage budgets, and distinguishes its successful-event small-rank bound
+from the unconditional preset rank cap.
+
+Fair growing-rank comparison
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The earlier example r=m^(1/10), theta=m^(-1/5), N=m^(7/6) does NOT
+separate the new method from fast batched block Krylov. A free-input
+factor-block multiplication removes the spurious multiplicative r there.
+That example has been removed from the latest manuscript.
+
+The replacement N=m^(7/6), r=m^(7/200), theta=m^(-17/50) does pass
+the corrected comparison. Put q=~m^(17/100) and L=(q+1)r=~m^(41/200).
+For the supplied rectangular-MM bound, both r and L are below the free
+factor-block threshold m^(7/13). Hence every A/B block action costs ~I,
+where I=m^(13/6), and q iterations cost m^(701/300)=N^(701/350).
+Even conventional tall-basis QR costs O(N L^2), exponent 473/300 in m,
+which is well below that iteration cost. Projecting the product at width L
+costs ~I; projected Gram, dense small-core algebra, and skinny lifting also
+have smaller exponents. The fast block comparison therefore includes its
+basis and extraction, not merely a matrix-vector loop.
+
+The new construction has leading exponent
+7/200+(3/4)(13/6)+1/2+17/100=233/100 in m,
+or 699/350=2-1/350 in N. Its Ir and core exponents are 1321/600 and 9/4.
+Output expansion has exponent two since r<N^(1/2). For growing r this
+gives N^(2+o(1)), not an asserted literal O(N^2) expansion.
+The named Gram comparison remains N^(100/49), while corrected batched
+Krylov is N^(701/350)=N^(2+1/350).
+
+The checked finite-Schatten-to-spectral route does not improve this uniform
+worst-case guarantee: q<~theta^(-1/2) forces oversampling to full width
+under its certified accuracy conversion. Full-width blocking costs at
+least the named Gram upper bound within the supplied MM formula. These
+are comparisons of applicable published upper bounds, not lower bounds
+on every possible Krylov or randomized algorithm.
+
+Parameter and compression comparisons
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The fixed-rank open family 1/8<d<(sqrt(2)-1)/2 and 2d<b<5d/2 follows
+directly from comparing the three construction exponents with output
+2+2d. For alpha*=(3sqrt(5)-5)/2 and s*=(7-3sqrt(5))/8, the stated
+theta=N^(-(10s*-2eta)), 0<eta<s*, gives construction N^(2-eta+o(1)),
+Gram N^(2+s*+o(1)), and fixed-rank Krylov N^(2+s*-eta+o(1)). Thus
+the strict-output comparison approaches saving s* without claiming a
+positive-margin construction at eta=0.
+
+The extra product-rank example also checks algebraically. At outer
+exponent 59/50, rank exponent 24/25 and theta exponent 469/1000, the
+rank-sensitive stochastic term is m^(4719/2000)=N^(2-1/2360), whereas
+the full-rank substitution is m^(4739/2000). The full asymmetric MM
+formula gives exact skinny-factor formation m^(16736281/7080000), and
+the two skinny Gram constructions each cost m^(6889/2950). Thus the
+displayed materialization bound is dominated by formation and is above
+output at the rank endpoint. For smaller actual k, exact compression can
+already be output optimal, as the manuscript explicitly cautions.
+
+Prior-art conclusion remains scoped
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The new paper now explicitly credits Chris Junchi Li--Michael I. Jordan,
+UAI2023, equations7--8, and Ian Gemp--Charlie Chen--Brian McWilliams,
+ICLR2023, Section3/Algorithm2, for independent-copy covariance-product
+unbiasing. See Section12 for the direct primary URLs and limitations.
+The sampler and total separate-factor bound have been independently
+checked; global priority remains unconfirmed. No additional claim of
+global SOTA or novelty follows from this proof audit or the named-route
+exponent comparisons.

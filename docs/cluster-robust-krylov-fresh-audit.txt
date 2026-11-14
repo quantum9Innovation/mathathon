@@ -1,0 +1,442 @@
+FRESH INDEPENDENT MATHEMATICAL AUDIT
+==================================
+
+Date: 2026-11-14.
+Audited source: docs/cluster-robust-krylov.tex.
+Exact SHA-256 of the complete source audited:
+1fc394588b2096d380d91218aca5eab4d06bc55ac361c52be573314405a37e80
+
+Line numbers below refer to that exact snapshot. The reviewer first read
+the complete manuscript, before reading the existing search and audit
+notes. The manuscript was not modified by this audit. This is an informal
+mathematical review, not formal verification or external peer review.
+
+VERDICT
+-------
+
+PASS for the direct interpolation theorem as stated, the displayed
+graph-angle corollary, and the displayed scalar-filter inequality. I
+found no fatal mathematical flaw after checking all the proof steps.
+In particular, the dangerous noncommutative evaluation and conditional
+independence steps are correct in this source, and the stated numerical
+constants are sufficient.
+
+There is one missing dependence in the prose description of acceleration:
+lines 345--347 omit the log(n-bd) term inherited from the angle prefactor.
+The displayed inequalities remain valid. Two additional clarifications
+would make the proof less vulnerable to misreading: explicitly reuse the
+joint event constructed in the main proof when proving the corollary,
+and explicitly declare that Q and Q_perp are orthonormal eigenvector
+matrices. Details and exact replacement formulas follow below.
+
+The equal-size, fixed-partition hypothesis is material. This result does
+not establish a general multiplicity-only or sliding-b-th-gap theorem.
+It also does not prove the refuted intermediate-factor conjecture or a
+new matrix-product runtime. The manuscript currently keeps these limits
+appropriately explicit. No priority certification is supplied here.
+
+1. ISSUES AND RECOMMENDED CLARIFICATIONS
+--------------------------------------
+
+1.1 Missing dimension dependence in the additional-depth prose
+
+At lines 345--347 the listed depth dependencies include log(1/epsilon),
+d log(1/g), d log(db/beta), and the outer separation. The prefactor in
+the displayed angle corollary also contains sqrt(n-bd). Consequently,
+the sufficient depth obtained from those inequalities contains
+(1/2) log(n-bd). If the list is intended to be complete, it needs a
+dimension term. This is a reporting omission, not a counterexample to
+any displayed theorem.
+
+For n>bd define exactly
+
+  C_beta = [8 d b^(3/2)/beta]
+           sqrt[2 d b (n-bd)/beta]
+           [16000 d^8 b^5/(beta^4 g)]^(d-1),
+
+and a_gamma = arcosh(1+2 gamma). For 0<epsilon<1 and gamma>0,
+
+  t >= ceil( log(2 C_beta/epsilon) / a_gamma )
+
+is a sufficient nonnegative integer filter degree for tan(angle)<=epsilon
+on the event of the angle corollary. More generally one can take the
+maximum of this expression and zero. The exact numerator expands as
+
+  log(16 sqrt(2)) + (3/2)log d + 2 log b
+  + (3/2)log(1/beta) + (1/2)log(n-bd) + log(1/epsilon)
+  + (d-1)[log 16000 + 8 log d + 5 log b
+           + 4 log(1/beta) + log(1/g)].
+
+Thus a complete concise dependence statement includes log(n) in addition
+to the terms already listed. For 0<gamma<=1, a_gamma is of order
+sqrt(gamma); for arbitrary gamma the displayed arcosh expression is
+the correct denominator.
+
+1.2 Explicitly use the joint head event in the corollary
+
+Lines 322--323 say to use the head theorem and its Gaussian norm event
+at failure beta/2. This is valid when interpreted as reusing the
+intersection event constructed in the proof of the theorem, with its
+confidence parameter set to beta/2. That proof event simultaneously
+controls G_H and max_i ||Omega_i^-1||, and has failure at most beta/2.
+
+The statement of the theorem alone only bounds G_H; blindly appending
+a separately allocated inverse-norm event could overcount the failure
+budget. A clear replacement is:
+
+  "Apply the joint event constructed in the proof of Theorem 1 with
+   confidence parameter beta/2. It simultaneously bounds G_H by the
+   theorem's right-hand side with beta replaced by beta/2 and bounds
+   max_i ||Omega_i^-1|| by 8 d b^(3/2)/beta."
+
+The subsequent tail Markov event costs beta/2, as written, and no
+independence between these events is needed for their union bound.
+The displayed angle constants need no alteration.
+
+1.3 Declare the eigenbasis and dimensions explicitly
+
+At lines 283--289 Q is first called a subspace and then used as a matrix.
+The standard intended interpretation is clear: Q is n-by-bd with
+orthonormal eigenvector columns, Q_perp completes it to an orthogonal
+eigenvector matrix, and A Q=Q Lambda_H with Lambda_H diagonal and
+partitioned into the supplied blocks. State this directly. Otherwise
+an arbitrary basis for an invariant subspace would not give a standard
+Gaussian Q^T Omega or the displayed diagonal head representation.
+
+1.4 Small edge-case wording
+
+The previous-block term in R is declared absent for q=1 and is handled
+correctly in the proof. Writing that convention next to the definition
+of R, or defining the term to be zero, would avoid the undefined symbol
+P_{-1} in a literal reading. Likewise, the filtered inequality can be
+introduced for n>bd, since the n=bd case was already settled and a maximum
+over an empty tail is otherwise undefined without a convention. Neither
+point affects the substantive result.
+
+2. LEFT EVALUATION AND GENERIC INTERPOLATION
+-------------------------------------------
+
+All coefficients are on the right: P(B)=sum_j B^j C_j. The proof uses
+only operations that respect that convention. In particular,
+
+  [P(z)D](B)=P(B)D
+
+for a constant right factor D. It never substitutes B into an arbitrary
+product of two matrix polynomials as though evaluation were a ring
+homomorphism.
+
+For a subset S of s blocks, let
+
+  K_S=[Gamma_S,A_S Gamma_S,...,A_S^(s-1) Gamma_S].
+
+This is square of order sb. Its determinant is polynomial in all entries
+of the original Gaussian blocks. The witness Omega_i=I_b produces, after
+row and column permutations, b scalar Vandermonde matrices. Each has
+one node from every block, so its nodes are distinct under precisely the
+stated cross-block disjointness. Repeated eigenvalues within a block do
+not spoil that witness. Thus det K_S is a nonzero polynomial and K_S is
+nonsingular almost surely.
+
+Multiplication by diag(Omega_i^-1:i in S) turns the block columns into
+[I,B_i,...,B_i^(s-1)] in block row i. This is exactly the linear map from
+stacked right coefficients to left evaluations, acting independently on
+each output column. Its invertibility proves uniqueness and existence
+of the actual fundamental polynomials. A finite union of null sets covers
+all subsets. There is no uncountable union over spectra here.
+
+Every prefix of an invertible K_S has independent columns. Hence each
+block orthogonalization step adds exactly b independent columns, and
+every leading coefficient C_{j,j} is invertible. The stipulated fixed
+measurable QR rule is enough; no hidden spectral or root randomness is
+used in constructing the basis of a subset.
+
+3. ROW SMALL-BALL LEMMA
+----------------------
+
+Independent centered Gaussian rows with covariance >=h^2 I are jointly
+absolutely continuous, so any b-1 of them are linearly independent almost
+surely. Conditional on the other rows, projection of row i onto a unit
+normal to their span is a centered Gaussian of variance at least h^2.
+Therefore its absolute value has probability at most sqrt(2/pi) u/h of
+being <=u. This remains valid for any measurably selected unit normal;
+the sign does not matter.
+
+For an invertible row matrix N the norm of column i of N^-1 is D_i^-1,
+where D_i is that row's distance to the other rows. Consequently
+
+  ||N^-1||_F^2=sum_i D_i^-2.
+
+If every D_i>sqrt(b) h t, then ||N^-1||_2<1/(h t), so the event
+sigma_min(N)<=h t forces at least one D_i<=sqrt(b) h t. The union bound
+is <=sqrt(2/pi) b^(3/2)t<=b^(3/2)t. The proof includes b=1 and works
+under the conditioning used later. No identical-covariance assumption
+is needed.
+
+4. TERMINAL BLOCK-LANCZOS POLYNOMIAL
+-----------------------------------
+
+For q blocks, V_0,...,V_{q-1} is a complete orthonormal basis for R^(qb).
+For j<=q-3, symmetry gives
+
+  V_j^T A V_{q-1}=(A V_j)^T V_{q-1}=0,
+
+because A V_j lies in the Krylov prefix through degree j+1<=q-2.
+The complete basis therefore gives the terminal recurrence with only
+V_{q-2} and V_{q-1}, and no residual block. Its coefficient matrices are
+compressions of A and have norm at most one after normalization.
+
+The polynomial
+
+  R(z)=z P_{q-1}(z)-P_{q-2}(z) E^T-P_{q-1}(z) D
+
+has degree q with leading coefficient C_q=C_{q-1,q-1}. Its realization
+sum_l A^l Gamma C_l is zero by the recurrence. The i-th block row of
+this identity is Omega_i R(B_i)=0. Thus it annihilates each selected
+matrix under the correct left evaluation.
+
+For z outside spec A, the scalar division identity in lines 170--174
+gives
+
+  (zI-A)^-1 Gamma R(z)
+    =sum_(l=1)^q sum_(t=0)^(l-1)
+          z^(l-1-t) A^t Gamma C_l.
+
+Left multiplication by V_{q-1}^T eliminates every term except l=q,
+t=q-1. The remaining term is I_b because
+
+  V_{q-1}=A^(q-1) Gamma C_q + lower-degree Krylov terms
+
+and V_{q-1} has orthonormal columns. The order is C_q on the right,
+exactly as required. Therefore
+
+  W(z) R(z)=I_b,
+  R(z)^-1=W(z)=V_{q-1}^T (zI-A)^-1 Gamma,
+  ||R(z)^-1||_2<=||Gamma||_2/dist(z,spec A).
+
+There is no omitted condition number of Gamma, a leading polynomial
+coefficient, or a transformed similarity in this estimate.
+
+For P_j of degree <=q-1, interpolation uniqueness gives
+
+  P_j(z)=sum_(i in S) F_i^S(z) Omega_i^-1 (V_j)_i.
+
+This identity is valid because every final factor is constant and on the
+right. The block rows of V_j have norm at most one. Thus each P_j has
+supremum norm <=q G_S max_i||Omega_i^-1||, and the three terms in R
+give the asserted factor 3. For q=1 there are only two terms, so the
+same bound remains valid. No induction estimate was assumed in proving
+the inverse identity.
+
+5. FRESH ROOT AND COVARIANCE
+----------------------------
+
+Fix T and k, and construct R exclusively from S=T\{k}. Conditional on
+the Gaussian matrices in S, all its coefficients and Gamma_S are fixed.
+Since Omega_k B_k^j=Lambda_k^j Omega_k,
+
+  N_{T,k}=Omega_k R(B_k)
+
+has row l equal to omega_{k,l}^T R(lambda_{k,l}). Each row is a fixed
+linear transform of a different standard Gaussian row. Its covariance
+is R(lambda)^T R(lambda), not R(lambda)R(lambda)^T; both have the same
+smallest eigenvalue, and the manuscript needs only the valid lower bound
+
+  R(lambda)^T R(lambda)
+      >= [delta_{T,k}/||Gamma_S||]^2 I_b.
+
+The resolvent estimate proves precisely this bound. The fresh row lemma
+therefore applies conditionally and proves nonsingularity. With
+
+  Z_{T,k}=delta_{T,k} ||N_{T,k}^-1||/||Gamma_S||,
+
+its conditional tail is <=min(1,b^(3/2)/z). Integrating the tail for
+the half moment gives exactly 2 b^(3/4). These estimates hold before
+intersecting any success event.
+
+The expression
+
+  F_k^T(z)=R(z)N_{T,k}^-1 Omega_k
+
+has degree at most |T|-1, evaluates to zero on S, and evaluates at B_k
+to R(B_k)[Omega_k R(B_k)]^-1 Omega_k=I_b. All multipliers used after
+R are constant right factors. Thus this is the actual fundamental
+polynomial. The proof does not evaluate a polynomial product illegally.
+
+6. DETERMINISTIC RECURSION AND PROBABILITY CONSTANTS
+--------------------------------------------------
+
+For each d original blocks,
+
+  E||Omega_i||_F^2=b^2,
+  Pr{||Omega_i||>2 b sqrt(d/beta)}<=beta/(4d),
+  Pr{||Omega_i^-1||>4 d b^(3/2)/beta}<=beta/(4d).
+
+The union of all 2d failures costs at most beta/2. One such event E
+controls every subset without an extra subset union bound.
+
+For q=|T|-1 on E,
+
+  ||Gamma_S||<=sqrt(q)L_0,
+  ||R||_sup<=3q G_S U_0,
+  ||N_{T,k}^-1||=Z_{T,k}||Gamma_S||/delta_{T,k},
+  ||Omega_k||<=L_0,
+  delta_{T,k}>=Delta.
+
+Multiplication gives exactly
+
+  G_T <= [3 q^(3/2) U_0 L_0^2/Delta]
+           max_(k in T) Z_{T,k} G_{T\{k}}.
+
+The singleton value G_T=1 is correct. In particular the minimum
+cross-block gap appears only once per elimination step. There is no
+extra factor of Delta^-1 concealed in the resolvent estimate or in the
+Gaussian norm bounds.
+
+For a fixed elimination permutation pi, every factor after Z_{T_1,pi_1}
+is measurable in the remaining original Gaussian blocks T_2. Conditional
+integration of Omega_{pi_1} therefore bounds the first half moment by
+2 b^(3/4) while leaving the later factors intact. Iterating proves
+
+  E[(product_j Z_{T_j,pi_j})^(1/2)]
+       <=(2 b^(3/4))^(d-1).
+
+This argument does not assume independent Z variables. It is crucial
+that no good event E is included in the conditioning; the manuscript
+does this correctly. Markov and a union bound over at most d! paths
+produce the displayed threshold with total failure <=beta/2.
+
+The deterministic factors multiply to
+
+  [3 U_0 L_0^2/Delta]^(d-1) ((d-1)!)^(3/2),
+  3 U_0 L_0^2=48 d^2 b^(7/2) beta^-2.
+
+The path moment threshold adds 4 b^(3/2) per step and the remaining
+factor 4 beta^-2(d!)^2. Thus the unsimplified bound in lines 270--272
+is arithmetically correct. The listed factorial estimates give a base
+power d^(15/2), which is <=d^8; the constant is 768, safely rounded up
+to 1000. The estimates also hold for d=2. The logarithm of the
+spectrum-independent prefactor is O(d log(db/beta)), as stated.
+
+Affine normalization preserves left evaluation: the polynomial
+F_i((x-a)/L) has the desired values at the original B_j if F_i has the
+desired values at (B_j-aI)/L. Replacing the normalized gap by Delta/L
+therefore restores exactly (L/Delta)^(d-1).
+
+7. GRAPH ANGLE AND FILTER CONSEQUENCES
+-------------------------------------
+
+In an orthonormal eigenbasis, K_H is square and nonsingular almost
+surely. The entire depth-d Krylov subspace can be written as the graph
+
+  range [I; X],  X=K_T K_H^-1.
+
+For the largest principal angle to the head coordinate subspace,
+tan(theta_max)=||X||_2. For y partitioned into head blocks,
+
+  p_y(z)=sum_i F_i(z) Omega_i^-1 y_i
+
+has coefficient stack K_H^-1 y because its head values reproduce y
+after multiplication by the original Omega_i. For ||y||=1,
+sum_i||y_i||<=sqrt(d). The row bound and its Frobenius summation
+therefore give exactly
+
+  ||X||<=sqrt(d)||Omega_T||_F G_H max_i||Omega_i^-1||.
+
+The theorem can be applied on the full spectral interval of A, so this
+controls evaluations at every tail eigenvalue, including a tail that
+is not ordered relative to the head. No outer spectral gap is needed
+for this initialization bound.
+
+With confidence beta/2 the joint head event gives
+
+  G_H<=[16000 d^8 b^5/(beta^4 g)]^(d-1),
+  max_i||Omega_i^-1||<=8 d b^(3/2)/beta.
+
+The tail Markov event gives ||Omega_T||_F<=sqrt(2b(n-bd)/beta) with
+failure <=beta/2. Their combination is precisely the printed corollary.
+For n=bd, the full square Krylov matrix is nonsingular almost surely,
+so the angle is zero.
+
+For scalar f nonzero on the head, the filtered graph matrix is
+
+  X_f=f(Lambda_T) X f(Lambda_H)^-1.
+
+Its norm has the printed ratio bound. The filtered graph is contained
+in the depth-(d+t) Krylov space; enlarging the approximating subspace
+cannot increase its largest principal angle to the fixed target. This
+justifies the filtered inequality even when the larger Krylov space
+has more than bd dimensions or has already saturated.
+
+For the top bd target with mu>ell and lambda_bd>mu, mapping [ell,mu]
+to [-1,1] and applying T_t gives absolute value <=1 on the tail and
+at least (1/2) exp[t arcosh(1+2gamma)] on the head. The stated ratio
+2 exp[-t arcosh(1+2gamma)] is correct. If every tail eigenvalue equals
+one value mu distinct from the target, the factor z-mu annihilates the
+tail and is nonzero on the head. Outer separation is necessary for
+this convergence consequence; it was not silently inserted into the
+initial angle theorem.
+
+The theorem certifies existence of accurate vectors in the ordinary
+block Krylov space. It does not by itself analyze finite precision,
+restarted algorithms, a specific Rayleigh--Ritz vector selection for
+arbitrary interior targets, or faster arithmetic per iteration. The
+manuscript does not presently claim those conclusions.
+
+8. FIXED PARTITION, QUANTIFIERS, AND PRIMARY-SOURCE SCOPE
+-------------------------------------------------------
+
+The stated result allows arbitrary within-block repetitions and arbitrary
+ordering of blocks, but it requires a supplied partition into d full
+blocks of size b whose spectra are pairwise disjoint. This implies that
+no eigenvalue has multiplicity greater than b among the target rows.
+The converse is false: with b=3,d=2, three distinct values of multiplicity
+two cannot be put into two size-three blocks without splitting some
+repeated value, which would make the cross-block gap zero. The current
+caveat at lines 68--70 is correct and necessary.
+
+The probability statement is also correct: for each deterministic
+admissible input, the claimed event has probability at least 1-beta.
+There is no claim that a single Gaussian draw works for all possible
+spectra, or that a partition selected adaptively from the Gaussian draw
+inherits this bound without an additional argument.
+
+Primary-source inspection confirms that Shao v2 Eq. (1) defines its gap
+using the supplied block partition and the full spectral diameter. Its
+Section 3.2 corollary has the direct angle exponent 1-d. The present
+theorem and corollary therefore address that direct conclusion, although
+they do not prove the intermediate-factor conjecture used there.
+Source: https://arxiv.org/html/2507.10144v2
+
+The cited Stepaniants manuscript states a negative result for the exact
+canonical intermediate chi_mono chi_coef quantity, already for b=2,d=3.
+That negative result does not conflict with the present direct theorem:
+the direct bound explicitly pays a power of the cross-block gap, and
+does not assert that the intermediate factors are uniformly bounded.
+Source: https://raw.githubusercontent.com/ajt60gaibb/OpenProblemsInNLA/main/randomized-and-low-rank-approximation/KE-05/solution.md
+
+Chen et al. Section 5 conjectures a sliding b-th-order relative gap and
+removal of a condition-number parameter in its low-rank approximation
+and Krylov-conditioning results. This is a different input parameter
+from a supplied equal-size partition gap. The present manuscript must
+not be described as resolving that entire conjecture merely from the
+stated theorem. Its existing cautious novelty language is appropriate.
+Source: https://arxiv.org/html/2508.06486v2
+
+Only these directly relevant primary-source relationships were checked;
+this audit is not an exhaustive search of orthogonal matrix-polynomial,
+block-Lanczos, or random Krylov literature. The terminal identity uses
+classical symmetric Krylov structure, and a lack of a located prior
+statement is not evidence of priority. Before external significance
+claims, retain a precise comparison of hypotheses, gap parameter,
+dimension/confidence dependence, and the actual algorithmic consequence.
+
+FINAL ASSESSMENT
+----------------
+
+The specific manuscript snapshot passes a fresh independent informal
+proof audit. The displayed main theorem, graph-angle corollary, and
+filter bound are supported by the argument, with no missing gap factor,
+orientation error, or invalid success-event conditioning found. Correct
+the omitted logarithmic ambient-dimension term in the convergence prose
+and make the joint head event explicit. Retain the fixed-partition,
+fixed-input, exact-arithmetic, and unresolved-priority qualifications.

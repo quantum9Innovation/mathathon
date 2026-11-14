@@ -1,0 +1,553 @@
+Matrix-free fine proxies and multilevel inverse-root preconditioning
+2026-11-14
+
+Status
+------
+A two-level construction survives the mathematical audit below. It strictly
+improves the currently proved one-level cost tradeoff, including an explicit
+quadratic-output regime at a smaller accuracy parameter. This is a theorem
+derivation and primary-comparator audit, not a certified global novelty claim.
+No numerical stability or bit-complexity result is asserted. The original
+theta=1/m, N=m^(9/8), construction target is still not reached.
+
+The setup, notation and arithmetic model are those in
+docs/sketch-preconditioned-spectral.tex. This note does not modify that paper.
+Its additional ingredient is to keep an accurate proxy in factored form and
+apply its inverse square root through a coarse explicit preconditioner. Thus
+the fine proxy need not be multiplied into a dense Gram matrix.
+
+1. A proved two-level bound
+--------------------------
+Let M=A B, with A n x m, B m x p, m<=min(n,p), and I=m(n+p).
+For distortion x, define sketch dimensions
+
+  s_A(x)=min(n,~O(m/x^2)), s_B(x)=min(p,~O(m/x^2)),
+  G_x=T_MM(m,s_A(x),m)+T_MM(m,s_B(x),m),
+  J_x=m[s_A(x)+s_B(x)]+m^2.
+
+For 0<theta<=h<=H/4 and H<=1/32, the two-level construction returns
+an explicitly expanded rank-one C satisfying
+
+  Prob{||M-C||_2 <= (1+theta) sigma_2(M)} >=1-delta
+
+with total arithmetic cost, suppressing logarithms and exponent slack,
+
+  I + G_H + m^omega + m^2/sqrt(H)
+      + I sqrt(h/theta) + J_h sqrt(H/theta) + n p.             (1)
+
+This statement holds for every fixed pair of real factors, including
+cancellations, rank deficiency, zero product, zero tail, and repeated
+singular values. The square roots and arithmetic used in the explicit
+polynomial below are allowed in the original model. There is no hidden
+trigonometric oracle or integral-coefficient computation.
+
+The first, slightly weaker derivation had an extra I sqrt(H/h) term for
+finding a fine eigenvalue bracket with true-factor actions. Section 4 removes
+that term by finding the norm of the fine sketched product instead. That
+operation uses fine-proxy actions and is absorbed in J_h sqrt(H/theta).
+
+2. Coarse coordinates and a matrix-free fine proxy
+------------------------------------------------
+Form H-accuracy SRHT Grams P_H and Q_H, costing ~I+G_H, and use exactly
+the support reduction and whitening from the main paper:
+
+  W^T P_H W=I, L=W^dagger, Z=A W,
+  G=Z^T Z, Q'=L B B^T L^T, Q_0=L Q_H L^T,
+  K_t=tG-G Q' G.
+
+All support algebra costs ~m^omega. If the support is zero, return zero.
+The nonzero eigenvalues of M M^T agree with those of G^(1/2) Q' G^(1/2).
+Write lambda=||M||_2^2. A true K_t action costs O(I), and
+
+  I/(1+H) <= G <= I/(1-H).
+
+The main paper constructs a coarse bracket [ell_0,b_0] for lambda and an
+explicit preconditioner
+
+  F_H(t)=(1+32H)t I-Q_0.
+
+For every threshold in that bracket,
+
+  22Ht I <= F_H-K_t <=42Ht I, F_H>=28Ht I,
+  ||Q'||<=2t, (2/3)lambda<=t<=(3/2)lambda.                    (2)
+
+The coarse norm estimate costs ~m^2/sqrt(H).
+
+Independently compute h-accuracy sketch FACTORS
+
+  A_h=S_h A, B_h=B T_h^T,
+
+in ~I time, without forming their Grams. On their good OSE events,
+
+  (1-h)A^T A <= P_h=A_h^T A_h <=(1+h)A^T A,
+  (1-h)B B^T <= Q_h=B_h B_h^T <=(1+h)B B^T.
+
+Use these operators implicitly:
+
+  G_h=W^T P_h W, Q'_h=L Q_h L^T,
+  K_h(t)=tG_h-G_h Q'_h G_h,
+  F_h(t)=K_h(t)+32ht I.
+
+Each application costs O(J_h). In particular, applying G_h consists of
+W, A_h, A_h^T, W^T actions; no tall transformed factor is materialized.
+Relative Loewner errors give ||G_h-G||<=h||G|| and
+||Q'_h-Q'||<=h||Q'||. Expanding the two symmetric products, using
+||G||<=16/15, ||G_h||<=17/15 and ||Q'||<=2t, gives
+
+  ||K_h(t)-K_t||<=10ht,
+  22ht I <= F_h-K_t <=42ht I.                               (3)
+
+The mass metric in K_h is G_h, not I. Using tI-Q'_h here would retain
+an O(Ht) error and lose the improvement. This distinction is essential.
+
+3. Why accurate proxy factors are sufficient
+-------------------------------------------
+Suppose a fine bracket, obtained in Section 4, ensures
+
+  (1-33h/8)lambda <= t
+     <=(1+h)^2 lambda/[(1-h/8)(1-h)^2]
+
+and is intersected with [ell_0,b_0]. Its precise upper endpoint is less
+important than that intersection and the displayed lower endpoint.
+Since h<=1/128, the negative part of K_t is bounded below by -5ht I:
+
+  K_t=G^(1/2)[tI-G^(1/2)Q'G^(1/2)]G^(1/2) >=-5ht I.
+
+Consequently F_h>=17ht I; use the conservative bound F_h>=16ht I.
+Also ||F_h||<=6t by (2), (3), and ||G||<=16/15.
+
+From (2), (3), and h<=H/4,
+
+  0<=F_H-F_h<=42Ht I,
+  F_H<=F_h+42Ht I<=(1+42H/(16h))F_h.
+
+Factor only the COARSE matrix, F_H=J J^T, costing ~m^omega. Thus
+
+  D=J^-1 F_h J^-T
+
+is a symmetric implicit operator with
+
+  [h/(3H)] I <= D <= I.                                   (4)
+
+Indeed its lower bound is at least
+h/[h+(42/16)H]>=h/(3H), since h/H<=1/4.
+Applying D costs O(J_h), including the small triangular actions.
+
+Put a=h/(3H), eta=h/1000, and choose a positive polynomial p on [a,1]
+with relative inverse-root error
+
+  |sqrt(x)p(x)-1|<=eta, x in [a,1].                         (5)
+
+Section 5 constructs it with degree ~O(sqrt(H/h)), using arithmetic and
+square roots only. Define R=J^-T p(D), apply R implicitly, and let
+
+  E_t=R^T K_t R,
+  Fbar=R^-T R^-1=J p(D)^(-2) J^T.
+
+The last matrices are ANALYTICAL definitions; neither Fbar nor p(D)^(-1)
+is formed. From (5),
+
+  -4eta F_h <= Fbar-F_h <=4eta F_h,
+  ||Fbar-F_h||<=24eta t.
+
+Together with (3), this gives safe bounds
+
+  21ht I <= Fbar-K_t <=43ht I, Fbar>=15ht I,
+  spectrum(E_t) subset [-2,1].                             (6)
+
+For the final line, write E_t=I-R^T(Fbar-K_t)R and use
+43/15<3. This construction supplies a FIXED SYMMETRIC operator at each
+threshold. It does not assume that adaptively stopped CG is a linear map,
+and it does not pass inaccurate solves to Lanczos without error control.
+
+A single E_t action costs
+
+  ~O(I+J_h sqrt(H/h)).
+
+The original actual-witness threshold argument applies using (6). If
+q is a returned actual Rayleigh value with additive error tau and x=Ry,
+then q<=tau implies
+
+  x^T K_t x/(x^T G x) <=64 tau h t,
+
+while q>=0 implies lambda<=t+46 tau h t. The minor change from 45 to
+46 does not affect the original choice tau=e_*/(512h), e_*=theta/8:
+(3/2)(64+46)/512<1. Negative and positive signs retain exact inertia
+meaning because R is invertible. At most logarithmically many adaptive
+tests return a vector z with z^T M M^T z>=(1-theta/8)lambda.
+
+There are ~O(sqrt(h/theta)) E_t actions, so their cost is
+
+  ~O(I sqrt(h/theta)+J_h sqrt(H/theta)+m^omega).
+
+The relative-Nystrom lemma in the main paper converts the final Rayleigh
+vector to a spectral rank-one approximation; final factor actions cost I,
+and explicit expansion costs n p. This establishes (1), subject to the
+bracket and polynomial constructions proved next.
+
+4. A fine bracket without true-factor refinement
+-----------------------------------------------
+Let lambda_h=||A_h B_h||_2^2. The fine OSE event gives
+
+  (1-h)^2 lambda <= lambda_h <=(1+h)^2 lambda.               (7)
+
+The already formed P_H,Q_H are valid 2H-relative Gram proxies for the
+FINE factors A_h,B_h. For example their Loewner ratios to P_h lie between
+(1-H)/(1+h) and (1+H)/(1-h), both within [1-2H,1+2H]. The same holds
+for Q_h. The main paper's coarse-proxy Rayleigh primitive can therefore
+be applied to the fine factors, with distortion 2H<=1/16 and requested
+Rayleigh parameter h. It uses the supplied cores; it need not resketch.
+Its true actions now cost J_h, rather than I. Obtain an actual s_h with
+
+  (1-h/8)lambda_h <= s_h <=lambda_h
+
+in cost ~O(J_h sqrt(H/h)+m^omega+m^2/sqrt(H)). The exact squared
+fine-product Rayleigh value is recomputed through A_h,B_h.
+By (7), a bracket for lambda is
+
+  [s_h/(1+h)^2,
+   s_h/((1-h/8)(1-h)^2)].                                 (8)
+
+Intersect it with [ell_0,b_0]. On all good events the intersection is
+nonempty and still contains lambda. Its lower endpoint is at least
+
+  (1-h/8)(1-h)^2/(1+h)^2 lambda
+       >=(1-33h/8)lambda.
+
+This proves the bracket property used in Section 3. The cost in this
+section is absorbed by the J_h sqrt(H/theta) term because theta<=h.
+The fine-proxy primitive uses a different inflation constant corresponding
+to distortion 2H; this does not change F_H=(1+32H)tI-Q_0 used in the
+final true-product threshold tests.
+
+5. An explicit uniform inverse-root polynomial
+----------------------------------------------
+For D with spectrum in [a,1], a>0, set
+
+  rho=(1-sqrt(a))/(1+sqrt(a)),
+  c=(1+sqrt(a))^2/4,
+  T=(1+a-2D)/(1-a).
+
+Then spectrum(T) is in [-1,1] and
+
+  D=c(I-2rho T+rho^2 I).
+
+The Legendre generating function gives
+
+  D^(-1/2)=c^(-1/2) sum_{j>=0} rho^j P_j(T),
+
+where P_j are the ordinary Legendre polynomials and |P_j(t)|<=1 for
+t in [-1,1]. The latter bound follows, for example, from the elementary
+Laplace integral for P_j(cos(phi)): the integrand
+(cos(phi)+i sin(phi)cos(psi))^j has modulus at most one. These integral
+representations justify the identity; the algorithm evaluates no integral.
+
+Truncate at degree k. Since c^(-1/2)/(1-rho)=1/sqrt(a), the operator
+norm of the tail is at most rho^(k+1)/sqrt(a). As ||D^(1/2)||<=1,
+this is also a relative error bound in (5). It suffices to choose k with
+
+  rho^(k+1)<=eta sqrt(a),
+  k=O(a^(-1/2) log(1/(eta sqrt(a)))).
+
+The stopping index can be found by multiplying rho repeatedly; no
+logarithm oracle is needed. Evaluate the polynomial on a vector using
+
+  P_0(T)v=v, P_1(T)v=Tv,
+  (j+1)P_{j+1}(T)v=(2j+1)T P_j(T)v-j P_{j-1}(T)v,
+
+and accumulate the weighted sum. There are k D-actions and O(k) scalar
+coefficient operations, plus O(km) vector work. All constants use arithmetic,
+division and the allowed square root. This avoids coefficient-construction
+cost and removes the need for a large-degree fallback. If a=1, use p=1.
+
+The polynomial is a mathematically controlled replacement for an inverse
+square root, not a claim that a raw polynomial recurrence is numerically
+stable at arbitrary precision in standard floating point.
+Primary formulas: NIST DLMF 18.12.11 (generating function), and 18.14.1
+with Jacobi parameters alpha=beta=0 (the unit bound):
+https://dlmf.nist.gov/18.12.E11
+https://dlmf.nist.gov/18.14.E1
+
+6. A strict improvement of the currently proved output regime
+------------------------------------------------------------
+Use m as the base and choose
+
+  n=p=N=m^(59/50), theta=m^(-11/25),
+  H=m^(-7/100), h=m^(-17/200).
+
+All parameter inequalities hold for sufficiently large m. Fine sketch rows
+have exponent 117/100<59/50, so J_h has exponent 217/100. Using the
+same rectangular multiplication bound as the main paper, construction
+exponents are
+
+  coarse Gram: 3362/1425 ~=2.359298,
+  true actions: 109/50+(11/25-17/200)/2=943/400=2.3575,
+  fine-proxy work: 217/100+(11/25-7/100)/2=471/200=2.355,
+  square core: 9/4, coarse norm estimate: 407/200,
+  output: 59/25=2.36.
+
+Hence construction is o(N^2) with a sufficiently small fixed exponent
+slack, and total explicit-output time is O(N^2). Confidence can be fixed
+or retained in logarithms. This strengthens the one-level quadratic-output
+instance from theta exponent 25/59 ~=0.423729 to 11/25=0.44, for exactly
+the same input dimensions and unrestricted general factors.
+
+It is a strict improvement of the OPTIMIZED one-level tradeoff, not merely
+of a poorly tuned one-level parameter. Output-optimal one-level true actions
+would require a coarse distortion exponent at least
+
+  11/25-2(59/50-1)=2/25=0.08.
+
+But its Gram setup at that exponent is already
+
+  2+4/25+1/[4(1+4/25)]=54/25+25/116>59/25.
+
+Any smaller exponent makes the one-level true-action term exceed output;
+any larger exponent makes its setup still larger. Clipping the sketch at
+the original rows only restores the exact-Gram baseline. That baseline
+and ordinary Krylov have respective bounds N^(7056/3481+o(1)) and
+N^(120/59+o(1)) here, both above N^2.
+
+7. Fixed-depth multilevel theorem
+--------------------------------
+The recursion closes if all levels use slightly larger, uniform inflation
+constants. The independently valid two-level theorem (1) does not depend on
+this extension. What follows is a full proof derivation, subject to separate
+review of its constants; it makes no claim for growing recursion depth.
+
+Fix an integer L>=1 INDEPENDENT of dimensions and accuracy. Suppose
+
+  0<theta<=h_L, h_0<=1/1024, h_j<=h_{j-1}/8, j=1,...,L.
+
+Compute explicit h_0-Grams and matrix-free h_j-sketch factors at every other
+level, and whiten the original A-side with the h_0-Gram. Define K_j as in
+Section 2 using level j's two factors; K_0=tI-Q_0. For j>=0 put
+
+  F_j(t)=K_j(t)+128h_j t I.
+
+On the joint OSE event, the algorithm below obtains the same spectral
+rank-one guarantee with total cost
+
+  ~O_L(I+G_{h_0}+m^omega+m^2/sqrt(h_0)
+       +I sqrt(h_L/theta)
+       +sum_{j=1}^L J_{h_j} sqrt(h_{j-1}/theta)+np).          (9)
+
+The suppressed logarithm exponent and constants may depend on FIXED L.
+Products of polynomial degrees, recurrence constants and logarithms are
+not silently treated as constants for input-dependent growing L.
+
+7.1 Uniform preconditioner induction
+
+For the ANALYSIS, call a threshold level-j valid if
+
+  |t-lambda|<=16h_j lambda.                                (10)
+
+The algorithm does not need lambda to check this condition: the brackets
+constructed below imply it for every threshold where it is used. Validity
+at level j implies validity at all earlier levels.
+
+On this window, t>=(63/64)lambda and the true metric has norm at most
+1024/1023. Thus ||Q'||<=2t, ||K_j-K||<=10h_j t as before, and
+
+  K>=-17h_j tI, ||F_j||<=4t,
+  118h_j tI<=F_j-K<=138h_j tI, F_j>=100h_j tI.              (11)
+
+For j=0 the same error bound follows from the coarse whitening formula.
+Indeed the estimate -17 follows from
+||G||*16h_j/(1-16h_j)<17h_j. The norm estimate uses
+||K||<=||G||t+||G||^2||Q'|| and 138h_j<=138/1024.
+
+Set R_0=J_0^-T, where F_0=J_0 J_0^T. Inductively suppose R_{j-1}
+is an implicitly applicable invertible map and
+
+  Fbar_{j-1}=R_{j-1}^-T R_{j-1}^-1,
+  117h_{j-1}tI<=Fbar_{j-1}-K<=139h_{j-1}tI,
+  Fbar_{j-1}>=99h_{j-1}tI.                               (12)
+
+The base case satisfies these slightly relaxed bounds by (11). At a
+level-j valid threshold, define
+
+  D_j=R_{j-1}^T F_j R_{j-1}.
+
+The differences in (11),(12), and h_j<=h_{j-1}/8, give
+
+  0<=Fbar_{j-1}-F_j<=139h_{j-1}tI,
+  Fbar_{j-1}<=F_j+[139h_{j-1}/(100h_j)]F_j.
+
+Therefore
+
+  [h_j/(2h_{j-1})]I<=D_j<=I.                             (13)
+
+Apply the Section 5 polynomial with a=h_j/(2h_{j-1}) and eta=h_j/1000,
+and define R_j=R_{j-1}p_j(D_j). Relative polynomial error yields
+
+  ||Fbar_j-F_j||<=4eta||F_j||<=16h_j t/1000.
+
+Consequently (12) holds with j in place of j-1, including Fbar_j>=99h_j tI.
+This proves the induction, uniformly over each validity window. In particular
+
+  spectrum(R_j^T K R_j) subset [-1,1],
+
+since 1-139/99>-1. The maps are fixed symmetric-polynomial constructions
+at each threshold; no nonlinear inner solve is passed to outer Lanczos.
+
+7.2 Proxy-only bracket refinement at every level
+
+The original h_0-Gram norm bracket [ell_0,b_0] contains lambda and, for
+h_0<=1/1024, lies in [(1-6h_0)lambda,(1+6h_0)lambda].
+Assume an available bracket [ell_{j-1},b_{j-1}] contains lambda and lies
+within that same six-times-distortion window at level j-1. Let
+lambda_j=||A_j B_j||_2^2. Its initial bracket is
+
+  [(1-h_j)^2 ell_{j-1}, (1+h_j)^2 b_{j-1}].               (14)
+
+All thresholds in (14) are within 8h_{j-1}lambda of lambda, and hence
+are level-(j-1) valid. To estimate lambda_j, use actual-witness threshold
+Lanczos on R_{j-1}^T K_j R_{j-1}, with TRUE mass G_j and TRUE product
+being A_j B_j. There are no original-factor actions in this step.
+
+Because ||K_j-K||<=10h_j t, its effective-preconditioner difference lies
+between 115h_{j-1}tI and 141h_{j-1}tI. Bound (12) then implies that
+the preconditioned operator has spectrum in [-1,1]. Also
+I/2<=G_j<=2I, with the actual sharper bounds exceeding .99 below and
+less than 1.01 above. For q<=tau the standard witness calculation gives
+
+  x^T K_j x/(x^T G_j x)<=256tau h_{j-1}t;
+
+for q>=0 it gives lambda_j<=t+256tau h_{j-1}t. Thus the same global
+sign/uncertain-witness bisection argument works with tau=e/(2048h_{j-1}).
+Take e=h_j/8. It returns an actual fine-product Rayleigh value s_j with
+
+  (1-h_j/8)lambda_j<=s_j<=lambda_j
+
+in ~sqrt(h_{j-1}/h_j) preconditioned actions. Unit physical fine-product
+witnesses use A_j W x/sqrt(x^T G_j x). This matters: a Rayleigh quotient
+using the original G would estimate the wrong product.
+For completeness, the sharper calculations are below 160 for the witness
+and below 143 for the uncertain upper bound, using G_j>=.99I; the relaxed
+256 constants allow a common statement. All such thresholds have
+t<=1.5lambda_j, so an uncertain witness loses at most
+(3/2)(256+256)e/2048<e. At a final lower-bracket call of relative width
+e/4, the deficit is at most (e/4+256e/2048)lambda_j<e lambda_j.
+
+Translate back using (7):
+
+  ell_j=s_j/(1+h_j)^2,
+  b_j=s_j/[(1-h_j/8)(1-h_j)^2].                           (15)
+
+This bracket contains lambda and lies within
+[(1-5h_j)lambda,(1+5h_j)lambda]. It therefore satisfies the six-times
+window needed for the next induction step. One may intersect it with prior
+true-lambda brackets, but intersection is not needed for the window proof.
+This establishes all required validity windows rather than assuming nested
+brackets happen to be suitable for the next fine product.
+
+After level L, apply the original true-product threshold witness primitive
+using R_L on bracket (15), with requested Rayleigh error theta/8. Bounds
+(12) give the same guarantees, with only absolute constant changes.
+Finish through the main paper's relative-Nystrom lemma and explicit output.
+
+7.3 Cost and failure accounting
+
+Let c_j be the cost of one R_j or R_j^T application at a fixed threshold.
+The explicit coarse inverse has c_0=O(m^2). The degree in (13) is
+~sqrt(h_{j-1}/h_j). Each D_j action uses one F_j action and two previous
+maps. Therefore, for fixed L,
+
+  c_j=~O_L((J_{h_j}+c_{j-1})sqrt(h_{j-1}/h_j)),
+  c_L=~O_L(m^2 sqrt(h_0/h_L)
+           +sum_{j=1}^L J_{h_j}sqrt(h_{j-1}/h_L)).
+
+Final true threshold tests cost ~sqrt(h_L/theta)(I+c_L). Proxy-only
+bracket level j costs ~sqrt(h_{j-1}/h_j)(J_{h_j}+c_{j-1}), the same
+order as c_j. Each c_j is absorbed in the final displayed sum because
+theta<=h_L<=h_j; the fixed-L sum of refinements changes only constants
+and logarithms. The propagated m^2 term is absorbed by the first J term,
+as J_{h_1}>=m^2. Coarse factorizations are performed at logarithmically
+many thresholds per level, costing ~O_L(m^omega) in total. This proves (9).
+
+For any adaptive norm/threshold call, condition on the fixed initial OSE
+events and all previous outcomes, and use a fresh random Lanczos start.
+Allocate failure probability by a union bound over L+1 OSE pairs and all
+bounded-in-advance primitive calls. Only logarithmic costs change. Zero
+support/product exits and bounded budgets are handled as in the main paper.
+
+7.4 Correct balancing and a stronger fixed-depth example
+
+Let N=m^(1+d), theta=m^(-b), h_j=m^(-a_j), with all fine sketch widths
+strictly below the original outer dimension. For a common construction
+exponent E=2+b/2+u, the work terms in (9) impose
+
+  a_j<=u/2+a_{j-1}/4, a_L>=2(d-u).
+
+Balancing all propagated terms gives
+
+  u=(6d-3*4^(-L)a_0)/(8-2*4^(-L)),
+
+which tends to 3d/4 as fixed depth increases. Thus any fixed exponent
+slack above the limiting construction envelope
+
+  E_infty=2+3d/4+b/2
+
+is attainable by choosing a sufficiently large but FIXED L, subject also
+to coarse setup and output. This is an infimum over fixed-depth bounds,
+not a claim that arbitrary growing depth preserves the suppressed factors.
+Local balancing of only the newest level can leave an early implicit level
+dominant; the global recurrence accounts for every propagated cost.
+
+A concrete L=2 example needs no limiting argument:
+
+  N=m^(59/50), theta=m^(-56/125),
+  h_0=m^(-7/100), h_1=m^(-17/200), h_2=m^(-89/1000).
+
+Construction exponents in m are
+
+  coarse Gram: 3362/1425 ~=2.359298,
+  level-1 propagated work: 2359/1000=2.359,
+  level-2 propagated work: 4719/2000=2.3595,
+  final true actions: 4719/2000=2.3595,
+  explicit output: 59/25=2.36.
+
+Thus construction is N^(2-1/2360+o(1)) and total time is O(N^2).
+This improves the two-level theorem (1) at the same dimensions: making
+its action and fine-work terms output bounded at b=56/125 would require
+a_0>=5b-12d=2/25, whose Gram setup exceeds output as in Section 6.
+All claims concern established UPPER bounds, not algorithmic lower bounds.
+
+For the original high-accuracy parameters d=1/8,b=1, the limiting
+construction exponent here is 83/32 in m, worse than exact Gram. Thus
+even the multilevel extension does not solve that stronger target.
+
+Diagnostic, separate from proof: a transient numpy sweep with seed2026111408
+generated 100 random SPD factor-Gram pairs in dimensions 2 through 10 and
+independent synthetic relative proxies at three distortion levels. It made
+1000 effective-preconditioner checks, including expanded fine-product norm
+bracket endpoints and recursive inverse-root polynomials. All displayed
+spectral/Loewner/bracket assertions passed; the smallest margin inside the
+normalized [117,139] difference bounds exceeded 9.07. The largest polynomial
+relative error was 7.54e-10. This checks proof inequalities, not a full AMM
+implementation, statistical SRHT performance, or numerical stability.
+
+8. Primary-comparator and novelty scope
+--------------------------------------
+The current one-level paper supplies the OSE, support/whitening, actual-witness
+threshold primitive and Nystrom finishing lemma. Its primary references are
+retained there. This note introduces no new query lower-bound claim.
+
+Derezinski--Musco--Yang, Faster Linear Systems and Matrix Norm Approximation
+via Multi-level Sketched Preconditioning (SODA 2025), arXiv:2405.05865:
+https://arxiv.org/html/2405.05865v2
+https://par.nsf.gov/servlets/purl/10581694
+Their Theorems 3.1 and 4.1 concern nonnegative-ridge systems based on explicit
+rectangular inputs or explicit SPD kernels. Their norm theorem concerns
+finite Schatten exponents below 2. The checked theorem does not directly
+supply the negative-Gram shifted threshold, the present factored action costs,
+or this spectral LRA output regime. Nonetheless recursive sketched inverse
+application is established prior art; a novel-method claim would be wrong.
+
+Classical polynomial inverse roots and congruence preconditioning are also
+standard. The potentially new result is the specific spectral-product cost
+bound (1), its fine-product bracket, and the resulting parameter regime.
+No checked primary theorem currently subsumes that bound, but the global
+literature audit remains open. Specialized covariance algorithms can remain
+faster on B=A^T and are not universally dominated by this result.

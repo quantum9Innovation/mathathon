@@ -1,0 +1,612 @@
+Positive features after coarse cancellation: a scoped obstruction
+2026-11-14
+
+Status
+------
+The concrete candidate tested here is AFFINE SQUARE COMPLETION: use a cheap
+explicit coarse positive threshold preconditioner and a true signed correction
+to manufacture positive Gram features without computing a fine Gram root.
+It fails uniformly near a critical eigenvalue. The failure is sharp for the
+entire affine-feature family, including arbitrary numbers of stacked features
+and coefficients chosen with knowledge of the shift and coarse distortion.
+
+This does not rule out nonlinear positive features, row-dependent construction,
+matrix factorizations, stochastic solvers with signed/nonconvex components,
+or a general improvement to spectral product approximation. It is not an AMM
+lower bound. No new total-runtime upper bound is claimed in Sections 1-5.
+
+1. Exact square-completion identity
+----------------------------------
+For a true positive threshold matrix F, let F0>0 be a coarse matrix and write
+E=F0-F, with E symmetric. The obvious first-order feature correction is
+
+  X(E)=F0^(1/2)-(1/2)F0^(-1/2)E.
+
+It can be applied using coarse small-core operations and a true E action.
+The product is exactly
+
+  X(E)^T X(E)=F+(1/4)E F0^(-1)E.                          (1)
+
+The remainder is positive semidefinite, which is attractive for a Gram
+representation. However its norm is bounded by ||E||^2/(4lambda_min(F0)),
+not by ||E||^2 alone. For the threshold regime, ||E||=Theta(Ht) and the
+coarse smallest eigenvalue is Theta(Ht), so the bound is Theta(Ht), not
+Theta(H^2 t). The critical direction destroys quadratic error improvement.
+
+The scalar example is exact:
+
+  F=g>0, F0=g+H, E=H,
+  X(E)^2=g+H^2/[4(g+H)].                                 (2)
+
+If g/H tends to zero, its additive error approaches H/4 and its relative
+error diverges like H/(4g). This is already compatible with fixed common
+coarse Gram information: take true P=1, true Q=1, coarse P0=1,Q0=1-H,
+and threshold t=1+g. The true complement is g and the coarse complement
+is g+H. These are valid H-relative Gram proxies. Adding the usual O(Ht)
+coarse inflation changes only constants in the same counterexample.
+
+2. Square completion is optimal among first-order affine features
+----------------------------------------------------------------
+Consider an arbitrary stacked feature matrix X(E)=U+VE satisfying
+
+  U^T U=F0, U^T V=V^T U=-I/2.
+
+These conditions make its constant term and linear signed correction exact.
+Projection/Cauchy--Schwarz gives
+
+  V^T V >= V^T U(U^T U)^(-1)U^T V=F0^(-1)/4.
+
+Therefore
+
+  X(E)^T X(E)>=F+(1/4)E F0^(-1)E.                        (3)
+
+Equality is attained by Section 1's choice. Adding affine feature rows or
+rotating their feature space cannot improve this quadratic bias. Even for a
+more general linear map L(E), with X(E)=U+L(E) and correct symmetric first
+variation, any unit v satisfies
+
+  ||L(E)v||^2 >= [v^T E v]^2/[4 v^T F0 v].                (4)
+
+This follows by Cauchy--Schwarz and
+2<Uv,L(E)v>=-v^T E v. The scalar obstruction thus survives arbitrary
+linear matrix correction maps, not just right multiplication VE.
+
+3. Sharp relative-approximation obstruction without derivative matching
+----------------------------------------------------------------------
+One might allow biased coarse features and settle for a constant-relative
+Gram approximation. Even that fails for arbitrary small critical gaps.
+
+Let f(x)=g+x on [0,H], g,H>0. Let phi(x) be ANY affine vector-valued
+feature map, of arbitrary finite feature dimension, and q(x)=||phi(x)||^2.
+Define kappa=(g+H)/g and r=sqrt(kappa). The exact smallest possible
+uniform relative error is
+
+  eta_star=(r-1)^2/(r^2+6r+1).                            (5)
+
+In other words, if (1-eta)f(x)<=q(x)<=(1+eta)f(x) throughout the interval,
+then eta>=eta_star, and equality is attainable by one scalar affine feature.
+
+Proof: for x=tau H, 0<=tau<=1, affine interpolation and the triangle
+inequality imply
+
+  sqrt(q(x)) <= (1-tau)sqrt(q(0))+tau sqrt(q(H)).
+
+The assumed relative bounds consequently force
+
+  (1-eta)/(1+eta)
+    <= [(1-tau)sqrt(g)+tau sqrt(g+H)]^2/(g+tau H).
+
+The minimum of the right side occurs at tau=1/(r+1) and equals
+
+  c=4r/(r+1)^2.
+
+Thus eta>=(1-c)/(1+c), which is (5). Conversely, take q to be
+2/(1+c) times the squared affine chord joining sqrt(g) and sqrt(g+H).
+The ratio of that chord squared to f ranges exactly from c to 1, so this
+choice attains the lower bound at the endpoints and at the minimizer.
+
+As H/g grows, eta_star=1-O(sqrt(g/H)) tends to one. Thus no fixed
+relative quality eta<1 is possible for a family of positive features affine
+in an unresolved coarse signed correction. Replacing x by H-E gives
+exactly a scalar coarse threshold F0-E with the same coarse data across
+the whole interval. This obstruction permits coefficients to depend on H
+and g; it is not an artifact of a badly chosen Taylor coefficient.
+
+4. Randomizing the correction adds covariance bias
+-------------------------------------------------
+Suppose a random matrix Z is an unbiased estimator of E and use the same
+square-completion formula. Its mean Gram is
+
+  E[X(Z)^T X(Z)]
+    =F+(1/4)E[Z^T F0^(-1)Z]
+    =F+(1/4)E^T F0^(-1)E
+       +(1/4)E[(Z-E)^T F0^(-1)(Z-E)].                    (6)
+
+Independent samples or a cross estimator can remove a covariance term
+algebraically, but a cross product need not be a positive sample Gram.
+Removing this positive bias by subtraction loses the promised positive
+feature representation.
+
+Small deterministic residual does not imply small stochastic variance.
+For example, let a covariance be P=I_m and sample an orthonormal-basis
+row uniformly. The unbiased one-row Gram estimate is
+
+  Y=m e_i e_i^T, i uniform in {1,...,m}.
+
+Even when the coarse proxy is EXACTLY P0=P=I, the centered estimator
+Z=Y-I has mean zero but
+
+  E[Z^2]=(m-1)I.                                          (7)
+
+For a minibatch of b independent rows, this second moment becomes
+(m-1)I/b. Therefore the variance in (6) is not O(||P-P0||^2), nor
+does it automatically decrease with the coarse embedding error. A genuine
+row-residual/control-variate construction needs an independent variance
+proof; merely subtracting the coarse mean is insufficient.
+
+Equation (7) is ALSO why a signed stochastic route remains possible and
+interesting: taking b=Theta(m) makes the matrix second moment constant at
+O(m^2) raw row work, and signed SVRG does not require positive features.
+That route is a distinct question and is not excluded by this audit.
+
+5. Cost, original target, and primary-reference scope
+----------------------------------------------------
+An affine corrected feature action in (1) costs a true signed operator
+action, O(I), plus coarse O(m^2) work. Generating a full-width batch must
+charge the corresponding rectangular factor products. More importantly,
+even a free construction cannot fix (2)-(5); the representation fails at
+the level of relative Gram quality.
+
+For N=m^(9/8), theta=1/m, the original construction target is
+~I+m^(9/4+zeta), with I=m^(17/8). To reduce the main threshold's true
+action factor sqrt(h/theta) to at most m^(1/8), one would need h of
+order m^(-3/4) or smaller. An explicit coarse H of constant accuracy is
+cheap, but its gap ratio H/h then diverges. The affine positive-feature
+quality in (5) approaches one rather than a useful fixed distortion.
+This quantifies why this proposed shortcut does not close the original gap.
+
+Relevant primary sources (already read in the broader audit):
+
+M. Derezinski, C. Musco, J. Yang, Faster Linear Systems and Matrix Norm
+Approximation via Multi-level Sketched Preconditioning, SODA 2025.
+https://arxiv.org/html/2405.05865v2
+https://par.nsf.gov/servlets/purl/10581694
+Theorem 3.1/Algorithm 3 support supplied rectangular positive features;
+they are not limited to a supplied dense Gram. A cheap factor for F would
+therefore be a meaningful missing reduction. This audit rules out one
+natural affine factor construction, not the theorem's applicability to a
+different, successfully constructed factor.
+
+D. Garber et al., Faster Eigenvector Computation via Shift-and-Invert
+Preconditioning, ICML 2016.
+https://proceedings.mlr.press/v48/garber16.pdf
+Theorem 9 permits nonconvex finite-sum components but requires an explicit
+variance inequality. Lemma 11 and Theorem 12 prove that inequality for a
+particular covariance row sampler. They do not assert that coarse mean
+cancellation controls component variance. The identity (7) shows why that
+extra analysis cannot be omitted for a new product-specific sampler.
+
+The square completion, Schur/Cauchy--Schwarz identities and polynomial
+root functions are standard linear-algebra ingredients. Novelty of the
+elementary scalar optimum (5) is neither needed nor claimed. No new
+state-of-the-art AMM theorem follows from the failed feature candidate.
+
+6. Independent audit of a distinct SIGNED stochastic-pencil route
+----------------------------------------------------------------
+Parent and research_runs subsequently derived a different construction that
+does not require positive features. Its sampler, variance and shifted-linear-
+solver reduction pass the independent audit below. The generalized global
+gap-free eigenvector wrapper is a separate proof obligation assigned to a
+different reviewer; this section does not silently assume it is supplied by
+the stochastic solver alone.
+
+6.1 Constant-distortion coordinates and probabilities
+
+Use the main paper's constant-accuracy coarse whitening W,L, so
+
+  G=W^T A^T A W, Q'=L B B^T L^T,
+  I/(1+H)<=G<=I/(1-H), H<=1/16.
+
+For a safe shift t>=lambda=||AB||^2, ||Q'||<2t. Write
+
+  u_i=W^T a_i for original A rows a_i^T,
+  v_j=L b_j for original B columns b_j,
+  G=sum_i u_i u_i^T, Q'=sum_j v_j v_j^T.
+
+Estimate all feature squared lengths simultaneously with O(log((n+p)/delta))
+Gaussian JL coordinates, using A(W Omega) and B^T(L^T Omega). This costs
+~O(I+m^2), not a transform of every row by W or L. Conditional on the JL
+event, sampling tables can be constructed so
+
+  p_i>=||u_i||^2/(4trG), q_j>=||v_j||^2/(4trQ').
+
+The normalizing traces need not be computed: normalize the approximate row
+lengths. Zero features get probability zero. The good simultaneous length
+bounds imply positive probability for every nonzero feature and the displayed
+domination. Condition on these preprocessing outcomes for the analysis.
+
+6.2 Minibatch actions and the signed unbiased estimator
+
+Let R=u_i u_i^T/p_i for i sampled from p. Then
+
+  E R=G, E R^2=sum_i (||u_i||^2/p_i)u_i u_i^T
+                    <=4tr(G)G.
+
+For a batch of exactly m independent rows, Ghat=(1/m)sum R,
+
+  E Ghat^2=(1-1/m)G^2+(1/m)E R^2<=20I.
+
+The identical calculation for Q' gives E Qhat^2<=20t^2I because
+trQ'<=2mt and ||Q'||<=2t. The crude constants cover rank-deficient
+support dimension a<=m as well.
+
+To apply Ghat to x, compute W x once, take m raw-row dot products and
+weighted raw-row sums, then apply W^T once. This costs O(m^2). No
+individual sampled feature u_i is formed by an O(m^2) transform.
+Likewise Qhat costs O(m^2), with L^T before the raw-column batch and L
+afterward. Indices and sampling tables cost only O(m) per batch.
+
+Draw G0,G1,G2,Qhat independently and define
+
+  Khat=tG0-(G1 Qhat G2+G2 Qhat G1)/2.
+
+Use the SAME sampled G1,G2,Qhat in the reversed branch. This makes Khat
+symmetric. Independence gives exact unbiasedness for
+
+  K=tG-G Q' G.
+
+Conditioning successively on the independent operators gives
+
+  E||G1 Qhat G2 x||^2<=20*20*20*t^2||x||^2.
+
+The symmetrized product has at most the same second-moment bound by the
+inequality ||(a+b)/2||^2<=(||a||^2+||b||^2)/2. Combining tG0 gives
+
+  E||Khat x||^2<=16040t^2||x||^2.                         (8)
+
+Each Khat action uses a constant number of the preceding raw-batch actions,
+so costs O(m^2), independent of n,p. A true K action still costs O(I).
+All sampling remains unbiased conditional on the JL tables; preprocessing
+randomness does not invalidate the independent minibatch conditioning.
+
+6.3 Nonconvex-component SVRG and acceleration
+
+Normalize K and Khat by t. Suppose K/t>=mu I for a certified mu>0.
+Set V=16040. For f(x)=x^T(K/t)x/2-b^T x, quadratic energy gives
+
+  E||Khat(x-x*)/t||^2
+      <=V||x-x*||^2
+      <=(2V/mu)[f(x)-f(x*)].                              (9)
+
+This is precisely Garber2016 Theorem 9's nonconvex-component variance
+inequality with S=V/mu. Its SVRG contraction takes O(V/mu^2) samples.
+A fresh sampled Hessian must act on the SINGLE difference x-x_ref:
+
+  grad_est=Khat(x-x_ref)/t+(K/t)x_ref-b.
+
+Applying independently sampled Hessians to x and x_ref would lose the
+control-variate cancellation. The full anchor gradient costs O(I), so a
+constant expected contraction costs ~O(I+m^2/mu^2).
+
+For a literal finite-sum interpretation, index components by all finite
+minibatch tuples sigma and put
+
+  psi_sigma(x)=Prob(sigma)[x^T(Khat_sigma/t)x/2-b^T x].
+
+The probability cancels in the sampled gradient formula. The algorithm
+never enumerates these tuples or multiplies their probabilities. The full
+expectation gradient is evaluated directly through A,B in O(I).
+
+Add proximal regularization rho||x-y||^2/2. For rho<=1 the component
+second moment remains an absolute constant and strong convexity becomes
+mu+rho, so the oracle contraction costs ~O(I+m^2/(mu+rho)^2).
+Frostig2015 accelerated approximate proximal point (APPA), Theorem 1.1,
+requires a strongly convex whole objective and a linearly converging primal
+oracle; it does not require the sampled quadratics to be convex. Its stated
+regularization condition is rho>=2mu; constant multiples do not affect the
+optimization below. In that regime the total work is
+
+  ~sqrt(rho/mu)[I+m^2/rho^2].
+
+Choose rho of order m/sqrt(I), which is at most one because I>=2m^2.
+If mu is within a constant factor of or exceeds that scale, the unaccelerated
+method already costs O(I).
+Thus the solver cost is
+
+  ~O(I+I^(3/4)m^(1/2)/sqrt(mu)).                          (10)
+
+This statement includes only logarithmic accuracy and failure dependence.
+Repeated fresh SVRG contraction epochs give exponentially decreasing
+expected relative function gap. Markov's inequality after O(log(1/(epsilon
+delta))) epochs supplies a high-probability relative energy guarantee.
+The same argument applies to randomized APPA's expected contraction or to
+high-confidence inner oracles. No 1/delta work factor is necessary.
+
+Additional primary APPA reference checked in this coordination:
+R. Frostig et al., Un-regularizing: approximate proximal point and faster
+stochastic algorithms for empirical risk minimization (2015).
+https://arxiv.org/abs/1506.07512
+https://arxiv.org/pdf/1506.07512
+
+6.4 Scope and adaptive-rank caution
+
+The positive-feature obstructions in Sections 1-5 do NOT exclude this signed
+solver. In fact (8)-(10) use the independent minibatch second moments that
+Section 4 shows must be accounted for, rather than assuming a small mean
+residual implies small variance. These are standard SVRG/APPA tools with
+a product-specific sampler and access-cost reduction. This potentially
+stronger known-template corollary must be included in any novelty assessment
+of the earlier multilevel spectral theorem.
+
+For rank-r deflation, G probabilities can remain fixed, but reusing the
+initial Q' feature-length probabilities requires an additional argument.
+The latent residual projector R_i is generally oblique; Q'_i<=Q' controls
+the sum of transformed feature outer products, not each feature length.
+A safe implementation recomputes B^T(R_i^T L^T Omega) at each stage,
+with fresh JL randomness conditional on the past, at ~O(I+m^2) cost.
+Then the preceding sampler analysis applies stagewise. This adds only
+~O(Ir) before the separately required spectral/deflation accounting.
+
+7. PRODUCT-RANK-SENSITIVE COORDINATES: INDEPENDENT AUDIT
+-------------------------------------------------------
+The proposed reduction to k=rank(AB) coordinates is valid. It requires
+carefully distinguishing product representation from a representation of
+the entire A factor, and it admits a particularly clean compressed deflation
+implementation. This addendum also checks the runtime cap on bad embedding
+outcomes and an exact-compression comparison that must accompany the claim.
+
+7.1 Coordinate construction and exact identity on the good event
+
+Let the original coarse A-support dimension be a, W be m x a and
+L=W^dagger, so LW=I_a. Define
+
+  Q'=L B B^T L^T, Q0=L Q_H L^T.
+
+On the common OSE event, Q0 and Q' have the same kernel and range.
+Moreover range(Q')=range(LB), and AW is injective on R^a because W's
+columns lie in range(A^T). Thus
+
+  k=rank(Q0)=rank(LB)=rank(AB).
+
+Construct an orthonormal U spanning range(Q0), and put
+
+  Wstar=WU (m x k), Lstar=U^T L (k x m),
+  Zstar=A Wstar, Bbar=Lstar B.
+
+Then Lstar Wstar=I_k and
+
+  M=AW LB=AW U U^T LB=Zstar Bbar.                         (11)
+
+For every right projection Pi, LB Pi remains in range(U). Consequently
+M Pi=Zstar Bbar Pi exactly, including all adaptive orthogonal deflations.
+There is no need for U to change after a deflation.
+
+Lstar need not equal Wstar^dagger. Also A=AWstar Lstar is generally
+FALSE. Neither identity is required by the stochastic solver or the
+spectral wrapper: they use only (11), the positive mass
+
+  Gstar=Zstar^T Zstar=U^T G U,
+  I/(1+H)<=Gstar<=I/(1-H),
+
+and Qstar=Bbar Bbar^T. The spectral relation with the physical product
+uses Gstar^(1/2)Qstar Gstar^(1/2), so it remains exact.
+The coarse mass is exactly I since Wstar^T P_H Wstar=I_k, and its
+coarse B-side proxy is Q0star=U^T Q0 U=Lstar Q_H Lstar^T.
+
+For an exact arithmetic construction of U, select independent columns C
+of Q0, form C^T C=R^T R by Cholesky, and set U=CR^(-1). Fast rank
+selection, multiplication, Cholesky and the formation of Wstar,Lstar cost
+~O(m^omega) in the same model as the main paper. No exact eigenvalue or
+SVD oracle is required for the support basis.
+
+7.2 Deflation entirely in k-dimensional latent coordinates
+
+Maintain V_i=Bbar^T C_i with orthonormal columns, D_i=Bbar V_i=Qstar C_i,
+and S_i=I_k-D_i C_i^T. Then
+
+  C_i^T Qstar C_i=I,
+  Bbar_i=Bbar(I-V_i V_i^T)=S_i Bbar,
+  Qstar_i=S_i Qstar S_i^T=Qstar-D_i D_i^T,
+  M_i=Zstar Bbar_i.
+
+For a physical cPCA witness z_i, put s_i=z_i^T M_i M_i^T z_i and
+
+  c=S_i^T Zstar^T z_i/sqrt(s_i),
+  v=Bbar^T c, d=Qstar c.
+
+The new v is unit and orthogonal to V_i; hence
+
+  S_{i+1}=S_i-dc^T=(I-dc^T)S_i.
+
+The coarse proxy updates as
+
+  Q0star_{i+1}=(I-dc^T)Q0star_i(I-cd^T),
+
+at O(k^2) cost. Initial Loewner bounds imply the corresponding current
+relative bounds by congruence for every adaptive S_i. This argument does
+not invoke Lstar=Wstar^dagger or A=AWstar Lstar. If one instead retains
+the original m-dimensional R_i updates, their low-rank actions cost O(mi)
+with i<=k; those are O(mk) as well, while any m^2 core update is <=I.
+The compressed implementation is simpler and avoids that extra work.
+
+7.3 k-row sampling, costs and confidence
+
+The features are now u_j=Wstar^T a_j and v_j=Lstar b_j, both k-vectors.
+The current B-side features are S_i Lstar b_j. Their Gram traces are
+bounded by k times their operator norms, so the Section 6 moment proof
+works with batch size exactly k, not m. With the same constants,
+
+  E Ghat^2<=20I_k, E Qhat_i^2<=20t^2 I_k,
+  E Khat_i^2<=16040t^2 I_k.
+
+A sampled action performs only two skinny Wstar/Lstar transforms, a
+batch of k raw rows or columns of length m, and O(k^2) S_i actions.
+Its cost is O(mk). JL length tables are obtained with A(Wstar Omega)
+and B^T(Lstar^T S_i^T Omega); they cost ~O(I+mk). Use fresh B-side
+JL randomness conditional on the stage history. Gstar probabilities may
+stay fixed. The exact full gradient continues to cost O(I).
+
+The shifted-system SVRG/APPA bound becomes
+
+  ~O(I+I^(3/4)(mk)^(1/4)/sqrt(mu)).                      (12)
+
+The moment and cost proofs are dimension-sensitive; this is not a change
+of notation that still samples m rows or transforms each sampled row.
+
+7.4 Combination with the stronger spectral certificate
+
+Sections 1-2 and 5 of docs/block-threshold-audit.txt were read as part of
+this audit. Their moving-tail cPCA-to-Nystrom argument and generalized
+AppxPCA implementation transfer to Gstar without alteration. They need
+the product representation M_i=Zstar Bbar_i and the constant-conditioned
+mass, not the missing whole-A identity. The physical lift is still
+z=Zstar x/sqrt(x^T Gstar x), and it has zero component outside range(M).
+
+In particular, cPCA leakage epsilon below (1-gamma)lambda_1 implies
+
+  ||M(I-V_ell V_ell^T)||^2
+    <=sigma_{ell+1}(M)^2/[(1-gamma)(1-epsilon)^ell].
+
+Choosing gamma=theta/4 and epsilon=theta/(4ell) controls the denominator;
+the inverse solver needs gap mu=Theta(theta), while epsilon enters only
+logarithmically. Thus there is NO sqrt(ell) iteration loss once this
+stronger cPCA wrapper is used. The older Rayleigh-only Nystrom chain would
+retain that loss and cannot justify the improved statement by itself.
+
+With ell=min(r,k), the resulting fixed-width guarantee has bound
+
+  ~O(I(1+ell)+m^omega
+       +ell I^(3/4)(mk)^(1/4)/sqrt(theta)
+       +np+T_MM(n,ell,p)),                               (13)
+
+with the usual rank-r relative spectral error, no eigengap or factor-energy
+promise, and the same failure allocation as the constituent audited results.
+If r>=k, at most k positive residual stages recover M exactly. Include
+the np writes even when ell=0. This is a composition of separately audited
+sampler, shifted-solver, cPCA and deflation arguments; global novelty remains
+a separate question.
+
+7.5 All-outcomes cap by the TRUE product rank
+
+The implementation computes khat=rank(Q0), which need not equal k on bad
+embedding outcomes. Nevertheless khat<=rank(AB) ALWAYS, independent of
+the OSE event. Indeed P_H=A^T S^T S A has range contained in range(P),
+so W's columns, and hence L's rows, lie in range(P). Therefore
+
+  rank(Q0)=rank(L B T^T)
+        <=rank(LB)<=rank(PB)=rank(AB).                    (14)
+
+The final equality uses that A is injective on range(P). Use khat for all
+computed batch dimensions and cap the stage count at min(r,khat). On the
+good event khat=k and (11)-(13) give the claimed approximation. On bad
+events approximation can fail, but the batch/stage dimensions still do not
+exceed the true k, so the k-sensitive work bound is not merely a successful-
+outcome bound. As in the parent algorithm, all solver loops and normalization
+failure exits must have the stipulated finite caps; this argument alone does
+not justify an unbounded retry-until-success implementation.
+
+7.6 Exact skinny-factor comparison
+
+The same coordinate reduction gives a strong competing route: materialize
+the EXACT factors Zstar=A Wstar and Bbar=Lstar B at cost
+
+  T_MM(n,m,k)+T_MM(k,m,p).
+
+Then compute reduced k-dimensional Grams, a small exact spectral factorization,
+and retained-direction lifts. The relevant reduced Gram cost is
+T_MM(k,n,k)+T_MM(k,p,k), plus k^omega and output/lifting. Consequently
+one must not compare (13) only to full-m Gram formation or scalar Krylov.
+
+For example, k<=sqrt(m) lets current dual-exponent bounds materialize both
+skinny factors at input-time exponents. Their Grams even cost <=I with
+classical multiplication because (n+p)k^2<=(n+p)m. Exact compression can
+already meet the original high-accuracy construction target on this class;
+no stochastic novelty claim is justified merely from that specialization.
+
+Use the full primary rectangular bound, not just square blocking:
+Amanov--van den Berg--Zuiddam, arXiv:2610.30054, Theorem 1.2,
+https://arxiv.org/abs/2610.30054
+For sorted exponents a>=b>=c, the bound is a+b if c(a+b)<=ab;
+otherwise it is (a+b+c)/2+(ab/c+ac/b+bc/a)/4.
+
+An illustrative regime where (13) improves these named materialization
+bounds is
+
+  N=m^(59/50), k=m^(24/25), theta=m^(-469/1000).
+
+Its stochastic construction exponent is 4719/2000=2.3595<2.36, giving
+O(N^2) total explicit output with suitable fixed exponent slack. The exact
+skinny-factor materialization bound is 16736281/7080000~=2.363881, and
+its reduced Gram exponent is only 6889/2950~=2.335254, so materialization
+dominates that named route. Full-rank stochastic construction has exponent
+2.3695 and full Gram has exponent about 2.391864. These are comparisons
+between audited upper bounds, not lower bounds on exact compression or a
+certified global state-of-the-art claim.
+
+8. ACTUAL STOCHASTIC MANUSCRIPT COPY REVIEW
+------------------------------------------
+Read docs/stochastic-product-spectral.tex after the parent wrote its first
+compiling version. This review concerns the actual manuscript, not only
+the preceding messages/preconstruction derivations. Assigned scope:
+product support, all-outcomes rank cap, sampler moments/action costs,
+compressed deflation, fresh B-side probabilities, rank-sensitive formula,
+and displayed asymptotic comparisons.
+
+Result: no substantive error found in that assigned scope.
+
+The product-support section explicitly distinguishes M=AWLB from the
+generally false whole-factor identity A=AWL after support compression.
+Its L=U^T L0 is a valid left inverse of W=W0U; the proof does not reuse
+W^dagger inappropriately. The deterministic cap rank(L0BT^T)<=rank(AB)
+is correct on all sketch outcomes because row(L0) lies in range(P).
+
+The batch-k second moments are valid with the manuscript's loose norm
+bounds: ||G||<=2, trG<=2k gives E Ghat^2<=4+16=20, and the same
+calculation works for Q_c/c. With s<=2, its symmetric signed product
+has moment at most 2*4*20+2*20^3=16160<20000, so the displayed V=20000
+is safe. The raw aggregation cost is O(mk) because W/L are transformed
+only before and after a whole batch.
+
+Compressed S_i, C_i, D_i updates and the stated rank-two proxy formula
+match Section 7.2 above. Recomputing B^T(L^T S_i^T Omega_i) at each
+stage correctly handles the oblique projection. Scalar core norm
+estimates and k^2 proxy updates are bounded by I. The cPCA-to-Nystrom
+argument makes the final rank dependence linear, resolving the earlier
+Rayleigh-only sqrt(r) concern. In the actual tail-mass lemma, the inverse-
+compression/min-max proof also checks: it constructs a d-j dimensional
+subspace of z^perp on which the compressed inverse Rayleigh quotient is
+at least (1-w)/t+w/lambda_1.
+
+All displayed comparisons checked algebraically:
+
+  N=m^(59/50), b=56/125: stochastic construction m^(2359/1000),
+      equivalently N^(2-1/1180).
+  Family d in (1/8,(sqrt(2)-1)/2), 2d<b<(5/2)d: all construction
+      terms below output; both named Gram and scalar-Krylov bounds above it.
+  alpha_star=(3sqrt(5)-5)/2, s_star=(7-3sqrt(5))/8: the stated equality
+      of comparison boundaries and supremum saving follow from
+      alpha_star^2+5alpha_star-5=0.
+  Growing r=m^(1/10), N=m^(7/6), theta=m^(-1/5): construction exponents
+      9/4,34/15,93/40; largest equals N^(2-1/140).
+      Krylov N^(71/35), Gram N^(100/49), rank-r expansion N^(2+o(1)).
+  Original N=m^(9/8),theta=1/m: m^(83/32) remains worse than Gram.
+
+Two exposition/comparison changes requested from the parent, without editing
+the main manuscript here:
+
+  (i) Explicitly say all actual batch/support dimensions use computed khat,
+      which equals true k on the OSE event. Some displayed formulas currently
+      say k while the theorem says k is not supplied. The intended algorithm
+      and all-outcomes argument are valid; this substitution should be stated.
+
+  (ii) Include the exact skinny-factor route from Section 7.6 as a named
+       rank-sensitive competitor. This avoids claiming stochastic superiority
+       on small-k classes already handled at the same total cost by exact
+       reduced-inner-dimension multiplication and factorization.
+
+The global AppxPCA uniform-start/TV and adaptive absolute-error sections are
+assigned to another reviewer. This audit checked their interfaces with the
+compressed coordinates, not an independent re-audit of every primary theorem.
+All-outcomes runtime also relies on the manuscript's prescribed advance caps:
+inverse-solver precision budgets should use its good-event normalized RHS
+bounds, rather than unbounded retry or bad-outcome data-conditioned budgets.

@@ -1,0 +1,1386 @@
+Absolute-pencil block method: primary literature audit -- 2026-11-14
+===================================================================
+
+Finding and scope
+-----------------
+Read the actual completed Section9 of docs/block-threshold-audit.txt and
+docs/block-absolute-independent-audit.txt before searching. The relevant
+comparison is to the full block construction, not an r-times-scalar solve.
+Only this dedicated file is changed in this continuation.
+
+Absolute-value preconditioning, preservation of inertia by SPD congruence,
+preconditioned Lanczos/Arnoldi counts, block interior eigensolvers,
+Chebyshev-filtered random subspaces, and root-squaring/coefficient methods
+are established antecedents. The closest combined precedent is
+Vecharynski--Yang's preconditioned eigenvalue-counting framework (2016/17),
+built on Vecharynski--Knyazev's AV framework (2013).
+
+The specific remaining contribution supported by the present audit is the
+uniform weighted quadratic-defect certificate from a coarse Gram proxy,
+its conversion of O(alpha) strong action error into O(alpha*h) error in
+the original pencil, and its raw-factor block cost. The inspected primary
+theorems do not state that combined separate-factor relative spectral-tail
+bound. This is a reasoned closest-antecedents comparison, not a global
+novelty or SOTA certificate.
+
+1. Original absolute-value preconditioning
+------------------------------------------
+Eugene Vecharynski and Andrew V. Knyazev, Absolute Value Preconditioning
+for Symmetric Indefinite Linear Systems, SIAM J. Sci. Comput.35(2),
+A696--A718 (2013):
+https://doi.org/10.1137/120886686
+https://arxiv.org/pdf/1104.4530
+
+Primary theorem scope: Theorem2.1 observes that |A|^(-1) gives two-step
+PMINRES. Definition2.2 formalizes AV spectral equivalence
+delta0*T^(-1)<=|A|<=delta1*T^(-1), with delta0>0. Theorem2.3 bounds
+the positive and negative eigenvalues of TA through those of T|A|;
+Corollary2.4 places them in [-delta1,-delta0] union [delta0,delta1].
+The analysis explicitly permits noncommuting A,T. Its practical construction
+is multigrid for a shifted Laplacian, not arbitrary dense product Grams.
+
+Own comparison with the proposed F
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Write the new pencil K=t*Bmass-Q, D=tI+Q0, and F=JJ^T. The proposed
+finite construction has -F<K<F and
+
+  0<=Delta:=F-K F^(-1)K<=36hD.
+
+It is an AV-motivated SPD regularization, but it is not claimed to satisfy
+the original AV definition with a uniform delta0. At a threshold where K
+has a null vector, F stays SPD, so no positive delta0 can satisfy
+delta0*F<=|K|. Arbitrarily near such a threshold, the best delta0 can
+be arbitrarily small. Thus the original uniformly separated two-interval
+convergence theorem cannot simply be invoked with constants independent
+of the product's spectral separation.
+
+This distinction is relevant because the new wrapper must allow all
+positive thresholds, including repeated eigenvalues and exact threshold
+eigenvalues. It tolerates near-zero preconditioned eigenvalues rather than
+assuming an AV gap around zero. The weighted additive defect above is the
+appropriate certificate for that tolerance. Describing the construction
+as a new AV-preconditioning principle would overstate its novelty.
+
+2. Closest counting/sign precedent
+----------------------------------
+Eugene Vecharynski and Chao Yang, Preconditioned iterative methods for
+eigenvalue counts (arXiv2016; book chapter2017):
+https://arxiv.org/pdf/1602.02306
+https://doi.org/10.1007/978-3-319-62426-6_8
+
+Primary scope: Section2 expresses negative inertia as trace of a step
+function and preserves it by C=M(A-tI)M*. Sections3--5 approximate
+random quadratic forms by preconditioned Lanczos/Arnoldi quadrature.
+Proposition1 gives exact quadrature after p steps when C has p distinct
+eigenvalues. Theorem1 identifies the iteration with a Hermite-interpolating
+polynomial. Section6 discusses AV and modified incomplete-LDL SPD
+preconditioners; construction of a universally good preconditioner is not
+part of its theorem. It estimates projector traces, rather than supplying
+an exact-rank spectral approximation to a factored product.
+
+Own reduction assessment
+~~~~~~~~~~~~~~~~~~~~~~~~
+The proposed pencil fits this mathematical model directly: the new
+congruence factor is J^(-1), and Sylvester inertia exactly identifies the
+number of generalized eigenvalues above t. Hence inertia-preserving AV
+preconditioning plus Lanczos is a direct antecedent, not merely a related
+application. The distinction lies in the quantitative guarantees needed
+after that transformation.
+
+The inspected counting result does not supply a uniform finite
+q=~O(sqrt(h/theta)) quantile bound when C can have eigenvalues arbitrarily
+close to zero, nor a width-r physical subspace and its original-product
+tail guarantee. Its few-step result assumes a favorable clustered spectrum;
+the two-step idealization uses |K|^(-1), unavailable or singular at the
+thresholds which the new wrapper handles.
+
+Random trace accuracy is also not itself the required ordered-eigenvalue
+certificate. Even an exact application of the sign projector needs a
+separate sampling error analysis to distinguish adjacent integer counts.
+The current method instead estimates the (r+1)-st eigenvalue of I-C via
+the per-vector block theorem and uses a deterministic one-sided quotient.
+The trace-count paper supplies the overall sign/inertia strategy but not
+this particular full-output cost or its successful-event stopping rule.
+
+3. Block interior eigensolvers and a quadratic sign identity
+-----------------------------------------------------------
+Eugene Vecharynski and Andrew Knyazev, Preconditioned Locally Harmonic
+Residual Method for Computing Interior Eigenpairs of Certain Classes of
+Hermitian Matrices, SIAM J. Sci. Comput.37(5), S3--S29 (2015):
+https://doi.org/10.1137/14098048X
+https://arxiv.org/pdf/1408.0042
+
+Primary scope: Section4/Algorithm2 explicitly gives a block PLHR method
+with matrix-block and preconditioner-block kernels. Section5 proposes
+T approximately |A-sigma B|^(-1). For the ideal pseudo-inverse AV choice,
+it uses I-(T(A-lambda B))^2 as the nullspace projector. Theorem2.1
+analyzes an idealized preconditioned residual iteration; the practical
+eigensolver and its block extension are assessed numerically. No inspected
+theorem gives the present global gap-free rank-r spectral-tail complexity.
+
+Own assessment: the identity C^2 approximately I and extraction of
+near-null/selected modes from it are old AV ideas. The new defect
+Delta=J(I-C^2)J^T is an approximate version of this algebra. What must be
+proved separately is its weighted size O(hD), and how a strong residual
+certificate transfers with the extra factor alpha instead of losing h.
+The old ideal projector identity alone does not prove that quantitative
+transfer for a noncommuting, approximate, regularized AV factor.
+
+4. The strong action transfer: exact additional obligation
+---------------------------------------------------------
+This is an independent algebraic comparison, not a claim that the lemma
+cannot appear elsewhere. Suppose C=J^(-1)KJ^(-T), F=JJ^T and
+0<=Delta=F-KF^(-1)K<=epsilonD. If an orthonormal U satisfies
+
+  ||(I-UU^T)(I-C)||<=1+a,
+
+then b=(1+a)^2-1 and w perpendicular to U give
+
+  w^T(C^2-2C)w<=b||w||^2.
+
+Putting w=J^T y on the dual complement gives
+
+  2y^T K y >= y^T K F^(-1)K y-b y^T F y
+             =(1-b)y^T K F^(-1)K y-b y^T Delta y
+             >=-b*epsilon*y^T D y, when b<=1.
+
+Thus the original-pencil loss is O(a*epsilon), uniformly without an
+eigenvalue gap. For epsilon=36h this is O(alpha*h), as required.
+The multiplicative b on Delta is the crucial part; simply translating a
+Loewner lower bound C>=-O(alpha)I would yield -O(alpha)F instead.
+
+The weaker AV facts alone cannot yield this improvement. For example take
+F=D=I and K=-aI. Then -F<K<F and ||I-C||=1+a, but K=-aD rather
+than -O(a*h)D for h arbitrarily small. Its defect is (1-a^2)I, and
+precisely fails the additional O(hD) hypothesis. This is a concrete reason
+that merely citing bounded preconditioned spectrum or inertia would omit
+a necessary theorem, even though the complete transfer proof is elementary.
+
+The lift also matters. The dual complement J^T Z^T x perpendicular to U
+corresponds to the physical space range(ZJU). Congruence preserves inertia
+but does not in general preserve Euclidean eigenspaces or approximation
+residuals. Therefore a sign-projector or PLHR subspace theorem is not a
+physical spectral-tail theorem until this lift and its norm inequalities
+are included. Section9 does include them.
+
+5. Randomized block Krylov and polynomial projection antecedents
+---------------------------------------------------------------
+Cameron Musco and Christopher Musco, Randomized Block Krylov Methods for
+Stronger and Faster Approximate Singular Value Decomposition, NeurIPS2015:
+https://arxiv.org/pdf/1504.05477
+
+Primary scope: Algorithm2 and Theorem12 give simultaneous per-vector
+quality at block degree ~O(1/sqrt(epsilon)). For target r+1, the compressed
+positive matrix yields an additive squared-eigenvalue error at most
+epsilon times the next squared singular value. The printed confidence is
+99/100. This theorem is exactly the source of the new quantile accuracy;
+the ordinary spectral-LRA theorem alone is insufficient for that inference.
+
+Own cost and wrapper assessment: apply the source to T=I-C>=0 and
+target r+1. Deterministic compression min--max makes every estimated
+mu_(r+1) an upper estimate, so taking the minimum across independent runs
+amplifies confidence without selecting or validating a successful run.
+The coefficient-power bound supplies the required one-sided Ritz value.
+These are valid additional reductions of the published block theorem.
+
+The final width-r Chebyshev-filtered Gaussian space is also within the
+classical randomized range-finding/polynomial-filtering paradigm. It needs
+only a separation band of width alpha, permits uncontrolled polynomial
+growth in the head, and avoids computing a true invariant projector at an
+arbitrarily small actual gap. The degree alpha^(-1/2) comes from the usual
+endpoint Chebyshev growth. The contribution is its combination with the
+weighted original-pencil certificate, not a new Chebyshev construction.
+
+Related primary filtering/counting sources:
+  Edoardo Di Napoli, Eric Polizzi, Yousef Saad, Efficient estimation of
+  eigenvalue counts in an interval, Numer. Linear Algebra Appl.23 (2016):
+  https://arxiv.org/pdf/1308.4275
+  Sections3--4 use polynomial/rational spectral-projector approximations
+  and stochastic trace estimation, including generalized problems.
+
+  Zhongxiao Jia, Kailiang Zhang, A FEAST SVDsolver based on
+  Chebyshev--Jackson series for computing partial singular triplets:
+  https://arxiv.org/pdf/2201.02901
+  Its stated target is singular triplets in a specified interval, using
+  approximate projectors and subspace iteration. It is an antecedent for
+  polynomial spectral slicing; no inspected statement gives the weighted
+  h-to-theta error transfer or separate-factor runtime used here.
+
+6. Coefficient quantiles are a classical root-squaring mechanism
+---------------------------------------------------------------
+Victor Y. Pan, New Progress in Classic Area: Polynomial Root-squaring and
+Root-finding (2022), Section1.2, equations2--5:
+https://arxiv.org/pdf/2206.01727
+
+This primary account explicitly recalls Dandelin--Lobachevsky--Graeffe
+root-squaring and extraction of powered roots from coefficient ratios.
+For a matrix V, characteristic coefficients of V^(2^s) use exactly
+the same powered roots. Therefore powering and coefficient-ratio recovery
+must be presented as a classical mechanism. The new note's elementary
+positive-root inequality
+
+  v_j/j <= e_j(V)/e_(j-1)(V) <= (k-j+1)v_j
+
+is a finite, gap-free way to bound that recovery, including repeated roots;
+it does not require the separated-root asymptotic in the introductory
+Graeffe discussion. No novelty claim for root-squaring itself is justified.
+
+Vincent Neiger, Clement Pernet, Gilles Villard, Computing Krylov iterates
+in the time of matrix multiplication, ISSAC2024, Corollary5.2:
+https://arxiv.org/html/2402.07345v2
+
+This supplies the deterministic fast Frobenius-form field-operation
+subroutine actually needed for characteristic coefficients. The assumption
+is an explicit small matrix over the base field. It neither provides the
+implicit product threshold nor charges for raw A/B access. Combining it
+with repeated squaring is valid in the stated exact arithmetic model;
+neither this audit nor the source makes enormous intermediate coefficients
+a bounded-word or numerically stable operation.
+
+7. Full block cost and closest-antecedents conclusion
+----------------------------------------------------
+The applicable new leading block cost is
+
+  ~O(I+G_h+m^(omega+zeta)
+      +sqrt(h/theta)*Acal(r+1)
+      +k*Lraw^2+Acal(r)+n*r^2
+      +np+TMM(n,r,p)),
+  Acal(b)=TMM(n,m,b)+TMM(p,m,b),
+  Lraw=~O((r+1)*sqrt(h/theta)).
+
+Its q*Acal(r+1) is a block cost. Replacing it by q*I*r in comparison
+with fast batched Krylov would be unfair. Conversely, calling an AV or
+PLHR preconditioner an O(1) primitive would omit both G_h and its core
+construction; a PDE-specific multigrid bound is not a general dense
+two-factor setup theorem.
+
+For N=m^(59/50), r=m^(1/10), theta=m^(-21/50), h=m^(-7/100):
+q=m^(7/40), Acal(r+1)=m^(109/50+o(1)), and the largest checked
+construction exponent is the sketched Gram 3362/1425<59/25. The block
+action exponent is 471/200, safe raw-basis QR is at most 31/20, and
+physical QR is 69/50. All are below output. Total is N^(2+o(1)); fair
+ordinary block Krylov is N^(239/118+o(1)) and named exact Gram is
+N^(7056/3481+o(1)). The prior linear-r stochastic accelerated term has
+m-exponent 489/200 and does not subsume this regime. These remain
+comparisons of applicable upper bounds, not algorithmic lower bounds.
+
+Closest-antecedents conclusion: the architecture 'AV-precondition a shifted
+matrix, preserve inertia, and run Krylov/random spectral filtering' is
+already explicit in the cited literature. The candidate's potential new
+result is a product-specific quantitative theorem: build a smooth coarse
+proxy at accounted cost; bound the weighted quadratic defect uniformly
+at every threshold; use a strong-action rank-r certificate and dual lift
+to retain alpha*h error; and wrap the resulting quantile with no actual
+gap or product-condition parameter. No inspected source supplied all of
+those obligations or the displayed total runtime. The independent proof
+audit supports that theorem conditional on its declared model. Its global
+priority still requires assessment beyond this targeted source comparison.
+
+8. Final bounded full-algorithm subsumption pass
+-----------------------------------------------
+This continuation searched specifically for sign/AV-preconditioned low-rank
+approximation, projectors from inaccurate Grams, and rational/pencil
+alternatives. It did not repeat the earlier broad GEP, MSP, covariance,
+sampling, or ordinary-Krylov searches. The following fresh primary checks
+do not establish a subsuming raw-product algorithm.
+
+Tyler Chen, Caroline Huber, Ethan Lin, Hajar Zaid, Preconditioning without
+a preconditioner using randomized block Krylov subspace methods,
+Electronic Transactions on Numerical Analysis65, 63--92 (2026):
+https://etna.ricam.oeaw.ac.at/vol.65.2026/pp63-92.dir/pp63-92.pdf
+https://doi.org/10.1553/etna_vol65s63
+
+Theorem3.3 proves that augmented block-CG matches or improves a broad
+class of Nystrom-PCG iterates for a supplied SPD A+muI, comparing
+matrix loads. Theorem3.5 separately charges block-Lanczos arithmetic;
+Section3.2 explicitly disclaims domination in arithmetic operations or
+total matrix products. This is an important current block-method
+comparison, but its result is a positive-system solve guarantee, not an
+indefinite quantile or physical spectral-tail guarantee. Applying it to
+the already transformed positive T=I-C does not supply the missing
+threshold transfer; its block space is still the ordinary polynomial
+Krylov space for that T. Applying it directly to K_t violates its SPD
+hypothesis at the interior thresholds in question. No reduction was
+established which yields the displayed raw-factor cost without the new
+weighted-defect argument and preconditioner setup.
+
+Nian Shao and Yuji Nakatsukasa, Convergence analysis of a nonlinear
+eigensolver based on rational approximation of the resolvent (2026):
+https://arxiv.org/pdf/2607.10377
+
+Theorems3.2/3.4 analyze poles given accurate rational approximations of
+sketched resolvents; constants depend on poles, residues and associated
+conditioning. The method samples T(z)^(-1) between probing blocks, then
+uses AAA/pole extraction. It does not furnish a uniform raw-factor oracle
+for those shifted inverses, nor the required gap-free rank-r product tail
+bound. Counting a sampled shifted inverse as a block matvec would omit the
+operation that has to be bounded. This is a concrete missing reduction,
+not a criticism of the paper's different nonlinear-eigenvalue objective.
+
+Jess Banks, Jorge Garza-Vargas, Archit Kulkarni, Nikhil Srivastava,
+Pseudospectral Shattering, the Sign Function, and Diagonalization in Nearly
+Matrix Multiplication Time:
+https://doi.org/10.1007/s10208-022-09577-5
+
+Its spectral divide-and-conquer routines compute sign-based projectors
+and deflate explicit dense matrices in nearly MM time. This is close
+component-level background, but inputting the true coefficient pencil
+requires forming its true Gram information; inputting only the h-accurate
+core leaves an h-scale modeling error. The theorem does not state a way
+to correct that error from separate A,B within the proposed block cost.
+
+A direct information check explains the latter distinction. Let G=I,
+Q1=diag(1+e,1), Q2=diag(1,1+e), and Q0=(1+e/2)I, with e of order h.
+The same Q0 is an admissible h-relative proxy for both true Grams. For
+any fixed rank-one left space, its orthogonal unit vector x has
+max{x^T Q1 x,x^T Q2 x}>=1+e/2, while each best rank-one squared
+residual is 1. Thus a procedure using only that proxy cannot guarantee
+1+theta relative spectral residual uniformly when theta is much smaller
+than h. True-factor corrective actions, such as those in the candidate,
+are essential. This is not an obstruction to methods which use them.
+
+The recent 'low-rank matrix-sign' terminology also has a different target:
+Chuan He, Zhanwang Deng, Zhaosong Lu, Low-rank Orthogonalization for
+Large-scale Matrix Optimization with Applications to Foundation Model
+Training:
+https://arxiv.org/pdf/2509.11983
+It approximates the polar/rectangular sign of an already supplied gradient
+matrix through a low-rank projection, and proves optimization stationarity
+results. It is not a threshold sign projector with a relative spectral-tail
+arithmetic theorem for arbitrary separate factors. It does not subsume
+the present result merely by sharing the words 'low rank' and 'sign'.
+
+Cost qualification for the simplified uniform expression
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The full Section9 statement charges k*Lraw^2 for conservative QR, in
+addition to q*Acal(r+1). If one writes only
+
+ ~O(I+G_h+m^omega+sqrt(h/theta)*Acal(r+1)+explicit output),
+
+under Lraw<=m, absorbing basis construction into m^omega additionally
+requires fast algebra. One can select independent raw columns by fast
+rank-profile elimination, form their Gram, perform Cholesky, and multiply
+by its inverse factor, all in ~O(m^omega) real operations for dimensions
+at most m. Mere width<=m does not absorb conventional O(m*Lraw^2) QR
+into m^omega. The concrete displayed parameter instance is already safe
+with conventional QR and does not require this refinement.
+
+After this bounded pass, no full-algorithm subsumption was established.
+The reasoned claim remains the new proof's accounted correction of coarse
+Gram information and its weighted original-product guarantee. Neither a
+negative search result nor matching component names determines priority.
+
+9. Verified bibliographic metadata for the five requested citations
+------------------------------------------------------------------
+AV2013
+  Eugene Vecharynski and Andrew V. Knyazev.
+  Absolute Value Preconditioning for Symmetric Indefinite Linear Systems.
+  SIAM Journal on Scientific Computing 35(2), A696--A718 (2013).
+  DOI: 10.1137/120886686.
+  https://doi.org/10.1137/120886686
+  https://arxiv.org/abs/1104.4530
+  Primary publisher/author metadata:
+  https://www.merl.com/publications/TR2013-016
+  Use Definition2.2, Theorem2.3 and Corollary2.4 for AV scope;
+  Theorem2.1 for the ideal two-step observation.
+
+PLHR2015
+  Eugene Vecharynski and Andrew Knyazev.
+  Preconditioned Locally Harmonic Residual Method for Computing Interior
+  Eigenpairs of Certain Classes of Hermitian Matrices.
+  SIAM Journal on Scientific Computing 37(5), S3--S29 (2015).
+  DOI: 10.1137/14098048X.
+  https://doi.org/10.1137/14098048X
+  https://arxiv.org/abs/1408.0042
+  Use Section4/Algorithm2 for block PLHR and Section5 for AV/pseudo-
+  inverse projector discussion. The arXiv first submission was 2014;
+  the cited journal publication is 2015.
+
+Pan2022
+  Victor Y. Pan.
+  New Progress in Classic Area: Polynomial Root-squaring and Root-finding.
+  arXiv:2206.01727 [math.NA] (2022), version 2, June 30, 2022; 21 pages.
+  First submitted May 30, 2022. No journal reference is listed on the
+  inspected primary arXiv record; cite it as a preprint.
+  https://arxiv.org/abs/2206.01727v2
+  https://doi.org/10.48550/arXiv.2206.01727
+  Use Section1.2, equations2--5, for classical DLG coefficient recovery.
+
+Musco2015
+  Cameron Musco and Christopher Musco.
+  Randomized Block Krylov Methods for Stronger and Faster Approximate
+  Singular Value Decomposition.
+  Advances in Neural Information Processing Systems 28 (NIPS 2015),
+  1396--1404. Curran Associates, Inc. Editors: C. Cortes, N. Lawrence,
+  D. Lee, M. Sugiyama, R. Garnett.
+  https://proceedings.neurips.cc/paper/2015/hash/1efa39bcaec6f3900149160693694536-Abstract.html
+  https://arxiv.org/abs/1504.05477
+  The official proceedings BibTeX confirms authors/title/volume/year/
+  editors/publisher but leaves its pages field empty; the page range is
+  also recorded in the authors' university publication metadata.
+  Use the full arXiv Theorem12 and Lemma9 Property2 for quantiles.
+
+NPV2024
+  Vincent Neiger, Clément Pernet, Gilles Villard.
+  Computing Krylov iterates in the time of matrix multiplication.
+  Proceedings of the International Symposium on Symbolic and Algebraic
+  Computation (ISSAC '24), Raleigh, NC, July 16--19, 2024, 419--428.
+  ACM, New York, NY, USA. DOI: 10.1145/3666000.3669715.
+  https://doi.org/10.1145/3666000.3669715
+  https://arxiv.org/abs/2402.07345v2
+  https://perso.ens-lyon.fr/gilles.villard/BIBLIOGRAPHIE/PDF/Kiterates.pdf
+  The author-hosted camera-ready PDF directly confirms pages 419 and 428.
+  Use Section5.1, Corollary5.2 for deterministic fast Frobenius form.
+
+10. Final review of the actual amended manuscript
+-------------------------------------------------
+Read docs/absolute-pencil-spectral.tex in full, including theorem/model,
+all proof sections, parameter comparison, antecedents, and every bibliography
+entry. Then reread the amended passages after the parent applied the
+corrections below. This section reviews that actual copy, rather than only
+the earlier construction note. No manuscript edits were made by this agent.
+
+Result: no substantive proof, literature-scope, or comparison error found
+in this review of the amended exact-real-arithmetic theorem. This does not
+turn the targeted literature audit into an exhaustive priority certificate.
+
+Exact corrections reported and verified resolved
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  * Pan's initials V. Y. Pan were already correct. The primary title is
+    'New Progress in Classic Area: Polynomial Root-squaring and Root-finding'.
+    The extra article 'a' before 'Classic Area' has now been removed.
+  * 'It never constructs the true dense Grams' was too absolute because
+    the specified identity-sketch branches can form an exact Gram. The
+    amended copy correctly says it uses explicit sketched Grams and
+    true-factor actions without an exact spectral decomposition.
+  * The coefficient lemma's operation bound now uses a nonzero logarithmic
+    expression at p=1. The initial p0 is the smallest sufficient power of
+    two, selected by scalar square-root iteration without a logarithm oracle.
+  * The rank(A_s)<j branch now precedes coefficient division and returns
+    q_t=1. This handles exceptional rank loss before undefined ratios.
+
+Literature and bibliographic review
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The antecedents section correctly identifies AV/inertia/block PLHR,
+Musco's per-vector theorem, root-squaring and characteristic algorithms
+as established. Its statement that the inspected theorems do not supply
+the complete raw-factor relative spectral-tail runtime matches the scoped
+audit. It explicitly distinguishes the weighted defect and physical lift
+from bounded congruent spectrum alone. It also preserves the harder
+original m=N^(8/9), theta=1/m target as unresolved.
+
+Every listed title/author/year/URL was checked against primary metadata.
+The existing abbreviated bibliography is correct after the Pan fix.
+Section9 supplies the detailed AV, PLHR, Pan, Musco and NPV metadata.
+Additional verified details for the other cited entries, if desired:
+
+  Amanov--van den Berg--Zuiddam:
+    Alimzhan Amanov, Maxim van den Berg, Jeroen Zuiddam.
+    Multiplying matrices via polynomials: exposition and barriers.
+    arXiv:2610.30054, submitted October 21, 2026.
+    https://arxiv.org/abs/2610.30054
+    Its primary abstract explicitly gives the bound over every field,
+    including the reals, and the full asymmetric rectangular exponent.
+
+  Cohen--Nelson--Woodruff:
+    Michael B. Cohen, Jelani Nelson, David P. Woodruff.
+    Optimal Approximate Matrix Product in Terms of Stable Rank.
+    ICALP2016, LIPIcs55, article11, 11:1--11:14.
+    https://doi.org/10.4230/LIPIcs.ICALP.2016.11
+    The first arXiv version is2015, but the cited conference year2016
+    and final arXiv version2016 are correct.
+
+  Jeannerod--Pernet--Storjohann:
+    Claude-Pierre Jeannerod, Clément Pernet, Arne Storjohann.
+    Rank-profile revealing Gaussian elimination and the CUP matrix
+    decomposition. Journal of Symbolic Computation56,46--68 (2013).
+    https://doi.org/10.1016/j.jsc.2013.04.004
+    https://arxiv.org/abs/1112.5717
+    Algorithm6 and Propositions3,6 are the correct cited labels:
+    they compute rank/row rank profile and the rank-sensitive cost,
+    without a generic-rank promise. Applying to the transpose selects
+    independent original columns. Padding dimensions at most m gives
+    the required O(m^omega) exact rank-revelation bound.
+
+  Neiger--Pernet:
+    Vincent Neiger, Clément Pernet. Deterministic computation of the
+    characteristic polynomial in the time of matrix multiplication.
+    Journal of Complexity67, article101572 (December2021).
+    https://doi.org/10.1016/j.jco.2021.101572
+    https://arxiv.org/abs/2010.04662
+    Theorem1.1 explicitly accepts an arbitrary base field and any supplied
+    feasible square-MM exponent greater than two; its applicability to
+    real exact field operations is direct.
+
+The Vecharynski--Yang entry's 2016/2017 designation correctly separates
+the preprint from the later book chapter. A fully expanded reference can
+use the 2017 chapter DOI already supplied in this audit. 'NeurIPS2015'
+is recognizable current terminology for the proceedings titled NIPS2015;
+this is not a bibliographic error.
+
+Block cost and example fairness
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The manuscript now proves the L<=m simplification using deterministic CUP
+rank revelation and exact Gram/Cholesky orthogonalization. This resolves
+the earlier qualification: width<=m alone would not absorb conventional
+mL^2 QR into m^omega. The arbitrary-L theorem retains the conservative
+term, and independent confidence repetitions use separate bases. Physical
+columns ZJU remain independent, so their Gram orthogonalization cost is
+bounded by Acal(r)+m^omega through dimension padding and tensor symmetry.
+
+For N=m^(59/50), r=m^(1/10), theta=m^(-21/50), h=m^(-7/100),
+the actual degree and raw-width exponents are 7/40 and11/40, including
+only subpolynomial logarithmic factors. The sketch row exponent57/50
+is smaller than59/50. The three dominant construction exponents are
+3362/1425,471/200,9/4. The first is largest and lies below output59/25
+by1/1425, giving N^(6724/3363+o(1)). Fixed multiplication slacks fit
+inside that strict margin. Parameter restrictions hold for sufficiently
+large m, as appropriate for the asymptotic corollary.
+
+The ordinary comparison already charges factor-block products at the
+input-optimal width r, giving m^(239/100), not I*r/sqrt(theta).
+Its raw basis exponent is .31; even conventional basis QR, projected
+Gram and a conservative small-core extraction remain below that term.
+The exact-Gram exponent7056/3481 in N and the earlier stochastic exponent
+489/200 in m are correct. The new growing-rank output statement is
+N^(2+o(1)), explicitly distinguished from a literal fixed-rank O(N^2)
+claim. All comparisons are labeled upper bounds, with no implied lower
+bound or global domination statement.
+
+Proof and model spot checks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The fixed even inverse-mass polynomial is SPD on every computed support,
+including failed embedding outcomes, and has the stated successful-event
+relative error. The smooth absolute core is formed by a finite Newton
+iteration; the margin, weighted defect, and uniform lack of lambda_1/t
+in its normalization agree with the independent proof audit. The ordered
+quantile's deterministic one-sided bound justifies minimum-over-repetitions
+confidence amplification. The separate Gaussian filter avoids an unproved
+monotonicity claim for truncated enlarged Ritz spaces.
+
+The threshold uncertainty uses a j-dimensional min--max subspace with
+the correct eigenvalue ordering. The strong-action transfer retains b
+on the weighted defect and uses the correct dual lift ZJU. Its final
+constants are safely within the claimed squared-error factor. The upper-
+endpoint fallback and coefficient initialization avoid any input-condition
+or actual-gap logarithm. Adaptive randomness is covered by fresh draws
+conditioned on all prior queries and the common sketch event.
+
+The manuscript explicitly counts exact field operations, comparisons,
+positive square roots and Gaussian draws; it excludes representation size,
+floating-point stability and bit complexity. It identifies the potentially
+large characteristic coefficients, powers and polynomial values, rather
+than hiding their word lengths in a tilde. Operation budgets are capped
+on failed outcomes. These qualifications are accurate and material to the
+proof, not merely generic numerical caveats. No unresolved correction
+remains from this actual-copy review.
+
+11. Bounded hybrid-comparator audit and the amended full rank range
+------------------------------------------------------------------
+This addendum supersedes only the rank-range portion of Section10. Read
+the amended Corollary7 and its proof in the actual manuscript after the
+range was increased to 1<=r<=ceil(m^(59/100)). No manuscript was changed.
+The question here is whether an already proved composition of stochastic
+raw-factor solves, fast block multiplication, and an existing global PCA
+wrapper matches total exponent two. Component precedents are insufficient.
+
+Outcome and remaining uncertainty
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+No such independent complete upper bound was established by this bounded
+audit. The inspected published truly-block stochastic theorems do not
+supply the required uniform, global, gap-free, relative spectral-tail
+wrapper at the favorable simultaneous-solve cost below. However, batching
+one fixed positive system is a valid and substantial saving: its arithmetic
+fits below output even at the new largest rank. Therefore one must not
+argue that every stochastic hybrid pays r separate scalar kernel costs,
+or that arithmetic rules out a stronger block-stochastic composition.
+A suitable global block inverse wrapper would be a serious comparator.
+Its absence from the inspected results is not a lower bound or priority
+certificate.
+
+Actual amended corollary: independent arithmetic check
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Put a=59/50, rho=59/100, b=21/50, u=7/100, where N=m^a,
+r<=m^rho, theta=m^(-b), and h=m^(-u). Logarithms and ceilings are
+absorbed into o(1) in the following exponent calculations.
+
+  input exponent I:                    109/50 = 2.18;
+  degree exponent (b-u)/2:               7/40 = .175;
+  largest raw-width exponent rho+q:   153/200 = .765 < 1;
+  largest Acal(r+1) exponent:      43681/20000 = 2.18405;
+  degree times action exponent:   47181/20000 = 2.35905;
+  sketched-Gram exponent:             3362/1425 = 2.3592982456...;
+  square-core exponent:                  9/4 = 2.25;
+  output exponent:                     59/25 = 2.36.
+
+The setup exceeds the block actions by exactly 283/1140000, and lies
+below output by 1/1425. Thus its N exponent is 6724/3363=2-2/3363.
+The sketch row exponent57/50 is below a=59/50. All strict margins permit
+fixed multiplication-exponent slacks. The input-free output expansion
+condition is at equality: rho*(a+a)=a*a. It therefore gives N^(2+o(1))
+through r=N^(1/2+o(1)), including the endpoint. Conventional mL^2
+would cost m^(253/100), so the manuscript's fast CUP/Gram core accounting
+is essential rather than cosmetic. Its L<m hypothesis holds uniformly.
+
+The ordinary fast-batched comparison N^(239/118+o(1)) is fairly confined
+to r<=m^(59/109): each factor action there has input exponent109/50,
+and q0=m^(21/100+o(1)). At the upper endpoint the raw basis exponent is
+8189/10900, fast tall rank revelation is bounded by exponent92393/43600,
+and projected-Gram, factor-projection and even cubic Ritz costs remain
+below239/100. At larger ranks that same fixed ordinary exponent should
+not be reused. The manuscript correctly uses the exact-Gram bound
+N^(7056/3481+o(1)) there. These are checked available upper bounds, not
+lower bounds on any algorithm family.
+
+A real simultaneous-solve saving
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The old raw-factor SVRG/APPA analysis extends to multiple right-hand sides
+for ONE fixed SPD matrix D without a multiplicative block-width penalty.
+For f(X)=tr(X^T D X)/2-tr(R^T X), use Frobenius inner products and the
+same sampled Dhat on X-Xref. If E||Dhat x||^2<=V||x||^2 for every x,
+then summing over columns gives E||Dhat X||_F^2<=V||X||_F^2. The same
+quadratic epoch proof and approximate-proximal acceleration apply. Absolute
+Frobenius error also bounds operator error; confidence/precision changes
+contribute logarithms rather than an arithmetic factor equal to the width.
+This is a direct extension of the audited solver proof, not a claim that
+the published PCA wrappers already perform this block reduction.
+
+With width w and a raw batch of m samples, let
+
+  F_w = Acal(w) + lower-order core work,
+  C_w = TMM(m,m,w) + O(m^2).
+
+For a normalized SPD shift with minimum eigenvalue mu and bounded raw
+second moment, the favorable accelerated simultaneous-solve bound is
+
+  ~O(F_w + F_w^(3/4)*C_w^(1/4)/sqrt(mu)).
+
+This follows from the same regularization balance as the scalar formula.
+No factor w should be placed outside it. The sampling and initial coarse
+coordinates can be shared for this fixed system. Each full gradient and
+each component action still performs its actual fast block products.
+
+At the three useful widths, setting mu=Theta(theta) gives these powers
+of m for a SINGLE such block solve:
+
+  width exponent       F_w exponent       C_w exponent       solve exponent
+  .1                   109/50             2                  469/200
+  59/109               109/50             51529/25724         6034303/2572400
+  59/100               43681/20000         11881/5900          11098937/4720000
+
+The last exponent is2.3514697034..., below output2.36 by
+40263/4720000. Its N exponent is11098937/5569600=1.9927709351....
+Thus the enlarged rank range does not remove the potential hybrid threat.
+
+Even on the bounded threshold T=I-J^(-1)KJ^(-T), an optimistic comparison
+should grant the same favorable exponent rather than dismiss batching.
+At this fixed power-law parameter point the inverse-mass polynomial has
+bounded degree. Granting a corresponding unbiased normalized T sampler
+with second moment O(h^(-2)), a positive-system shift of gap
+alpha=Theta(theta/h) would have accelerated contribution
+
+  F_w^(3/4) * (C_w*h^(-2))^(1/4) / sqrt(alpha)
+    = Theta(F_w^(3/4)*C_w^(1/4)/sqrt(theta)).
+
+This paragraph is a favorable conditional kernel grant, not a proved
+new global block PCA algorithm or a published raw-factor theorem. It
+shows why solving the wrapper issue is necessary for a fair comparison.
+
+Why the existing scalar and block results do not complete this reduction
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The previous AppxPCA/Nystrom procedure selects successive residual
+operators and shifts adaptively. All these future solves cannot be put
+into one same-matrix block call: later operators, normalization scales,
+and sampling probabilities depend on earlier outputs. Parallel independent
+top-vector calls also need not span the ordered top-r threshold space.
+If original-product sampling is reused after residual normalization,
+its variance can depend on lambda1(original)/lambda1(residual); PSD
+monotonicity by itself does not remove that ratio. Shifts safe for a
+deflated problem need not be SPD for the original undeflated problem.
+
+For bounded T with a relevant cutoff near1 and norm at most2, a shift
+above its global largest eigenvalue is SPD, but it can leave only
+O(alpha) separation between eigenvalues around the desired interior
+cutoff. A shift near1 is indefinite when some selected eigenvalues
+exceed it. Applying SVRG/APPA for an aggregate strongly convex quadratic
+at that shift is then unjustified. The usual two-sided rational-sign
+denominator (T-I)^2+alpha^2 I is SPD but has minimum eigenvalue alpha^2;
+the same accelerated solver would pay 1/alpha rather than1/sqrt(alpha)
+without an additional structural argument. These observations identify
+missing proofs in particular reductions; they are not impossibility
+claims for rational, block, or stochastic eigensolvers.
+
+Musco--Musco2015 is already a valid global block wrapper on T, requiring
+~O(alpha^(-1/2)) exact T actions. It is precisely the published wrapper
+used in the manuscript after the new weighted-defect construction.
+An approximate solve of a positive shifted system is a different
+operator from a T action; substituting it does not invoke that theorem
+unchanged. Independently solving once per action retains the sequential
+outer action count. Conversely, granting the manuscript's F, weighted
+transfer and physical lift makes the Musco composition a valid way to
+obtain the new bound, rather than an independent prior raw-AB comparator.
+
+Targeted primary theorem checks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  * Zhiqiang Xu and Xin Gao, On Truly Block Eigensolvers via Riemannian
+    Optimization, AISTATS2018, PMLR84:168--177.
+    https://proceedings.mlr.press/v84/xu18b.html
+    https://proceedings.mlr.press/v84/xu18b/xu18b.pdf
+    Theorem4.3 is a genuinely global block RSVRG result. Its linear
+    rate uses the actual kth eigengap and an initial-overlap parameter.
+    Its kth-gap-free O(1/epsilon) alternative still depends on nearest
+    positive gaps in the step-size conditions; Remarks1--2 explicitly
+    expose those gaps and the random-start overlap issue. It does not
+    provide the uniform accelerated global spectral-tail wrapper needed
+    above merely from ||T||<=2. This is a substantive comparator, not
+    a scalar theorem mislabeled as a block result.
+
+  * Peng Xu, Bryan He, Christopher De Sa, Ioannis Mitliagkas,
+    Christopher Re, Accelerated Stochastic Power Iteration,
+    AISTATS2018, PMLR84:58--67.
+    https://proceedings.mlr.press/v84/xu18a.html
+    https://proceedings.mlr.press/v84/xu18a/xu18a.pdf
+    https://proceedings.mlr.press/v84/xu18a/xu18a-supp.pdf
+    Theorem5 is a scalar stochastic variance-reduced theorem with a
+    constant-overlap initial vector and an actual-gap-tuned momentum.
+    Its batch size also depends inversely on the spectral gap, so the
+    accelerated iteration count is not the total arithmetic cost.
+    Supplement Theorem11 gives a deterministic block recurrence, not
+    a block extension of the stochastic Theorem5. The inspected result
+    therefore does not justify a global rank-free stochastic wrapper.
+
+  * Ohad Shamir, Fast Stochastic Algorithms for SVD and PCA:
+    Convergence Properties and Convexity, ICML2016, PMLR48:248--256.
+    https://proceedings.mlr.press/v48/shamira16.pdf
+    Theorem1's block VR-PCA result assumes a warm start and a positive
+    actual kth gap; its runtime depends on that gap. It does not give
+    the desired uniform global gap-free reduction.
+
+  * Arun Jambulapati, Syamantak Kumar, Jerry Li, Shourya Pandey,
+    Ankit Pensia, Kevin Tian, Black-Box k-to-1-PCA Reductions: Theory
+    and Applications, COLT2024, PMLR247:2564--2607.
+    https://proceedings.mlr.press/v247/jambulapati24a.html
+    https://proceedings.mlr.press/v247/jambulapati24a/jambulapati24a.pdf
+    Its model recursively calls a 1-PCA oracle k times. Improved
+    energy/correlation approximation degradation in that reduction
+    does not delete the growing-rank sequential calls or furnish a
+    simultaneous block inverse theorem.
+
+  * The already audited generalized LazyEV/LazyCCA, raw CCA/PLS and
+    stochastic-product sources were reused for their actual input
+    models, not searched again here. Allen-Zhu--Li's gap-free GEP
+    wrapper is sequential deflation. Direct full-rank CCA whitening
+    removes the product singular values, and ridge versions introduce
+    factor/product condition parameters. Raw stochastic PLS supplies
+    factor-energy-dependent additive-objective bounds. None of those
+    audited reductions supplies the stated arbitrary-factor bound
+    with all those parameters absent.
+    https://arxiv.org/abs/1607.06017
+    See docs/stochastic-priority-audit.txt for the exact source scopes.
+
+Exact-Gram and proxy-only hybrid checks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+For these balanced dimensions, forming even one full true factor Gram
+by the checked rectangular algorithm already has exponent3528/1475 in m,
+or7056/3481 in N, above output. Relative sketches of accuracyTheta(theta)
+would need nominal row exponent1+2b=46/25>N's59/50; the identity branch
+reverts to exact Grams. A cheaper coarse proxy alone gives relative
+accuracyO(h), not theta. The common-proxy two-diagonal counterexample
+in Section8 prevents a uniform theta<<h spectral-tail conclusion from
+only those inaccurate Grams. True-factor correction remains necessary.
+These checks do not exclude a more efficient correction using those
+Grams; the simultaneous-solve calculation above deliberately keeps
+that possibility open.
+
+Final scope: the amended range and arithmetic pass this review. The
+checked known wrappers do not complete a matching quadratic stochastic
+hybrid, but the same-system kernel bound is already favorable throughout
+the full rank range. The defensible claim remains the concrete proved
+absolute-pencil upper bound and its comparison to explicit audited
+upper bounds, with global priority and stronger block-stochastic
+compositions unresolved.
+
+12. Actual-copy amendment: coefficient sign tests and absolute error
+-------------------------------------------------------------------
+Reviewed the amended Sections4,6,7,9 and the antecedents/bibliography in
+docs/absolute-pencil-spectral.tex, then reread the final boundary-wording
+changes. This is a review of the actual simplified manuscript. No broad
+literature search or manuscript edit was made. No substantive mathematical
+correction remains after the small statement/indexing fixes below.
+
+Plain coefficient ratio and the new finite bracket
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+For decreasing nonnegative eigenvalues, the identity for j*e_j gives
+e_j/e_(j-1)>=v_j/j because every (j-1)-subset omits a top-j index.
+Removing the largest-index element of each j-subset proves the upper
+bound (d-j+1)*v_j: that element has value at most v_j, and each remaining
+subset is charged at most d-j+1 times. The zero-coefficient check handles
+rank loss before any ratio is formed. On the computed support Q0 is
+positive definite and j<=k, so the initialization's denominator is nonzero.
+
+Consequently rho/k<=lambda_j(Q0)<=k*rho. Combining the existing
+Q0/Q and mass bounds gives [rho/(4k),4k*rho] for lambda_*, of ratio
+16k^2. After Q bisections the interval width is at most4k*rho/2^Q,
+whereas the stopping tolerance is at least
+(theta/10^6)*rho/(4k). Thus
+Qmax=ceil(log2(16*10^6*m^2/theta))+1 is a valid cap. Scalar halving
+computes such a cap with the permitted operations. No singular-value-ratio
+logarithm, matrix powering, root-squaring, scalar root extraction loop,
+or initial target-scale eigenvalue approximation is needed.
+
+Exact Descartes tests
+~~~~~~~~~~~~~~~~~~~~~
+For a real-rooted polynomial with zero roots removed, let D be its degree
+and P,N its positive/negative root counts, including multiplicities.
+Descartes gives P<=V(p), N<=V(p(-x)). For consecutive nonzero coefficient
+degrees separated by g, the two variation counts together contribute
+one if g is odd, and zero or two if g is even, always at most g.
+Summing gives V(p)+V(p(-x))<=D=P+N, forcing equality in both counts.
+This independently verifies the manuscript's elementary proof. Removing
+zero roots excludes eigenvalues exactly on the test level, as required.
+
+Thus characteristic coefficients plus exact sign comparisons compute
+strict shifted inertia at1 and1-2*epsilon. This is valid at repeated roots,
+at zero roots, and without any eigenvalue separation. The existing fast
+characteristic-polynomial references are sufficient for the operation
+bound. No numerical ordered eigenvalue or exact eigensolver is introduced.
+
+For each compressed run, beta_j<=lambda_j(T)^2 deterministically. Hence
+ANY beta_j>1 is a safe below decision on the sketch event. If ALL beta_j
+are at most1-2*epsilon and any Musco run succeeds, then
+lambda_j(T)^2<1, so above is safe. In the remaining case some beta_j
+exceeds1-2*epsilon and none exceeds1; with a successful run,
+
+  1-2*epsilon < lambda_j(T)^2 <= 1/(1-epsilon).
+
+This implies |1-lambda_j(T)|<=2*epsilon<alpha for the stated parameters.
+Missing j-th compressed eigenvalues count as zero. Independent repetitions
+fail jointly only when all per-vector runs fail. The minimum/maximum
+conceptual notation is used only in the proof; the algorithm performs
+the two exact count tests. The changes preserve all equality cases and
+conditional-on-the-past confidence amplification.
+
+Search, confidence, and arithmetic qualifications
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The weighted near and upper-endpoint transfer proofs are unaffected by
+replacing numerical Ritz values with these count decisions. The safe
+bracket invariant, per-query fresh draws, Qmax cap and final independent
+filter remain valid. The main theorem's budgets sum to at most
+delta/2+(Qmax+1)*delta/[4(Qmax+1)]<delta. Range algebra continues to
+charge raw columns; characteristic extraction adds only the same core
+cost. The simplified precision paragraph correctly retains potentially
+large coefficients, arbitrarily delicate sign tests, ill-conditioned
+Cholesky/rank computations and polynomial growth. Exact arithmetic is
+still essential; removal of root-squaring is not a stability theorem.
+
+Adaptive absolute-error corollary
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+For supplied e>0, fixed t=e^2/(1+theta/4) makes threshold bisection
+unnecessary. At an attempted r<k, absence of any beta_(r+1)>1 plus
+one successful per-vector repetition implies lambda_(r+1)(T)<=1+alpha.
+The existing final filter and physical lift then give squared residual
+at most (1+758*theta/10^6)*t<e^2. For r=0 the accepted operator-norm
+bound itself gives the required strong residual with the zero-dimensional
+space, so explicitly writing zero is valid without a Gaussian filter.
+
+By the mass comparison,
+lambda_(r_e+1)(Hhat)<=e^2/[(1+theta)^2*(1-epsilon_m)]<t.
+Thus at every attempted r>=r_e with r<k, exact inertia gives
+lambda_(r+1)(T)<=1 and compression gives beta_(r+1)<=1 on EVERY
+repetition. No successful Musco run is required for the stopping-rank
+bound. Doubling 0,1,2,4,... therefore stops by the first width at least
+r_e, at most2*r_e; at r_e=0 it stops at zero. An earlier exact-support
+branch returns no larger width. The stopping-rank statement needs only
+the sketch event; accepted-output error additionally uses the allocated
+per-vector and final-filter events.
+
+There are at most ceil(log2(m))+2 attempts. Fresh conditional failure
+budgets over this known number of attempts give a SINGLE event of
+probability at least1-delta for output error, output width and the stated
+r_e-sensitive runtime. On it, all processed widths are bounded by
+s_e=min(m,2*r_e+1), and the output width by ell_e=min(m,2*r_e).
+Monotonic padding and the logarithmic number of attempts give the claimed
+cost; its displayed raw-width condition suffices throughout. When r_e=0,
+the expansion term is interpreted as zero and writing still costs np.
+Off the good event, the rank loop stops at the computed support cap m;
+the general raw-width charge gives a finite all-outcome arithmetic bound.
+This confidence statement is for the supplied e, not a simultaneous
+uncountable family of future thresholds.
+
+Boundary wording reported and verified corrected
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The parent amended Corollary8 to put error, width and the r_e-sensitive
+cost explicitly on the same probability-at-least1-delta event. Its
+definition now takes r_e over integers0,...,m. The arithmetic model now
+extends eigenvalues and singular values by zero past the matrix dimension,
+so lambda_(r_e+1)(Hhat) is defined even when r_e reaches the support
+dimension. These resolve the only statement/indexing clarifications
+identified in this amendment review.
+
+Antecedent wording after simplification
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The actual manuscript no longer cites Pan or presents root-squaring as a
+step. Descartes' rule is correctly identified as established, and the
+remaining fast characteristic-polynomial and Musco citations still match
+the exact operations used. The unchanged scoped AV/PLHR and weighted-
+transfer claims continue to match Sections1--11 of this audit. Historical
+Pan/root-squaring discussion earlier in this audit records the previous
+construction and is not a claim about the final simplified manuscript.
+
+13. Growing-depth endpoint: named baselines and targeted PCP check
+-----------------------------------------------------------------
+Read the saved Section12 of docs/block-hierarchy-audit.txt. This section
+independently checks its comparison envelope and a narrowly targeted
+projector-reduction antecedent family. It does not replace the separate
+constant/invariant proof audits or claim global algorithmic priority.
+
+Full ordinary-block postprocessing at the largest rank
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Write N=m^(1+d), theta=m^(-5d/2), and r<=sqrt(m), for fixed
+1/8<d<(sqrt(2)-1)/2. The standard gap-free block-Krylov degree is
+q0=m^(5d/4+o(1)). Its width-r factor products are input optimal:
+the fixed m-by-m-by-ceil(sqrt(m)) kernel, row tiling and tensor
+permutation give Acal(r+1)<=m^(2+d+o(1)). Therefore the checked
+ordinary iteration bound is m^(2+9d/4+o(1)).
+
+This does include the difficult r=sqrt(m) endpoint. Put
+l=1/2+5d/4 for the raw Krylov-width exponent. Then l<1. The following
+are bounds on all other familiar phases, in powers of m:
+
+  physical fast tall QR/CUP: (1+d)+(5/4)l=13/8+41d/16;
+  projected Gram:            (1+d)+l+l^2/[4(1+d)];
+  small-core square MM:      (9/4)l;
+  even cubic dense Ritz:     3l=3/2+15d/4.
+
+The projected-Gram exponent is below the displayed QR bound because
+l<1+d. The QR bound is below2+9d/4 by3/8-5d/16>0. Cubic Ritz is
+below it by1/2-3d/2>0 throughout the stated interval. Thus no raw-basis,
+QR, Gram or conventional cubic Ritz phase changes the iteration exponent.
+Products on the wider raw basis can simply be split into q0 blocks of
+width r, costing at most the same iteration term; no uncharged wide
+factor pass is assumed. Smaller target ranks only decrease these costs.
+
+The output product is input optimal as well: r exponent1/2 is at most
+(1+d)/2. Thus expansion costs N^(2+o(1)), below the ordinary iteration
+term. A conservative quartic max-pivot-Jacobi charge would NOT be absorbed
+at this endpoint; the comparison uses the usual cubic dense Ritz or
+faster dense-core convention. This is an arithmetic comparison, not an
+arbitrary-input finite-word or stability theorem. The earlier small-rank
+argument absorbing a quartic core must not be reused here.
+
+Exact-Gram comparison and optimization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The checked rectangular Gram-formation exponent is
+
+  E_G=2+d+1/[4(1+d)].
+
+Its square-MM core term9/4 is smaller throughout the stated interval.
+The named Gram route uses the conventional fast dense-core SVD/PCA
+postprocessing bound, rather than charging a cubic m^3 eigensolver.
+This conventional arithmetic scope is already explicitly discussed in
+Jin--Sidford2019 Section1.4; it is not a new bit-complexity assertion.
+
+Dividing the complete named costs by1+d and subtracting output exponent
+two gives
+
+  g_K(d)=d/[4(1+d)],
+  g_G(d)=1/[4(1+d)^2]-d/(1+d).
+
+Both are positive in the prescribed interval. The first increases
+strictly and the second decreases strictly. Their unique intersection
+solves5d(1+d)=1, namely
+
+  d_star=(3sqrt(5)-5)/10=0.1708203932...,
+  s_star=(7-3sqrt(5))/8=0.0364745084....
+
+It lies strictly inside the interval and maximizes min(g_K,g_G).
+At it, alpha_star=1/(1+d_star)=(3sqrt(5)-5)/2, so
+r<=sqrt(m)=N^(alpha_star/2+o(1)) and
+theta=N^(-5d_star/[2(1+d_star)]+o(1))=N^(-10s_star+o(1)).
+The comparison is new totalN^(2+o(1)) versus these named bounds
+N^(2+s_star+o(1)). The endpoint gap is attained as an exponent statement;
+it is not a literal O(N^2) construction bound with fixed hidden constants.
+At fixed small rank the earlier stochastic route can already match the
+output envelope, so no uniform growing-rank dominance over that route
+or global best-known algorithm is asserted.
+
+The simultaneous-solve threat is still real
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+At r=sqrt(m), both the actual raw-batch action C_r and the true-gradient
+block cost have the favorable bounds
+
+  C_r=m^(2+o(1)), F_r=m^(2+d+o(1)).
+
+The already audited ONE-SPD-system block SVRG/APPA formula at
+mu=Theta(theta) is
+
+  F_r^(3/4)*C_r^(1/4)/sqrt(theta)=m^(2+2d+o(1))=N^(2+o(1)).
+
+Thus a valid global rank-free block inverse wrapper would match this
+entire envelope. One cannot dismiss it by charging r scalar solves.
+The previously inspected scalar/deflation GEP wrappers do not supply
+that simultaneous global reduction. The following projector papers are
+more directly relevant; the accelerated one is genuinely gap-free.
+
+Verified primary PCP references and exact source scope
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Frostig, Roy; Musco, Cameron; Musco, Christopher; Sidford, Aaron.
+  Principal Component Projection Without Principal Component Analysis.
+  ICML2016, Proceedings of Machine Learning Research48:2349--2357.
+  https://proceedings.mlr.press/v48/frostig16.html
+  https://proceedings.mlr.press/v48/frostig16.pdf
+  Theorems1.2/3.2: ~gamma^(-2) ridge-inverse calls; the formal projection
+  theorem assumes separation around the supplied spectral threshold.
+
+  Allen-Zhu, Zeyuan; Li, Yuanzhi.
+  Faster Principal Component Regression and Stable Matrix Chebyshev
+  Approximation. ICML2017, PMLR70:107--115.
+  https://proceedings.mlr.press/v70/allen-zhu17c.html
+  https://proceedings.mlr.press/v70/allen-zhu17c/allen-zhu17c.pdf
+  Theorem7.3 is global GAP-FREE approximate PCP: ||X||<=1,
+  lambda in(0,1), gamma in(0,2/3], and O(gamma^(-1)log(1/(gamma*eps)))
+  approximate ridge calls. Definition3.1 allows a bounded transition
+  band; Theorem7.2 is the actual-gap counterpart. Do not describe the
+  whole paper as requiring an actual eigengap.
+
+  Jin, Yujia; Sidford, Aaron.
+  Principal Component Projection and Regression in Nearly Linear Time
+  through Asymmetric SVRG. Advances in Neural Information Processing
+  Systems32. Curran Associates, Inc.,2019.
+  https://proceedings.neurips.cc/paper_files/paper/2019/hash/3b92d18aa7a6176dd37d372bc2f1eb71-Abstract.html
+  https://arxiv.org/pdf/1910.06517
+  The publisher's BibTeX leaves pages empty. Definition1/Theorem1 allow
+  a gray transition band. Theorem5 gives polylogarithmic Zolotarev degree;
+  Theorem3's squared solver retains1/mu. In the full arXiv version,
+  Theorems6/7 are generic asymmetric SVRG/acceleration and Theorem8
+  specializes its row-covariance variance. Assumptions include a positive
+  symmetric part and charged full/component actions with norm/variance
+  control. Scalar multiple-RHS extension does not change1/mu to1/sqrt(mu).
+
+Concrete PCP compositions at the endpoint
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The 2017 reduction supplies a global projector primitive, so it addresses
+the previous scalar-wrapper concern more directly. It nevertheless uses
+~gamma^(-1) sequential ridge actions. Even granting a bounded coarse
+pencil, cutoff comparable to one, correct physical lift and width-r
+batching, choosing transition width gamma=Theta(theta) leaves the
+straight ridge composition at an available cost ~I/theta, exponent
+2+7d/2 in m. It is not the desired output bound. The 2016 polynomial
+composition has a worse transition-width exponent. This is evaluation
+of these available compositions, not a lower bound on ridge methods.
+
+The 2019 rational method avoids the polynomial call count, but solves
+((T-cI)^2+mu^2 I)x=b near the desired interior cutoff. Its asymmetric
+linearization has form [[I,-(T-cI)/mu],[(T-cI)/mu,I]], whose symmetric
+part is I. Grant the favorable bounded raw-pencil variance and common
+batching from Section11. The variance-only proof of its generic solver
+then gives an optimistic block contribution
+
+  sqrt(F_r*C_r)/mu.
+
+For a transition of ordertheta in a bounded coarse pencil, mu is
+Theta(theta) up to logarithms. The resulting available contribution is
+m^(2+3d+o(1)), above ordinary2+9d/4 and output2+2d. Directly applying
+positive-quadratic SVRG/APPA to the squared system gives the weaker
+F_r^(3/4)*C_r^(1/4)/theta, exponent2+13d/4. One may not use the
+positive-system1/sqrt(theta) rate for the asymmetric skew-block system:
+its published/proved outer acceleration pays the inverse transition
+width, as its actual Theorem7 shows.
+
+This last calculation deliberately grants more than the native input
+model: a conceptual factor sqrt(T) and its covariance samples are not
+automatically available from raw A,B. The generic asymmetric variance
+proof, rather than pretending such rows are free, is the favorable
+candidate reduction. A stronger preconditioned asymmetric/complex-shift
+solver could change this assessment; no such complete theorem was
+established in this bounded check. Introducing the new fine hierarchy
+and its weighted transfer into that solver would not be an independent
+prior subsumption of that hierarchy.
+
+The already credited multigrid AV papers likewise do not state a uniform
+arbitrary-dense-factor hierarchy with these finite level-dependent
+constants, costs and relative-tail lift. This is a scoped comparison
+of the inspected primary theorems. Global priority remains unresolved.
+
+14. Actual hierarchical manuscript: full-copy scope and rigor review
+-------------------------------------------------------------------
+Read all of docs/hierarchical-absolute-spectral.tex, including both
+theorems, every proof section, the two-level example, arithmetic limits,
+antecedents and bibliography. Then reread the amended rank-domain,
+polynomial-obstruction, relative-perturbation and Gaussian-cap passages.
+The optimized named-baseline corollary had not yet been added at this
+review stage; its independent calculation is Section13 above. No source
+edit or additional broad literature search was performed.
+
+Result at this stage: the actual fixed-depth and growing-depth statements
+match the audited construction and the stated exact-real arithmetic scope.
+No substantive correction remains from this full-copy scope/cost review.
+This is an internal independent audit, not external peer review or a
+global priority certificate. Additional mathematical checks by the other
+agents are recorded separately in the hierarchy audit.
+
+Statements and imported ingredients
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The fixed-depth theorem correctly confines hidden O_L constants to a
+fixed depth, states the explicit C_j/B_j/A_L recurrence, and uses an
+ACTUAL raw-width condition including all logarithms. The growing-depth
+theorem unfolds every level dependence instead of invoking O_L with
+L=O(loglog(m)). It restricts confidence to constant/inverse-polynomial
+failure, ranks to sqrt(m), and d to an interval with a positive core/output
+margin. It asserts exponent-two total time, not literal O(N^2).
+
+The companion imports are now its simplified exact-coefficient versions:
+plain coefficient ratio, exact Descartes shifted inertia, no numerical
+Ritz eigenproblem and no root-squaring. Their per-vector Musco guarantee
+and deterministic-safe below branch are stated with the correct ordering.
+The support identity is M=Z*Bcal; the false stronger identity A=Z*Lc
+is not used. Computed support never exceeds the true product rank even
+off the coarse event, while full range recovery handles zero tails.
+
+The amended model explicitly declares integer1<=r<=m and extends
+eigenvalues/singular values by zero past dimension. Thus r=m and
+support-boundary indices are defined. Rank-zero and support<=r paths
+occur before coefficient division and before the hierarchical search.
+
+Shared mass, finite interpolation and the relaxed invariant
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The same true Neumann mass B_m is fixed across ALL thresholds and levels.
+Its epsilon_m=theta/10^9 is kept separate from alpha*h_L=theta/A_L;
+this distinction matters when A_L grows. Fine inverse masses are fixed
+polynomials in fine-factor Grams, not approximate solves or true-factor
+actions. Their O(h_j) proxy error remains uniform at every positive t.
+
+Spot checks of the noncommuting refinement agree with the independent
+proof: inflation P=(1+epsilon)Fprev gives the correct kappa_P power;
+Young's inequality controls E Fprev^(-1)E, and the ideal identity
+f_eta-x^2/f_eta=2eta is exact. The coefficient multiplying the quadratic
+term is uniformly below one at epsilon<=1/1024. The relative polynomial
+perturbation resets kappa to five with the displayed C_j recurrence.
+No ratio restriction depending on a growing C_j is hidden. The amended
+relative-perturbation lemma states positive metrics and0<=delta<1.
+
+The finite Chebyshev interpolation proof uses an analytic ellipse away
+from the imaginary singularities, dyadic Gauss nodes, positive half-angle
+square roots and a real-pair DCT. Its node construction and coefficient
+preparation respect the permitted field/square-root operations. Tolerance
+depends on B_j only through a logarithm of its size. A fine polynomial
+matrix or inverse fine polynomial is never computed.
+
+Transfer and exact physical output
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The relaxed invariant is correctly distinguished from a PSD ordinary
+defect bound. Its sign-indefinite left side is sufficient for both the
+near-threshold min--max argument and the strong-action transfer because
+kappa remains constant and alpha is correspondingly small. The physical
+lift is Z R_L^(-T) U, with the correct dual orientation. The final
+physical, threshold and shared-mass factors fit the error budget.
+
+The carried identity T S^T=S^T V0 gives exactly
+Y=S^T Wout and R_L^(-T)Y=R0^(-T)Wout. Hence the computed physical
+span Z J0 Wout is the required dual span. The manuscript does not apply
+a nonsymmetric Lanczos theorem to V0 or invert an effective fine factor.
+Selecting independent Wout columns before the physical lift handles
+arbitrary rank loss. Coarse matrices are explicitly factored and charged.
+
+The amended covariance budget is executable: U_S=2^L sqrt(h0/h_L)
+bounds kappa(S), and R_G=(100*k*U_S/beta)^3 is an ample deterministic
+head/tail capture bound. Direct column-distance and Frobenius-Markov
+estimates give, for example,16*k^3*kappa(S)/beta^2 with failure<=beta;
+R_G dominates it. Increasing the scalar Chebyshev denominator to2R_G/alpha
+therefore fixes a finite degree using parameter-only quantities. Gaussian
+head/tail independence is not assumed. The resulting logarithm depends
+on the schedule ratio, not on input singular values or coarse conditioning.
+
+Growing depth and all costs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The accepted square-root schedule has the stated exact terminal window
+sqrt(rho)<=h_L<1024sqrt(rho). The no-accepted-level branch is treated
+separately by the rank-preserving companion algorithm; simply writing AB
+would have violated the width cap. This affects only finitely many m
+in each fixed-d asymptotic family.
+
+B_L and C_L are polylogarithmic; interpolation and fine-mass degrees
+have a common O(log(m)) bound after their explicit ratio factor.
+The conservative recurrence unfolds to exp(O((loglog(m))^2)), and
+the fixed-shape multiplication overhead chi(m) occurs once per expanded
+leaf, not once per recursive depth. True K appears once per outer
+operator action. Fine leaf costs use stored sketched factors, including
+identity fallbacks, with no fine Gram hidden. All sketches are formed
+and stored within the charged input times logarithmic factors.
+
+The schedule's identity h_j^2=hprev*h0*sqrt(rho) cancels each fine
+contribution against sqrt(h_L*theta) exactly. The true-factor term is
+at most32N^2 and each fine term at mostN^2/h0 before the common
+subpolynomial overhead. The raw outer width is m^(.5+d+o(1))<m;
+internal constant-width polynomial recurrence does not enlarge it.
+Fast CUP/range algebra and compressed sign counts are thus charged.
+Final row-tiled physical QR and explicit output use the same single
+fixed m-by-m-by-sqrt(m) multiplication kernel. Every output entry is
+included, and the square-core multiplication slack fits strictly below
+output because d>1/8.
+
+Confidence and failed outcomes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The schedule is selected before randomness. A common full-factor Loewner
+event covers all coarse/fine congruences, even though support coordinates
+depend on the coarse sketches. Fine deterministic recurrences introduce
+no further failure probability. Conditional fresh threshold Gaussians
+and the final fresh elliptical Gaussian support the stated union bounds.
+Qmax uses A_L/theta, accounting for the growing constant in the relative
+bracket stopping rule. Under the theorem's delta range all failure logs
+remain O(log(m)).
+
+Successful-event effective factors are invertible by the finite invariant.
+Failed-event factors may be singular, but only their forward polynomials
+are executed; no inverse fine factor is taken. Coarse positivity, rank
+tests and coefficient-denominator checks supply finite all-outcome caps.
+Large numbers, exact signs, Gram--Cholesky conditioning and growth of the
+nonnormal carried recurrences remain expressly outside a finite-word
+or stability guarantee. Nothing in this review supplies such a guarantee.
+
+Scope, citations and resolved clarifications
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The PCP discussion correctly names Frostig--Musco--Musco--Sidford,
+the genuinely gap-free Allen-Zhu--Li Theorem7.3, and Jin--Sidford's
+rational/asymmetric construction. It does not claim an actual eigengap
+distinguishes all those predecessors. It requires their oracle costs
+to be charged and leaves full subsumption unresolved, consistent with
+the bounded primary-source calculation in Section13. All displayed
+author/title/year/URL metadata matches that earlier checked metadata.
+The local companion PDF link resolves to an existing file.
+
+AV/inertia, embeddings, block Krylov and fast rank/characteristic algebra
+are credited as established. The contribution is scoped to the finite
+relaxed invariant, its noncommuting propagation, exact carried lift and
+unfolded cost. The polynomial-degree observation now states the precise
+condition C*epsilon<=1/16 and lower bound1/(20*C*epsilon), so it does
+not hide a growing-C constant. The original harder target is still
+explicitly unresolved, with an obstruction only for the displayed
+isotropic-sketch schedule. No lower bound on all factor-access methods
+or unconditional SOTA/priority claim is introduced.
+
+The separate same-model exact-Gram comparator is now proved in
+docs/exact-gram-baseline-audit.txt. It removes the need to treat an
+exact SVD/eigenroot as a primitive. For the ordinary comparison, the
+companion with constant h0 already supplies the theta^(-1/2) block
+action exponent in the same model, avoiding an unproved uniform cubic
+Ritz convention. These observations can support the optimized corollary
+when it is added; its final actual wording still needs a short reread.
+
+15. Final actual-copy delta: optimized corollary, absolute error, Gram
+--------------------------------------------------------------------
+Read the integrated optimized comparison, new adaptive absolute-error
+corollary, AppendixA exact-field Gram construction, final PCP discussion
+and bibliography in docs/hierarchical-absolute-spectral.tex. Reread the
+small rank-branch and source-parameter clarifications after the parent
+applied them. This closes the pending actual-wording check from Section14.
+No manuscript edit or new literature search was made by this agent.
+
+Outcome: these final additions pass the independent scope, arithmetic,
+boundary and source review. No unresolved correction remains from this
+review. The statement continues to be a proved exact-real upper bound
+with scoped named comparisons, not a global SOTA/priority certificate.
+
+Optimized total-output comparison
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The actual corollary uses the previously checked d_star, alpha_star,
+s_star and theta=N^(-10*s_star+o(1)) identities. It includes every
+rank up to floor(sqrt(m)), totalN^(2+o(1)) and the attained named
+gap s_star. Its proof charges the raw basis, fast tall rank revelation,
+projected Gram, full-width factor projections and even a conventional
+cubic Ritz phase. Each postprocessing exponent is smaller than the
+ordinary factor-action exponent throughout the stated d interval.
+
+The source now gives a uniform exact-field realization of the same
+ordinary scaling through the already proved companion at constant
+h=1/1024. Its setup m^omega and raw-width condition fit. Therefore
+the comparison no longer requires an unproved numerical Ritz or exact
+SVD primitive; the conventional cubic calculation is supplementary
+cost accounting rather than an algorithmic assumption. At the largest
+rank the r+1 companion blocks can be split into at most two sqrt(m)
+blocks, as already established by the uniform kernel construction.
+
+The optimization is explicitly of two available upper bounds. It neither
+claims those costs are lower bounds nor overlooks the earlier scalar
+stochastic method's fixed-rank output-optimal envelope. The endpoint is
+correctly distinguished from literal O(N^2) and from a strict subquadratic
+construction. The exact-Gram side has the same-model realization below.
+
+Adaptive absolute-error corollary
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The corollary puts error<=e, returned width<=2*r_e and the conditional
+N^(2+o(1)) runtime on one event of probability at least1-delta. Its
+r_e definition explicitly includes0,...,m, and the model's zero-extension
+convention covers support-boundary indices. The initial fixed threshold
+and accepted-quantile test imply lambda_(r+1)(T)<=1+alpha whenever a
+per-vector repetition succeeds. The physical factor is smaller than
+1+theta/4, so t=e^2/(1+theta/4) gives the required error. At r=0,
+the norm bound supplies the empty-space certificate directly.
+
+The final amended proof explicitly takes full-support recovery at every
+attempt with r>=computed support dimension, before asking for target
+j=r+1. This resolves the only inherited rank-branch ambiguity. For
+r<k, the mass comparison places the represented tail at r_e+1 strictly
+below t, so no trial at or above r_e can advance on the embedding
+event, independently of per-vector quality. Hence the doubling loop
+stops by width2*r_e.
+
+When r_e<=floor(sqrt(m))/2, the first dyadic width at least r_e is
+within the permitted rank cap and the fallback is never reached on
+that event. All processed target blocks are at most sqrt(m)+1 and
+fit the same uniform-kernel analysis; O(log(m)) attempts only change
+the existing subpolynomial overhead. For larger needed ranks or
+exceptional paths, the companion absolute-error algorithm supplies a
+global finite fallback with a separately reserved half failure budget.
+Using its internal accuracy theta'<=theta is valid because
+e/(1+theta')>=e/(1+theta), so its slack rank cannot increase. This
+preserves the width2*r_e guarantee. Fresh conditional main/fallback
+budgets can be allocated over the known cap to give the stated SINGLE
+success event. The finite no-accepted-level branch uses that same
+rank-preserving fallback. No unconditional adaptive runtime is claimed.
+
+AppendixA: exact-field Gram comparator
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The actual appendix matches docs/exact-gram-baseline-audit.txt. Exact
+support whitening forms positive definite Hc and handles support<=r
+before coefficient ratios. Bisection with exact shifted inertia takes
+O(log(m/theta)) field-MM calls and produces a true upper threshold.
+The fresh scalar perturbation avoids all eigenvalues almost surely
+while keeping sqrt(t)<=(1+theta/100)*sigma_(r+1)(M).
+
+For each fixed nonsingular symmetric Kc, every Gaussian-congruence
+leading-minor polynomial is nonzero, witnessed by any eigenbasis.
+Conditional probability one therefore permits unpivoted recursive LDL^T.
+The prefix-minor property propagates to Schur blocks, yielding the
+displayed matrix-multiplication recurrence; failed zero checks return
+within a fixed cap. The physical normals are correctly
+Z*S^(-T)*L*E_negative. Orthogonality removes precisely the negative
+D coordinates of y^T Kc y, proving the residual bound without ordered
+eigenvectors. All lifting, orthogonalization and explicit expansion are
+charged. Accuracy costs only logarithms, and no singular-value-ratio
+logarithm or input-conditioned precision loop is introduced.
+
+Consequently the complete Gram comparator has the claimed exponent
+2+d+1/[4(1+d)] in m, with smaller core/lift/output terms on the stated
+interval. Probability-one algebraic success is compatible with the
+main theorem's Gaussian/field/square-root model. The appendix expressly
+excludes numerical stability and does not conceal word lengths.
+
+Final source and precision checks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The PCP text retains the genuinely gap-free Allen-Zhu--Li Theorem7.3.
+The final Jin--Sidford pointer now explicitly includes Theorem3. Its
+mu is defined as spectral regularization width: the squared system has
+a mu^2 positive shift, so an inverse-first-power width factor cannot
+be replaced by treating mu itself as a strong-convexity modulus.
+This matches the primary theorem and fixes the possible parameter-name
+conflation in the earlier shorthand sentence. Metadata and URLs remain
+consistent with Section13. Efficient batching of one fixed stochastic
+block solve is still acknowledged, while stronger global compositions
+and full priority remain unresolved.
+
+All three additions maintain the exact-real-operation qualification.
+Neither the optimized comparison, adaptive stopping nor almost-sure
+Gram construction supplies finite-word, bit-complexity or stable
+floating-point guarantees. The original harder parameter target also
+remains explicitly open. The final actual-copy review is complete.

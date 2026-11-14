@@ -1,0 +1,656 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[colorlinks=true,urlcolor=blue,citecolor=blue,linkcolor=blue]{hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+\newcommand{\R}{\mathbb R}
+\newcommand{\C}{\mathbb C}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\range}{\operatorname{range}}
+\newcommand{\MM}{T_{\mathrm{MM}}}
+\newcommand{\tO}{\widetilde O}
+\title{Product-aware ridge filters:\\a proved primitive and the remaining spectral-cutoff obstacle}
+\author{Research working note}
+\date{November 14, 2026}
+\begin{document}
+\maketitle
+\begin{abstract}
+The desired result remains a gap-free, high-accuracy spectral approximation of
+\(AB\) with faster total arithmetic complexity, including its explicit output.
+This note does not claim that result or a state-of-the-art improvement for it.
+We derive a product-aware ridge-filter primitive from constant-distortion input
+sketches, including a uniform operator-error bound, rank-deficient inputs, and
+setup costs. We then give exact counterexamples to two tempting extensions and
+a coefficient-growth obstruction for uniformly sharp filters assembled from
+negative-shift ridge filters. These results isolate a specific missing step;
+cheap regularized solves alone do not establish the proposed approximation bound.
+The novelty of the primitive itself remains unverified.
+\end{abstract}
+
+\section{Objective and cost model}
+Let \(A\in\R^{n\times m}\), \(B\in\R^{m\times p}\),
+\(m\leq\min(n,p)\), \(M=AB\), \(D=n+p\), and \(I=mD\).
+The target in \texttt{research-direction.typ} is to produce width-\(r\) factors
+and their explicit product \(C\) such that, for every fixed input,
+\[
+ \Pr\{\norm{M-C}_2\leq(1+\theta)\sigma_{r+1}(M)\}\geq1-\delta
+\]
+in construction time \(\tO(Ir+m^{\omega+\zeta})\) and total time including
+expansion. Here \(\omega\leq9/4\) is the bound in \cite{amanov}, and
+\(\zeta>0\) is fixed exponent slack. The broader absolute-error objective
+also permits other algorithms, but any claimed improvement must specify their
+input class, tolerance, confidence, rank, and total output cost.
+
+All results below count exact-real arithmetic operations. Matrix inverses in
+small cores are algebraic operations; finite-precision stability and bit cost
+are not proved here. We use
+\(\MM(n,r,p)\leq O(npr)\) for expansion, allowing fast multiplication when
+appropriate. A ridge-filter action returns vectors, not an \(n\times n\)
+matrix. It does not by itself return the required low-rank approximation.
+
+For the notes' example \(n=p=N\), \(m=\lceil N^{8/9}\rceil\),
+\(r=1\), \(\theta=1/m\), the stated exponents check out:
+\[
+ \omega(1,8/9,1)\leq\frac{625}{288},\qquad
+ \omega(8/9,1,8/9)\leq\frac{169}{81},\qquad
+ (8/9)(9/4)=2.
+\]
+These follow from Theorem 1.2 of \cite{amanov}; they are upper bounds for
+the named exact-product and Gram routes, not a lower bound against every
+possible approximation algorithm. The absolute-error conclusion still needs
+\((1+1/m)\sigma_2(M)\leq\varepsilon\).
+
+\section{What ordinary input embeddings already give}
+Set
+\[
+ P=A^\top A,\qquad Q=BB^\top.
+\]
+Suppose \(S\) and \(T\) satisfy the squared-norm embedding inequalities
+\begin{align}
+ (1-\eta)P&\preceq (SA)^\top SA\preceq(1+\eta)P,\label{eq:embedding-a}\\
+ (1-\eta)Q&\preceq (TB^\top)^\top TB^\top\preceq(1+\eta)Q.
+ \label{eq:embedding-b}
+\end{align}
+The parameter \(\eta\) always denotes distortion of squared norms in this
+note. Norm-distortion conventions in references must be converted accordingly.
+
+\begin{proposition}[Lifted sketch approximation]\label{prop:lift}
+Let \(U=SA\), \(V=TB^\top\), and let \(\widetilde C_r\) be a truncated
+SVD of \(UV^\top\). Then
+\[
+ C=A U^\dagger\widetilde C_r(V^\dagger)^\top B
+ \quad\text{satisfies}\quad
+ \rank C\leq r,\qquad
+ \norm{M-C}_2\leq\frac{1+\eta}{1-\eta}\sigma_{r+1}(M).
+\]
+No full-rank assumption is needed.
+\end{proposition}
+\begin{proof}
+The embeddings preserve kernels. Thus \(AU^\dagger U=A\) and
+\(V^\top(V^\dagger)^\top B=B\). On the relevant ranges,
+\(\norm{AU^\dagger}_2,\norm{B^\top V^\dagger}_2\leq(1-\eta)^{-1/2}\).
+The singular vectors retained in \(\widetilde C_r\) lie in \(\range U\)
+and \(\range V\). Consequently
+\[
+ \norm{M-C}_2\leq(1-\eta)^{-1}
+       \norm{UV^\top-\widetilde C_r}_2.
+\]
+The optimal rank-\(r\) truncation \(M_r\) lies in the column and row
+spaces of \(M\), hence in those of \(A\) and \(B\). Applying the upper
+embedding bounds on these spaces gives
+\(\norm{S(M-M_r)T^\top}_2\leq(1+\eta)\norm{M-M_r}_2\).
+Optimality of the sketched truncation proves the result.
+\end{proof}
+
+For constant \(\eta\), standard fast subspace embeddings have
+\(\tO(m)\) rows, can be applied in \(\tO(I)\) time, and leave cores
+processable in \(\tO(m^{\omega+\zeta})\) time; see
+\cite{cnw,embedding}. A compact core SVD followed by lifting only the
+retained coefficient vectors costs \(O(Ir)\), not a full tall basis
+construction. This is an existing sketch-and-solve pattern, and is not claimed
+as a new algorithm. The issue is the dependence on high accuracy.
+
+\begin{proposition}[Sharpness of distortion-only lifting]\label{prop:reversal}
+For \(0<\eta<1\), choose
+\(1<\alpha<(1+\eta)/(1-\eta)\). Let
+\[
+ A=B=\diag(\sqrt\alpha,1),\qquad
+ S=T=\diag(\sqrt{1-\eta},\sqrt{1+\eta}).
+\]
+Both embeddings satisfy \eqref{eq:embedding-a}--\eqref{eq:embedding-b}.
+The unique rank-one sketched truncation lifts to
+\(C=\diag(0,1)\), with error \(\alpha\), whereas \(\sigma_2(M)=1\).
+\end{proposition}
+\begin{proof}
+The sketched product is
+\(\diag((1-\eta)\alpha,1+\eta)\), whose second diagonal entry is larger.
+Lifting restores that entry to 1 and does not restore the discarded entry.
+\end{proof}
+
+The example pads to arbitrarily tall inputs. It is a counterexample to an
+argument using only the two distortion inequalities, not an OSE distributional
+lower bound. To obtain the target through Proposition~\ref{prop:lift}, one
+needs \(\eta\leq\theta/(2+\theta)\); order-\(\theta\) distortion is also
+necessary for a uniform argument of this form. General oblivious embeddings
+have the familiar \(\Omega(m/\eta^2)\) row lower bound in sufficiently large
+ambient dimension \cite{oselower}. This does not lower-bound adaptive
+product-aware algorithms or embeddings using the identity in smaller dimensions.
+
+\section{A uniform ridge-filter primitive}
+We now keep \(\eta\) constant. Write
+\[
+ \widetilde P=(SA)^\top SA,\quad
+ \widetilde Q=(TB^\top)^\top TB^\top,\quad
+ \mathcal D=\diag(P,Q),\quad
+ \widetilde{\mathcal D}=\diag(\widetilde P,\widetilde Q).
+\]
+For \(\lambda>0\), define the two \(2m\times2m\) block systems
+\begin{equation}\label{eq:block}
+ \mathcal T_\lambda=
+ \begin{pmatrix}P&\sqrt\lambda I_m\\-\sqrt\lambda I_m&Q\end{pmatrix},
+ \qquad
+ \widetilde{\mathcal T}_\lambda=
+ \begin{pmatrix}\widetilde P&\sqrt\lambda I_m\\-\sqrt\lambda I_m&\widetilde Q\end{pmatrix}.
+\end{equation}
+The coupling is kept exact; only the diagonal Gram blocks are sketched.
+Define the ridge filter
+\[
+ \mathcal R_\lambda=MM^\top(MM^\top+\lambda I_n)^{-1}.
+\]
+
+\begin{theorem}[Uniform ridge actions]\label{thm:ridge}
+Assume \eqref{eq:embedding-a}--\eqref{eq:embedding-b} with
+\(0<\eta<1/2\). For any \(v\in\R^n\), set \(z_0=0\) and perform
+\begin{equation}\label{eq:iterate}
+ z_{j+1}=z_j+\widetilde{\mathcal T}_\lambda^{-1}
+       \left(\binom{A^\top v}{0}-\mathcal T_\lambda z_j\right).
+\end{equation}
+Let \(x_j\) be the first \(m\) components of \(z_j\), and set
+\(\widehat{\mathcal R}_{\lambda,j}v=Ax_j\). Then
+\begin{equation}\label{eq:ridge-bound}
+ \norm{\widehat{\mathcal R}_{\lambda,j}-\mathcal R_\lambda}_2
+ \leq K_\eta\rho_\eta^j,
+ \qquad
+ K_\eta=\sqrt{\frac{1+\eta}{1-\eta}},\quad
+ \rho_\eta=\frac{\eta}{1-\eta}<1.
+\end{equation}
+The same event establishes this inequality for all positive shifts, all
+right-hand sides, and all iteration counts simultaneously, including adaptive
+choices. The result includes rank-deficient inputs.
+\end{theorem}
+
+\begin{proof}[Proof for positive definite \(P,Q\)]
+The symmetric part of \(\mathcal T_\lambda\) is \(\mathcal D\succ0\),
+so the system is nonsingular. Likewise the sketched system is nonsingular.
+Let
+\(\mathcal E=\mathcal D-\widetilde{\mathcal D}
+             =\mathcal T_\lambda-\widetilde{\mathcal T}_\lambda\).
+The embedding inequalities imply
+\[
+ \norm{\widetilde{\mathcal D}^{-1/2}\mathcal E
+                \widetilde{\mathcal D}^{-1/2}}_2\leq\rho_\eta.
+\]
+Furthermore,
+\[
+ \widetilde{\mathcal D}^{-1/2}\widetilde{\mathcal T}_\lambda
+       \widetilde{\mathcal D}^{-1/2}=I+J,\qquad J^\top=-J.
+\]
+For real skew-symmetric \(J\),
+\((I+J)^\top(I+J)=I+J^\top J\succeq I\). Hence
+\(\norm{(I+J)^{-1}}_2\leq1\), regardless of the size of the coupling.
+If \(z_*\) is the exact solution and \(e_j=z_j-z_*\), iteration
+\eqref{eq:iterate} gives
+\[
+ e_{j+1}=-\widetilde{\mathcal T}_\lambda^{-1}\mathcal E e_j,
+ \qquad
+ \norm{e_{j+1}}_{\widetilde{\mathcal D}}
+ \leq\rho_\eta\norm{e_j}_{\widetilde{\mathcal D}}.
+\]
+
+Writing \(z_*=(x_*,y_*)\) and \(h=A^\top v\), the second block equation
+gives \(y_*=\sqrt\lambda Q^{-1}x_*\), and the first gives
+\((P+\lambda Q^{-1})x_*=h\). Thus
+\begin{align*}
+ \norm{z_*}_{\mathcal D}^2
+ &=x_*^\top(P+\lambda Q^{-1})x_*\\
+ &=h^\top(P+\lambda Q^{-1})^{-1}h
+ \leq h^\top P^{-1}h\leq\norm v_2^2.
+\end{align*}
+The last inequality uses the orthogonal projector \(AP^{-1}A^\top\).
+Since \(z_0=0\),
+\[
+ \norm{A(x_j-x_*)}_2
+ \leq\norm{e_j}_{\mathcal D}
+ \leq\frac{\rho_\eta^j}{\sqrt{1-\eta}}
+                         \norm{z_*}_{\widetilde{\mathcal D}}
+ \leq K_\eta\rho_\eta^j\norm v_2.
+\]
+Finally, Woodbury's identity gives
+\[
+ A(P+\lambda Q^{-1})^{-1}A^\top
+ =MM^\top(MM^\top+\lambda I_n)^{-1}.
+\]
+The estimate holds for every \(v\), so it is an operator-norm estimate.
+\end{proof}
+
+\begin{proof}[Extension to positive semidefinite \(P,Q\)]
+First, both matrices in \eqref{eq:block} are nonsingular even when their
+diagonal blocks are singular. For example, if
+\(\mathcal T_\lambda(x,y)=0\), then multiplying by \((x^\top,y^\top)\)
+gives \(x^\top Px+y^\top Qy=0\). Thus \(Px=Qy=0\), after which
+the two block equations give \(x=y=0\).
+
+For the estimate, add \(\tau I_m\) to each of \(P,Q,\widetilde P,
+\widetilde Q\), with \(\tau>0\). The same distortion bounds still hold.
+Use the same right-hand side \((A^\top v,0)\). The preceding proof gives
+\[
+ \norm{A(x_{j,\tau}-x_{*,\tau})}_2
+ \leq K_\eta\rho_\eta^j\norm v_2,
+\]
+because \(P+\tau I_m\succeq A^\top A\) and
+\(A(P+\tau I_m)^{-1}A^\top\preceq I_n\).
+Nonsingularity at \(\tau=0\) implies continuity of every inverse and of
+every fixed finite iterate as \(\tau\downarrow0\).
+The limiting exact solution satisfies
+\[
+ x_*=Q(PQ+\lambda I_m)^{-1}A^\top v.
+\]
+The push-through identity then gives \(Ax_*=\mathcal R_\lambda v\)
+without requiring an inverse of \(P\) or \(Q\). Passing to the limit proves
+\eqref{eq:ridge-bound}. Rank deficiency therefore adds no regularization
+parameter to the actual algorithm.
+\end{proof}
+
+\begin{corollary}[Arithmetic accounting]\label{cor:cost}
+For constant \(\eta<1/2\), constant-distortion sketches can be constructed
+and their Gram matrices formed in \(\tO(I+m^{\omega+\zeta})\) time.
+For each distinct requested shift, factoring
+\(\widetilde{\mathcal T}_\lambda\) costs
+\(O(m^{\omega+\zeta})\), and applying its inverse to \(s\) vectors
+costs \(O(m^2s)\) conventionally. Applying the true system uses
+\(P x=A^\top(Ax)\) and \(Qy=B(B^\top y)\), costing \(O(Is)\).
+
+Consequently, \(L\) shifts, each applied to a block of \(s\) vectors with
+operator error at most \(\xi\in(0,1)\), cost
+\[
+ \tO\!\left(I+(L+1)m^{\omega+\zeta}
+              +IsL\log(1/\xi)\right).
+\]
+In this expression confidence and dimension logarithms are hidden, while
+the displayed refinement logarithm is explicit. There is no polynomial
+dependence on a factor condition number or on \(\lambda\).
+For polylogarithmically many shifts and \(s=O(r)\), this primitive fits
+the desired construction budget up to logarithms. It still lacks a
+low-rank approximation theorem. Any eventual \(XY^\top\) must additionally
+pay \(\MM(n,r,p)\) to be explicitly formed.
+\end{corollary}
+
+The probability statement comes solely from the two input embeddings, each
+chosen with failure probability at most \(\delta/2\). Once both hold, the
+ridge theorem is deterministic and simultaneous; there is no additional union
+bound over adaptively chosen shifts or vectors. The inequality
+\(I\geq2m^2\) absorbs dense small-core inverse applications. Inverses can be
+precomputed by fast algebra; triangular solves should not silently be charged
+\(O(m^2s)\) after a factorization that has not supplied an applicable inverse.
+
+The proof is an application of accretivity and sketch preconditioning, with
+connections to classical Hermitian/skew-Hermitian splitting \cite{hss}.
+It should not be described as a new AMM algorithm without a further novelty
+audit and a proof of the required approximation guarantee.
+
+\section{Why an interior spectral cutoff is different}
+Resolvents needed for a sharp spectral cutoff typically involve shifts near
+the positive spectrum of \(MM^\top\), rather than negative real shifts.
+Keeping the same sketches does not give the preceding contraction there.
+
+\begin{proposition}[Exact failure near a cutoff]\label{prop:shift}
+Take scalar Gram blocks \(P=Q=\widetilde Q=1\),
+\(\widetilde P=1+\eta\), and replace \(\lambda>0\) in
+\eqref{eq:block} by
+\(\lambda=-(1+\eta)+i\gamma\), \(\gamma>0\), using any complex
+square root. The error iteration in \eqref{eq:iterate} has spectral radius
+\(\eta/\gamma\). It diverges when \(\gamma<\eta\).
+\end{proposition}
+\begin{proof}
+Let \(s^2=\lambda\). The sketched system has determinant
+\(1+\eta+\lambda=i\gamma\), whereas
+\(\mathcal E=\diag(-\eta,0)\). The error matrix
+\(-\widetilde{\mathcal T}_\lambda^{-1}\mathcal E\) is rank one and has
+nonzero eigenvalue \(\eta/(i\gamma)\).
+\end{proof}
+
+This is not a lower bound against other linear-system solvers or different
+preconditioners. It invalidates the specific inference that constant Gram
+distortion suffices for uniformly cheap interior-shift refinement. In
+particular, small-core inversion costs alone cannot justify a rational-filter
+runtime if the number of full-input correction steps is unbounded.
+
+\section{Can negative shifts alone build the missing filter?}
+Write \(r_\lambda(x)=x/(x+\lambda)\), \(\lambda>0\).
+These are the scalar functions supplied by Theorem~\ref{thm:ridge} on
+the eigenvalues of \(MM^\top\). The following two elementary bounds
+restrict attempts to combine them into a sharp universal filter.
+
+\begin{proposition}[Nonnegative filter combinations]\label{prop:positive}
+Suppose
+\[
+ f(x)=\sum_{j=1}^L a_j\prod_{\ell=1}^{d_j}r_{\lambda_{j\ell}}(x),
+ \qquad a_j\geq0,\quad d_j\leq d.
+\]
+An empty product is 1. For \(b\geq a>0\),
+\(f(b)\leq(b/a)^d f(a)\). Thus amplification by \(K>1\) between
+1 and \(1+g\) requires
+\(d\geq\log K/\log(1+g)\).
+\end{proposition}
+\begin{proof}
+For each factor,
+\[
+ \frac{r_\lambda(b)}{r_\lambda(a)}
+ =\frac ba\frac{a+\lambda}{b+\lambda}\leq\frac ba.
+\]
+Multiplying and then summing with nonnegative weights proves the assertion.
+\end{proof}
+
+\begin{corollary}[A rank-one failure instance for nonnegative filters]
+Let \(m\geq65\), \(0<\theta\leq1/8\), and
+\(M=\diag(1+2\theta,1,\ldots,1)\). Let \(f\) be nonzero and of the
+form in Proposition~\ref{prop:positive}. Draw \(\omega\sim N(0,I_m)\),
+set \(v=f(M^\top M)\omega/\norm{f(M^\top M)\omega}_2\), and output
+\(C=Mvv^\top\). If
+\[
+ d\leq\frac{\log((m-1)/16)}{2\log((1+2\theta)^2)},
+\]
+then \(\norm{M-C}_2>(1+\theta)\sigma_2(M)\) with probability at
+least \(5/8\). Thus this strategy needs depth
+\(\Omega(\theta^{-1}\log m)\) for uniformly high success probability.
+\end{corollary}
+\begin{proof}
+Put \(s=1+2\theta\) and \(K=f(s^2)/f(1)\). The preceding proposition
+and the depth assumption give \(K^2\leq(m-1)/16\).
+By Markov's inequality, \(\omega_1^2\leq4\) with probability at least
+\(3/4\). The sum of the remaining squares has mean \(m-1\) and variance
+\(2(m-1)\), so Chebyshev's inequality bounds the probability that it
+is below \((m-1)/2\) by \(8/(m-1)\leq1/8\). The intersection has
+probability at least \(5/8\). There, \(v_1^2\leq1/3\), while
+\[
+ \norm{M(I-vv^\top)}_2^2
+ =1+(s^2-1)(1-v_1^2)
+ \geq1+\tfrac23(4\theta+4\theta^2)>(1+\theta)^2.
+\]
+The equality follows by restricting
+\(M^\top M=I+(s^2-1)e_1e_1^\top\) to \(v^\perp\).
+\end{proof}
+
+This is only a lower bound for the specified algorithm and filter class.
+Indeed the signed polynomial \(f(x)=x-1\) recovers the distinguished
+direction of this particular instance in one application. The instance
+therefore is not a general matvec or product-access lower bound.
+
+Signed coefficients remove that particular argument, but introduce another
+quantity that a runtime proof must track.
+
+\begin{theorem}[Coefficient growth for a uniform cutoff]\label{thm:coeff}
+Let
+\[
+ f(z)=\sum_{j=1}^L a_j\prod_{\ell=1}^{d_j}
+                         \frac{z}{z+\lambda_{j\ell}},
+ \quad a_j\in\C,\quad\lambda_{j\ell}>0,\quad
+ \mathcal A=\sum_j|a_j|.
+\]
+Suppose \(0<g\leq1/8\), \(0<\alpha\leq1/4\),
+\[
+ \sup_{x\in[1/2,1]}|f(x)|\leq\alpha,
+ \qquad |f(1+g)|\geq1.
+\]
+Then
+\begin{equation}\label{eq:coeff}
+ \log(4\mathcal A/\alpha)
+ \geq\log(4/3)\left(
+       \frac{\log(3/(8\alpha))}{\sqrt{8g}}-1\right).
+\end{equation}
+In particular, along \(g\to0\) and \(\alpha=m^{-c}\) for fixed
+\(c>0\), \(\log\mathcal A=\Omega(g^{-1/2}\log m)\).
+This holds regardless of the number of factors in each product.
+\end{theorem}
+\begin{proof}
+For \(\operatorname{Re}z\geq0\),
+\(|z/(z+\lambda)|\leq1\). Hence \(|f(z)|\leq\mathcal A\) in
+that half-plane. In particular this holds on the disk centered at \(3/4\)
+of radius \(1/2\). Cauchy's estimate bounds the \(j\)-th Taylor
+coefficient in that disk by \(\mathcal A(1/2)^{-j}\).
+Every point of \([1/2,1+g]\) is within \(3/8\) of the center.
+If \(p_k\) is the degree-\(k\) Taylor truncation, then
+\[
+ \sup_{x\in[1/2,1+g]}|f(x)-p_k(x)|
+ \leq4\mathcal A(3/4)^{k+1}.
+\]
+Choose \(k=\lceil\log(4\mathcal A/\alpha)/\log(4/3)\rceil\).
+The error is at most \(\alpha\), so \(p_k\) is bounded by
+\(2\alpha\) on \([1/2,1]\), but
+\(|p_k(1+g)|\geq1-\alpha\geq3/4\).
+
+Chebyshev's extremal inequality, after mapping \([1/2,1]\) to
+\([-1,1]\) by \(x\mapsto4x-3\), gives
+\[
+ |p_k(1+g)|\leq2\alpha T_k(1+4g)
+ \leq2\alpha\exp(k\sqrt{8g}).
+\]
+This inequality also holds for complex polynomials: interpolation at the
+Chebyshev extrema bounds the absolute value by the sum of absolute Lagrange
+weights, which equals \(T_k\) outside the interval. The last step uses
+\(T_k(1+u)=\cosh(k\operatorname{arcosh}(1+u))\) and
+\(\operatorname{arcosh}(1+u)\leq\sqrt{2u}\).
+Therefore \(k\geq\log(3/(8\alpha))/\sqrt{8g}\).
+The upper bound \(k\leq\log(4\mathcal A/\alpha)/\log(4/3)+1\)
+proves \eqref{eq:coeff}.
+\end{proof}
+
+\paragraph{What the coefficient bound does and does not show.}
+For a simple linear combination of ridge actions, the usual termwise error
+estimate is \(\norm{\widehat f(H)-f(H)}_2\leq\mathcal A\xi\)
+when every action is approximated to operator error \(\xi\).
+It therefore calls for refinement depth
+\(O(\log(\mathcal A/\varepsilon_f))\) to establish final filter
+error \(\varepsilon_f\). Products also require tracking their lengths
+and intermediate errors. Theorem~\ref{thm:coeff} shows why a claim of
+polylogarithmic work cannot simply hide coefficient magnitudes in this
+error analysis. It does not prove a computational lower bound: large
+coefficients alone do not rule out a different stable evaluation, and
+uniform scalar separation on an interval is a sufficient filtering strategy,
+not a necessary characterization of every rank-\(r\) approximation algorithm.
+
+\subsection{A sharper degree bound, independent of coefficient size}
+The coefficient argument is not needed to obtain the following degree
+obstruction. It applies to arbitrary complex coefficients and to a larger pole
+region than the negative real axis. Its only approximation-theoretic ingredient
+is classical polynomial Chebyshev extremality \cite{extremal}.
+
+\begin{theorem}[Restricted-pole growth]\label{thm:poles}
+Let \(a<b<c\) be real. Let \(f=p/q\) be a reduced rational function with
+complex coefficients, no pole on \([a,b]\), and \(d=\deg p\).
+Suppose every zero \(z\) of \(q\) satisfies
+\(\operatorname{Re}z\leq(a+b)/2\). If
+\(\sup_{x\in[a,b]}|f(x)|\leq\alpha\), then
+\[
+ |f(c)|\leq\alpha T_d\!\left(\frac{2c-a-b}{b-a}\right).
+\]
+The bound is sharp over this class, since constant denominators are allowed.
+\end{theorem}
+\begin{proof}
+For a zero \(z\) of \(q\), convexity of \(|x-z|^2\) and
+\(\operatorname{Re}z\leq(a+b)/2\) show that its maximum on \([a,b]\)
+is attained at \(b\). Its value is nondecreasing for \(x\geq b\).
+Factoring \(q\) over \(\C\) therefore gives
+\[
+ |q(x)|\leq|q(b)|\quad(a\leq x\leq b),\qquad
+ |q(c)|\geq|q(b)|>0.
+\]
+Thus \(|p(x)|\leq\alpha|q(b)|\) on \([a,b]\). Polynomial Chebyshev
+extremality implies
+\[
+ |p(c)|\leq\alpha|q(b)|
+      T_d\!\left(\frac{2c-a-b}{b-a}\right).
+\]
+For complex coefficients, multiply \(p\) by a unit complex scalar so that
+its value at \(c\) is nonnegative real and apply the real-polynomial
+inequality to its real part; its degree is at most \(d\). Dividing by
+\(|q(c)|\geq|q(b)|\) proves the assertion. Sharpness follows from
+\(q=1\) and \(p(x)=\alpha T_d((2x-a-b)/(b-a))\).
+\end{proof}
+
+In particular, if \(a=1/2\), \(b=1\), \(c=1+g\),
+\(0<\alpha<1\), and \(|f(c)|\geq1\), then
+\begin{equation}\label{eq:pole-degree}
+ d\geq\frac{\operatorname{arcosh}(1/\alpha)}
+                 {\operatorname{arcosh}(1+4g)}
+   \geq\frac{\log(1/\alpha)}{\sqrt{8g}}.
+\end{equation}
+Hence left-half-plane poles, and even poles with real part at most \(3/4\),
+give no improvement over the polynomial degree needed for this uniform
+top-end separation. A rational filter constructed from \(L\) simple ridge
+terms has numerator degree at most \(L\) after a common denominator is
+formed, so \eqref{eq:pole-degree} applies regardless of coefficient sizes.
+
+This is a degree bound, not a total-arithmetic lower bound. Many shifted
+solves might be processed together by fast rectangular multiplication;
+degree alone does not charge a separate full-input pass per pole. Nor does
+the theorem cover adaptive filters required to be small only at the actual
+tail eigenvalues. The remaining algorithmic issue is whether simultaneous
+solves and a stable spectral extraction can exploit batching while retaining
+the desired high-accuracy guarantee. No such extraction theorem is proved here.
+
+\section{Literature audit and limits of the present result}
+The following records the relevant conclusions from the supplied references
+and additional directly related primary sources. It is not an exhaustive
+novelty certificate.
+\begin{description}
+ \item[Halko--Martinsson--Tropp \cite{hmt}.]
+ Range finding, power schemes, and a posteriori norm estimates are existing
+ tools. A posteriori certification requires its own operator applications;
+ it does not turn a loose sketch into a high-accuracy rank-\(r\) solution.
+ Relevant parts: Sections 4.3--4.5 and 9--11.
+ \item[COD \cite{cod,luo}.]
+ The 2017 shrinking argument and the 2021 nuclear/Ky Fan refinement remain
+ comparison routes. Their factor-energy dependence must not be replaced by
+ a product-only singular-value bound without an additional argument.
+ Relevant parts: COD Theorems 2--3; revisited COD Section 3, Theorem 1.
+ \item[Block Krylov \cite{musco,chen}.]
+ The gap-free spectral guarantee has polynomial inverse-accuracy dependence.
+ Chen et al. extend guarantees to intermediate block sizes; this is not a
+ result removing that dependence. Relevant parts: Musco--Musco Sections 5--6
+ and Appendix A; Chen et al. Sections 3.3--3.5.
+ \item[Fast core algebra \cite{demmel}.]
+ Fast SVD and related core operations are available reductions, not the
+ missing product-interaction sketch. Precision and stability qualifications
+ still matter in a bit-cost treatment. Relevant part: Section 6.2.
+ \item[Oracle lower bounds \cite{bakshi,zhang}.]
+ Matvec lower bounds do not directly lower-bound algorithms given the
+ separate factors. The 2026 preprint's theorem concerns a right-projector
+ oracle task at constant success probability. It must not be quoted as a
+ total-arithmetic lower bound for this input model. Relevant parts:
+ Bakshi--Narayanan Theorem 1.1 and Remark 1.3; Zhang et al. Section 3.
+ \item[Product-aware sampling \cite{bhojanapalli,wu}.]
+ These must be included in a novelty search. Their conditioning and tail
+ terms prevent silently substituting the desired gap-free relative spectral
+ guarantee. Relevant parts: Bhojanapalli et al. Theorem 3.1 and matrix-product
+ application; Wu et al. Theorem 3.1.
+ \item[AMM and embeddings \cite{cnw,embedding}.]
+ Stable-rank AMM and fast input embeddings are established primitives.
+ They support inexpensive constant-distortion cores but do not supply the
+ high-accuracy interaction correction used nowhere yet in this note.
+ \item[Sketch-powered approximation \cite{sketchpower}.]
+ This 2026 preprint already refines low-rank approximation using a larger
+ sketch. Its additive spectral-tail term and polynomial accuracy costs need
+ to be retained in comparisons. Relevant part: Theorem 2.1 and Algorithm 2.
+ \item[Shift-and-invert \cite{garber}.]
+ Replacing iteration counts by cheap inverse calls is an established idea.
+ Its system-solve costs and gap/accuracy parameters must be accounted for;
+ an oracle inverse cannot be treated as free.
+\end{description}
+
+\paragraph{Current outcome.}
+We have proved a useful uniform product ridge action, not the original AMM
+target. Its derivation is self-contained; novelty is unresolved. The lifting
+counterexample, interior-shift counterexample, coefficient bound, and
+restricted-pole degree bound close specific unjustified shortcuts. None is a
+lower bound against the full goal.
+
+\paragraph{Next mathematical issue.}
+A successful continuation needs an argument beyond the ridge filter proved
+here: for example, a threshold-local preconditioner with
+explicitly bounded correction work, or a product-aware rank-selection method
+that avoids uniform scalar cutoff separation. Such an argument must include
+rank exactly at most \(r\) when claiming the notes' guarantee, failures and
+precision, setup and lifting, and explicit expansion. There is currently no
+proved candidate in this note that beats the \(N^{169/81+o(1)}\) comparison
+in the supplied high-accuracy example.
+
+\begin{thebibliography}{99}
+\bibitem{hmt} N. Halko, P.-G. Martinsson, J. Tropp.
+\emph{Finding Structure with Randomness} (2011).
+\url{https://arxiv.org/abs/0909.4061}.
+\bibitem{cod} Y. Mroueh, E. Marcheret, V. Goel.
+\emph{Co-Occurring Directions Sketching for Approximate Matrix Multiply} (2017).
+\url{https://proceedings.mlr.press/v54/mroueh17a.html}.
+\bibitem{luo} L. Luo, C. Chen, G. Xie, H. Ye.
+\emph{Revisiting Co-Occurring Directions} (2021).
+\url{https://arxiv.org/abs/2009.02553}.
+\bibitem{musco} C. Musco, C. Musco.
+\emph{Randomized Block Krylov Methods for Stronger and Faster Approximate
+Singular Value Decomposition} (2015).
+\url{https://arxiv.org/abs/1504.05477}.
+\bibitem{demmel} J. Demmel, I. Dumitriu, O. Holtz.
+\emph{Fast Linear Algebra Is Stable} (2007).
+\url{https://arxiv.org/abs/math/0612264}.
+\bibitem{chen} T. Chen, E. Epperly, R. Meyer, C. Musco, A. Rao.
+\emph{Does Block Size Matter in Randomized Block Krylov Low-Rank Approximation?}
+(2025 preprint).
+\url{https://arxiv.org/abs/2508.06486}.
+\bibitem{bakshi} A. Bakshi, S. Narayanan.
+\emph{Krylov Methods Are (Nearly) Optimal for Low-Rank Approximation} (2023).
+\url{https://arxiv.org/abs/2304.03191}.
+\bibitem{zhang} H. Zhang et al.
+\emph{Matrix-Vector Complexity of Low-Rank Approximation} (2026 preprint).
+\url{https://arxiv.org/abs/2609.35840}.
+\bibitem{amanov} A. Amanov, M. van den Berg, J. Zuiddam.
+\emph{Multiplying Matrices via Polynomials: Exposition and Barriers}
+(2026 preprint).
+\url{https://arxiv.org/abs/2610.30054}.
+\bibitem{cnw} M. Cohen, J. Nelson, D. Woodruff.
+\emph{Optimal Approximate Matrix Product in Terms of Stable Rank} (2016).
+\url{https://arxiv.org/abs/1507.02268}.
+\bibitem{embedding} S. Chenakkod, M. Derezi\'nski, X. Dong.
+\emph{Optimal Oblivious Subspace Embeddings with Near-Optimal Sparsity} (2025).
+\url{https://arxiv.org/abs/2411.08773}.
+\bibitem{oselower} J. Nelson, H. L. Nguyen.
+\emph{Lower Bounds for Oblivious Subspace Embeddings} (2014).
+\url{https://arxiv.org/abs/1308.3280}.
+\bibitem{bhojanapalli} S. Bhojanapalli, P. Jain, S. Sanghavi.
+\emph{Tighter Low-Rank Approximation via Sampling the Leveraged Element} (2015).
+\url{https://arxiv.org/abs/1410.3886}.
+\bibitem{wu} S. Wu, S. Bhojanapalli, S. Sanghavi, A. Dimakis.
+\emph{Single Pass PCA of Matrix Products} (2016).
+\url{https://arxiv.org/abs/1610.06656}.
+\bibitem{sketchpower} S. Chenakkod, M. Derezi\'nski.
+\emph{Accelerating Power Method with Fast Sketching for Stronger Low-Rank
+Approximation} (2026 preprint).
+\url{https://arxiv.org/abs/2605.09755}.
+\bibitem{garber} D. Garber et al.
+\emph{Faster Eigenvector Computation via Shift-and-Invert Preconditioning} (2016).
+\url{https://arxiv.org/abs/1605.08754}.
+\bibitem{hss} Z.-Z. Bai, G. Golub, M. Ng.
+\emph{Hermitian and Skew-Hermitian Splitting Methods for Non-Hermitian Positive
+Definite Linear Systems} (2003).
+\url{https://doi.org/10.1137/S0895479801395458}.
+\bibitem{extremal} L. Bos, S. Ma'u, S. Waldron.
+\emph{Extremal Growth of Polynomials}, Proposition 2.1.
+\url{https://www.math.auckland.ac.nz/~waldron/Preprints/Extremal-growth/BosMauWaldron1.pdf}.
+\end{thebibliography}
+\end{document}

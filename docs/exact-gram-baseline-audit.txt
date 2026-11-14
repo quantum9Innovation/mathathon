@@ -1,0 +1,210 @@
+Exact-Gram spectral baseline in the finite exact-real model
+===========================================================
+Independent audit, 2026-11-14. This verifies the parent's proposed
+comparator, without an exact SVD, eigenvalue-root or eigenvector oracle.
+Only this dedicated audit file was created. It is a baseline construction,
+not a global novelty claim.
+
+Result
+------
+For fixed arbitrary real A in R^(n by m), B in R^(m by p), target
+1<=r<=m, and theta>0, there is a probability-one algorithm returning
+width-at-most-r factors and explicitly forming C with
+
+  ||AB-C||_2 <= (1+theta) sigma_(r+1)(AB).
+
+In the exact field/comparison/positive-square-root/Gaussian model, its
+uniform arithmetic cost is
+
+  ~O(G_exact + m^(omega+zeta) + Acal(r)
+                     + np + T_MM(n,r,p)),
+
+where G_exact=T_MM(m,n,m)+T_MM(m,p,m). The tilde here hides dimension
+and accuracy logarithms only. In particular the threshold search has
+O(log(m/theta)) calls for 0<theta<=1, not O(log(m)/theta) calls.
+There is no hidden input-condition or eigenvalue-ratio logarithm.
+The finite caps apply even on exceptional zero-pivot outcomes, which
+may return zero factors and have probability zero for each fixed input.
+
+1. Exact support reduction and its cost
+--------------------------------------
+Form P=A^T A and Qraw=B B^T. Use exact rank revelation and core
+Gram/Cholesky algebra, as in the reviewed manuscript's support reduction,
+to obtain W in R^(m by k), Lc in R^(k by m), such that
+
+  Z=A W, R=Lc B, M=AB=Z R, Z^T Z=I_k,
+  H=R R^T=Lc Qraw Lc^T is positive definite, k=rank(M).
+
+For example first whiten range(P) exactly using W0, L0=W0^dagger;
+then restrict to the range of L0 Qraw L0^T. The equality A=Z Lc
+is unnecessary; the product identity M=Z Lc B suffices. All algebra
+after P,Qraw are formed has dimensions at most m and costs
+~O(m^(omega+zeta)). Neither tall Z nor wide R must be materialized.
+
+If k=0, write zero. If k<=r, form the factors Z,R using width k
+factor products and return M exactly. Otherwise put j=r+1<=k and
+lambda_*=lambda_j(H)>0. Nonzero eigenvalues of M M^T are those of H.
+
+2. A condition-free positive upper threshold
+-------------------------------------------
+Let rho=e_j(H)/e_(j-1)(H), using exact characteristic coefficients.
+Positivity of H ensures nonzero denominator. The elementary coefficient
+ratio inequalities give rho/k<=lambda_*<=k*rho. Use this positive
+bracket. At its midpoint s, the characteristic polynomial of H-sI
+and exact Descartes sign variations count eigenvalues strictly above s.
+If that count is at least j, set the lower endpoint to s; otherwise
+set the upper endpoint to s. Equality at lambda_* is safely assigned
+to the upper branch. Repeated eigenvalues cause no difficulty.
+
+Stop once u-l<=(theta/100)l. Then
+
+  lambda_*<=u<=(1+theta/100)lambda_*.
+
+The initial ratio is at most k^2, so at most
+ceil(log2(100*k^2/theta))+1 bisections suffice for theta<=1. Scalar
+halving determines a safe cap with allowed field operations and comparisons.
+Each query can recompute the shifted characteristic polynomial in
+~O(k^(omega+zeta)); no root isolation or ordered eigenvalue is computed.
+Alternatively polynomial shifting of previously obtained coefficients
+costs O(k^2) per query. The simpler recomputation bound suffices.
+
+Draw a fresh standard Gaussian scalar g and set
+
+  t=u*(1+(theta/100)*g^2/(1+g^2)).
+
+It satisfies u<=t<u*(1+theta/100). Its distribution has no atoms:
+for each fixed t-value in its range there are at most two corresponding
+g-values, with a possible singleton at g=0. Conditional on the already
+computed u, the finitely many eigenvalues of H are therefore avoided
+with probability one. Consequently K=tI-H is nonsingular almost surely.
+Since t>=lambda_*, its negative index is at most r.
+
+3. Gaussian congruence permits unpivoted fast LDL^T
+--------------------------------------------------
+Draw an independent k-by-k matrix S with independent standard Gaussian
+entries. It is invertible almost surely. Conditional on any fixed
+nonsingular symmetric K, every leading principal minor of
+
+  C_S=S^T K S
+
+is a polynomial in the entries of S which is not identically zero.
+Indeed, take S to be an orthogonal eigenbasis of K for this existence
+argument; then C_S is diagonal with all diagonal entries nonzero,
+and all its leading principal minors are nonzero. A nonzero real
+polynomial vanishes on a Lebesgue-null set. A finite union therefore
+shows that all these leading minors are nonzero almost surely.
+
+Thus the unpivoted symmetric elimination
+
+  S^T K S = L D L^T
+
+exists with L unit lower triangular and D diagonal with no zero entries.
+This property is stronger than nonsingularity of the full matrix and
+is exactly what the recursive no-pivot algorithm needs.
+
+For a balanced block partition, recursively factor C11=L11 D1 L11^T,
+compute X=C21 L11^(-T) D1^(-1), and recursively factor the Schur
+complement C22-X D1 X^T. Then
+
+  L = [[L11,0],[X,L22]], D=diag(D1,D2).
+
+Every leading minor of that Schur complement is nonzero: the corresponding
+leading minor of C_S is det(C11) times it. Hence the induction's required
+prefix property propagates. Triangular inversions, diagonal scaling and
+Schur products cost O(k^(omega+zeta)). The balanced recurrence
+
+  T(k)<=2T(ceil(k/2))+O(k^(omega+zeta))
+
+has that same asymptotic bound. The usual adjusted unequal subproblem
+sizes handle odd k. Scalar pivots are checked before any division.
+No positivity assumption is imposed on K or on D.
+
+Computing S^(-T) has the same fast bound. Exact rank-revealing inversion
+can be used; alternatively Gaussian S also has all its leading minors
+nonzero almost surely, so recursive unpivoted LU/block inversion suffices.
+The Gaussian draw and exact sign tests cost only O(k^2) and O(k).
+
+4. The orientation and physical complement
+------------------------------------------
+Let E_- collect the standard-coordinate columns whose D entries are
+negative, and define
+
+  V=S^(-T) L E_-.
+
+Its columns are independent and their number is at most r, by Sylvester
+inertia. For any y with V^T y=0, put w=L^T S^(-1)y. Then E_-^T w=0
+and
+
+  y^T K y = w^T D w >= 0.
+
+This proves the proposed orientation exactly. For a physical vector
+x orthogonal to range(ZV), let y=Z^T x. Then V^T y=0 and
+||y||<=||x|| because Z is an isometry. Therefore
+
+  x^T M M^T x = y^T H y
+              <= t ||y||^2 <= t ||x||^2.
+
+It follows that, for U an orthonormal basis of range(ZV),
+
+  ||(I-UU^T)M||_2^2 <= t
+    < (1+theta/100)^2 lambda_*.
+
+Thus the spectral residual is at most
+(1+theta/100) sigma_(r+1)(M), which is stronger than required.
+The method needs no ordered eigenvectors or subspace eigengap.
+
+5. Final factors, complete costs, and exceptional outcomes
+---------------------------------------------------------
+First orthonormalize V in the k-dimensional core, obtaining V_o.
+Since Z^T Z=I, U=Z V_o is then already physically orthonormal.
+Compute it as A(W V_o), without materializing all of Z. This costs
+O(Acal(r)+m^(omega+zeta)); computing R_p=M^T U through A,B has
+the same block bound. Return C=U R_p^T and form every entry, charging
+np+T_MM(n,r,p). Core inversion/congruence/LDL work stays within
+~O(m^(omega+zeta)). The exact-Gram setup dominates reading the input.
+
+For fixed A,B all undesired Gaussian events have probability zero.
+Check zero pivots, rank and coefficient denominators before division;
+an exceptional failed check returns zero factors within the same cap.
+There are no retries, representation-length loops or input-dependent
+precision searches. Almost-sure success implies success at least1-delta
+for every supplied delta>0 without repeating the procedure.
+
+The model still permits arbitrarily large or tiny exact real numbers.
+Leading minors and D pivots can be arbitrarily close to zero; coefficient
+signs may require arbitrarily high precision; S or the original factors
+can be ill-conditioned. No floating-point, bit-complexity or stable
+implementation statement follows. These are precisely the same exact-real
+qualifications as the candidate theorem, so no SVD convention mismatch
+is needed for the Gram comparison.
+
+6. Consequence for the named endpoint comparison
+-----------------------------------------------
+For n=p=N=m^(1+d), r<=sqrt(m), theta=m^(-5d/2), current rectangular
+multiplication gives
+
+  G_exact=m^(2+d+1/[4(1+d)]+o(1)).
+
+The core cost m^(9/4+o(1)), width-r factor products m^(2+d+o(1)),
+and explicit output N^(2+o(1)) are all smaller for
+1/8<d<(sqrt(2)-1)/2. Accuracy contributes only logarithms. Therefore
+the complete exact-field Gram baseline has precisely the named exponent,
+including at the optimized d_star. This removes the need to regard a
+dense SVD or exact eigenroot as an uncharged primitive in that comparator.
+
+Primary algebraic components already audited elsewhere
+------------------------------------------------------
+Vincent Neiger and Clement Pernet, Deterministic computation of the
+characteristic polynomial in the time of matrix multiplication,
+Journal of Complexity67,101572(2021), Theorem1.1:
+https://arxiv.org/abs/2010.04662
+
+Claude-Pierre Jeannerod, Clement Pernet, Arne Storjohann,
+Rank-profile revealing Gaussian elimination and the CUP matrix
+decomposition, Journal of Symbolic Computation56,46--68(2013):
+https://arxiv.org/abs/1112.5717
+
+The coefficient/Descartes proof and support construction are given
+explicitly in the reviewed docs/absolute-pencil-spectral.tex. This audit
+proves the additional Gaussian-congruence and dual-complement steps
+directly; it does not assert that this baseline argument is a new result.

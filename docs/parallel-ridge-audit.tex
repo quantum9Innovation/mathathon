@@ -1,0 +1,420 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[colorlinks=true,urlcolor=blue,linkcolor=blue]{hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newcommand{\R}{\mathbb R}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\MM}{T_{\mathrm{MM}}}
+\newcommand{\tO}{\widetilde O}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\range}{\operatorname{range}}
+\newcommand{\rank}{\operatorname{rank}}
+\title{Parallel product ridge actions: shared exact setup, fast blocks, and the unresolved filter step}
+\author{Research working audit}
+\date{November 14, 2026}
+\begin{document}
+\maketitle
+
+\paragraph{Status.}
+This note proves an exact-arithmetic improvement to the accounting of the
+ridge primitive in \texttt{ridge-filters.tex}: all shifts share one
+\(\tO(m^{\omega+\zeta})\) small-core setup, and true-system
+corrections can use rectangular matrix multiplication on the entire block.
+It does not prove the desired gap-free, high-accuracy rank-\(r\)
+approximation of \(AB\). A large number of parallel shifts is affordable
+in the supplied hard regime. The unresolved issue is stable evaluation or
+subspace extraction at the accuracy required by a sharp filter. The algebraic
+tools used here are established tools; novelty of their combination is not
+certified.
+
+\section{An exact shared-shift setup without an eigenvalue oracle}
+Let \(P_0,Q_0\in\R^{m\times m}\) be positive semidefinite. They
+need not be nonsingular. For \(\lambda>0\), use the unscaled block
+system
+\begin{equation}\label{eq:unscaled}
+ U_\lambda=
+ \begin{pmatrix}P_0&I\\-\lambda I&Q_0\end{pmatrix}.
+\end{equation}
+This is a rescaling of the block system in \texttt{ridge-filters.tex}:
+with \(w=\sqrt\lambda\,y\), the two formulations are equivalent.
+The unscaled form keeps the new setup and applications entirely within
+field operations \(+, -,\times,/\).
+
+\begin{lemma}[Shared exact resolvents]\label{lem:shared}
+Given \(P_0,Q_0\), a deterministic setup costing
+\(\tO(m^{\omega+\zeta})\) field operations permits the following
+operation. For any positive shifts \(\lambda_1,\ldots,\lambda_s\)
+and arbitrary right-hand sides \((h_j,k_j)\), all solutions
+\[
+ U_{\lambda_j}\binom{x_j}{w_j}=\binom{h_j}{k_j}
+\]
+can be computed exactly using a constant number of
+\(\MM(m,m,s)\) products and \(O(ms)\) additional field operations.
+The shifts and right-hand sides may be chosen after setup.
+\end{lemma}
+
+\begin{proof}
+Form \(D=P_0Q_0\). Neiger--Pernet--Villard \cite{npv}, Corollary 5.2,
+compute a Frobenius normal form together with its transformation
+deterministically in
+\(O(m^\omega(\log\log m)^2)\) field operations. Thus, after also
+inverting the transformation, we have
+\[
+ D=S F S^{-1},
+\]
+where \(F\) is block diagonal with companion blocks. This is an exact
+field computation. It does not require computing generally irrational
+eigenvalues by finitely many rational operations.
+
+For a companion block of dimension \(d\), solving
+\((F_i+\lambda I)u=v\) costs \(O(d)\) operations. For example,
+take the convention with ones on the subdiagonal and the negated monic
+polynomial coefficients in the last column. The last \(d-1\) row
+equations express \(u_{d-1},\ldots,u_1\) affinely in \(u_d\),
+in backward order. The first row then determines \(u_d\). The
+denominator is nonzero precisely when the shifted companion matrix is
+nonsingular. This is a Horner-type recurrence; it does not require a
+dense triangular solve. Summing over blocks gives \(O(m)\) per
+right-hand side.
+
+For \(\lambda>0\), \(D+\lambda I\) is nonsingular. Indeed,
+the nonzero eigenvalues of \(P_0Q_0\) are nonnegative, as seen by
+comparison with \(Q_0^{1/2}P_0Q_0^{1/2}\). Zero eigenvalues are
+also harmless. Consequently all companion recurrences are valid.
+
+Eliminate \(x\) from \eqref{eq:unscaled}. The result is
+\begin{equation}\label{eq:block-solution}
+ w=(D+\lambda I)^{-1}(\lambda h+P_0k),\qquad
+ x=\lambda^{-1}(Q_0w-k).
+\end{equation}
+For all columns, first form \(H\diag(\lambda_j)+P_0K\), change
+basis by \(S^{-1}\), solve the companion blocks independently at each
+shift, change basis by \(S\), and multiply by \(Q_0\). These are
+a constant number of common dense matrix--block products and \(O(ms)\)
+scalar operations. The setup is independent of the shifts.
+\end{proof}
+
+This observation corrects the unnecessary per-shift setup charge in the
+earlier corollary. It is an improvement in the proved primitive's accounting,
+not a claim that simultaneous shifted solves or Frobenius forms are new.
+The algebraic setup is deterministic, so it introduces no new failure event.
+
+\paragraph{Equivalent spectral formula, including singular Gram blocks.}
+For comparison, suppose spectral data are available and write
+\[
+ Q_0^{1/2}P_0Q_0^{1/2}=W\diag(d_i)W^\top,
+ \quad G=Q_0^{1/2}W,\quad F_0=P_0G,\quad
+ D_\lambda=\diag((d_i+\lambda)^{-1}).
+\]
+For the original scaled block matrix
+\(T_\lambda=\bigl(\begin{smallmatrix}P_0&\sqrt\lambda I\\
+-\sqrt\lambda I&Q_0\end{smallmatrix}\bigr)\), direct substitution gives
+\[
+ T_\lambda^{-1}=
+ \begin{pmatrix}
+ GD_\lambda G^\top&
+ -\lambda^{-1/2}(I-GD_\lambda F_0^\top)\\
+ \lambda^{-1/2}(I-F_0D_\lambda G^\top)&
+ \lambda^{-1}(P_0-F_0D_\lambda F_0^\top)
+ \end{pmatrix}.
+\]
+No inverse of \(P_0\) or \(Q_0\) occurs. Shared basis transforms
+and per-column Cauchy denominators likewise give a common setup for all
+shifts. But an exact eigendecomposition is not a finite exact-field
+primitive; Lemma~\ref{lem:shared} supplies the strictly algebraic route.
+
+\section{Fast rectangular corrections and a uniform error theorem}
+Let \(A\in\R^{n\times m}\), \(B\in\R^{m\times p}\),
+\(P=A^\top A\), \(Q=BB^\top\), \(I=m(n+p)\), and
+\(M=AB\). Suppose constant-distortion sketches satisfy
+\[
+ (1-\eta)P\preceq\widetilde P\preceq(1+\eta)P,
+ \qquad
+ (1-\eta)Q\preceq\widetilde Q\preceq(1+\eta)Q,
+ \quad 0<\eta<1/2.
+\]
+Define, up to a fixed multiplicative constant, the batched application cost
+\begin{align*}
+ \mathcal B(s)={}&\MM(n,m,s)+\MM(m,n,s)\\
+ &+\MM(p,m,s)+\MM(m,p,s)+\MM(m,m,s).
+\end{align*}
+The true Gram actions on a block are computed as
+\(PX=A^\top(AX)\) and \(QY=B(B^\top Y)\); no true full Gram
+matrix is formed.
+
+\begin{theorem}[Uniform batched ridge actions]\label{thm:batch}
+After \(\tO(I+m^{\omega+\zeta})\) setup, a block of \(s\)
+possibly different positive-shift ridge actions
+\[
+ R_{\lambda_j}v_j=
+ MM^\top(MM^\top+\lambda_j I)^{-1}v_j
+\]
+can be approximated to
+\[
+ \norm{\widehat R_{\lambda_j}v_j-R_{\lambda_j}v_j}_2
+ \le\xi\norm{v_j}_2\qquad(j=1,\ldots,s)
+\]
+in \(O(\mathcal B(s)\log(1/\xi))\) additional arithmetic
+operations. Logarithmic constants depend only on \(\eta\).
+The embedding event makes this statement simultaneous for all shifts,
+right-hand sides, iteration counts, and adaptive choices.
+\end{theorem}
+
+\begin{proof}
+Use Lemma~\ref{lem:shared} with
+\(P_0=\widetilde P\), \(Q_0=\widetilde Q\) to apply every
+sketched block inverse after one shared setup. Apply the Richardson
+correction from the uniform ridge theorem in \texttt{ridge-filters.tex}
+to all columns in parallel; the rescaling between \(U_\lambda\)
+and \(T_\lambda\) preserves the exact iterates after the same
+coordinate change. The proven error estimate is
+\[
+ \norm{\widehat R_{\lambda,j}-R_\lambda}_2
+ \le K_\eta\rho_\eta^j,\qquad
+ K_\eta=\sqrt{\frac{1+\eta}{1-\eta}},\quad
+ \rho_\eta=\frac\eta{1-\eta}<1.
+\]
+Each simultaneous true-system action costs \(O(\mathcal B(s))\).
+Each simultaneous preconditioner action costs
+\(O(\MM(m,m,s)+ms)\), which is included in the same bound.
+Initial products \(A^\top[v_1,\ldots,v_s]\) and final lifting
+by \(A\) are also included. Choose
+\(j=O(\log(K_\eta/\xi))\).
+\end{proof}
+
+The input sketches can each be assigned failure probability \(\delta/2\).
+Once both inequalities hold, the theorem is deterministic and simultaneous;
+there is no union bound over the \(s\) shifts or repeated adaptive blocks.
+Rank deficiency adds no new parameter, by the rank-deficient ridge theorem
+and Lemma~\ref{lem:shared}.
+
+For \(L\) shifts each applied to \(r\) vectors, use \(s=Lr\)
+columns. The new bound is
+\[
+ \tO(I+m^{\omega+\zeta})+
+ O\!\left(\mathcal B(Lr)\log(1/\xi)\right),
+\]
+instead of requiring \(L\) independent fast factorizations. Memory for
+the returned block and any subsequent low-rank factors must still be paid.
+This is a vector-action theorem; it does not output the AMM approximation.
+
+\section{Hard-regime block accounting}
+Take \(n=p=N\), \(m=N^{8/9}\), so that \(N=m^{9/8}\).
+A block of width \(s=m^{1/2}\) has matrix-multiplication dimension
+exponents
+\[
+ (a,b,c)=(9/8,1,1/2).
+\]
+The full rectangular bound in Amanov--van den Berg--Zuiddam
+\cite{avz}, Theorem 1.2, is input-optimal when
+\(c(a+b)\le ab\). Here
+\[
+ c(a+b)=17/16\le9/8=ab.
+\]
+Thus
+\[
+ \mathcal B(\sqrt m)=m^{17/8+o(1)}=N^{17/9+o(1)}.
+\]
+In particular \(\sqrt m\) simultaneous exact Gram actions can be
+computed at the input-size exponent. The shared setup costs
+\(m^{9/4+o(1)}=N^{2+o(1)}\). Polylogarithmically many refinement
+rounds with polynomially small \(\xi\) therefore fit the desired
+\(N^{2+o(1)}\) construction exponent. The number of positive shifts
+alone is not an obstruction.
+
+More generally, a block of width \(m^c\) remains input-optimal for
+\(c\le9/17\). For larger \(c\), the same theorem gives
+\[
+ \omega(9/8,1,c)\le\frac{(9+17c)^2}{288c}.
+\]
+This is at most \(9/4\) through
+\(c\le(171+54\sqrt2)/289\), approximately \(0.856\).
+This larger block may fit the total small-core budget even though it is
+not input-optimal. These statements concern one known block of right-hand
+sides, not sequentially dependent queries that have yet to be generated.
+
+If an algorithm eventually returns width-\(r\) factors, it must add
+\(O(npr)\) for explicit expansion. In the hard rank-one regime that
+adds \(O(N^2)\). None of the batched-action statements eliminates this
+output cost.
+
+\section{Why residual augmentation does not yet repair a sharp filter}
+For a signed linear combination of negative-shift ridge actions,
+\(f(H)=\sum_\ell a_\ell R_{\lambda_\ell}\), let
+\(\mathcal A=\sum_\ell|a_\ell|\). The usual separate-action bound
+is
+\[
+ \norm{\widehat f(H)-f(H)}_2\le\mathcal A\xi.
+\]
+The coefficient theorem in \texttt{ridge-filters.tex} permits
+\(\log\mathcal A=\Omega(\theta^{-1/2}\log m)\) for a sharp
+uniform cutoff with polynomially small tail leakage. This theorem does
+not prove a lower bound against another evaluation method. It does imply
+that Theorem~\ref{thm:batch}, used with this separate-action error bound,
+needs polynomially many refinement rounds in the hard example.
+
+If \(y_\ell\) approximately solves
+\((H+\lambda_\ell I)y_\ell=b\), write
+\[
+ r_\ell=b-(H+\lambda_\ell I)y_\ell.
+\]
+Adjoining the residuals to the candidate space gives the exact relation
+\[
+ H y_\ell\in\operatorname{span}\{b,y_\ell,r_\ell\}.
+\]
+This is useful algebra, but it does not identify that enlarged space with
+the exact high-degree rational Krylov space. The right-hand sides have
+changed independently at each shift. A theorem controlling the amplified
+combination, or an alternative rank-\(r\) extraction theorem, is still
+needed.
+
+\begin{proposition}[Scalar-preconditioner test]\label{prop:scalar}
+Consider simultaneous Richardson solves of
+\((H+\lambda I)y=b\), initialized at zero, with preconditioner
+\((c+\lambda)I\), for any number of different positive shifts.
+After at most \(j\) correction rounds, all iterates and their
+residuals lie in
+\[
+ \mathcal K_{j+1}(H,b)
+ =\operatorname{span}\{b,Hb,\ldots,H^j b\}.
+\]
+Increasing the number of shifts does not increase this upper bound on
+the exact generated space.
+\end{proposition}
+\begin{proof}
+Every correction is a scalar multiple of a previous residual. Induction
+shows that an iterate after \(j\) rounds is a polynomial in \(H\)
+of degree at most \(j-1\), applied to \(b\); its residual has degree
+at most \(j\). Different shifts change only the scalar coefficients.
+\end{proof}
+
+Take \(H\) with spectrum in a constant relative interval around
+\(c>0\). Then \(cI\) is an admissible constant-distortion
+preconditioner, so Proposition~\ref{prop:scalar} is a valid test for any
+argument using only that distortion property. The same issue occurs in
+the product block formulation with \(Q=\widetilde Q=I\) and
+\(\widetilde P=cI\): the blocks of the sketched inverse are scalar
+multiples of the identity, and all output vectors have polynomial degree
+controlled by the number of correction rounds, not the number of shifts.
+This is not an OSE distributional lower bound. A proof exploiting the
+actual randomness of the input embedding could go beyond this test, but
+must explicitly establish the required additional property.
+
+Stable sequential rational Arnoldi or a factorized Newton/Clenshaw
+evaluation avoids forming a huge partial-fraction sum directly. Its
+known operator dependencies are sequential, so it does not automatically
+inherit the fast-block budget. A simultaneous Sylvester or Clenshaw
+linearization is an interesting alternative. A constant sketch can move
+its surrogate eigenvalues outside the Chebyshev interval by a fixed
+amount, however; high-degree polynomial values there can grow
+exponentially in the degree. No uniform contraction or stable fast
+parallel solve for that linearization has been proved here.
+
+\section{Exact partial Gram postprocessing and the sequential gap}
+Suppose a coefficient block \(V\in\R^{m\times s}\) is already
+available, and let \(Z=AV\). Exact restricted information can be
+obtained through
+\[
+ Z=AV,\quad F=A^\top Z,\quad T=B^\top F=M^\top Z,
+ \quad G=Z^\top Z,\quad K=T^\top T.
+\]
+The two small Gram matrices supply normalization of \(Z\) and the
+usual Rayleigh--Ritz core for the product restricted to its span. Only
+the selected \(r\) directions need be lifted. The required products
+cost a constant number of the terms in \(\mathcal B(s)\), plus
+\(\MM(s,n,s)+\MM(s,p,s)\), fast \(s\)-dimensional algebra,
+and selected-direction lifting. For \(s=\sqrt m\) in the hard
+regime, all these costs fit \(N^{2+o(1)}\).
+
+For a genuine standard Krylov candidate, its established low-rank
+approximation proof justifies the final selection. Merely knowing a
+good rank-\(s\) range approximation is not sufficient to assert the
+same \((1+\theta)\) error after truncating to rank exactly \(r\);
+the rank-\(r\) extraction needs its own guarantee.
+
+The unresolved construction is the true coefficient Krylov block
+\[
+ V=[\Omega,\,QP\Omega,\,(QP)^2\Omega,\ldots].
+\]
+Its columns are not known before the exact input actions are performed.
+Charging one fast multiplication to the entire final block therefore
+does not constitute an algorithm for generating it. With conventional
+sequential generation and \(s=\Theta(\theta^{-1/2})=\Theta(\sqrt m)\)
+for rank one, the input work remains
+\(\tO(I\sqrt m)=N^{7/3+o(1)}\), above both the target and the
+named fast-Gram comparison \(N^{169/81+o(1)}\).
+
+Neiger--Pernet--Villard's fast Krylov theorem applies to an
+\emph{explicit} square operator. Applying it to \(QP\) after
+forming \(P,Q\) retains the Gram setup cost. Treating the factorized
+operator as if that explicit input had already been supplied would
+discard the central cost in this problem.
+
+\paragraph{A genuinely different remaining route.}
+Their polynomial-matrix, kernel-basis, and high-order-lifting tools might
+be applied directly to a tall factor linearization. For example, the
+polynomial matrix
+\[
+ \mathcal L(z)=
+ \begin{pmatrix}
+ zI_m&-A^\top&0&0\\
+ 0&I_n&-A&0\\
+ 0&0&I_m&-B\\
+ -B^\top&0&0&I_p
+ \end{pmatrix}
+\]
+has Schur complement \(zI_m-PQ\) after eliminating the identity
+blocks. Its polynomial degree is concentrated in only \(m\) rows,
+while its off-diagonal data are precisely the tall factors. A
+structure-sensitive kernel-basis or truncated-power-projection theorem
+for this representation could be relevant. Standard explicit Schur
+elimination forms the costly Gram blocks, and a dense algorithm on the
+full \((n+p+2m)\)-dimensional linearization is also too expensive.
+No appropriate cost theorem for retaining this structure is proved or
+identified here. The explicit-square-matrix theorem must not be claimed
+to cover it.
+
+\section{Precision and final assessment}
+The shared-shift theorem is a proved exact-field arithmetic result. It
+avoids the logical error of charging an exact spectral decomposition as
+a finite rational computation. It does not make the canonical-form
+similarity basis well conditioned. Companion coefficients, transformation
+matrices, and nearly cancelling terms in \eqref{eq:block-solution}
+can be large; shifts near zero can require very high relative precision.
+The uniform output-norm proof for exact Richardson does not by itself
+control those internal roundoff errors. A numerical implementation needs
+an explicit precision theorem, potentially depending on shift scale and
+core conditioning. No polylogarithmic bit-cost result follows from the
+operation count alone.
+
+The positive conclusions are one shared exact setup for every shift and
+an input-optimal exponent for a \(\sqrt m\)-wide known block in the
+hard regime. The arbitrary-input AMM target remains unproved. There is
+no demonstrated new total-runtime algorithm beating the named
+\(N^{169/81+o(1)}\) comparison on every input. The most concrete new
+question isolated here is whether structured factor linearizations or a
+structure-preserving parallel rational-space extraction can exploit the
+affordable batch without inheriting sequential generation or exponential
+cancellation precision.
+
+\begin{thebibliography}{9}
+\bibitem{npv}
+V. Neiger, C. Pernet, and G. Villard.
+\emph{Computing Krylov Iterates in the Time of Matrix Multiplication}
+(2024), Theorem 4.1 and Corollary 5.2.
+\url{https://arxiv.org/abs/2402.07345}.
+\bibitem{avz}
+A. Amanov, M. van den Berg, and J. Zuiddam.
+\emph{Multiplying Matrices via Polynomials: Exposition and Barriers}
+(2026 preprint), Theorem 1.2.
+\url{https://arxiv.org/abs/2610.30054}.
+\bibitem{mm}
+C. Musco and C. Musco.
+\emph{Randomized Block Krylov Methods for Stronger and Faster Approximate
+Singular Value Decomposition} (2015).
+\url{https://arxiv.org/abs/1504.05477}.
+\end{thebibliography}
+\end{document}

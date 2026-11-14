@@ -1,0 +1,995 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[colorlinks=true,urlcolor=blue,linkcolor=blue,citecolor=blue]{hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\newcommand{\R}{\mathbb R}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\range}{\operatorname{range}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\tO}{\widetilde O}
+\newcommand{\MM}{T_{\rm MM}}
+\newcommand{\Ac}{\mathcal A}
+\newcommand{\Jc}{\mathcal J}
+\title{Hierarchical absolute pencils for block spectral\\
+approximation of factored products}
+\author{Working manuscript: exact-arithmetic proof; priority under review}
+\date{November 14, 2026}
+\begin{document}
+\maketitle
+\begin{abstract}
+We refine a coarse absolute-value preconditioner using finer Gram
+proxies that are supplied only through sketched-factor actions.
+The actual finite preconditioners satisfy a relaxed quadratic invariant
+\(F-\kappa KF^{-1}K\preceq ChD\), with fixed \(\kappa>1\).
+It preserves the \(\alpha h\) transfer of a strong block residual,
+although the ordinary quadratic defect need not be \(O(hD)\).
+Each refinement uses \(\widetilde O(H/h)\) fine-proxy actions.
+An exact carried-preimage identity implements the physical output lift
+without inverting an implicit polynomial preconditioner.
+
+All depth dependence can be unfolded. For fixed
+\(1/8<d<(\sqrt2-1)/2\), \(n=p=N=m^{1+d+o(1)}\),
+\(\theta=(m/N)^{5/2}\), and every \(r\leq\sqrt m\), a scalar
+square-root schedule of depth \(O(\log\log m)\) gives total
+explicit-output time \(N^{2+o(1)}\), with gap-free error
+\((1+\theta)\sigma_{r+1}(AB)\). Confidence is constant or inverse
+polynomial. The bound includes all preprocessing, range algebra,
+and output entries. The model counts exact real arithmetic, positive
+scalar square roots, comparisons, and Gaussian samples; it makes no
+stable finite-word claim. The combined theorem's global priority remains
+under review.
+\end{abstract}
+
+\section{Statements and arithmetic model}
+Let \(A\in\R^{n\times m}\), \(B\in\R^{m\times p}\),
+\(m\leq\min(n,p)\), \(M=AB\), and \(I=m(n+p)\).
+Unless specified otherwise, \(1\leq r\leq m\) is an integer.
+Eigenvalues and singular values past a matrix's dimension are zero.
+We use a feasible square multiplication exponent \(\omega>2\), with
+fixed slack \(\zeta>0\); \(\omega\leq9/4\) is available over the
+reals \cite{amanov}. Multiplication costs are chosen symmetrically in
+their three dimensions, using the matrix multiplication tensor. Define
+\begin{align*}
+ \Ac(b)&=\MM(n,m,b)+\MM(p,m,b),\\
+ s_A(h)&=\min\{n,\tO(m/h^2)\},\quad
+ s_B(h)=\min\{p,\tO(m/h^2)\},\\
+ \Jc_h(b)&=\MM(s_A(h),m,b)+\MM(s_B(h),m,b),\\
+ G_h&=\MM(m,s_A(h),m)+\MM(m,s_B(h),m).
+\end{align*}
+The row counts include their allocated failure probabilities. Use the
+identity embedding when a row bound reaches the ambient dimension.
+Thus this fallback retains the original factors as operators and its
+cost is included explicitly. Forming and storing an \(h\)-proxy costs
+\(\tO(I)\); \(G_h\) is paid only when its Gram is formed.
+
+All operations are exact field operations, comparisons, positive scalar
+square roots, or Gaussian samples of unit cost. Representations may have
+arbitrary size. Tildes hide logarithms in dimensions, inverse supplied
+accuracy, and inverse failure probability. No input-conditioned logarithm
+is hidden. A subscript \(L\) on \(\tO_L\) permits dependence on a
+\emph{fixed} depth only; the growing-depth result below unfolds it.
+
+\begin{theorem}[Fixed-depth tradeoff]\label{thm:fixed}
+Fix an integer \(L\geq1\),
+\[
+ 0<\theta\leq h_L<\cdots<h_0\leq1/64,
+ \qquad h_j/h_{j-1}\leq1/1024.
+\]
+For every fixed factor pair and \(0<\delta<1\), an algorithm returns
+factors of width at most \(r\), explicitly forms their product \(C\),
+and satisfies
+\(\norm{M-C}_2\leq(1+\theta)\sigma_{r+1}(M)\)
+with probability at least \(1-\delta\).
+Let
+\[
+ B_j=2^{j+1},\quad C_0=36,\quad C_j=100(C_{j-1}+1),\quad
+ A_L=10^6(C_L+1),\quad \alpha=\frac{\theta}{A_Lh_L}.
+\]
+Take a sufficient capped per-run degree
+\(q=\tO(\alpha^{-1/2})\), including the logarithm of the final
+Gaussian covariance condition, and put \(w_K=(2q+1)(r+1)\).
+When \(w_K\leq m\), total cost is
+\begin{equation}\label{eq:fixedcost}
+ \tO_L\!\left(I+G_{h_0}+m^{\omega+\zeta}
+ +\Ac(r+1)\sqrt{h_L/\theta}
+ +\sum_{j=1}^L\Jc_{h_j}(r+1)
+                    \frac{h_{j-1}}{\sqrt{h_L\theta}}
+ +np+\MM(n,r,p)\right).
+\end{equation}
+For arbitrary \(w_K\), adding \(m w_K^2\) gives a conservative
+range-algebra bound. Rank-deficient factors, repeated values, zero
+products, and zero optimal tails are covered. All outcome costs are capped.
+\end{theorem}
+
+\begin{theorem}[A growing-depth endpoint family]\label{thm:family}
+Fix \(1/8<d<(\sqrt2-1)/2\) and \(c_\delta>0\).
+Let \(n=p=N=m^{1+d+o(1)}\),
+\[
+ \rho=m/N,\qquad \theta=\rho^2\sqrt\rho,\qquad
+ 1\leq r\leq\lfloor\sqrt m\rfloor,
+ \qquad m^{-c_\delta}\leq\delta<1.
+\]
+There is a depth-\(O_d(\log\log m)\) instance of the finite algorithm
+whose total explicit-output cost is \(N^{2+o(1)}\), with the same
+width and error guarantee as Theorem~\ref{thm:fixed}.
+The schedule uses only scalar square roots, field operations, and
+comparisons. More explicitly, for a fixed-shape multiplication overhead
+\(\chi(m)=m^{o(1)}\), the cost is bounded by
+\begin{equation}\label{eq:unfolded}
+ N^2\chi(m)\exp\!\left(O_{d,c_\delta}((\log\log m)^2)\right)
+       +m^{\omega+\zeta}(\log m)^{O_{d,c_\delta}(1)}.
+\end{equation}
+Choose fixed slack \(\zeta\) below the positive core/output margin.
+\end{theorem}
+
+\section{Precisely stated ingredients from the companion}
+We use the following finite results from the independently audited
+companion \cite{companion}. They are recalled to specify exactly what
+is imported; all new hierarchical obligations are proved here.
+
+Fast embeddings \cite{cnw} and the companion's product-support reduction
+give explicit \(W,L_c,Q_0\) and operator identities, on the common
+coarse event,
+\begin{equation}\label{eq:support}
+ \begin{gathered}
+ M=Z\mathcal B,\qquad Z=AW,\qquad\mathcal B=L_cB,\\
+ G=Z^\top Z,\qquad Q=\mathcal B\mathcal B^\top,\\
+ \frac I{1+h_0}\preceq G\preceq\frac I{1-h_0},\qquad
+ (1-h_0)Q\preceq Q_0\preceq(1+h_0)Q.
+ \end{gathered}
+\end{equation}
+Its dimension \(k\) equals \(\rank M\) on the event; the computed
+dimension never exceeds \(\rank M\) on any outcome. \(Z\) is injective
+and \(Q_0\) is positive definite on every computed nonzero support.
+The reduction costs \(\tO(I+G_{h_0}+m^{\omega+\zeta})\).
+If the computed support is zero, return zero. If its dimension is at most
+\(r\), project \(M\) onto the full range of \(Z\); this is exact on
+the coarse event. Hence the remaining analysis has \(r<k\).
+
+Use an even, fixed Neumann polynomial
+\[
+ B_m=\sum_{i=0}^{l_m}(I-G)^i,\qquad
+ \varepsilon_m=\theta/10^9,
+ \qquad(1-\varepsilon_m)G^{-1}\preceq B_m
+                   \preceq(1+\varepsilon_m)G^{-1}.
+\]
+Its degree is \(O(\log(1/\theta))\); even degree makes it positive
+for every positive \(G\), even off the event. Fix throughout all layers
+and thresholds
+\begin{equation}\label{eq:truepencil}
+ K(t)=tB_m-Q,\quad D(t)=tI+Q_0,\quad
+ \widehat H=B_m^{-1/2}QB_m^{-1/2}.
+\end{equation}
+The analytical roots are not computed. With \(H=G^{1/2}QG^{1/2}\),
+\begin{equation}\label{eq:masscompare}
+ \lambda_i(H)/(1+\varepsilon_m)
+ \leq\lambda_i(\widehat H)
+ \leq\lambda_i(H)/(1-\varepsilon_m).
+\end{equation}
+The eigenvalues of \(H\) are the nonzero squared singular values of \(M\).
+
+The companion's \emph{Finite weighted defect} lemma constructs an
+explicit \(F_0=J_0J_0^\top\) and \(J_0^{-1}\), at every \(t>0\),
+in \(\tO(m^{\omega+\zeta})\), with
+\begin{equation}\label{eq:base}
+ 8h_0D\preceq F_0\preceq2D,\quad -F_0\prec K\prec F_0,
+ \quad0\preceq F_0-KF_0^{-1}K\preceq36h_0D.
+\end{equation}
+Set \(R_0=J_0^{-\top}\).
+It computes \(S_0=(tI-Q_0)(tI+Q_0)^{-1}\), a finite upper Newton
+approximation to \(\sqrt{S_0^2+64h_0^2I}\), and its regularized
+coarse metric. This is finite field/Cholesky algebra, not a spectral
+oracle. The coarse core remains positive on every outcome.
+
+The companion's \emph{Coefficient ratio and shifted inertia} lemma,
+using fast characteristic polynomials \cite{np}, proves
+\(v_j/j\leq e_j/e_{j-1}\leq(k-j+1)v_j\) for PSD spectra, and
+computes exact shifted inertia in \(\tO(m^{\omega+\zeta})\), including
+zero and repeated roots. Thus for \(j=r+1\) and
+\(\varrho=e_j(Q_0)/e_{j-1}(Q_0)\),
+\begin{equation}\label{eq:init}
+ [\ell,u]=[\varrho/(4k),4k\varrho]
+ \quad\hbox{contains}\quad\lambda_*:=\lambda_j(\widehat H)>0.
+\end{equation}
+Its ratio is \(16k^2\); no leading-to-target scale search is needed.
+
+We also import the companion's \emph{Safe threshold oracle}. Its proof
+applies to \emph{any} symmetric \(C\) with \(-I\prec C\prec I\),
+\(T=I-C\), and an inertia-equivalent pencil. Musco--Musco's per-vector
+Theorem~12 \cite{mm}, applied to target \(j\), gives a compressed
+\(T^2\) Ritz value \(\beta_j\leq\lambda_j(T)^2\) on every run and
+\(\beta_j\geq(1-\alpha/100)\lambda_j(T)^2\) with probability
+\(99/100\). Independent repetitions and exact shifted-inertia tests at
+\(1\) and \(1-2\alpha/100\) return one of:
+\[
+ \textit{below}:\ \mu_j(C)<0,\qquad
+ \textit{above}:\ \mu_j(C)\geq0,\qquad
+ \textit{near}:\ |\mu_j(C)|\leq\alpha.
+\]
+Here \(\mu_i\) is ordered increasingly. A below decision is always safe
+on the common event; failure at most \(\beta\) for the whole query
+requires only logarithmic repetitions. The degree is
+\(\tO(\alpha^{-1/2})\). No numerical Ritz extraction, root isolation,
+or coefficient powering is used.
+
+Finally, deterministic CUP rank revelation \cite{jps}, followed by
+exact independent-column Gram--Cholesky algebra, supplies range bases
+in \(\tO(m^{\omega+\zeta})\) whenever both dimensions are at most
+\(m\). The physical thin-basis cost is bounded by
+\(\Ac(r)+m^{\omega+\zeta}\) using tensor symmetry and padding.
+These algorithms permit arbitrary column dependencies.
+
+\section{Fine inverse masses use only fine factors}
+Store finer factors \(A_j=S_jA\), \(B_j^{\rm fac}=BT_j^\top\)
+without forming their Grams. On their simultaneous Loewner events,
+\[
+ G_j=W^\top A_j^\top A_jW\in[(1-h_j)G,(1+h_j)G],\qquad
+ Q_j=L_cB_j^{\rm fac}(B_j^{\rm fac})^\top L_c^\top
+                         \in[(1-h_j)Q,(1+h_j)Q].
+\]
+Coarse whitening gives \(\norm{I-G_j}_2\leq2h_0<1\).
+An even Neumann polynomial \(\widetilde B_j\) approximates
+\(G_j^{-1}\) relatively to \(h_j/100\) in
+\(O(\log(1/h_j))\) fine-factor actions. Define
+\(K_j(t)=t\widetilde B_j-Q_j\). Inverse Loewner comparison and
+\eqref{eq:support} imply, uniformly for every \(t>0\),
+\begin{equation}\label{eq:proxy}
+ -8h_jD\preceq E_j:=K_j-K\preceq8h_jD.
+\end{equation}
+Indeed the two inverse masses differ by at most a small constant times
+\(h_jI\); the right proxy error is at most
+\(h_jQ\preceq h_jQ_0/(1-h_0)\). The constant eight is conservative.
+All inverse masses are fixed polynomials throughout the threshold search.
+Their actions cost \(\tO(\Jc_{h_j}(b))\) on a width-\(b\) block.
+They use the stored fine factors, including an identity fallback when
+chosen, with no finer support calculation.
+
+\section{A finite relaxed invariant}
+The stronger ordinary defect bound in \eqref{eq:base} will be replaced
+by
+\begin{equation}\label{eq:invariant}
+ 8h_jD\preceq F_j\preceq B_jD,\qquad -F_j\prec K\prec F_j,
+ \qquad F_j-\kappa_jKF_j^{-1}K\preceq C_jh_jD,
+\end{equation}
+where \(\kappa_0=1\) and \(\kappa_j=5\) for \(j\geq1\).
+The last left side need not be positive. This distinction permits a
+hierarchy without asserting a false \(O(h_jD)\) ordinary defect.
+
+\begin{lemma}[Relative perturbation]\label{lem:relative}
+Let \(F_*,\bar F\) be positive definite, \(0\leq\delta<1\), and \(\kappa\geq0\).
+If \((1-\delta)F_*\preceq\bar F\preceq(1+\delta)F_*\) and
+\(F_*-\kappa KF_*^{-1}K\preceq ChD\), then
+\[
+ \bar F-\kappa(1+\delta)^2K\bar F^{-1}K
+ \preceq(1+\delta)(F_*-\kappa KF_*^{-1}K)
+ \preceq(1+\delta)ChD.
+\]
+No matrices in this statement need commute.
+\end{lemma}
+\begin{proof}
+Use \(\bar F\preceq(1+\delta)F_*\) and
+\(\bar F^{-1}\succeq(1+\delta)^{-1}F_*^{-1}\), then apply
+congruence by \(K\).
+\end{proof}
+
+\begin{lemma}[Finite inverse-root polynomial]\label{lem:poly}
+For \(0<\eta\leq1/8\), \(0<\tau<1/4\), and
+\(f_\eta(x)=\sqrt{x^2+\eta^2}+\eta\), a finite polynomial \(p\)
+of degree \(O(\eta^{-1}\log(1/(\tau\eta)))\) satisfies
+\[
+ |p(x)\sqrt{f_\eta(x)}-1|\leq\tau\quad(-1\leq x\leq1).
+\]
+Its coefficients use field operations and positive scalar square roots
+only, in \(O(n\log n)\) work for a dyadic degree bound \(n\).
+\end{lemma}
+\begin{proof}
+Let \(g(z)=(\sqrt{z^2+\eta^2}+\eta)^{-1/2}\), with positive real
+branches. On the Bernstein ellipse of parameter
+\(\varrho=1+\eta/4\), the imaginary part has magnitude at most
+\(\eta/4\). Hence \(\operatorname{Re}(z^2+\eta^2)\geq15\eta^2/16\);
+the branches are analytic there and \(|g(z)|\leq\eta^{-1/2}\).
+The Laurent representation under \(z=(w+w^{-1})/2\) and Cauchy's
+bound give Chebyshev coefficient magnitudes at most
+\(2\eta^{-1/2}\varrho^{-i}\). Interpolation at \(n\) Gauss--Chebyshev
+nodes aliases each omitted Chebyshev polynomial to a polynomial of norm
+at most one on the interval. The interpolation error is therefore at
+most \(24\eta^{-3/2}\varrho^{-n}\).
+
+Choose dyadic \(n\) by repeatedly squaring \(\varrho^{-n}\) until it
+is at most \(\tau\eta\sqrt\eta/1000\). This gives the stated degree
+and absolute error at most \(\tau/2\). Since
+\(g(x)\geq1/\sqrt{1+2\eta}>0.8\), it gives the relative claim and
+positivity of \(p\). The dyadic nodes are real parts of dyadic roots
+of unity, constructed by positive half-angle square roots. Each node
+value of \(g\) uses two positive scalar roots and division. The dyadic
+DCT is evaluated by the usual divide-and-conquer DFT recurrence using
+these roots, in \(O(n\log n)\) real-pair operations. Thus no cosine,
+integration, coefficient, or matrix-root oracle is used. The Chebyshev
+recurrence applies \(p\) using \(n\) matrix actions.
+\end{proof}
+
+\begin{lemma}[One finite refinement]\label{lem:refine}
+Assume \eqref{eq:invariant} at accuracy \(H=h_{j-1}\), with
+\(\kappa\leq5\), constants \(B,C\), and \(C\geq1\).
+Let \(h=h_j\), \(\epsilon=h/H\leq1/1024\), and suppose
+\eqref{eq:proxy} holds. If an actual inverse factor \(R_{j-1}\) has
+\(F_{j-1}=R_{j-1}^{-\top}R_{j-1}^{-1}\), a finite polynomial
+construction produces \(R_j\) satisfying \eqref{eq:invariant} with
+\[
+ B_j=2B,\qquad C_j=100(C+1),\qquad\kappa_j=5.
+\]
+It uses degree \(\tO(H/h)\) and only forward previous-level and
+fine-proxy actions. In addition \(F_j\pm K\succeq55hD\).
+\end{lemma}
+\begin{proof}
+Set \(P=(1+\epsilon)F_{j-1}\),
+\(R_P=R_{j-1}/\sqrt{1+\epsilon}\), and
+\(A_j=R_P^\top K_jR_P\). The error bound and
+\(F_{j-1}\succeq8HD\) give \(-P\prec K_j\prec P\), hence
+\(\operatorname{spec}(A_j)\subset[-1,1]\).
+
+Write \(E=K_j-K\). Weighted normalization gives
+\(EF_{j-1}^{-1}E\preceq8h^2D/H\). Quadratic Young's inequality,
+with parameter \(\epsilon\), gives
+\[
+ KF_{j-1}^{-1}K\preceq(1+\epsilon)K_jF_{j-1}^{-1}K_j
+ +(1+1/\epsilon)EF_{j-1}^{-1}E.
+\]
+Consequently
+\begin{equation}\label{eq:young}
+ P-\kappa_PK_jP^{-1}K_j\preceq C_PH D,\quad
+ \kappa_P=\kappa(1+\epsilon)^3\leq6,\quad C_P\leq2(C+1).
+\end{equation}
+This controls noncommuting cross terms; no commutation with \(D\) or
+\(E\) is assumed.
+
+Put \(\eta=8\epsilon\) and define, for analysis only,
+\(F_*=R_P^{-\top}f_\eta(A_j)R_P^{-1}\).
+Since \(f_\eta\geq|x|+\eta\), its minimum is \(2\eta\), and its
+maximum is at most \(1+2\eta\leq5/4\),
+\begin{equation}\label{eq:idealbounds}
+ F_*\succeq128hD,\quad F_*\preceq(1+2\eta)(1+\epsilon)BD,
+ \quad F_*\pm K\succeq56hD.
+\end{equation}
+The scalar identity \(f_\eta-x^2/f_\eta=2\eta\) gives exactly
+\(F_*-K_jF_*^{-1}K_j=2\eta P\).
+By \eqref{eq:young} and \(F_*\preceq(5/4)P\),
+\[
+ F_*-K_jF_*^{-1}K_j
+ \preceq2\eta\kappa_P(5/4)K_jF_*^{-1}K_j+16C_PhD.
+\]
+The first coefficient is below one because
+\(\epsilon\leq1/1024\). Hence
+\(F_*-2K_jF_*^{-1}K_j\preceq16C_PhD\).
+Young's inequality with parameter one and
+\(EF_*^{-1}E\preceq hD/2\) now imply
+\begin{equation}\label{eq:idealrelax}
+ F_*-4KF_*^{-1}K\preceq(16C_P+2)hD.
+\end{equation}
+
+Apply Lemma~\ref{lem:poly} with
+\(\tau=h/[10^6(1+B)]\), and set
+\[
+ R_j=R_Pp_j(A_j),\qquad F_j=R_j^{-\top}R_j^{-1}.
+\]
+Only \(R_j\) and its transpose are applied. The analytical metric
+satisfies \((1-4\tau)F_*\preceq F_j\preceq(1+4\tau)F_*\).
+Lemma~\ref{lem:relative} turns \eqref{eq:idealrelax} into the claimed
+\(\kappa_j=5\), \(C_j=100(C+1)\) inequality. The relative error,
+\eqref{eq:idealbounds}, and the chosen \(\tau\) preserve the floor,
+the \(55hD\) margins, and the upper bound \(2BD\).
+All constants are uniform in the level; \(C\) enters linearly, and
+\(B\) enters only the scalar tolerance. No fine metric is formed.
+\end{proof}
+
+Starting at \eqref{eq:base}, Lemma~\ref{lem:refine} proves the actual
+finite invariant at every level with the explicit theorem constants.
+The construction is uniform over all positive thresholds, including
+singular pencils. It uses no fine spectral-norm refinement or fine Gram.
+
+\section{Threshold search and physical transfer}
+At a fixed threshold set
+\(F=F_L\), \(R=R_L\), \(C_F=R^\top KR\), \(T=I-C_F\).
+Domination gives \(0\prec T\prec2I\). The safe threshold oracle from
+the companion applies literally to this symmetric operator. The congruent
+matrix \(C_F\) has the inertia of \(K=tB_m-Q\), hence counts
+eigenvalues of \(\widehat H\) above the threshold.
+Update \(\ell=t\) on below and \(u=t\) on above. At a near result,
+\(|\mu_j(C_F)|\leq\alpha\).
+
+\begin{lemma}[Relaxed min--max and strong transfer]\label{lem:transfer}
+Suppose \(-F\prec K\prec F\) and
+\(F-\kappa KF^{-1}K\preceq ChD\), with \(1\leq\kappa\leq5\).
+Assume \(0<\alpha\leq1/(100\kappa)\) and \(7C\alpha h<1/4\),
+as holds for the theorem's parameters at \(C=C_L,h=h_L\).
+For the theorem's \(\alpha\), a near result implies
+\[
+ \lambda_*\geq\frac{1-x}{1+x}t,\qquad
+ x\leq4C\alpha h.
+\]
+If \(U\) is an orthonormal basis satisfying
+\(\norm{(I-UU^\top)T}_2\leq1+3\alpha\), then
+\(\mathcal S=\range(ZR^{-\top}U)\) satisfies
+\begin{equation}\label{eq:physical}
+ \norm{(I-\Pi_{\mathcal S})M}_2^2
+ \leq\frac{1+u+\varepsilon_m}{1-u}\,t,
+ \qquad u=7C\alpha h.
+\end{equation}
+\end{lemma}
+\begin{proof}
+Put \(\beta_\alpha=\alpha/(1-\kappa\alpha^2)\leq2\alpha\).
+For \(-1\leq c\leq\alpha\),
+\(c\leq\beta_\alpha(1-\kappa c^2)\). To check this, the convex
+quadratic \(\beta_\alpha\kappa c^2+c-\beta_\alpha\) vanishes at
+\(c=\alpha\) and is nonpositive at \(c=-1\).
+Apply it on the bottom-\(j\) eigenspace, undo the congruence, and use
+the relaxed invariant. On a dimension-\(j\) subspace,
+\(K\preceq C\beta_\alpha hD\preceq2C\beta_\alpha h(tB_m+Q)\).
+Generalized min--max proves the first assertion.
+
+Let \(b=(1+3\alpha)^2-1\leq7\alpha\). Symmetry and the strong
+action norm imply \(w^\top(C_F^2-2C_F)w\leq b\norm w^2\) for
+\(w\perp U\). Substitute \(w=R^{-1}y\). Then
+\[
+ 2y^\top Ky\geq y^\top KF^{-1}Ky-b y^\top Fy
+ \geq(1-\kappa b)y^\top KF^{-1}Ky-bCh\,y^\top Dy
+ \geq-bCh\,y^\top Dy.
+\]
+For physical \(x\perp\mathcal S\), \(y=Z^\top x\) has this
+orthogonality and satisfies
+\(y^\top G^{-1}y\leq\norm x^2\),
+\(\norm y^2\leq2\norm x^2\), and
+\(y^\top Q_0y\leq2x^\top MM^\top x\).
+Using \(B_m\preceq(1+\varepsilon_m)G^{-1}\) gives
+\[
+ t\norm x^2-x^\top MM^\top x
+ \geq-(Cbh+\varepsilon_m)t\norm x^2
+       -Cbh\,x^\top MM^\top x.
+\]
+Taking the largest quotient proves \eqref{eq:physical}.
+\end{proof}
+
+If no near result occurs, stop when \(u-\ell\leq\alpha h_L\ell\)
+and take the final \(t=u\). Inertia gives \(\lambda_j(T)\leq1\)
+and \(t\leq(1+\alpha h_L)\lambda_*\). A near result gives
+\(\lambda_j(T)\leq1+\alpha\). In both cases the final strong filter
+is applicable. All thresholds are positive; the coarse core has no poles.
+An outcome-independent bound on threshold calls is
+\begin{equation}\label{eq:Qcap}
+ Q_{\max}=\left\lceil\log_2(16m^2 A_L/\theta)\right\rceil+1.
+\end{equation}
+Scalar halving finds a sufficient integer without a logarithm oracle.
+
+With \(C=C_L\), \(h=h_L\), the choices in the theorem give
+\(u\leq7\theta/10^6\) and \(x\leq4\theta/10^6\).
+The physical factor is at most \(1+3u+2\varepsilon_m\), the near
+threshold costs at most \(1+4x\), and mass comparison costs at most
+\(1+2\varepsilon_m\). Their product is below \((1+\theta)^2\).
+This calculation keeps \(\varepsilon_m=\theta/10^9\) separate from
+\(\alpha h_L=\theta/A_L\), including at growing depth.
+
+\section{Exact carried preimages implement the dual output}
+The physical lift in Lemma~\ref{lem:transfer} contains \(R_L^{-\top}\).
+It cannot be replaced by an uncharged approximate inverse: that would
+change the exact dual complement. We now implement the lift using only
+forward fine polynomials.
+
+Let
+\[
+ S=R_0^{-1}R_L,\qquad A_0=R_0^\top KR_0,\qquad
+ T=I-S^\top A_0S,\qquad V_0=I-A_0SS^\top.
+\]
+The explicit coarse matrices apply \(R_0^{-1}\) and its transpose.
+Although the fine polynomial factors need not commute,
+\begin{equation}\label{eq:Scond}
+\kappa(S)\leq U_S:=2^L\sqrt{h_0/h_L}
+\end{equation}
+Indeed each positive polynomial factor has condition at most
+\(2\sqrt{h_{j-1}/h_j}\), by its relative approximation and the
+minimum and maximum of \(f_\eta\); multiply the conditions.
+Scalar inflations have condition one.
+
+Use a fresh standard Gaussian \(\Xi\in\R^{k\times r}\) and the
+start \(\Omega=S^\top\Xi\) for the final filter. The companion's
+filter polynomial is
+\[
+ \phi_v(x)=\frac{{\rm Cheb}_v(2x/(1+\alpha)-1)}
+ {{\rm Cheb}_v(2(1+2\alpha)/(1+\alpha)-1)}.
+\]
+Set the computable bound \(R_G=(100kU_S/\beta)^3\). Increase the
+denominator by the scalar recurrence until it is at least \(2R_G/\alpha\).
+The intertwining identity
+\(TS^\top=S^\top V_0\) proves exactly
+\begin{equation}\label{eq:preimage}
+ Y=\phi_v(T)\Omega=S^\top W_o,\qquad
+ W_o=\phi_v(V_0)\Xi,\qquad
+ R_L^{-\top}Y=R_0^{-\top}W_o.
+\end{equation}
+Thus compute \(W_o\) by forward polynomial recurrence and output the
+physical span \(\range(ZJ_0W_o)\). No inverse fine polynomial is applied.
+The carried operator \(V_0\) may be nonnormal; the proof is the exact
+polynomial identity, not a nonsymmetric Lanczos assertion.
+
+For completeness, the Gaussian filter capture remains valid with this
+start. In a fixed \(T\) eigenbasis, let the head be the eigenvalues
+strictly above \(1+\alpha\), of dimension at most \(r\). Its Gaussian
+row covariance has eigenvalues between \(\sigma_{\min}(S)^2\) and
+\(\sigma_{\max}(S)^2\). A square head subblock has least singular
+value at least \(\sigma_{\min}(S)\) times that of a standard Gaussian
+square matrix. The elementary column-distance/union bound and a
+Frobenius Markov bound for the tail give, with failure at most \(\beta\),
+\[
+ \norm{\Omega_{\rm tail}\Omega_{\rm head}^\dagger}_2
+\leq R_G.
+\]
+No head/tail independence is required. Strong polynomial values at
+eigenvalues at least \(1+2\alpha\) are at least one; weak head
+coordinates are forced to zero by the analytical head right inverse.
+Choosing the denominator at least \(2R_G/\alpha\)
+gives strong-space error at most \(\alpha/2\). The remaining spectrum
+is below \(1+2\alpha\), and \(\norm T\leq2\), so
+\(\norm{(I-\Pi_{\range Y})T}\leq1+3\alpha\).
+The required degree is
+\(O(\alpha^{-1/2}\log(kU_S/(\alpha\beta)))\).
+This proves the strong certificate for the actual physical space in
+\eqref{eq:preimage}. Its basis may have width less than \(r\).
+
+Select independent columns of \(W_o\), lift them by \(ZJ_0\), and
+orthonormalize by exact Gram--Cholesky. Compute \(M^\top U_p\) through
+the original factors and expand \(U_p(M^\top U_p)^\top\).
+These are exactly the charged physical range and output operations.
+
+\section{Fixed-depth action cost and probability}
+Write \(c_j(b)\) for an action of \(R_j\) or \(R_j^\top\) on a
+width-\(b\) block at one fixed threshold. Lemma~\ref{lem:poly} and
+the recursive definition give
+\[
+ c_j(b)=\tO_L\!\left(\frac{h_{j-1}}{h_j}
+                   [c_{j-1}(b)+\Jc_{h_j}(b)]\right).
+\]
+Only the explicit coarse metric is factored at each threshold.
+Unrolling the ratios telescopes to \(h_0/h_L\). The true \(K\)
+appears once in each outer \(T\) action; the inverse masses inside
+the finer metrics use fine factors only. Consequently the outer action
+cost, at \(q=\tO_L(\sqrt{h_L/\theta})\), is exactly the two action
+terms in \eqref{eq:fixedcost}. The same is true of \(V_0\) for the
+final carried filter. No intermediate norm searches are needed.
+
+The raw outer Krylov basis has at most \(w_K\) columns, including
+dependent ones. Under \(w_K\leq m\), CUP and independent-column
+Gram--Cholesky cost \(\tO(m^{\omega+\zeta})\), as do its compressed
+Gram and exact sign counts. If wider, conventional rank revelation and
+orthogonalization cost at most \(m w_K^2\). Applying \(T\) to its
+range basis in width-\((r+1)\) chunks costs the same order as generating
+the raw basis. Gaussian repetitions have separate bases. Internal fine
+polynomial recurrences retain only constant-width blocks.
+
+Allocate \(\delta/2\) over the \(2(L+1)\) embedding events, and
+\(\beta=\delta/[4(Q_{\max}+1)]\) to each conditional threshold query
+and the final fresh filter. All preconditioner polynomials are deterministic
+given the embeddings; there are no hidden randomized recursive calls.
+Conditional union bounds give failure at most \(\delta\).
+All layers, degrees, repetitions, rank checks, and dimensions are capped
+from parameters and computed support. Failed fine embeddings can make
+an effective factor singular, but the executed algorithm takes only
+forward polynomials and \eqref{eq:preimage}; no inverse fine factor is
+taken on these outcomes. Coarse Cholesky and coefficient denominators
+are checked, and an invalid check returns zero factors within the cap.
+The rank-zero and zero-tail branches were handled before threshold search.
+This proves Theorem~\ref{thm:fixed}.
+
+\section{Growing depth with every dependence unfolded}
+We now prove Theorem~\ref{thm:family}; no \(\tO_L\) assertion is used.
+Set \(h_0=1/1024\), \(h_*=h_0\sqrt\rho\), and start at \(h_0\).
+Accept \(h_{j+1}=\sqrt{h_jh_*}\) only while
+\(h_{j+1}\leq h_j/1024\). This is a finite scalar-computable schedule.
+
+If at least one level is accepted, write \(g_j=\log(h_j/h_*)\) for
+analysis. Acceptance means \(g_j\geq2\log1024\); each accepted step
+halves \(g_j\). Thus the terminal value lies in
+\([\log1024,2\log1024)\), and
+\begin{equation}\label{eq:schedule}
+ \sqrt\rho\leq h_L<1024\sqrt\rho,\quad
+ L=O_d(\log\log m),\quad2^L=\Theta_d(\log m),\quad
+ h_j^2=h_{j-1}h_0\sqrt\rho.
+\end{equation}
+The logarithms describe the finite loop; none is needed to execute it.
+If no level is accepted, then \(\rho>1024^{-4}\). For fixed positive
+\(d\) this gives only finitely many \(m\). Use the companion's verified
+one-level algorithm at internal accuracy \(\min(\theta,h_0)\), with
+its conservative cost. It preserves width at most \(r\); merely
+returning the exact product could violate that requirement. The finite
+exception is absorbed in the family constant.
+
+The explicit invariant constants satisfy
+\[
+ B_L=2^{L+1}=\operatorname{polylog}(m),\qquad
+ C_L=(36+100/99)100^L-100/99=\operatorname{polylog}(m).
+\]
+The refinement ratio restriction is uniform in \(C_j\): \(\kappa_j\)
+resets to five at every layer. There is no hidden depth-dependent
+smallness requirement. Since \(\tau_j=h_j/[10^6(1+B_{j-1})]\),
+the interpolation degrees obey the common bound
+\begin{equation}\label{eq:degreeuniform}
+ n_j\leq C_d(h_{j-1}/h_j)\log(2m).
+\end{equation}
+The fine inverse-mass degree is also \(O_d(\log m)\).
+
+Put \(\ell_m=\log(2m)\). For leaf product costs \(J_j^{\rm leaf}(b)\),
+an explicit uniform recurrence is
+\begin{equation}\label{eq:recuniform}
+ c_j(b)\leq C\ell_m^2\frac{h_{j-1}}{h_j}
+                 [c_{j-1}(b)+J_j^{\rm leaf}(b)].
+\end{equation}
+One factor \(\ell_m\) covers interpolation and the other fine inverse
+mass; this conservative bound also covers scalar recurrence work.
+Unrolling multiplies leaf sums by at most
+\begin{equation}\label{eq:E}
+ E(m)=(C\ell_m^2)^L
+        =\exp(O_d((\log\log m)^2))=m^{o(1)}.
+\end{equation}
+\(B_j\) enters degrees only logarithmically; \(C_L\) enters outer
+accuracy through the polynomial factor \(A_L\). They do not exponentiate
+\eqref{eq:E} a second time. The largest ratio \(h_{j-1}/h_j\) is
+\(\rho^{-1/4}\), so all scalar dyadic interpolation preparations cost
+at most \(O_d(L\rho^{-1/4}(\log m)^2)\). They may be reused at every
+threshold and are below the final bound.
+
+\paragraph{A uniform fixed kernel.}
+Use the actual fixed-shape bound
+\[
+ \MM(m,m,\lceil\sqrt m\rceil)\leq m^2\chi(m),
+ \qquad\chi(m)=m^{o(1)},
+\]
+from \cite{amanov}. Split each varying row dimension into \(m\)-row
+blocks and pad rank width to at most two width-\(\lceil\sqrt m\rceil\)
+blocks. Transpose actions follow by tensor symmetry and summing inner
+blocks. A factor with \(s\geq m\) rows costs at most
+\(Cs m\chi(m)\) per block action, uniformly across every layer.
+Therefore
+\begin{equation}\label{eq:kernels}
+ \Ac(r+1)\leq CmN\chi(m),\quad
+ J_j^{\rm leaf}(r+1)
+   \leq Cm^2h_j^{-2}\chi(m)(\log m)^\gamma
+\end{equation}
+for a fixed embedding-log exponent \(\gamma\).
+The identity fallback only decreases the stored row bound.
+There is no varying-shape, nonuniform rectangular-exponent assumption.
+The \(\chi(m)\) factor occurs once per expanded leaf, rather than
+being raised to \(L\), because \eqref{eq:recuniform} is linear in costs.
+
+All stored sketches have at most \(N\) rows. Their combined storage
+is \(O(LmN)\), and application costs \(mN\) times fixed logarithmic
+factors. No fine Gram is formed, even if the final levels use identity
+factors. Coarse sketch rows are \(m\operatorname{polylog}m\); their
+Grams and support cost \(m^{\omega+\zeta}\operatorname{polylog}m\).
+
+The exact cancellations in \eqref{eq:schedule}, with
+\(\theta=\rho^{5/2}\), give
+\begin{equation}\label{eq:cancel}
+ mN\sqrt{h_L/\theta}\leq32N^2,\qquad
+ \frac{m^2h_{j-1}}{h_j^2\sqrt{h_L\theta}}
+ =\frac{m^2}{h_0\sqrt\rho\sqrt{h_L\theta}}
+ \leq N^2/h_0.
+\end{equation}
+Every unrolled fine term is thus quadratic before the common overhead.
+Combine \eqref{eq:E}--\eqref{eq:cancel}, \(\sqrt{A_L}\), and the
+threshold/source logarithms to get \eqref{eq:unfolded}.
+Since \(d>1/8\), choose fixed \(\zeta<2+2d-9/4\); the core term
+is smaller than \(N^2\). Thus the total is \(N^{2+o(1)}\).
+
+For clarity, the actual outer degree and raw width obey
+\[
+ q\leq(N/m)\operatorname{polylog}m=m^{d+o(1)},\qquad
+ w_K\leq m^{1/2+d+o(1)}<m.
+\]
+Here \(\log\kappa(S)\leq O(L)+\tfrac12\log(h_0/h_L)=O_d(\log m)\),
+so elliptical capture adds only a logarithm. Every core range/sign-count
+operation uses the fast bound. Gaussian repetitions never concatenate
+bases; inner polynomial recurrences do not enlarge the outer raw width.
+\eqref{eq:Qcap} is \(O_d(\log m)\), and with inverse-polynomial
+confidence all embedding/query failure logarithms are \(O(\log m)\).
+The deterministic finite invariants introduce no extra failure events.
+
+Finally, tile the \(N\)-by-\(N\) output into \(m\)-by-\(m\) blocks.
+Its inner rank is at most \(\sqrt m\), so the same tensor-permuted
+fixed kernel expands it in \(O(N^2\chi(m))\), including every entry.
+Physical Gram--Cholesky uses the same row tiling plus \(m^{\omega+\zeta}\).
+All outcome caps and the exact zero-tail branch remain valid at this
+growing depth. This completes Theorem~\ref{thm:family}.
+
+\section{An optimized total-output comparison}
+The comparison uses fast factor-block actions throughout, including when
+the target rank grows polynomially. No factor \(r\) is inserted into an
+input-optimal block product.
+
+\begin{corollary}\label{cor:optimized}
+Put
+\[
+ d_* =\frac{3\sqrt5-5}{10},\qquad
+ \alpha_* =\frac{3\sqrt5-5}{2},\qquad
+ s_* =\frac{7-3\sqrt5}{8}=0.0364745084\ldots .
+\]
+For \(n=p=N\), \(m=N^{\alpha_*+o(1)}\),
+\(\theta=(m/N)^{5/2}=N^{-10s_*+o(1)}\), and every
+\(1\leq r\leq\lfloor\sqrt m\rfloor\), Theorem~\ref{thm:family}
+gives total time \(N^{2+o(1)}\).
+Both the checked ordinary block-Krylov bound and the exact-Gram bound
+have exponent \(2+s_*\) at these parameters. In particular the rank
+may grow through \(N^{\alpha_*/2+o(1)}\).
+The comparison is of available arithmetic upper bounds, not a lower
+bound for every algorithm.
+\end{corollary}
+\begin{proof}
+For a general fixed \(d\) in Theorem~\ref{thm:family}, a width-at-most-
+\(\sqrt m\) factor action costs \(m^{2+d+o(1)}\). Ordinary block
+Krylov \cite{mm} uses \(\theta^{-1/2}=m^{5d/4+o(1)}\) iterations,
+giving the checked exponent \(2+9d/4\) in powers of \(m\).
+This includes postprocessing: its raw basis width has exponent
+\(\ell=1/2+5d/4<1\). Fast tall rank revelation and range algebra cost
+at most exponent
+\(1+d+(5/4)\ell=13/8+41d/16<2+9d/4\).
+The compressed Gram exponent
+\(1+d+\ell+\ell^2/[4(1+d)]\) is smaller still.
+Even the conventional cubic dense Ritz charge has exponent
+\(3\ell=3/2+15d/4<2+9d/4\), since \(d<1/3\).
+Full-basis factor actions can be split into width-\(r\) blocks and
+cost at most the same iteration term. Final projection and expansion
+also fit that term. A uniform exact-field realization of this same
+scaling, without a Ritz oracle, follows from the companion's theorem
+at constant distortion \(h=1/1024\); its raw-width condition also
+holds because \(1/2+5d/4<1\).
+
+Exact Gram formation has exponent
+\(2+d+1/[4(1+d)]\) by \cite{amanov}; the remaining core, lifting,
+and output work are smaller on the stated interval. Appendix~\ref{app:gram}
+gives a realization in the same exact-field model without an SVD oracle.
+Subtracting the new total exponent two after conversion to powers of
+\(N\), the two comparison gaps are
+\[
+ g_K(d)=\frac{d}{4(1+d)},\qquad
+ g_G(d)=\frac{1}{4(1+d)^2}-\frac{d}{1+d}.
+\]
+The first increases and the second decreases. Their intersection is
+\(5d(1+d)=1\), namely \(d=d_*\), where both gaps equal \(s_*\).
+The identities \(\alpha_*=1/(1+d_*)\) and
+\(10s_*=5d_*/[2(1+d_*)]\) give the displayed parameters.
+This endpoint saving is attained for exponent-two total time; it is
+not a literal \(O(N^2)\) or strict subquadratic-construction statement.
+The earlier scalar stochastic route already reaches this accuracy
+envelope at fixed rank. The hierarchy extends it through growing ranks;
+no dominance over that route in every regime is claimed.
+\end{proof}
+
+\begin{corollary}[Absolute error without a supplied rank]\label{cor:absolute}
+In the dimensional family of Theorem~\ref{thm:family}, let \(e>0\)
+be supplied and define
+\[
+ r_e=\min\{s\in\{0,\ldots,m\}:\sigma_{s+1}(M)\leq e/(1+\theta)\}.
+\]
+Without being supplied \(r_e\), an algorithm returns explicit error at
+most \(e\) and width at most \(2r_e\), with probability at least
+\(1-\delta\). On that same event its total time is \(N^{2+o(1)}\)
+whenever \(r_e\leq\lfloor\sqrt m\rfloor/2\). Other outcomes have
+a finite dimension-dependent cap; this adaptive cost is a high-probability
+statement.
+\end{corollary}
+\begin{proof}
+Fix \(t=e^2/(1+\theta/4)\) and use the companion's rank sequence
+\(0,1,2,4,\ldots\). Construct the present hierarchical metric at that
+one threshold.
+At each attempt, take the full-support projection branch first if
+\(r\) reaches the computed support dimension, before requesting \(j=r+1\).
+For smaller widths, advance if any compressed squared quantile exceeds
+one. If all are at most one, any successful per-vector repetition gives
+\(\lambda_{r+1}(T)\leq1+\alpha\). The fresh carried filter and
+\eqref{eq:physical} give error at most \(e\), since
+\(3u+2\varepsilon_m<\theta/4\). At rank zero the accepted norm
+bound itself gives the strong certificate for the empty output space.
+The represented tail at \(r_e+1\) is strictly below \(t\), by
+\eqref{eq:masscompare}. Thus no attempt at or above \(r_e\) can
+advance on the common embedding event, even if its per-vector runs
+fail. The stopping rank is at most \(2r_e\).
+
+If the next attempt would exceed \(\lfloor\sqrt m\rfloor\), use
+the companion's globally capped absolute-error algorithm, with an
+independent half-budget for failure. It also gives width at most
+\(2r_e\); an internal accuracy smaller than \(\theta\), if needed,
+only decreases its slack rank. On the stated small-\(r_e\) event this
+fallback is never reached. On this small-\(r_e\) event, every hierarchical
+block is at most \(\sqrt m+1\),
+and the logarithmic number of attempts is absorbed in \eqref{eq:unfolded}.
+Conditional failure budgets, including a reserved fallback budget, give
+one common event for error, width, and time. The no-level finite-size
+branch uses that same companion algorithm.
+\end{proof}
+
+\section{A two-level growing-rank example and scope}
+\begin{corollary}\label{cor:twolevel}
+Let \(n=p=N=m^{59/50+o(1)}\),
+\[
+ h_0=m^{-7/100},\quad h_1=m^{-1/12},\quad
+ \theta=m^{-11/25},\quad1\leq r\leq\lceil m^{14/25}\rceil.
+\]
+For constant confidence, the two-level algorithm constructs the
+approximation in \(N^{6724/3363+o(1)}\) and explicitly outputs it in
+total \(N^{2+o(1)}\).
+\end{corollary}
+\begin{proof}
+The ratio condition holds eventually, and the raw width exponent is
+\(443/600<1\). At the endpoint rank, the full rectangular formula in
+\cite{amanov} gives the following exponents in powers of \(m\):
+\[
+\begin{array}{c|c}
+ G_{h_0}&3362/1425\\
+ \Ac(r+1)\sqrt{h_1/\theta}&29227553/12390000\\
+ \Jc_{h_1}(r+1)h_0/\sqrt{h_1\theta}&2831/1200\\
+ m^\omega&9/4
+\end{array}
+\]
+The fine block cost itself has exponent \(867/400\); it is slightly
+outside the input-optimal range and is not charged just as its input
+size. Coarse Gram is largest, below output \(59/25\), and exceeds
+the fine term by \(1/7600\). Fine sketch rows have exponent
+\(7/6<59/50\), so neither sketch is an identity fallback here.
+All strict margins accommodate logarithms and small multiplication slack.
+Since \(r=N^{28/59+o(1)}<N^{1/2}\), expansion has exponent two.
+\end{proof}
+
+Power-law parameters in this example may be rounded within fixed factors
+to dyadic values using integer-power comparisons. No general root oracle
+is needed to select them. This example expands the available one-level
+accuracy tradeoff at growing rank: even rank-one true-factor work at
+\(\theta=m^{-11/25}\) would require a one-level distortion exponent
+at least \(2/25\) to fit \(N^2\), whose sketched-Gram exponent is
+\(54/25+25/116>59/25\). This compares checked upper-bound tradeoffs;
+it is not a lower bound for every one-level algorithm.
+
+The \(H/h\) refinement degree is meaningful. A uniform polynomial
+inverse congruence satisfying \(|x|p(x)^2\leq1\) on \([-1,1]\),
+\(p(0)^2\geq1/(C\epsilon)\), and \(C\epsilon\leq1/16\) has degree
+at least \(1/(20C\epsilon)\), hence \(\Omega(1/\epsilon)\) for fixed \(C\).
+Indeed if \(M_p=\max|p|\), its maximizer lies within \(1/M_p^2\)
+of zero; at \(4/M_p^2\) the value has magnitude at most \(M_p/2\).
+Bernstein's interior derivative bound gives
+\(\deg p\geq M_p^2/20\). At a zero threshold the relaxed invariant
+forces precisely this large central value, with \(\epsilon=h/H\).
+Thus the old positive inverse-root hierarchy's square-root ratio cannot
+be silently reused for a uniform absolute-value congruence. Rational
+or data-adaptive mechanisms are outside this scoped observation.
+
+Absolute-value preconditioning and inertia are established
+\cite{vk,vy}; block Krylov, Gaussian range finding, embeddings, and fast
+exact rank/characteristic-polynomial algebra are established
+\cite{mm,cnw,jps,np}. The new obligations proved here are the finite
+relaxed invariant, its noncommuting propagation, and the exact carried
+dual lift, together with the unfolded total cost. A global priority
+claim requires a separate review.
+
+Principal-component projection through ridge calls begins with
+Frostig--Musco--Musco--Sidford \cite{pcp16}. Allen-Zhu--Li's
+Theorem~7.3 \cite{pcp17} supplies a gray-band guarantee without an
+actual eigengap; Jin--Sidford \cite{pcp19} use rational approximations
+and asymmetric systems. These are direct antecedents for the filtering
+step and cannot be dismissed by imposing a spectral-gap distinction.
+Their ridge or squared-system costs must be charged in the present
+separate-factor access model before comparing total runtimes. No
+matching full bound from those sources is asserted or ruled out here.
+The reviewed gap-free polynomial PCP theorem uses
+\(\widetilde O(\gamma^{-1})\) ridge calls. With \(\mu\) denoting
+spectral regularization width, the reviewed squared systems have a
+\(\mu^2\) positive shift and retain a \(1/\mu\) solve factor
+\cite[Theorem 3]{pcp19}. One cannot import \(1/\sqrt\mu\) by treating
+that width itself as the strong-convexity modulus. The inspected
+reductions do not establish this combined bound. A same-system stochastic
+\emph{block} solve can itself batch efficiently; removing a rank factor
+from its kernel cost does not supply a global block spectral wrapper.
+Stronger compositions remain possible, and the literature audit is not
+an exhaustive priority certificate.
+
+The original stronger
+\(m=N^{8/9},\theta=1/m\) target remains open: isotropic sketches reach
+ambient rows at \(h=m^{-1/16}\), and this hierarchy's displayed full-input
+schedule already has exponent at least \(m^{83/32}\), above output.
+No statement here bounds all possible factor-access algorithms.
+
+Exact rank tests, Cholesky algebra, interpolation coefficients, and
+polynomial recurrences can require arbitrarily large representations.
+The carried operators may be nonnormal and their recurrences can grow
+exponentially in degree. The proved costs are exact real operation
+counts; stable floating-point and bit-complexity guarantees remain separate.
+
+\appendix
+\section{An exact-field Gram comparator}\label{app:gram}
+The exact-Gram route does not need an eigenvalue or SVD oracle.
+Form the two true Grams and use rank revelation and Cholesky to obtain
+\(M=Z\mathcal B\), \(Z^\top Z=I\), and explicit positive definite
+\(H_c=\mathcal B\mathcal B^\top\) on its product support.
+This core algebra costs \(\widetilde O(m^{\omega+\zeta})\), beyond
+the two Gram products. If \(r\) reaches the support dimension, return
+the exact product as a support projection.
+
+Otherwise use the plain coefficient-ratio bracket and exact shifted
+inertia to bisect the positive \(\lambda_{r+1}(H_c)\). In
+\(O(\log(m/\theta))\) calls, each costing
+\(\widetilde O(m^{\omega+\zeta})\), find an upper endpoint \(u\)
+with \(u\leq(1+\theta/100)\lambda_{r+1}(H_c)\).
+Draw a fresh Gaussian scalar \(g\) and set
+\[
+ t=u\left(1+\frac{\theta g^2}{100(1+g^2)}\right).
+\]
+Then \(K_c=tI-H_c\) is nonsingular almost surely and has at most
+\(r\) negative eigenvalues. Draw an independent square Gaussian
+\(S\). Every leading principal minor of \(S^\top K_cS\) is nonzero
+almost surely: each is a nonzero polynomial in \(S\), as witnessed
+by an eigenbasis of the fixed nonsingular symmetric \(K_c\).
+Consequently unpivoted recursive symmetric elimination gives
+\(S^\top K_cS=LDL^\top\), with diagonal nonzero \(D\), in
+\(O(m^{\omega+\zeta})\) field operations. Its Schur-complement
+recurrence is \(2T(m/2)+O(m^{\omega+\zeta})\); the leading-minor
+condition propagates to each recursive block. Failed zero checks return
+within this cap and have probability zero.
+
+Let \(E_-\) select negative diagonal entries and take the physical
+space \(\mathcal V=\range(ZS^{-\top}LE_-)\), of width at most \(r\).
+For \(x\perp\mathcal V\), \(y=Z^\top x\) satisfies
+\(E_-^\top L^\top S^{-1}y=0\). Thus \(y^\top K_cy\geq0\), and
+\[
+ x^\top MM^\top x=y^\top H_cy\leq t\norm y^2\leq t\norm x^2.
+\]
+The projection residual is at most
+\(\sqrt t\leq(1+\theta/100)\sigma_{r+1}(M)\).
+Fast physical range algebra and expansion cost
+\(\widetilde O(\Ac(r)+m^{\omega+\zeta})+np+\MM(n,r,p)\).
+This proves the quoted Gram comparator in precisely the same arithmetic
+model, with no input singular-value-ratio logarithm. It does not assert
+numerical stability of exact coefficient signs or Gaussian congruence.
+
+\begin{thebibliography}{99}
+\bibitem{companion} \emph{Block spectral approximation of a factored product
+from regularized absolute-value pencils}. Companion working manuscript,
+November 14, 2026. Product support; finite weighted defect; coefficient
+ratio and shifted inertia; safe threshold oracle; filtered Gaussian projection.
+\href{absolute-pencil-spectral.pdf}{Local review copy}.
+\bibitem{cnw} M. Cohen, J. Nelson, D. Woodruff.
+\emph{Optimal Approximate Matrix Product in Terms of Stable Rank}. 2016,
+Appendix A.2. \url{https://arxiv.org/abs/1507.02268}.
+\bibitem{amanov} A. Amanov, M. van den Berg, J. Zuiddam.
+\emph{Multiplying matrices via polynomials: exposition and barriers}. 2026.
+\url{https://arxiv.org/abs/2610.30054}.
+\bibitem{mm} C. Musco, C. Musco.
+\emph{Randomized Block Krylov Methods for Stronger and Faster Approximate
+Singular Value Decomposition}. NeurIPS 2015, Algorithm 2 and Theorem 12.
+\url{https://arxiv.org/abs/1504.05477}.
+\bibitem{np} V. Neiger, C. Pernet.
+\emph{Deterministic computation of the characteristic polynomial in the
+time of matrix multiplication}. J. Complexity, 2021, Theorem 1.1.
+\url{https://arxiv.org/abs/2010.04662}.
+\bibitem{jps} C.-P. Jeannerod, C. Pernet, A. Storjohann.
+\emph{Rank-profile revealing Gaussian elimination and the CUP matrix
+decomposition}. J. Symbolic Computation, 2013, Algorithm 6, Propositions 3, 6.
+\url{https://arxiv.org/abs/1112.5717}.
+\bibitem{vk} E. Vecharynski, A. V. Knyazev.
+\emph{Absolute value preconditioning for symmetric indefinite linear systems}.
+SIAM J. Sci. Comput. 35(2), A696--A718, 2013.
+\url{https://arxiv.org/abs/1104.4530}.
+\bibitem{vy} E. Vecharynski, C. Yang.
+\emph{Preconditioned iterative methods for eigenvalue counts}. 2016/2017.
+\url{https://arxiv.org/abs/1602.02306}.
+\bibitem{pcp16} R. Frostig, C. Musco, C. Musco, A. Sidford.
+\emph{Principal Component Projection Without Principal Component Analysis}.
+ICML 2016. \url{https://proceedings.mlr.press/v48/frostig16.html}.
+\bibitem{pcp17} Z. Allen-Zhu, Y. Li.
+\emph{Faster Principal Component Regression and Stable Matrix Chebyshev
+Approximation}. ICML 2017, Theorem 7.3.
+\url{https://proceedings.mlr.press/v70/allen-zhu17c.html}.
+\bibitem{pcp19} Y. Jin, A. Sidford.
+\emph{Principal Component Projection and Regression in Nearly Linear Time
+through Asymmetric SVRG}. NeurIPS 2019, Definition 1, Theorems 1, 3, and 5.
+\url{https://arxiv.org/abs/1910.06517}.
+\end{thebibliography}
+\end{document}

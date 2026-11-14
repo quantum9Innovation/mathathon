@@ -1,0 +1,239 @@
+Lean verification of hierarchical absolute spectral approximation
+
+Status and scope
+
+  Full formalization is IN PROGRESS under the active goal. Completion
+  requires the actual randomized algorithm-existence, success-probability,
+  and arithmetic-runtime assertions of paper Theorems 1 and 2 and their
+  corollaries, without additional algorithmic certificate assumptions.
+  The conditional transfer theorems below are intermediate lemmas, not
+  substitutes for those main results. The goal is not achieved yet.
+
+  The mathematical review of the complete paper, including the remaining
+  algorithmic dependencies, is docs/hierarchical-mathematical-review.txt.
+  The original manuscript and PDF were not changed.
+
+Build and inspect
+
+  Lean 4.31.0; mathlib revision fabf563a7c95a166b8d7b6efca11c8b4dc9d911f.
+  Both versions and all transitive dependency revisions are pinned.
+  With Lean/Elan and a working C toolchain installed:
+
+    cd formal
+    lake update
+    lake exe cache get
+    lake build
+    lake env lean Audit.lean
+
+  The library is the default Lake target. Audit.lean prints the principal
+  theorem's full statement, the singular-value definition, and the axioms
+  used by the main results. No local source uses sorry, admit, a custom
+  axiom, native_decide, or an unsafe declaration. The axiom audit is also
+  needed because checking source tokens alone would miss transitive holes.
+
+Start with the theorem statement
+
+  HierarchicalAbsoluteSpectral/Spectral.lean:
+    theorem hierarchical_spectral_error
+
+  Its conclusion, exactly as in the checked source, is:
+
+    (U * (Uᵀ * (A * B))).rank ≤ r ∧
+    ‖A * B - U * (Uᵀ * (A * B))‖ ≤
+      (1+θ) * tailSingularValue (A * B) r
+
+  The output is C=U(U^T AB), so the returned factors are U and U^T AB.
+  U has w orthonormal columns with an explicit hw : w<=r hypothesis;
+  w may be zero or smaller than r. Thus rank loss and a zero optimal
+  tail are not removed by the theorem statement.
+
+  A : Matrix (Fin n) (Fin m) real; B : Matrix (Fin m) (Fin p) real.
+  The target rank r appears explicitly, separately from output width w.
+  The scope Matrix.Norms.L2Operator selects the spectral/operator norm,
+  rather than the entrywise maximum norm or the Frobenius norm.
+  The scope MatrixOrder selects the Loewner order: A<=B means B-A PSD.
+  tailSingularValue M r is Mathlib's LinearMap.singularValues r on the
+  Euclidean linear map represented by M. Mathlib is ZERO-indexed, so
+  this is exactly paper sigma_(r+1)(M), extended by zero past dimension.
+
+What the principal theorem assumes
+
+  These are genuine hypotheses of the Lean theorem, not proved construction
+  facts hidden behind an axiom. Inspect them in Spectral.lean or Audit.lean.
+
+  hU, hw       Orthonormal physical output columns and width<=target rank.
+  hF, hK       F is positive definite and K is real symmetric.
+  hinvariant   F-kappa K F^-1 K <= C h D, paper equation (9).
+  hidentity    Z K Z^T = t Z Bm Z^T - (AB)(AB)^T.
+  hmass        Z Bm Z^T <= (1+epsilon) I.
+  hD           Z D Z^T <= 2t I + 2(AB)(AB)^T.
+  hstrong      On v perpendicular to U, for y=Z^T v,
+                 y^T K F^-1 K y - 2 y^T K y <= b y^T F y.
+               This is the quadratic strong-action certificate in Lemma 6.
+  htail        t <= [(1+x)/(1-x)] [1/(1-epsilon)] sigma_(r+1)(AB)^2.
+               This combines near-threshold and mass comparisons.
+  Scalar       b,C,h,t,theta,x,epsilon nonnegative; theta<=1;
+               kappa*b<=1; b*C*h,x,epsilon<=theta/1000.
+
+  The paper provides much smaller scalar budgets. The proof derives the
+  physical Rayleigh bound from these matrix hypotheses, proves the combined
+  scalar budget, bounds the norm of the orthogonal projection residual, and
+  proves its rank bound. Neither the desired spectral error nor an existence
+  assertion about a fast successful randomized algorithm is assumed as an
+  opaque proposition. The remaining certificate-construction obligations
+  are nevertheless substantial and remain outside the formal theorem.
+
+Paper to Lean map
+
+  Each locator below is FileStem.declaration. All declarations have the
+  Lean namespace HierarchicalAbsoluteSpectral, without the file stem.
+
+  Lemma 3, relative perturbation
+    MatrixInequalities.relative_perturbation
+    MatrixInequalities.inverse_order
+    Actual real matrices and ordinary matrix inverses. The inverse-order
+    proof uses positive block matrices and Schur complements. The formal
+    relative-perturbation lemma needs only the paper's upper relative bound;
+    its lower bound and delta<1 are not needed for this particular step.
+
+  Lemma 5, noncommuting cross terms and ideal relaxation
+    Refinement.weighted_young_vector
+    Refinement.weighted_young
+    Refinement.ideal_refinement_relaxation
+    Refinement.finite_relaxation_reset
+    These prove the Young inequality, the coefficient-four ideal bound,
+    and the finite reset to five with Cnext=100(C+1). The ideal theorem
+    explicitly assumes the root identity, the weighted fine-error bound,
+    the inflated coarse invariant, and Fstar<=(5/4)P. It does not construct
+    the ideal matrix or finite approximating polynomial.
+
+  Lemma 6, transfer
+    Scalars.near_scalar_inequality
+    Scalars.relaxed_strong_transfer_scalar
+    MatrixInequalities.relaxed_strong_action_transfer
+    MatrixInequalities.physical_transfer_rayleigh
+    Spectral.projection_error_of_complement_bound
+    Spectral.hierarchical_spectral_error
+    The physical Rayleigh theorem uses u=b*C*h, which is slightly sharper
+    than replacing b by 7*alpha as in the paper. The spectral theorem then
+    uses the physical projection and the actual product singular value.
+
+  Section 5, combined error budget
+    Scalars.final_error_budget
+    Scalars.threshold_error_budget
+    The hypotheses u,x,epsilon<=theta/1000 are weaker than the paper's
+    u<=7theta/10^6, x<=4theta/10^6, epsilon=theta/10^9.
+
+  Section 6, exact carried lift, equation (16)
+    Carry.carried_intertwining
+    Carry.polynomial_intertwining
+    Carry.carried_filter_identity
+    Carry.exact_carried_preimage
+    Carry.exact_physical_lift
+    These hold for every real polynomial and arbitrary noncommuting matrix
+    factors. The carried-preimage theorem explicitly requires S invertible.
+    It even holds without requiring R0 invertible because Mathlib's inverse
+    is total and the matrix identity remains valid in that stronger form.
+    In the manuscript both factors are invertible on the good event.
+
+  Section 8, recurrence and equation (22)
+    Schedule.cost_recurrence_unfold
+    Schedule.true_cost_cancellation
+    Schedule.fine_cost_cancellation
+    Schedule.loglog_sq_isLittleO_log
+    The cancellation theorems use s=sqrt(rho), m=N*s^2, theta=s^5,
+    and hj^2=H*h0*s. This is precisely the paper's square-root schedule.
+    The last declaration proves (log log m)^2=o(log m), the logarithmic
+    statement behind the subpolynomial overhead. It does not derive a
+    total algorithmic runtime from code for all matrix operations.
+
+  Corollary 7, optimized parameters
+    Scalars.optimized_parameters
+    Scalars.optimized_parameter_in_family
+    Exact square-root identities, the intersection of both exponent gaps,
+    reciprocal alpha*, and membership of d* in the theorem's open interval.
+
+  Practical cutoff
+    Schedule.first_level_cutoff
+    The first acceptance test forces rho<=1024^-4, hence N/m>=2^40.
+    The decimal dimension examples are generated by the Python review script.
+
+Constructed dependencies added while pursuing the full goal
+
+  InverseMetric.lean constructs the metric of an inverse factor and proves
+  its positivity, inverse, congruence identities and actual scalar inflation.
+
+  WeightedError.lean derives E F^-1 E <= (a^2/c)D directly from
+  -aD<=E<=aD and cD<=F using a positive block matrix and Schur complement.
+  fine_error_previous_metric and fine_error_ideal_metric now prove the two
+  weighted errors previously assumed by the local ideal-algebra lemma.
+
+  Inflation.lean derives equation (10), including the explicit value
+    Cp=(1+epsilon)C+8*kappa*epsilon*(1+epsilon)^2,
+  its bound Cp<=2(C+1), and the normalized proxy domination.
+
+  IdealMetric.lean constructs f_eta(A) using the proved matrix spectral
+  calculus and verifies positivity, both margins, its upper/lower bounds,
+  and f_eta(A)-A f_eta(A)^-1 A=2eta I. This calculus is used analytically;
+  it is not an additional computational primitive in the algorithm.
+
+  AnalyticRefinement.constructed_ideal_refinement constructs the ideal
+  metric from the preceding inverse factor and proves its 128h lower
+  bound, upper bound, both 56h margins and coefficient-four relaxed defect.
+  Its root identity and weighted error are derived internally.
+
+  PolynomialMetric.refinedInverseFactor_relative derives invertibility and
+  relative metric closeness for the actual finite factor Rp*p(Aj) from
+  the polynomial's scalar approximation bound on the spectrum.
+
+  FiniteRefinement.finite_refinement_invariant proves all inequalities of
+  (9), the actual finite inverse-factor invertibility, the 55h margins,
+  Bnext=2B and Cnext=100(C+1), from the preceding invariant and the
+  uniform scalar polynomial approximation. The latter still needs its
+  full degree-bounded construction theorem; it is not hidden as an axiom.
+
+  StrongAction.strong_action_dual_certificate derives the quadratic strong
+  certificate from the actual operator-norm condition. Its physical-span
+  version proves the required orthogonality after column orthonormalization.
+
+  PhysicalPencil.lean derives the physical mass bound, D bound and exact
+  pencil identity from the support factorization and its coarse Gram
+  estimates. SupportFilter.support_filter_spectral_error integrates these
+  and StrongAction into the spectral conclusion. Core/physical widths may
+  differ from the requested rank, including rank loss.
+
+  DyadicNodes.lean constructs dyadic Gauss--Chebyshev nodes by nested scalar
+  square roots and complex-pair field arithmetic. It proves their analytic
+  node formula, interval membership, distinctness, the actual Lagrange
+  interpolant's node values and its degree bound. This does not yet prove
+  the required uniform interpolation error or the FFT implementation cost.
+
+Remaining work for a full formalization of Theorems 1 and 2
+
+  1. A formal finite exact-real arithmetic algorithm and its operation-cost
+     semantics, including the fixed matrix-multiplication kernel.
+  2. Product-support/sketch construction, all failure-event bounds, and the
+     companion's exact characteristic-coefficient/inertia oracle.
+  3. Lemma 4's uniform analytic Chebyshev interpolation error, finite dyadic
+     DCT implementation and degree/cost bounds. The finite metric algebra
+     from that scalar error bound is now proved. Also construct the actual
+     fine/true Neumann inverse masses and instantiate the fine-proxy bounds.
+  4. The min--max/eigenvalue near-threshold step, Gaussian head/tail bounds,
+     and the strong operator-norm bound for the actual filtered Gaussian
+     output. The conversion of that norm to hstrong is now proved.
+  5. Adaptive conditional probability accounting, uniform depth bounds,
+     every primitive's cost, all-outcome caps, finite-size fallback and
+     output generation. The cost cancellations alone do not prove these.
+  6. The absolute-error adaptive corollary and the exact-Gram comparator
+     implementation are mathematically reviewed but not formally proved.
+
+  Consequently this development is useful as a checked algebraic foundation
+  and an explicit reduction theorem. It is not an end-to-end formal
+  verification of the randomized near-quadratic algorithm.
+
+Observed verification results
+
+  lake build checks the proof modules imported by the root library.
+  lake env lean Audit.lean: passed. Every audited declaration depends only
+  on Lean's standard propext, Classical.choice and Quot.sound axioms.
+  No sorryAx or additional mathematical axiom occurs in these dependencies.

@@ -1,0 +1,320 @@
+Factor-aware spectral approximation: independent PCA/comparator search
+2026-11-14. No shared mathematical source files were edited.
+
+Outcome: no new algorithm meeting the unrestricted target was established.
+The useful positive comparator is high-accuracy full-column-space sketching in
+very tall regimes. It is an old sketch-and-truncate method, and its simplest
+output-optimal example does not require fast matrix multiplication. Generalized
+PCA and variance-reduced eigenvector algorithms do not remove the missing core
+or interior-shift cost in the original balanced high-accuracy regime.
+
+1. High-accuracy SRHT: precise existing primitive and actual total cost
+
+Primary source: Cohen, Nelson, Woodruff, Optimal approximate matrix product in
+terms of stable rank, full version, Appendix A.2:
+https://people.eecs.berkeley.edu/~minilek/publications/papers/stable_ammv2.pdf
+Published version:
+https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ICALP.2016.11
+
+Their appendix gives an eta-subspace embedding for any fixed d-dimensional
+subspace with failure probability delta and
+s = O(eta^(-2) (d+log(1/(eta delta))) log(d/delta)) rows.
+The SRHT consists of random signs, a normalized Hadamard transform, and row
+sampling. On a dense n-by-m A it can be applied in O(n m log n) arithmetic
+operations, independent of s apart from writing the s-by-m answer; use the
+identity when s >= n. Padding n to a power of two changes dimensions by at most
+a constant. The original Tropp analysis alone is not the best citation for
+arbitrary distortion/confidence, because CNW explicitly generalizes those settings.
+
+Set P=A^T A, Q=B B^T, Ptilde=(SA)^T SA and assume
+(1-eta)P <= Ptilde <= (1+eta)P.
+An exact rank-r truncation of N=(SA)B, lifted through A(SA)^dagger, has error
+
+||M-C||_2 <= sqrt((1+eta)/(1-eta)) sigma_(r+1)(M).
+
+Proof: the lift has norm <=(1-eta)^(-1/2) on range(SA), while S restricted to
+range(A) has norm <=sqrt(1+eta). Compare the optimal truncation of N to S M_r,
+then lift its residual. Kernel preservation handles deficient A. This is an
+ordinary full-subspace-embedding argument, not a target-rank-only embedding.
+It requires eta <= ((1+theta)^2-1)/((1+theta)^2+1), hence eta=Theta(theta).
+
+Do not form N explicitly. Compute Ptilde and exact Q, then use the m-by-m core
+Ptilde^(1/2) Q^(1/2). If its truncation is U_r Sigma_r V_r^T, lift only the
+r coefficient vectors:
+X=A Ptilde^(dagger/2) U_r Sigma_r^(1/2),
+Y=B^T Q^(dagger/2) V_r Sigma_r^(1/2).
+Here supports and pseudoinverses are restricted to their ranges. This gives the
+same lifted truncation. Under the existing note's idealized small-core arithmetic
+convention, the one-sided total bound is
+
+~O(I r + T_MM(m,min(n,~m/theta^2),m)
+       + T_MM(m,p,m) + m^(omega+zeta)) + T_MM(n,r,p).
+
+Sketch both factors when beneficial: replace the exact B Gram term by
+T_MM(m,min(p,~m/theta^2),m), with the two-sided distortion factor in
+ridge-filters.tex and eta a smaller constant multiple of theta.
+This bound belongs in the comparison frontier: an eta^(-2) sketch dimension
+does not automatically make the method slower than exact tall Grams or output.
+
+2. Check of the proposed very-tall example, including novelty
+
+Take n=m^4, p=m^(1+gamma), r=1, theta=1/m, fixed delta, 0<gamma<1/16.
+The sketch has s=~m^3<n. Costs with entirely conventional arithmetic:
+
+- SRHT on A: ~m^5.
+- Form Ptilde: s*m^2 = ~m^5.
+- Form Q exactly: p*m^2 = m^(3+gamma).
+- Cubic core algebra: ~m^3, subject to precision conventions below.
+- Lift r=1: O(I)=O(m^5).
+- Explicit rank-one output: O(np)=m^(5+gamma).
+
+Thus old SRHT plus ordinary algebra already gives output-optimal total time
+~O(m^(5+gamma)) for every fixed input pair, with the displayed relative spectral
+guarantee. Converting to an absolute epsilon guarantee still requires
+(1+1/m) sigma_2(AB)<=epsilon.
+
+Using the 2026 rectangular bound, the exact tall Gram route costs
+m^(1+4+1/(4*4)+o(1)) = m^(81/16+o(1)), above output in this gamma range.
+The sketched Gram could instead be formed in m^(49/12+o(1)), but this is already
+below input and unnecessary for the example. The construction is therefore not
+a new AMM method or an improvement that fundamentally needs fast core SVD.
+An assertion of research novelty based only on this example is unsupported.
+
+For the original n=p=N, m=N^(8/9), theta=1/m example, s=~m^3 exceeds both
+ambient dimensions. Identity sketches revert to the exact Gram comparison, so
+this does not resolve the original difficult target regime.
+
+3. Sobczyk-Mladenovic-Luisier generalized PCA: the missing cost remains
+
+Primary paper, NeurIPS 2024:
+https://proceedings.neurips.cc/paper_files/paper/2024/file/21f6bdb10b7e019543daf35012e79210-Paper-Conference.pdf
+
+Their main result computes spectral projectors for a supplied dense Hermitian
+definite pencil (H,S) in near-matrix-multiplication time, with logarithmic
+dependence on accuracy, conditioning of S, and inverse spectral gap. Crucially,
+Theorem 4.1 explicitly starts GIVEN the covariance H=X^T X. It does not include
+an input-sparsity construction of that covariance. Theorem 4.2's block-Krylov
+version still uses q=Theta(log(n)/sqrt(epsilon_PCA)) iterations. The positive-gap
+assumption concerns projector accuracy; it is not itself a gap-free tail-error
+algorithm. For M=AB one may form P,Q and a dense core/pencil then apply this
+technology, but that still pays G=T_MM(m,n,m)+T_MM(m,p,m). Treating an implicit
+Gram matvec as a supplied dense core would silently discard the bottleneck.
+
+4. Stochastic/variance-reduced shift-and-invert: useful, but no free cutoff
+
+Primary source: Garber et al., Faster Eigenvector Computation via Shift-and-Invert
+Preconditioning, ICML 2016:
+https://proceedings.mlr.press/v48/garber16.pdf
+Their finite-sum treatment permits nonconvex row components while the complete
+shifted quadratic remains positive definite. For an explicit data matrix X with
+d columns, the offline leading-eigenvector bound has schematic form
+~O((nnz(X)+d*sr(X)/gap^2) log(1/accuracy)). The accelerated variant separates
+input size and gap differently, but retains polynomial inverse-gap dependence.
+Gap-free versions replace an unavailable eigengap by requested eigenvalue
+accuracy; they do not turn it into logarithmic dependence.
+
+Generalized eigenvector/CCA primary sources:
+https://projects.iq.harvard.edu/sites/projects.iq.harvard.edu/files/kakade/files/1604-03930-2016.pdf
+https://proceedings.mlr.press/v70/allen-zhu17b/allen-zhu17b.pdf
+These reduce to approximate linear solves, with conditioning/gap costs explicit.
+They do not supply a uniform cheap solver for a factor-access interior spectral
+complement. For AB, an explicit transformed data matrix such as A Q^(1/2) must
+also be charged for; its construction is a tall multiplication comparable to a
+Gram cost. Nested solves in Q^(-1) are not constant-cost row updates. No theorem
+found here validates the desired ~O(Ir+m^omega) result for every fixed pair.
+
+5. A broader elementary obstruction for static complement preconditioners
+
+This strengthens the particular Richardson failure in ridge-filters.tex, but
+is not a lower bound for adaptive algorithms.
+
+Let 0<eta<1/2, epsilon>0, Q=I and
+P1=diag(1,1-eta), P2=diag(1-eta,1), Ptilde=(1-eta/2)I.
+The same Ptilde is an admissible eta-relative approximation to either Pi.
+At lambda=1+epsilon, the positive definite complements are
+S1=lambda I-P1=diag(epsilon,epsilon+eta), S2=diag(epsilon+eta,epsilon).
+
+Any single SPD preconditioner W determined from the shared proxy, Q and lambda
+must satisfy
+max_i kappa(W^(-1/2) Si W^(-1/2)) >= 1+eta/epsilon.
+
+Proof: if both preconditioned condition numbers were <K, spectral-equivalence
+transitivity would give kappa(S2^(-1/2)S1 S2^(-1/2))<K^2. The latter condition
+number is exactly (1+eta/epsilon)^2. Thus K cannot be smaller than
+1+eta/epsilon. All factor Grams here are well conditioned, yet the complement
+inherits the fine cutoff scale. This excludes uniformly good STATIC SPD
+preconditioning from a fixed constant-distortion proxy alone. Additional true
+input queries can distinguish the examples; their 2D form makes that easy.
+
+6. Matrix multiplication update
+
+Primary all-fields/rectangular source:
+https://arxiv.org/abs/2610.30054
+November 6 all-fields exposition:
+https://arxiv.org/abs/2611.09716
+Constructive square algorithms:
+https://arxiv.org/abs/2610.28627
+https://eccc.weizmann.ac.il/report/2026/281/
+
+No verified square exponent below 9/4 was found. Later exposition/construction
+papers retain that bound. Zhao Song's October SSRN asymmetric preprint is
+https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7600178
+Its disclosed alpha>=0.466525 and omega(1,1,2)<=3.136635 do not improve the
+later 1/2 dual exponent and rectangular curve already used in the source note.
+For example, the supplied general curve gives omega(1,1,2)<=3.125. Thus that
+preprint is not a stronger comparator in the current regimes.
+
+PRECISION / REPORTING LIMITS
+
+The SRHT argument above is exact-real mathematical error analysis. Implementing
+pseudoinverse square roots, support detection, and the core truncation to a
+multiplicative spectral-tail guarantee requires a precision policy. A finite
+precision computation cannot simply promise zero error when sigma_(r+1)=0.
+The core SVD tolerance must be tied to theta*sigma_(r+1) and lifting norms, or
+rank-zero-tail cases handled in an exact algebraic model. The 2024 PCA paper is
+useful for explicitly accounting for precision and gap parameters after a dense
+core is supplied. None of these observations proves a general factor-access
+lower bound or rules out a genuinely adaptive new construction.
+
+7. Independent audit of the stronger restricted-pole filter obstruction
+
+Root proposed the following elementary result. It is correct, including complex
+coefficients, without a factor of two or a denominator-degree term.
+
+Let a<b<c be real, f=p/q a nonzero reduced rational function, d=deg p, with
+every finite root z of q satisfying Re(z)<=a. If |f(x)|<=alpha for every real
+x in [a,b], then
+
+|f(c)| <= alpha T_d((2c-a-b)/(b-a)).
+
+Proof: write q(z)=q_lead product_j(z-z_j). Each |x-z_j| increases for real
+x>=a, giving |q(x)|<=|q(b)| on [a,b] and |q(c)|>=|q(b)|. Thus
+|p(x)|<=alpha |q(b)| on the interval. Rotate p by a constant complex phase
+making its value at c nonnegative real, and take the coefficientwise real part.
+This gives a real polynomial h of degree at most d with h(c)=|p(c)| and
+|h(x)|<=|p(x)| on the real interval. Classical Chebyshev extremality after
+affine rescaling bounds |p(c)| by alpha |q(b)| T_d of the displayed argument.
+Divide by |q(c)|. If p(c)=0 the result is immediate. A reduced pole exactly
+at a is incompatible with finite uniform boundedness; b and c cannot be poles.
+For d=0 the same proof uses T_0=1.
+
+For a=1/2,b=1,c=1+g, if |f(c)|>=1 and 0<alpha<1, then
+
+d >= arcosh(1/alpha)/arcosh(1+4g)
+  >= log(1/alpha)/sqrt(8g).
+
+The second inequality uses arcosh(1/alpha)>=log(1/alpha) and
+arcosh(1+4g)<=sqrt(8g). The universal inequality is sharp because q may be
+constant and p a suitably rescaled Chebyshev polynomial.
+
+The pole condition can be relaxed to Re(z_j)<=(a+b)/2. The squared distance
+from z_j is convex on [a,b], and its endpoint maximum then occurs at b;
+distance is increasing from b to c. The original Re(z_j)<=a condition is
+therefore more than sufficient.
+
+Primary antecedent for polynomial extremality:
+Len Bos, Sione Ma'u and Shayne Waldron, Extremal Growth of Polynomials,
+Proposition 2.1, PDF p.3, citing Rivlin, Chebyshev Polynomials, Section 2.7:
+https://www.math.auckland.ac.nz/~waldron/Preprints/Extremal-growth/BosMauWaldron1.pdf
+An existing Lean formalization of the real-polynomial step appears as
+Polynomial.Chebyshev.eval_iterate_derivative_le_of_forall_abs_le_one with k=0:
+https://teorth.github.io/analysis/docs/Mathlib/Analysis/SpecialFunctions/Trigonometric/Chebyshev/Extremal.html
+
+I did not locate an exact published statement of this restricted-pole corollary.
+It should be presented as an elementary consequence of classical extremality,
+with novelty unverified, rather than promoted as a new approximation theorem.
+
+Connection to actions: a linear straight-line vector computation built from
+negative-shift resolvent/ridge applications and scalar linear combinations has
+a common denominator dividing the product of its requested linear factors.
+Its rational degree is at most its number of operator applications (polynomial
+actions, if allowed, must also be counted). Consequently polylogarithmically
+many such actions cannot yield the required uniform cutoff when g is inverse
+polynomial and alpha=m^(-constant). This is stronger than a coefficient-growth
+obstruction and does not depend on coefficient magnitudes.
+
+Limits: the result requires smallness on a full interval, not merely on finitely
+many eigenvalues of a particular input. It does not exclude adaptive choices
+that exploit the actual discrete spectrum, full small-core matrix operations,
+noncommuting preconditioned iterations, positive/interior poles, or algorithms
+that never construct a scalar uniform filter. It is not a general AMM lower
+bound. Degree must not be equated with computation depth when a full matrix
+representation permits squaring; here a high-degree function applied through
+vector oracles still costs its actual operator applications.
+
+ADDENDUM: OCTOBER 2026 SURVEY AND CLOSEST REFERENCED PRECONDITIONERS
+Audited November 14, 2026; this is a scoped novelty check, not certification.
+
+Survey: Epperly, Kressner, Nakatsukasa, Randomized algorithms in numerical
+linear algebra for scientific computing, submitted October 28, v2 October 30.
+https://arxiv.org/abs/2610.38157
+https://arxiv.org/pdf/2610.38157
+Read its actual source sections 4, 6.3.2, and 7.1-7.2, including references.
+Section 4.4.2 summarizes ordinary subspace/block-Krylov convergence; section
+4.5 explains the classical Gram/Nystrom correspondence. Section 6.3.2 sketches
+Rayleigh-Ritz extraction from an already adequate subspace. Section 7.1 covers
+least-squares whitening and points to RLOBPCG for minimum singular vectors;
+7.2 covers positive-regularized Nystrom linear solves. No theorem in these
+sections states the accuracy-tuned, separate-two-factor threshold tradeoff or
+the manuscript's full-output-optimal regime. The survey expressly does not
+cover all relevant theory, so this absence cannot establish novelty.
+
+Closest new eigenvector reference: Epperly, Park, Nakatsukasa (2026),
+Fast, High-Accuracy, Randomized Nullspace Computations for Tall Matrices.
+https://arxiv.org/abs/2602.16797
+https://arxiv.org/pdf/2602.16797
+Theorem 1.2, printed page 4, concerns a supplied full-column-rank tall matrix
+X and its MINIMUM singular vector. With gap=(sigma_{q-1}^2-sigma_q^2)/sigma_q^2,
+it assumes embedding distortion eta<gap/(2+gap). Corollary 1.3 chooses
+eta=min(gap/3,1/6) and proves iteration count
+O(log(1/epsilon)/min(gap,1)); its displayed construction cost is
+~O(nnz(X)/min(gap,1) + q^3/min(gap,1)^2).
+My inference: this is relevant prior art for sketch-preconditioned eigensolvers,
+but does not give access to a Gram factor of tG-GQ'G from A,B. That pencil
+may be indefinite during bisection; merely supplying its matvec does not meet
+the paper's supplied-tall-matrix embedding assumption. No gap-free product-tail
+bound or two-factor total-cost theorem was identified there.
+
+Two related 2026 Ritz papers:
+Grigori, Kressner, Shao, Simunec, Restoring similarity in randomized Krylov
+methods with applications to eigenvalue problems and matrix functions.
+https://arxiv.org/abs/2601.10248
+The construction restores the same approximations as ordinary Arnoldi with
+less expensive basis maintenance; it does not assert fewer operator actions.
+Shao, Stabilizing the Rayleigh-Ritz procedure by randomization, v4 October 26.
+https://arxiv.org/abs/2604.01037
+This extracts eigenpairs from a prescribed subspace and controls compressed
+eigenpair conditioning. It is not a construction of the required subspace.
+My inference: neither abstract supplies the missing two-factor threshold route.
+
+Important general linear-solver reference: Derezinski, Musco, Yang,
+Faster Linear Systems and Matrix Norm Approximation via Multi-level Sketched
+Preconditioning, SODA 2025, arXiv v2 April 11, 2025.
+https://arxiv.org/abs/2405.05865
+https://arxiv.org/pdf/2405.05865
+Theorem 1.2 treats an explicit PSD X and positive regularization lambda,
+with cost ~O(q^2 log^3(1/epsilon)+d_lambda^omega). It uses additional levels
+of sketched Nystrom preconditioning. Theorem 1.1 instead assumes all but k
+singular values are within a constant of the minimum. Its matrix-norm
+applications are trace/spectral-sum estimates, not returned relative-spectral
+low-rank factors. My inference: the positive-regularized theorem is not an
+oracle for an indefinite complement; using the other theorem on a complement
+requires checking its outlier/average-condition hypotheses and paying to build
+its input-dependent sketches. No claimed general A,B guarantee here removes
+those requirements. It is important context, not a verified stronger comparator.
+
+Chen, Huber, Lin, Zaid (ETNA 2026), Preconditioning without a preconditioner
+using randomized block Krylov subspace methods.
+https://etna.ricam.oeaw.ac.at/vol.65.2026/pp63-92.dir/pp63-92.pdf
+Section 1.2 explicitly assumes matrix-vector or block-matrix-vector access.
+The method improves positive-definite linear-system solves and can outperform
+Nystrom-preconditioned CG. My inference: it provides no additional separate
+factor sketches beyond that oracle. Block costs must still be charged through
+A and B; it cannot be invoked as an input-linear, gap-free product-PCA theorem.
+
+Assessment: the new references strengthen the prior-art discussion of the
+mechanism. This scoped audit found no published theorem subsuming the exact
+two-factor bound, and no stronger general-product comparator that invalidates
+the strict O(N^2) instance. State this as a search result. A formal first-ever
+or complete-SOTA claim remains unsupported; EPSI and other work outside this
+survey still require the separate checks documented by the other auditors.

@@ -1,0 +1,360 @@
+THE SECOND COLLISION PHASE OF A BALANCED UNSIGNED SKETCH
+======================================================
+
+This note proves a sharp success transition for the particular centered
+balanced sketch already defined in balanced-permutation-amm.txt. It
+connects exact permutation assignments to the spectra of small colored
+collision components. The factorial-moment/Poisson method is classical;
+no novelty certificate, general embedding lower bound, or AMM runtime
+improvement over signed sketches is claimed.
+
+1. THE ASYMPTOTIC STATEMENT
+==========================
+Fix an integer d>=2 and a tolerance 0<epsilon<1 with
+
+  1<d epsilon<sqrt(2).                                  (1)
+
+Let t tend to infinity. For each t, let m=sq, s>=2, q>=2 be integers,
+with
+
+  s/t^(3/2)->c in (0,infinity),
+  q->Q in {2,3,...} union {infinity}.                    (2)
+
+If Q is finite, q is eventually the integer Q. Choose a deterministic
+set I of t coordinates of [m]. The assumptions imply t<s<=m for all
+sufficiently large t, so such sets exist. Independently for each of
+d colors, partition [m] uniformly into s labeled buckets of size q.
+For its incidence H_a put
+
+  p=(q-1)/(m-1),
+  W_a=(H_a^T H_a-p11^T)/(1-p),
+  Wbar=d^-1 sum_a W_a.
+
+The sketch has Gram matrix Wbar. Let
+
+  V_I={x in R^m: supp(x) subset I, sum_i x_i=0},
+
+of dimension r=t-1. Success means simultaneous squared-norm preservation:
+
+  |x^T(Wbar-I)x|<=epsilon||x||^2 for EVERY x in V_I.     (3)
+
+Use 1/Q=0 when Q=infinity, and define
+
+  kappa_2=1-1/Q,
+  kappa_3=(1-1/Q)(1-2/Q),
+  lambda_W=d(d-1)kappa_2^2/(2c^2),
+  lambda_T=d kappa_3/(6c^2).                            (4)
+
+Then the exact limiting success probability is
+
+  Pr(success on V_I)->exp(-lambda_W-lambda_T).          (5)
+
+Thus for a fixed limiting failure target delta in (0,1), the critical
+constant is
+
+  c_delta^2=[d(d-1)kappa_2^2/2+d kappa_3/6]
+                         /[-log(1-delta)].             (6)
+
+Choosing c>c_delta gives a limiting success probability greater than
+1-delta, and choosing c<c_delta gives one less than 1-delta. The total
+shared-constant factor width is ell=1+d(s-1)~dc r^(3/2).
+This is the explicit stacked width; rank Wbar<=min(m,ell). If Q>d,
+including Q=infinity, it is genuinely compressed eventually. When
+Q<=d the redundant stack may have width at least m. The theorem still
+describes the stated Wbar, but an implementation taking an exact
+identity fallback instead would have a different success law.
+
+The strict window (1) matters. It allows isolated pair collisions while
+rejecting every three-vertex path or triangle. No claim is made here
+at d epsilon=1 or sqrt(2), or in other tolerance windows. In particular
+the theorem does not supply a complete phase diagram.
+
+2. EXACT SMALL PATTERN PROBABILITIES
+===================================
+For one balanced partition, two specified coordinates collide with
+probability
+
+  p=(q-1)/(m-1).
+
+Three specified coordinates lie in one bucket with probability
+
+  p_3=(q-1)(q-2)/[(m-1)(m-2)].                         (7)
+
+Represent the partition by a uniform permutation into m slots, with
+q slots in each of s buckets. More generally, suppose disjoint specified
+coordinate groups of sizes v_1,...,v_h must each lie within a bucket,
+and additionally require different groups to use different buckets.
+For a=sum_j v_j the EXACT probability is
+
+  (s)_h product_j(q)_(v_j)/(m)_a.                       (8)
+
+This follows by assigning distinct buckets to the groups and distinct
+slots to their labeled coordinates. All (m)_a assignments of distinct
+slots to the specified coordinates are equiprobable. Here (z)_a is a
+falling factorial. Formula (8), rather than independent coordinate
+hashing, retains the finite population correction in (4).
+
+For later use fix a finite colored constraint pattern on a bounded
+number of vertices. For each color, let its nontrivial connected
+components have sizes v_j. Requiring its indicated collision edges
+means that every such component occupies a single bucket. Define
+the total colored constraint rank
+
+  R=sum_colors sum_components(v_j-1).                   (9)
+
+Uniformly for q>=2 as s tends to infinity, its probability is O(s^-R),
+where the constant can depend on the fixed pattern and d. To see this,
+in each color expose one coordinate per component freely and then
+the other coordinates in that component. At a constrained exposure
+there are at most q allowable slots and at least m-a unused slots.
+For a fixed pattern, q/(m-a)<=2/s eventually. There are exactly
+sum_j(v_j-1) constrained exposures. Independence multiplies this bound
+across colors. If q is smaller than a required component, the event
+is impossible and the same upper bound is valid.
+
+When every required component has size two or three, formula (8) also
+gives its leading probability if different components of a color use
+different buckets. Assignments merging at least two of those groups
+use at least one fewer bucket; summing their finite possible mergers
+and using (m)_a~m^a shows that they contribute O(s^(-R-1)). Thus for
+disjoint vertex sets the leading factors are
+
+  size two: s^-1*(q)_2/q^2=s^-1*(1-1/q),
+  size three: s^-2*(q)_3/q^3
+                         =s^-2*(1-1/q)(1-2/q).          (10)
+
+All approximation errors here are uniform over q>=2 for each fixed
+pattern, as absolute O(s^(-R-1)+s^-R/m) errors. A forbidden size-three
+component at q=2 has probability zero exactly. No relative division
+by its vanishing leading constant is used.
+
+3. THE TWO RARE MOTIFS AND THEIR MEANS
+=====================================
+On I draw an edge of color a whenever two coordinates collide in
+partition a. A color alone is a disjoint union of cliques. Different
+colors can initially give multiple edges on the same pair.
+
+Define W to count the following wedge objects: a center v, an unordered
+pair {u,w} of other vertices, and two DISTINCT colors assigned to
+the two indicated edges vu and vw. Each such color assignment is one
+object; swapping the ordering used to describe the unordered endpoints
+does not create another object with the same colored edges. Its event
+is just the two prescribed collisions. There are
+
+  d(d-1)t*binom(t-1,2)=d(d-1)(t)_3/2
+
+possible wedge objects. Each has exact probability p^2, because its
+two colors are independent. Consequently
+
+  E W=d(d-1)(t)_3 p^2/2 ->lambda_W.                     (11)
+
+Define T to count an unordered three-vertex set and a single color
+in which all three vertices collide. Its graph is a monochromatic
+triangle. There are d*binom(t,3) such objects, so
+
+  E T=d(t)_3 p_3/6 ->lambda_T.                          (12)
+
+These definitions impose no absence of other edges. The small-component
+event in Section 5 will connect these raw motif counts to actual
+collision components. In particular they need not be induced patterns
+for the factorial-moment proof.
+
+4. JOINT FACTORIAL MOMENTS AND INDEPENDENT POISSON LIMITS
+=======================================================
+For fixed nonnegative integers a,b, we prove
+
+  E[(W)_a(T)_b]->lambda_W^a lambda_T^b.                 (13)
+
+The zero-order case is one. Expand into ordered tuples of a DISTINCT
+wedge objects and b DISTINCT triangle objects. Write h=a+b.
+First retain tuples whose motifs have disjoint vertex sets. Their
+exact number is
+
+  (t)_(3h) [d(d-1)/2]^a[d/6]^b.                       (14)
+
+They impose 2h colored constraints in the sense of (9). Applying
+(8),(10) in each color and using independence across colors gives
+their common leading event probability
+
+  s^(-2h)(1-1/q)^(2a)[(1-1/q)(1-2/q)]^b,
+
+with absolute error O(s^(-2h-1)+s^(-2h)/m). The grouping of components
+among colors changes only this uniform error; it does not change the
+leading factors. Combining with (14), t^3/s^2->c^-2, and q->Q gives
+the right side of (13). At Q=2, any tuple containing a triangle is
+impossible eventually, as required.
+
+It remains to bound tuples with overlapping motif vertices. For each
+such tuple let its underlying uncolored union graph have connected
+components. For a component with v vertices, its colored constraint
+rank R obeys
+
+  R>=v-1.                                               (15)
+
+Indeed, replace each connected component of each colored constraint
+graph by an arbitrary spanning tree. The union of these trees remains
+connected on the v vertices and has R edges, so must have at least
+v-1 edges. No independence of edges within a color is asserted.
+
+If v>=4, there are O(t^v) possible labels for each fixed abstract
+pattern, and its probability is O(s^-R). Its total contribution is
+therefore at most a constant times
+
+  t^v/s^(v-1)=O(t^(3/2-v/2))=o(1).                    (16)
+
+For v=3, a single motif has rank two and is the leading case already
+counted. If a connected three-vertex component contains at least two
+distinct motif objects, its rank is at least three. For if R=2, the
+constraints can only consist of EITHER one connected monochromatic
+three-vertex component (which defines exactly one triangle object),
+OR two differently colored edges connecting the three vertices (which
+define exactly one wedge object). No second distinct motif is possible
+in either case. The contribution with v=3 and multiple motifs is
+therefore O(t^3/s^3)=o(1).
+
+Each overlapping tuple has at least one such negligible component.
+All other components contribute O(1), with a lone motif contributing
+O(t^3/s^2)=O(1). There are finitely many abstract constraint patterns
+for fixed a,b,d. Multiplying the component labeling/probability bounds
+and summing proves that all overlapping tuples contribute o(1).
+This proves (13). Shared colors between vertex-disjoint components
+do not affect this upper bound: (9) applies to their union and its
+rank is the sum of their colored ranks.
+
+For completeness, (13) implies the stated independent Poisson limit
+without an unproved exchange of an infinite series. Independently
+retain each wedge with probability 1-u and each triangle with probability
+1-v, where 0<=u,v<=1. Let Z count retained motifs. The binomial identity
+for falling factorials and (13) give, for every fixed j,
+
+  E(Z)_j ->[(1-u)lambda_W+(1-v)lambda_T]^j.
+
+Bonferroni's finite inclusion-exclusion bounds enclose Pr(Z=0) between
+the odd and even truncations of sum_j(-1)^j E(Z)_j/j!. First let
+t tend to infinity for a fixed truncation and then let its order tend
+to infinity. The limiting exponential series converges, so
+
+  E[u^W v^T]=Pr(Z=0)
+    ->exp(lambda_W(u-1)+lambda_T(v-1)).                 (17)
+
+First moments give tightness of (W,T). Any subsequential distributional
+limit has the generating function (17), which uniquely identifies
+independent Poisson variables of means lambda_W,lambda_T. Thus the
+full joint distribution converges. Setting u=v=0 also directly proves
+
+  Pr(W=T=0)->exp(-lambda_W-lambda_T).                   (18)
+
+5. OTHER COLLISION COMPONENTS VANISH
+===================================
+With probability tending to one, the colored collision graph on I has
+no repeated pair, no rainbow triangle, and no connected component with
+four or more vertices. Here a rainbow triangle has three different
+edge colors. These assertions follow from explicit first moment bounds:
+
+  repeated pairs: O_d(t^2 p^2)=O_d(t^2/s^2)=o(1);
+  rainbow triangles: O_d(t^3 p^3)=O_d(t^3/s^3)=o(1).
+
+If a connected component has at least four vertices, it contains a tree
+on four vertices. There are O_d(t^4) possible four-vertex trees with
+three edge colors assigned. Each tree imposes colored rank exactly
+three: each color subgraph of a tree is a forest, whose rank equals
+its number of edges. Equation (9) bounds its event probability by
+O_d(s^-3). Thus
+
+  Pr(a component has at least four vertices)
+      <=O_d(t^4/s^3)=o(1).                              (19)
+
+Let G denote this joint high-probability event. Its simple components
+are isolated vertices, isolated edges, three-vertex paths with different
+edge colors, and monochromatic triangles. A path with two edges of one
+color forces its third edge by equality of buckets, so is a triangle.
+A triangle with exactly two colors forces a repeated pair by the same
+transitivity, and has been excluded. Three differently colored edges
+form the excluded rainbow case. On G, therefore, W counts precisely
+the three-vertex path components, while T counts precisely the triangle
+components. A triangle contributes one T and no differently colored
+wedge; a path contributes one W and no T.
+
+6. EMBEDDING SUCCESS IS CONTROLLED BY THEIR PERRON EIGENVALUES
+============================================================
+Let A_col be the t-by-t adjacency with entry K_ij counting pair
+collisions over the d colors and zero diagonal. Let P_t=I_t-11^T/t.
+For a vector supported on I with coordinate sum zero, the exact
+restricted squared-norm error is represented by
+
+  Z_t=(1-p)^-1 P_t(A_col/d+pI_t)P_t.                    (20)
+
+This follows directly from H_a^T H_a=I_t+A_a on those coordinates;
+the mean term p11^T vanishes on their contrast space. Success (3)
+is equivalent to ||Z_t|_(1-perp)||<=epsilon.
+
+On G and W=T=0, the collision graph is a matching plus isolated
+vertices. Hence ||A_col||<=1, and
+
+  ||Z_t||<=(1/d+p)/(1-p)<epsilon
+
+for all sufficiently large t, because p->0 and d epsilon>1.
+
+Conversely, on G and W+T>=1, select a three-vertex component. Its
+local Perron eigenvalue is lambda=sqrt(2) for a path, or lambda=2
+for a triangle. Let v be its unit nonnegative Perron vector, extended
+by zero to all t coordinates. Then A_col v=lambda v. Put
+
+  y=P_t v, z=(1^T v)^2/t<=3/t.
+
+Now ||y||^2=1-z, and because A_col is entrywise nonnegative,
+
+  y^T A_col y
+    =lambda-2lambda z
+       +(1^T v)^2 t^-2 (1^T A_col 1)
+    >=lambda(1-2z).
+
+For t>3 this supplies a nonzero contrast vector with Rayleigh quotient
+
+  y^T A_col y/||y||^2
+      >=lambda(1-2z)/(1-z)=lambda-O(1/t),              (21)
+
+uniformly for the two component types. Equations (20),(21) show
+
+  y^T Z_t y/||y||^2
+    >=(lambda/d-O(1/t)+p)/(1-p)>epsilon
+
+eventually, since lambda>=sqrt(2) and d epsilon<sqrt(2). Thus success
+is equivalent to W=T=0 on G for all sufficiently large t. As Pr(G)->1,
+equation (18) proves (5). Notice that simply taking the norm of a
+rank-one projection perturbation is unnecessary; the local eigenvector
+argument controls the mean-removal loss directly by O(1/t).
+
+7. RELATION TO THE MATRIX AND PERMUTATION PROJECTS
+================================================
+Let U be any orthonormal basis matrix for V_I. Taking A=U^T, B=U
+makes AB=I_(t-1), while A Wbar B-I is precisely the compressed Gram
+error in (3). Therefore (5) is also an exact limiting spectral AMM
+success law on this explicitly specified input family. Zero padding
+can enlarge physical input/output dimensions without changing it.
+It is not a guarantee for arbitrary factors or the relative-tail target.
+
+The previous birthday phase in balanced-variance-and-birthday.txt,
+where d epsilon<1 asymptotically, rejects even one pair collision and
+has the t^2/s critical scale. Allowing isolated edges changes the first
+rejected component to three vertices; its t^3/s^2 scale gives the new
+t^(3/2) bucket threshold. The finite-q constants distinguish path
+components across colors from same-color triangles. At Q=2 triangles
+cannot occur and lambda_T=0, but lambda_W>0 for d>=2.
+
+The exact assignment formula (8) is the compatible permutation matching
+input used throughout spectral-gap/. The proof here organizes those
+probabilities by collision graphs and weights them by the corresponding
+small adjacency spectra. The sharp SG-11/14/16 mixed centered envelopes
+remain available for broader weighted trace sums, but are not needed
+to improve an inequality in this particular Poisson argument. A claim
+that their new constants caused the phase law would overstate the
+dependency. This is a new analysis within the worktree of the balanced
+construction; external historical firstness remains unverified.
+
+Classical sparse and signed embedding methods can have better row
+tradeoffs than the restricted fixed-pass construction studied here.
+No comparison to a global AMM runtime optimum follows from the phase
+transition. It instead gives a proved sharp obstruction and matching
+success law within a specific tolerance/pass window, beyond the
+one-collision birthday bound.

@@ -143,8 +143,9 @@ theorem absolute_family_actual_work_log_bound
     have hh := mul_le_mul hloop hcore
       (Nat.cast_nonneg (absoluteUniformAttemptWorkCap kernels I.fixed S C R Ck p))
       (show 0 ≤ 4*Real.log (m:ℝ) by linarith)
-    push_cast
-    convert hh using 1 <;> simp only [ell,p] <;> ring
+    dsimp only [ell,p] at hh ⊢
+    push_cast at hh ⊢
+    exact hh.trans_eq (by ring)
   have hrows := P.absolute_initial_rows_scale_of_fixed I.seed I.fixed.seed I.fixed_seed_eq hL D c
     hD0 hc hm hmLog hscale hδ g.1
   have hRcoarse : 1 ≤ familyCoarseRowCoefficient D c := by unfold familyCoarseRowCoefficient; linarith
@@ -181,8 +182,7 @@ theorem absolute_family_actual_work_log_bound
   have hpow2 : ell^3 ≤ ell^(3*p+3) := by
     have hh := Real.rpow_le_rpow_of_exponent_le hmLog (show (3:ℝ) ≤ 3*p+3 by linarith)
     change ell^(3:ℝ) ≤ ell^(3*p+3) at hh
-    rw [Real.rpow_natCast ell 3] at hh
-    exact hh
+    simpa only [Real.rpow_ofNat] using hh
   have hpow3 : ell^(3*p) ≤ 4*ell^(3*p+3) := by
     have hh := Real.rpow_le_rpow_of_exponent_le hmLog (show 3*p ≤ 3*p+3 by linarith)
     have hp0 : 0 ≤ ell^(3*p+3) := Real.rpow_nonneg (by linarith) _

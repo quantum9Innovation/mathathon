@@ -73,7 +73,7 @@ def exactGramAppendixSoftBudget
   ((kernels m n m).cost:ℝ)+((kernels m p m).cost:ℝ)+
     200*(C+1)*(Nat.clog 2 (m+1)+exactGramAppendixSearchCap m (θ/100)
       (div_pos hθ (by norm_num))+1:ℕ)*((2*(m+1):ℕ):ℝ)^q+
-    4*(matrixProductCost kernels n m r:ℝ)+(matrixProductCost kernels p m r:ℝ)+
+    5*(matrixProductCost kernels n m r:ℝ)+2*(matrixProductCost kernels p m r:ℝ)+
     (matrixProductCost kernels n r p:ℝ)+(n*p:ℕ)+(m*(n+p):ℕ)
 
 theorem exactGramAppendixFiniteBudget_le_soft

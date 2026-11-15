@@ -56,8 +56,6 @@ theorem exactGramAppendixShiftedEigenvalueTestProgram_eval
     rw [heq]
   · rename_i out heq
     rw [heq]
-    simp only [eval_bind, certify_eval, positiveDiagonalCountProgram_eval]
-    rfl
 
 theorem exactGramAppendixShiftedEigenvalueTestProgram_admissible
     (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)

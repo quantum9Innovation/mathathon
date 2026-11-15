@@ -25,7 +25,7 @@ def exactGramAppendixFiniteBudget
     (C q : ℝ) (n m p r : ℕ) (θ : ℝ) (hθ : 0 < θ) : ℝ :=
   ((kernels m n m).cost:ℝ)+((kernels m p m).cost:ℝ)+
     exactGramAppendixArithmeticBudget C q m (θ/100) (div_pos hθ (by norm_num))+
-    4*(matrixProductCost kernels n m r:ℝ)+(matrixProductCost kernels p m r:ℝ)+
+    5*(matrixProductCost kernels n m r:ℝ)+2*(matrixProductCost kernels p m r:ℝ)+
     (matrixProductCost kernels n r p:ℝ)+
     (exactGramAppendixSearchCap m (θ/100) (div_pos hθ (by norm_num))*(m*m)+1+m*m:ℕ)+
     (n*p:ℕ)+(m*(n+p):ℕ)
@@ -63,8 +63,30 @@ theorem exactGramAppendixThetaSearchCap_le_clog (m : ℕ) (θ : ℝ) (hθ : 0 < 
   simpa only [hratio] using
     exactGramAppendixSearchCap_le_clog m (θ/100) (div_pos hθ (by norm_num))
 
+/-- The actual returned width determines the two literal factor-write
+counts. Their feasible physical product costs absorb these entries. -/
+theorem exactGramAppendixThetaProgram_factorWrites_bound
+    (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
+    {n m p : ℕ} (A : Matrix (Fin n) (Fin m) ℝ) (B : Matrix (Fin m) (Fin p) ℝ)
+    (r : ℕ) (θ : ℝ) (hθ : 0 < θ) (tape : ExactGramAppendixThetaTape kernels A B θ hθ) :
+    n*(exactGramAppendixThetaProgram kernels A B r θ hθ tape).eval.width+
+      (exactGramAppendixThetaProgram kernels A B r θ hθ tape).eval.width*p ≤
+      matrixProductCost kernels n m r+matrixProductCost kernels p m r := by
+  have hw := exactGramAppendixThetaProgram_width kernels A B r θ hθ tape
+  have hl := Nat.mul_le_mul_left n hw
+  have hr := Nat.mul_le_mul_right p hw
+  have hleft : n*r ≤ matrixProductCost kernels n m r := by
+    unfold matrixProductCost
+    have hcomm := Nat.mul_comm n r
+    omega
+  have hright : r*p ≤ matrixProductCost kernels p m r := by
+    unfold matrixProductCost
+    omega
+  exact (Nat.add_le_add hl hr).trans (Nat.add_le_add hleft hright)
+
 /-- This includes every arithmetic instruction on every outcome, all
-Gaussian coordinates, all explicit product entries, and dense input reads. -/
+Gaussian coordinates, both returned factors, every dense product entry,
+and dense input reads. -/
 theorem exactGramAppendixTotalWork_bound
     (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     (C q : ℝ) (hC : 0 < C) (hq : 2 ≤ q)
@@ -79,9 +101,13 @@ theorem exactGramAppendixTotalWork_bound
   have hdraw : (exactGramAppendixThetaGaussianDraws kernels A B θ hθ:ℝ) ≤
       (exactGramAppendixSearchCap m (θ/100) (div_pos hθ (by norm_num))*(m*m)+1+m*m:ℕ) := by
     exact_mod_cast exactGramAppendixThetaGaussianDraws_le kernels A B θ hθ
+  have hfactors : ((n*(exactGramAppendixThetaProgram kernels A B r θ hθ tape).eval.width+
+      (exactGramAppendixThetaProgram kernels A B r θ hθ tape).eval.width*p:ℕ):ℝ) ≤
+      (matrixProductCost kernels n m r:ℝ)+(matrixProductCost kernels p m r:ℝ) := by
+    exact_mod_cast exactGramAppendixThetaProgram_factorWrites_bound kernels A B r θ hθ tape
   unfold exactGramAppendixTotalWork exactGramAppendixFiniteBudget
   push_cast
-  push_cast at hdraw
+  push_cast at hdraw hfactors
   linarith
 
 structure ExactGramAppendixGuarantee

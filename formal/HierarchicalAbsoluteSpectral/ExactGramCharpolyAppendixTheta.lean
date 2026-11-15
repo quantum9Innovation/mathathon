@@ -111,12 +111,17 @@ theorem exactGramAppendixThetaGaussianDraws_le
       exactGramAppendixSearchCap m (θ/100) (div_pos hθ (by norm_num))*(m*m)+1+m*m :=
   exactGramAppendix_draws_le _ m (exactGramAppendixCanonicalSupport kernels A B).dimension_le _ _
 
+/-- Charge all executed arithmetic, every Gaussian coordinate, the n*w
+and w*p entries of the returned factors, all n*p dense product entries,
+and all dense input reads. Here w is the actual returned width. -/
 def exactGramAppendixTotalWork
     (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     {n m p : ℕ} (A : Matrix (Fin n) (Fin m) ℝ) (B : Matrix (Fin m) (Fin p) ℝ)
     (r : ℕ) (θ : ℝ) (hθ : 0 < θ) (tape : ExactGramAppendixThetaTape kernels A B θ hθ) : ℕ :=
-  (exactGramAppendixThetaProgram kernels A B r θ hθ tape).work+
-    exactGramAppendixThetaGaussianDraws kernels A B θ hθ+n*p+m*(n+p)
+  let program := exactGramAppendixThetaProgram kernels A B r θ hθ tape
+  let w := program.eval.width
+  program.work+exactGramAppendixThetaGaussianDraws kernels A B θ hθ+
+    n*w+w*p+n*p+m*(n+p)
 
 end
 end HierarchicalAbsoluteSpectral

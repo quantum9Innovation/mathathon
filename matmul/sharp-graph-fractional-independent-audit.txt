@@ -1,0 +1,154 @@
+Independent review of the sharp-width sparse graph synthesis
+============================================================
+
+Reviewer: separate Codex research agent, 2026-11-15 UTC.
+Source read completely: sharp-graph-fractional-updates.txt, SHA256
+  f0dacfad8b4d80c610634f7c758f8bed0395c8fc1ff43d909b863bf6d943afd1
+
+Finding: PASS for the actual sharp-leading-width algorithm in the stated
+exact arithmetic/scalar-power model, with EXPECTED nearly-linear work.
+The minimax width constant is sharp over the positive mass-weighted
+graph update class, using the separately proved graph-path realization
+and companion PSD count theorem as inputs. This is an informal separate
+mathematical review, not human peer review, a formal proof or a novelty
+certificate.
+
+Authoritative inputs independently inspected
+---------------------------------------------
+1. sharp-matrix-function-updates.tex, current SHA256
+     334b439ea2dd72c09e8d6024582e74862590c6cf192e5d48a9e7a43f1f63b3e6
+   Its actual Constructive moving strip lemma and complete scalar proof
+   were read, including node count, moving-strip envelope, coefficient
+   mass, log-node bound, positive polynomial-square windows and rounded
+   exponentiation. Its separately audited scalar construction is accepted
+   as an input here; this report does not re-audit the entire raw-factor
+   matrix-function manuscript.
+
+2. graph-path-realization.txt, SHA256
+     d0cb385bcce665fe395bc7c388d1083e9f6f74e072f9d247fbc6a9dd3c862fac
+   Its complete proof was independently reviewed earlier in
+   graph-fractional-independent-audit.txt, including connected rank-k
+   path limits, exact norm-one normalization and strict counts.
+
+3. The two-endpoint energy-error argument and confidence amplification
+   were independently checked in the earlier graph manuscript review.
+   KMP's primary PDF Theorem 4.6, Lemmas 4.3 and 4.5 were inspected.
+
+Proof and complete-cost checks
+-------------------------------
+4. For positive changes and arbitrary fixed positive masses, E=UU^T
+   is PSD. The formulas for a^2=||E||_F^2 and b=||U||_F^2=tr(E) are
+   exact sparse formulas, including normalized diagonal and off-diagonal
+   weights. Positive eigenvalues give
+     ||E||<=a<=sqrt(k)||E||, 1<=chi=b/a<=sqrt(k).
+   Unlike general signed changes with arbitrary masses, this entails
+   no hidden mass-ratio or representation-cancellation parameter.
+
+5. R-S=R E S=(RU)(SU)^T is the exact rank-k resolvent product. Both
+   normalized endpoint operators are PSD, so ||R-S||<=1/t and the
+   update identity gives ||R-S||<=a/t^2. The logarithmic fractional
+   integrand has exactly the PSD strip envelope required by the actual
+   constructive lemma, with strip half-width pi and no spectral scale.
+   Its real-line derivative bound also transfers from the resolvent
+   identity. Disconnected and singular endpoints cause no obstruction.
+
+6. A column energy error eta implies Euclidean error <=eta||u||/t.
+   Summing gives block error <=eta sqrt(b)/t. Expanding the cross
+   product gives (2eta+eta^2)b/t^2, hence <=3eta b/t^2 for eta<=1.
+   No common linear or symmetric approximate inverse is assumed.
+
+7. The congruence identity
+     (A+tI)^-1=H^1/2(K+tH)^-1H^1/2
+   and its energy-error transport are exact. K+tH is SPD SDD. Each
+   application and quadratic-distance check requires sparse edge work
+   plus diagonal scalings, with no polynomial or logarithmic mass ratio
+   in the exact-arithmetic transfer. The standard SDD theorem's expected
+   work qualification is correctly retained.
+
+8. The constructive quadrature supplies ACTUAL positive nodes s_j and
+   nonnegative coefficients a_j with
+     q<=L^2/[4pi^2 alpha(1-alpha)]+O_alpha(L^(7/4)),
+     |log s_j|<=B_0=O_alpha(L+1), sum_j a_j=O_alpha(L+1).
+   The source specifies a computable B_0 from pre-rounded logarithmic
+   locations; it does not require a logarithm of a spectral scale or
+   a node as a free primitive.
+
+9. The decisive weighted solve-error calculation is correct:
+     sum_j omega_j error_j
+       <=C_alpha eta chi a^alpha (L+1) exp((1-alpha)B_0).
+   With eta<=c_alpha exp(-L-(1-alpha)B_0)/[chi(L+1)], this is at most
+   O_alpha(a^alpha exp(-L)). Its precision is O_alpha(L+log(2k)).
+   The proposed dyadic implementation is sufficient because
+   2 log(2)>1 and 1-alpha<1. Repeated halving and comparisons cost
+   O_alpha(L+1), not an uncharged exponential oracle.
+
+10. L=log(1/epsilon)+O_alpha(log(2k)) with exp(-L) small enough absorbs
+    a^alpha/||E||^alpha<=k^(alpha/2), together with all fixed quadrature,
+    coefficient and solve budgets. For fixed k the O(L^(7/4)) term is
+    o(L^2), so neither the scalar realization nor the solve precision
+    loses the claimed leading width coefficient.
+
+11. Each actual node uses the general real factors
+      P_j=sqrt(omega_j)Vhat_j, Q_j=sqrt(omega_j)What_j.
+    They need no n-by-k by k-by-k multiplication. The 2kq solves,
+    O(Nkq) physical factor work and O_alpha(L^3) scalar construction
+    all fit the displayed soft-O expected bound. Sorting/merging edits
+    has only dimension-logarithmic overhead. Dense output is separately
+    charged. General fixed alpha retains the source's explicit extra
+    scalar-power qualification; alpha=1/2 uses ordinary arithmetic,
+    comparisons and scalar square roots.
+
+12. Arbitrary confidence follows from the referenced robust solver
+    amplification. Use odd s and include zero self-distances in each
+    median, as explicitly specified in the underlying graph audit.
+    Constant-success solves at eta/3, majority selection by sparse
+    inner-system energy distances, and a union bound give simultaneous
+    accuracy for all 2kq calls. The added s^2 distance work is only
+    logarithmic overhead. This does not upgrade expected work to a cap.
+
+13. Exact symmetrization has width at most 2kq and the same work order.
+    The source correctly claims the SHARP coefficient only for general
+    PQ^T output. Approximate symmetry of low-rank factors is not enough
+    to claim a sharp-width PSD or exactly symmetric factor at the same
+    variable-k construction cost.
+
+Lower bound and scope checks
+-----------------------------
+14. The path realization supplies positive rank-one graph updates with
+    exact unit norm. k disjoint witnesses have norm-one rank-k positive
+    update. Adding arbitrarily weak unchanged bridge conductances makes
+    one connected path and preserves every strict count for sufficiently
+    small bridges. These examples are in the algorithm's MASS-WEIGHTED
+    POSITIVE-update class, and chi<=sqrt(k) holds on them.
+
+15. The companion PSD count theorem therefore gives matching leading
+    width k/[4pi^2 alpha(1-alpha)] already for those graph examples.
+    Any rank-l approximant within spectral error epsilon must have
+    l>=N_epsilon(target), irrespective of symmetry or randomness. A
+    randomized output with a smaller guaranteed width cannot succeed
+    on such an input even with positive probability. The lower and upper
+    classes therefore match for the leading worst-case width constant.
+
+16. This is a minimax statement over all finite dimensions and all
+    allowed positive masses; the graph and masses may depend on epsilon.
+    It is not an asymptotic for one fixed graph, a lower bound on runtime,
+    a bounded-mass theorem, or a sharpness theorem on unit-mass paths.
+    Signed unit-mass changes retain the sharp upper coefficient, but no
+    matching graph-restricted lower has been established there. Signed
+    arbitrary-mass changes correctly retain the extra log(chi) cost.
+
+No substantive repair was identified in the mathematical theorem.
+The source's Section 1 still labels the imported scalar source with its
+historical docs/ path; the workspace now stores it under matmul/. The
+hash identifies the correct current source, so this is an editorial
+path correction only. General unrestricted quadratic multiplication,
+historical priority and finite-word stability remain open.
+
+Root editorial reconciliation after workspace rename
+----------------------------------------------------
+Only the literal source path docs/sharp-matrix-function-updates.tex
+was changed to matmul/sharp-matrix-function-updates.tex. Reversing this
+one substitution exactly recovers the independently audited source hash
+f0dacfad8b4d80c610634f7c758f8bed0395c8fc1ff43d909b863bf6d943afd1.
+No mathematical statement, proof, or scalar-source hash changed.
+Final source SHA256: aa3118bf9fd820befbdf93c89728617f06e50c4ee8074919c648d7a8ff1b6e37

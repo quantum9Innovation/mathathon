@@ -40,6 +40,7 @@ def check(m, s):
                tuple([1]*(m//2)+[-1]*(m//2)),
                tuple([1]*(m-1)+[-(m-1)])]
     sums_z, sums_z2 = [0]*len(vectors), [0]*len(vectors)
+    gram_variance_numerators = [0]*(m-1)
     count, collisions = 0, 0
     for partition in partitions(tuple(range(m)), q):
         bucket = {v: i for i, block in enumerate(partition) for v in block}
@@ -60,6 +61,16 @@ def check(m, s):
             znum = quadratic(t, vector)
             sums_z[k] += znum
             sums_z2[k] += znum*znum
+        for rank in range(1, m):
+            # P projects onto zero-sum vectors in the first rank+1 coordinates.
+            # Its entries are integer multiples of 1/(rank+1); no square
+            # roots or numerical orthonormal basis are required.
+            pnum = [[((rank+1)*int(i == j)-1)
+                     if i <= rank and j <= rank else 0
+                     for j in range(m)] for i in range(m)]
+            tp = multiply(t, pnum)
+            gram_variance_numerators[rank-1] += sum(
+                tp[i][j]*tp[j][i] for i in range(m) for j in range(m))
         count += 1
         collisions += bucket[0] == bucket[1]
     assert all(value == 0 for row in sum_t for value in row), (m, s, "EW")
@@ -79,9 +90,20 @@ def check(m, s):
         actual = F(sums_z2[k], count*denominator**2*norm2**2)
         assert sums_z[k] == 0 and actual == expected, (m, s, "quadratic variance", k, actual, expected)
         variances.append(str(actual))
+    tau = 2*coefficient*F(m-1, m*(m-3))
+    gram_variances = []
+    for rank in range(1, m):
+        leverage_square_sum = F(rank*rank, rank+1)
+        expected = tau/2*(rank*(rank+1)+F(2*rank, (m-1)*(m-2))
+                          -F(2*m, m-2)*leverage_square_sum)
+        actual = F(gram_variance_numerators[rank-1],
+                   count*denominator**2*(rank+1)**2)
+        assert actual == expected, (m, s, "projected Gram variance", rank, actual, expected)
+        gram_variances.append(str(actual))
     return dict(m=m, s=s, q=q, partitions=count, collision_probability=str(p),
                 covariance_coefficient=str(coefficient),
-                unit_vector_quadratic_variances_contrast_balanced_spiked=variances)
+                unit_vector_quadratic_variances_contrast_balanced_spiked=variances,
+                projected_gram_frobenius_variances_by_rank=gram_variances)
 
 
 if __name__ == "__main__":

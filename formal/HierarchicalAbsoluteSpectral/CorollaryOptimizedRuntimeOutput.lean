@@ -9,7 +9,7 @@ set_option autoImplicit false
 set_option maxHeartbeats 1000000
 noncomputable section
 open Matrix Matmul.RectangularPrograms
-variable {N m r w : ℕ}
+variable {N m r w L : ℕ}
 
 theorem comparator_nat_sup_real_le {ι : Type*} [Fintype ι] [Nonempty ι]
     (f : ι → ℕ) (B : ℝ) (h : ∀ i, (f i:ℝ) ≤ B) :
@@ -84,7 +84,7 @@ theorem comparator_exact_output_cap
     (hout : FixedOutputKernelEnvelopes N kernels χOut) (hC : 0 < Ck) (hE : 2 ≤ E)
     (hK : ∀ a b c D : ℕ, 1 ≤ D → a ≤ D → b ≤ D → c ≤ D →
       ((kernels a b c).cost:ℝ) ≤ Ck*(D:ℝ)^E)
-    (I : FixedProblem N m N r 1) (S : StoredSketches N m N 1) (C : MainSupportData S)
+    (I : FixedProblem N m N r L) (S : StoredSketches N m N L) (C : MainSupportData S)
     (hm : 1 ≤ m) (hNm : m ≤ N) (hr : (r:ℝ) ≤ Real.sqrt (m:ℝ)) :
     (mainExactOutputWorkCap kernels I S C:ℝ) ≤
       96*χ*(N:ℝ)*(m:ℝ)+9*(Ck+1)*(m:ℝ)^E+(N:ℝ)^2*χOut := by

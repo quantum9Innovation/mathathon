@@ -197,7 +197,9 @@ theorem absoluteDoublingLoop_work_cap
     (hwork : ∀ r < m, (attempt r).work ≤ K) :
     (absoluteDoublingLoop attempt fallback fuel offset).work ≤ fuel*K+fallback.work := by
   induction fuel generalizing offset with
-  | zero => simp only [absoluteDoublingLoop,work_bind,work_pure,Nat.add_zero,Nat.zero_mul,Nat.zero_add]
+  | zero =>
+    simp only [absoluteDoublingLoop,work_bind,work_pure,Nat.add_zero,Nat.zero_mul,Nat.zero_add]
+    exact le_rfl
   | succ fuel ih =>
     rw [absoluteDoublingLoop_work_succ]
     split_ifs with hm

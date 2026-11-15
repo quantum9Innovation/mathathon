@@ -206,5 +206,40 @@ theorem comparator_actual_core_envelope
   · intro hkc
     exact mainStrongDegree_comparator_cap I S C hm hkc
 
+def comparatorPipelineWorkCap (I : FixedProblem N m N r 1) (ζ χ χOut Ck : ℝ) : ℕ :=
+  1000*(I.queryCap+1)*(I.repetitions+1)*
+    ((comparatorOuterDegreeCap I+1)*comparatorActionCharge I χ+
+      comparatorCoreCharge Ck ζ m+comparatorOutputCharge χ χOut Ck ζ N m)
+
+def comparatorPreparedCoreWorkCap (I : FixedProblem N m N r 1) (ζ χ χOut Ck : ℝ) : ℕ :=
+  4+3*I.queryCap+2*I.repetitions+29+comparatorPipelineWorkCap I ζ χ χOut Ck
+
+theorem mainCoreProgram_comparator_work_bound
+    (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c) (ζ χ χOut Ck : ℝ)
+    (hζ : 0 < ζ) (hχ : 1 ≤ χ) (hχOut : 1 ≤ χOut) (hC : 0 < Ck)
+    (hEnv : FixedFamilyKernelEnvelopes ζ N m kernels χ χOut Ck)
+    (I : FixedProblem N m N r 1) (haccuracy : I.accuracy=comparatorAccuracy)
+    (S : StoredSketches N m N 1) (C : MainSupportData S) (hm : 2 ≤ m)
+    (hr : r ≤ ⌊Real.sqrt (m:ℝ)⌋₊)
+    (hraw : (comparatorOuterDegreeCap I+1)*(r+1) ≤ m) (g : MainRandomTape I) :
+    (mainCoreProgram kernels I S C g).work ≤ comparatorPipelineWorkCap I ζ χ χOut Ck := by
+  have he := comparator_actual_core_envelope kernels ζ χ χOut Ck hζ hχ hχOut hC hEnv
+    I haccuracy S C hm hr hraw
+  exact (mainCoreProgram_work_bound kernels Ck (9/4+ζ) hC (by linarith) hEnv.core I S C g).trans
+    (ComparatorCoreEnvelope.core_work kernels I S C Ck (9/4+ζ) _ _ _ _ he)
+
+theorem preparedMainCoreProgram_comparator_work_bound
+    (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c) (ζ χ χOut Ck : ℝ)
+    (hζ : 0 < ζ) (hχ : 1 ≤ χ) (hχOut : 1 ≤ χOut) (hC : 0 < Ck)
+    (hEnv : FixedFamilyKernelEnvelopes ζ N m kernels χ χOut Ck)
+    (I : FixedProblem N m N r 1) (haccuracy : I.accuracy=comparatorAccuracy)
+    (S : StoredSketches N m N 1) (C : MainSupportData S) (hm : 2 ≤ m)
+    (hr : r ≤ ⌊Real.sqrt (m:ℝ)⌋₊)
+    (hraw : (comparatorOuterDegreeCap I+1)*(r+1) ≤ m) (g : MainRandomTape I) :
+    (preparedMainCoreProgram kernels I S C g).work ≤ comparatorPreparedCoreWorkCap I ζ χ χOut Ck := by
+  rw [preparedMainCoreProgram_work]
+  exact Nat.add_le_add_left (mainCoreProgram_comparator_work_bound kernels ζ χ χOut Ck
+    hζ hχ hχOut hC hEnv I haccuracy S C hm hr hraw g) _
+
 end
 end HierarchicalAbsoluteSpectral

@@ -23,6 +23,25 @@ def familyFinalPreprocessingCap
   (I.prepared.depth+1)*2*sketchFormationCap N m I.prepared.fixed.sketchFailure+
     coarseSupportWorkCap kernels m (S.levelA 0).1 (S.levelB 0).1
 
+theorem family_final_explicit_work_cap
+    (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
+    (I : FamilyProblem N m r) (g : FamilyRandomTape I)
+    (Ck p0 : ℝ) (hC : 0 < Ck) (hp : 2 ≤ p0)
+    (hK : ∀ a b c D : ℕ, 1 ≤ D → a ≤ D → b ≤ D → c ≤ D →
+      ((kernels a b c).cost:ℝ) ≤ Ck*(D:ℝ)^p0) :
+    let S := (mainSketchProgram I.prepared.fixed g).eval
+    let C := (coarseSupportProgram kernels S.initialA S.initialB).eval
+    growingDepthExplicitWork kernels I g ≤ familyFinalRestCap I+
+      familyFinalPreprocessingCap kernels I g+mainCoreWorkCap kernels I.prepared.fixed S C Ck p0 := by
+  intro S C
+  have hfixed := fixedDepthProgram_work_bound kernels Ck p0 hC hp hK I.prepared.fixed g
+  have hexp := preparedFixedDepthExplicitWork_le kernels I.prepared.fixed g
+  rw [growingDepthExplicitWork_eq]
+  rw [preparedFixedDepthTotalWork_eq] at hexp
+  dsimp only [fixedDepthRealizedWorkCap] at hfixed
+  dsimp only [familyFinalRestCap,familyFinalPreprocessingCap,S,C]
+  nlinarith only [hexp,hfixed]
+
 theorem family_final_explicit_work_of_core_envelope
     (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     (I : FamilyProblem N m r) (g : FamilyRandomTape I)

@@ -65,7 +65,7 @@ theorem exactGramAppendixSearchIndexed_eval
         ArithmeticProgram.eval, exactGramAppendixSearchIndexedValue]
       split_ifs
       · rfl
-      · simp only [eval_bind, eval_add, eval_div]
+      · simp only [eval_add, eval_div]
         cases (query ⟨offset, by omega⟩ ((l+u)/2)).eval with
         | none => rfl
         | some b => cases b <;> exact ih _ _ _ _
@@ -150,7 +150,7 @@ theorem exactGramAppendixSearchIndexed_admissible
       simp only [exactGramAppendixSearchIndexed, admissible_bind, admissible_sub,
         admissible_mul, eval_sub, eval_mul, true_and, ArithmeticProgram.admissible]
       split_ifs
-      simp only [admissible_bind, admissible_add, admissible_div, eval_add, eval_div,
+      simp only [admissible_add, admissible_div, eval_add, eval_div,
         true_and, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true]
       refine ⟨hquery _ _, ?_⟩
       cases (query ⟨offset, by omega⟩ ((l+u)/2)).eval with
@@ -172,23 +172,22 @@ theorem exactGramAppendixSearchIndexed_work_bound
       simp only [exactGramAppendixSearchIndexed, work_bind, work_sub, work_mul,
         eval_sub, eval_mul, ArithmeticProgram.work]
       split_ifs
-      · simp only [work_pure, Nat.cast_add, Nat.cast_one, Nat.cast_zero, Nat.cast_succ]
+      · simp only [Nat.cast_zero, Nat.cast_succ]
         nlinarith [mul_nonneg (Nat.cast_nonneg fuel) (show 0 ≤ 5+cost by linarith)]
-      · simp only [work_bind, work_add, work_div, eval_add, eval_div,
-          Nat.cast_add, Nat.cast_one, Nat.cast_succ]
+      · simp only [work_add, work_div, eval_add, eval_div, Nat.cast_add, Nat.cast_succ]
         have hq := hquery ⟨offset, by omega⟩ ((l+u)/2)
         cases hqe : (query ⟨offset, by omega⟩ ((l+u)/2)).eval with
         | none =>
-            simp only [hqe, work_pure, Nat.cast_zero]
+            simp only [work_pure, Nat.cast_zero]
             nlinarith [mul_nonneg (Nat.cast_nonneg fuel) (show 0 ≤ 5+cost by linarith)]
         | some b =>
             cases b with
             | false =>
-                simp only [hqe]
+                dsimp only
                 have hh := ih (offset+1) (by omega) l ((l+u)/2)
                 nlinarith
             | true =>
-                simp only [hqe]
+                dsimp only
                 have hh := ih (offset+1) (by omega) ((l+u)/2) u
                 nlinarith
 

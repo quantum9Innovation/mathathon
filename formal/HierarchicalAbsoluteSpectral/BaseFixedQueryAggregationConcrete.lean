@@ -64,13 +64,16 @@ theorem fixedQueryCoreBudget_bounds
   have hceil := (Nat.ceil_lt_add_one htest0).le
   have htestP : 212*(Ck+1)*(C.pair.dimension:ℝ)^exponent ≤ 212*P := by
     dsimp [P]
-    exact mul_le_mul_of_nonneg_left hkpow (by positivity)
+    have hm := mul_le_mul_of_nonneg_left hkpow (by positivity : 0 ≤ 212*(Ck+1))
+    nlinarith only [hm]
   have htest : (⌈212*(Ck+1)*(C.pair.dimension:ℝ)^exponent⌉₊:ℝ) ≤ 213*P := by
     linarith
   refine ⟨hP1.trans hPB,?_,henv.trans hPB,hsq.trans hPB,?_,hdim.trans hPB,?_⟩
   · exact hbase'.trans (by nlinarith)
-  · change _ ≤ 9*P at hpsd
-    exact hpsd.trans (by nlinarith)
+  · have hpsd' : (psdGramCost K r:ℝ) ≤ 9*P := by
+      dsimp [P]
+      nlinarith only [hpsd]
+    exact hpsd'.trans (by nlinarith)
   · exact htest.trans (by nlinarith)
 
 theorem fixedQueryCoreBudget_psd_bound

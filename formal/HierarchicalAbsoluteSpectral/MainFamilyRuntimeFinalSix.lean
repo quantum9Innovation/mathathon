@@ -83,7 +83,7 @@ theorem family_final_six_core_envelope
   · intro b hb
     exact family_final_nat_le_of_real ((hactions b hb).2.2.1.trans hceil)
   · apply family_final_nat_le_of_real
-    simpa only [Nat.cast_add,Nat.cast_one] using
+    simpa only [Nat.cast_mul,Nat.cast_add,Nat.cast_one] using
       (hactions (r+1) le_rfl).2.2.2.1.trans hceil
   · have hh := comparator_base_cost_ambient kernels Ck (9/4+ζ) hC hE hEnv.core hm1 hk
       (1/1024) (by norm_num)

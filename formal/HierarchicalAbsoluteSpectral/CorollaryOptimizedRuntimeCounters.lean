@@ -53,6 +53,7 @@ theorem comparator_query_cap_bound (I : FixedProblem N m N r 1)
   let M := comparatorScalarMagnitude I
   have hb := comparatorScalarMagnitude_bounds I
   have hM : 1000 ≤ M := hb.1
+  have hα0 := I.alpha_positive
   have hm : 1 ≤ m := I.rank_positive.trans I.rank_le_core
   have hm0 : (0:ℝ) < m := by exact_mod_cast hm
   have hlogm : Real.log (m:ℝ) ≤ M :=
@@ -77,6 +78,7 @@ theorem comparator_query_cap_bound (I : FixedProblem N m N r 1)
   have hlogR : Real.log R ≤ 297+6*M := by
     have he : Real.log R=3*(Real.log 100+Real.log (m:ℝ)+Real.log (1/I.singleFailure)) := by
       dsimp [R,gaussianCaptureRadius]
+      simp only [mul_one]
       rw [Real.log_pow,Real.log_div (by positivity) hβ0.ne',
         Real.log_mul (by norm_num) hm0.ne',one_div,Real.log_inv]
       norm_num
@@ -117,7 +119,8 @@ theorem comparator_query_cap_bound (I : FixedProblem N m N r 1)
       unfold initializerRatio
       rw [Real.log_mul (Real.sqrt_pos.mpr hm0).ne' (by positivity),Real.log_sqrt hm0.le,
         one_div,Real.log_inv]
-      rfl
+      dsimp [R]
+      ring
     rw [he]
     linarith
   have hh := comparator_halving_linear_bound (16*initializerRatio m I.singleFailure) I.nearTolerance

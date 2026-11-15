@@ -1,0 +1,477 @@
+INDEPENDENT AUDIT: SMALL-BLOCK PETZ LIFTS AND ONE-SIDED CERTIFICATES
+================================================================
+Auditor: /root/faust_fawzi_independent_referee
+Date: 2026-11-15 UTC
+
+Actual complete frozen source read:
+  matmul/quantum-small-block-search.txt (530 lines)
+  SHA256 b4338b810ded7523705bff10f928849f53a7ed61d3ae34e0b9cb4661f77a297d
+
+Also inspected:
+  matmul/positive-rational-approximation.tex, especially its actual
+  positive construction, sign of the exact error, comparison bounds,
+  and previous Kronecker/Petz representation.
+
+Primary sources independently opened for this review:
+  Faust--Fawzi, arXiv:2305.12405v1, especially Theorem 5 and its
+  immediately preceding paragraph:
+    https://arxiv.org/pdf/2305.12405
+  Hirche--Tomamichel, arXiv:2306.12343v3, introduction and equation 1.7:
+    https://arxiv.org/pdf/2306.12343
+  Kossmann--Schwonnek, arXiv:2404.17016v2, abstract and problem statement:
+    https://arxiv.org/pdf/2404.17016
+  Frenkel, arXiv:2208.12194v4 record/abstract:
+    https://arxiv.org/abs/2208.12194
+
+VERDICT
+-------
+PASS for the exact two-block lift of each standard/Petz rational kernel,
+its positive semidefinite boundary extension, joint convexity and
+channel monotonicity. PASS for the sharp-rate quantum approximation
+transfer, full 1<=a<b<=2 one-sided lower rescaling, entropy/power upper
+SDP when b=2, explicit scalar error certificate, and the stated
+optimization brackets in their positive-state/finite-certificate scope.
+
+No substantive correction is required for the frozen source. Two useful
+refinements are proved in section 7 of this audit: the global objective
+bracket actually has width at most eta*R/2, stronger than the note's
+valid but loose eta*R; and a primal lift objective plus the endpoint
+block gives a directly verifiable bracket without exact evaluation of
+D_minus. When writing finite optimum differences, assume the feasible
+set is nonempty. No optimizer-attainment or finite-gap guarantee is
+obtained merely from the absence of a global chi-squared cap.
+
+This is not a novelty certificate, external peer review, formal proof,
+finite-word implementation theorem, or a fast generic SDP solver result.
+The small-block existence was already stated in FF Theorem 5. The lift
+is an elementary classical infimal-convolution identity. The sharp rate
+uses the separately audited conjecture proof. These distinctions are
+preserved by the source.
+
+1. THE HILBERT-SPACE QUADRATIC IDENTITY IS EXACT
+----------------------------------------------
+For positive definite self-adjoint P,Q and c, let z=(P+Q)^(-1)c.
+For any x+y=c, write x=Pz+h and y=Qz-h. Expanding the two quadratic
+forms gives
+
+  <x,P^(-1)x>+<y,Q^(-1)y>
+   =<c,(P+Q)^(-1)c>+<h,(P^(-1)+Q^(-1))h>.
+
+The two cross terms cancel in their real parts, so the identity is
+valid on a complex Hilbert space. The minimum is attained at x=Pz,
+y=Qz and is unique. No commutativity of P,Q is required.
+
+On matrix space, P=L_A and Q=R_B are positive self-adjoint for A,B>0.
+The second quadratic form is
+
+  <Y,R_B^(-1)Y>_HS=Tr[Y^*Y B^(-1)]
+                       =Tr[Y B^(-1)Y^*].
+
+This proves equation (2), including the essential order of the factors.
+The inverse-of-sum identity is exactly the usual parallel-sum quadratic
+variational identity; claiming that elementary identity as novel would
+be unsupported. The source explicitly credits its classical status.
+
+2. THE TWO SCHUR BLOCKS, DIMENSIONS AND AFFINENESS
+-------------------------------------------------
+For fixed A,B>0, the first block [A,X;X^*,U]>=0 is equivalent to
+U>=X^*A^(-1)X. The second block [B,Y^*;Y,V]>=0 is equivalent to
+V>=Y B^(-1)Y^*. Thus X+Y=C and tau>=TrU+TrV imply the epigraph
+inequality, and the minimizing split constructs feasible U,V achieving
+equality. The epigraph projection is exact rather than just a relaxation.
+
+The optimal X=AZ and Y=ZB generally are not Hermitian, even for a
+Hermitian C. The source correctly leaves them unrestricted complex.
+The orientations of X, X^*, Y and Y^* in both displayed blocks are
+correct. Replacing the second block by [B,Y;Y^*,V] would be wrong.
+
+Every entry is affine in the stated matrices. There is no inverse,
+Kronecker matrix, matrix product of two optimization variables, or
+Sylvester solve in the LMI representation itself. The equality-certificate
+Sylvester solve is used only in the proof and optional verification.
+
+After eliminating Y, X has 2n^2 real coordinates and U,V each have
+n^2, for exactly 4n^2 auxiliary real coordinates per node. The epigraph
+variable tau and other problem variables are not counted as auxiliaries
+of the node. Both blocks have order 2n over the complex Hermitian field.
+For the rectangular identity, U has order q, V order p and X shape
+p-by-q, giving two blocks of order p+q and (p+q)^2 real auxiliaries.
+
+The alternative scaling in (6) is valid: use sqrt(t)X and
+sqrt(1-t)Y as the original split. The two trace costs then have the
+unscaled rho/sigma Schur forms. At endpoint t=0 or t=1 the remaining
+single block is correct; all sharp interior quadrature nodes are
+strictly inside (0,1), so no endpoint inverse ambiguity is hidden.
+
+3. IT IS THE PETZ KERNEL, INCLUDING AT THE PSD BOUNDARY
+-----------------------------------------------------
+In left/right eigenbases the matrix element of Delta=rho-sigma is
+(r_i-s_j)<u_i,v_j>. The Petz kernel weight is
+
+  s_j*f_t(r_i/s_j)=(r_i-s_j)^2/[t*r_i+(1-t)*s_j].
+
+This is precisely the Sylvester quadratic in (4). The result is not a
+trace of the noncommutative maximal matrix perspective. All subsequent
+scalar-to-quantum inequalities therefore use the intended divergence.
+
+For singular A,B the generalized Schur complement adds the range
+conditions range(X) subset range(A), range(Y^*) subset range(B), and
+uses A^+,B^+. The Hilbert-space quadratic identity extends on those
+ranges: if C is in range(L_A+R_B), choose Z=(L_A+R_B)^+C and take
+X=AZ,Y=ZB. The same completed squares prove optimality. If C is
+outside that range, no finite-cost split exists, since for positive
+operators range(P+Q)=range(P)+range(Q) in finite dimensions.
+
+For A=t*rho, B=(1-t)*sigma and C=Delta with 0<t<1, the range
+condition always holds. A vector Z in the Sylvester kernel satisfies
+rho Z=0 and Z sigma=0, hence both <Z,rho> and <Z,sigma> vanish.
+Thus <Z,Delta>=0. This proves finiteness of every interior rational
+kernel for all PSD rho,sigma, without a common-support assumption.
+
+The regularization rho+epsilon I, sigma+epsilon I leaves Delta fixed
+and adds epsilon I to the Sylvester operator. Since Delta is orthogonal
+to its kernel, its inverse quadratic converges to the pseudoinverse
+quadratic. This justifies the exact PSD extension stated in the note.
+
+The entropy error/bracket theorem itself is correctly stated on positive
+definite density matrices. If extended to singular states, a finite
+entropy/chi-squared certificate requires support(rho) subset
+support(sigma); the endpoint block with sigma enforces the corresponding
+range condition. Otherwise the upper chi-squared term is infinite and
+no finite approximation-gap claim follows. The note does not incorrectly
+assert a finite uniform gap at such incompatible supports.
+
+4. CONVEXITY, HOMOGENEITY AND DATA PROCESSING
+-------------------------------------------
+Projection of the affine LMI feasible set is convex. Scaling rho,sigma
+and all split/slack matrix variables by the same positive scalar proves
+positive homogeneity. Each kernel is a nonnegative inverse quadratic,
+so every positive weighted sum is nonnegative and vanishes at equality.
+
+For a CPTP map Phi, apply id_2 tensor Phi separately to the two block
+constraints. Complete positivity preserves block positivity; star
+preservation keeps their orientations; linearity preserves X+Y=Delta;
+and trace preservation leaves the cost unchanged. The transformed
+variables are feasible for the image problem with the same objective,
+so minimization proves data processing. This proof works directly with
+the PSD lift if a channel sends a positive state to a singular state.
+No unproved continuity or maximal/Petz identification is used.
+
+For m positive nodes these arguments give exactly 2m blocks and
+4mn^2 auxiliary real coordinates. They apply also to the rescaled
+lower approximation and its positive endpoint correction.
+
+5. SCALAR ERROR TRANSFER AND THE GENERAL ONE-SIDED REFINEMENT
+-------------------------------------------------------------
+The eigenbasis weights s_j*|<u_i,v_j>|^2 are nonnegative, so the
+absolute scalar relative error transfers termwise to the Petz sums.
+For trace-one states, S_f1=D and
+S_f2=(Tr[rho^2 sigma^(-1)]-1)/2. For unequal traces, the note uses
+the correct generalized entropy, including -Tr(rho)+Tr(sigma), and
+the quadratic correction Tr[Delta sigma^(-1)Delta]/2.
+
+The sign of the actual positive construction is essential. Its exact
+error has Omega(-x)=x(x-1) times a square, so f_a-r has sign x-1,
+apart from interpolation zeros. The statement is correct for every
+1<=a<b<=2 in this construction, including a=1,b=2.
+
+For 0<x<=1, second derivatives give f_b<=f_a. To check the stronger
+ratio bound including a=1, put y=-log x and compute
+
+  a*f_a(x)=1-x-x*integral_0^y exp[-(a-1)t]dt.
+
+The right side increases in a. Hence a*f_a<=b*f_b and
+f_b<=f_a<=(b/a)f_b<=2f_b. For x>=1, second derivatives instead give
+f_a<=f_b. These claims use only Taylor's integral formula and the
+displayed elementary identity; the logarithm appears only in analysis.
+
+If |f_a-r|<=e*f_b, on x<=1 the sign gives
+f_a<=r<=f_a+e*f_b<=(1+e)f_a. Thus r/(1+e)<=f_a and its lower gap
+is at most e*f_a/(1+e)<=2e*f_b/(1+e). On x>=1, r<=f_a and the
+lower gap is [(f_a-r)+e*f_a]/(1+e), with the same upper bound.
+The rescaled rational function remains nonnegative with strictly
+positive weights, and has exactly the same nodes and rate.
+
+The involution f_a(x)=x*f_(1-a)(1/x) sends a kernel node t to 1-t
+without changing its weight. It therefore transports one-sidedness and
+the relative error to the full negative parameter range. The statement
+in the note is correctly scoped.
+
+For b=2, adding eta*S_f2 to the rescaled lower Petz approximation
+gives an upper convex SDP with one extra endpoint block. For a general
+b<2, the pointwise upper obtained by adding eta*S_fb need not itself
+have an exact single-block SDP; the note correctly restricts that
+single-extra-block assertion to b=2.
+
+6. ENTROPY BRACKETS, SHARP NODE COUNT AND FINITE CERTIFICATE
+----------------------------------------------------------
+Taking e=eta/2 gives a lower error coefficient
+2e/(1+e)<=eta. Thus
+
+  D_minus<=D<=D_plus=D_minus+eta*S_f2,
+  D-D_minus<=eta*chi_P^2/2,
+  D_plus-D<=eta*chi_P^2/2.
+
+All functions used for the approximations are convex positive Petz
+sums. The added endpoint block [sigma,Delta;Delta,W]>=0 contributes
+exactly eta*TrW/2, whose minimum is eta*S_f2. Its orientation, factor
+one-half and dimensions are correct.
+
+The positive scalar result with e=eta/2 gives
+m<=log^2(2C/eta)/(2pi^2)+3 for sufficiently small eta. The lower
+function uses 2m order-2n blocks and the upper 2m+1. The change of
+constant inside the logarithm does not alter the leading node
+coefficient. No explicit numerical value of the unknown asymptotic
+Ganelius constant is silently assumed.
+
+The explicit comparison certificate (21) is correct. At a=1,b=2,
+K_a=1, p=1/2, and the two prior comparison bounds become
+
+  2pi*d_minus^2+4*d_minus*d_plus,
+  4*d_minus*d_plus+2pi*d_plus^2.
+
+Their maximum is exactly the displayed e_m. The product maxima use
+s^(1/2)B(s)^2, so the earlier critical polynomial is used with r=1/4.
+For identical n-node products, m=2n+1 and e_m=(2pi+4)d^2. A rigorous
+upper bound e>=e_m is sufficient for the rescaling. Using
+eta_m=2e/(1+e) gives a valid upper endpoint correction and the same
+a posteriori bracket, without knowing the asymptotic constant C.
+Root extraction and verified scalar evaluations are separately charged,
+as the source explicitly says. This is not a finite-word theorem.
+
+A finite positive sum of strictly interior kernels grows at most
+linearly as x tends to infinity. It cannot globally upper bound the
+x*log(x) entropy generator. The endpoint correction in the upper
+approximation is therefore a substantive domain requirement, not an
+unnecessary pole introduced by the proof.
+
+7. OPTIMIZATION CERTIFICATES: VALID AND SLIGHTLY STRONGER FORM
+-------------------------------------------------------------
+Assume a nonempty feasible set of trace-one positive definite states,
+with the stated affine/LMI restrictions. Pointwise bracketing gives
+p_minus<=p<=p_plus for the three infima. Each infimum is finite since
+the functions are nonnegative and a feasible positive pair has finite
+value. The use of infima rather than attained optima is appropriate.
+
+If chi_P^2<=R throughout the feasible set, the two individual errors
+in (18) are valid by approximating sequences. In fact the pointwise
+difference D_plus-D_minus=eta*chi_P^2/2 gives the stronger combined
+bound
+
+  p_plus-p_minus<=eta*R/2.
+
+To prove it, evaluate D_plus along an approximating minimizing sequence
+for D_minus. The note's eta*R combined bound is valid but loose. For a
+desired combined width delta, eta=2delta/R already suffices (when the
+small-eta count is used in its stated regime); its eta=delta/R choice
+is conservative and valid.
+
+Without a known R, an attained LOWER optimizer x_minus gives exactly
+
+  D_plus(x_minus)-p_minus=eta*chi_P^2(x_minus)/2.
+
+Therefore the proposed evaluated-gap bracket is valid without a supplied
+global cap. For an approximately lower-optimal feasible x, add its
+optimization suboptimality. For a certified dual lower bound ell,
+the note's displayed bracket width is correct. A merely small residual
+is not a certified feasible point or a valid lower bound, as the note
+properly acknowledges.
+
+There is an even more direct lift-level certificate: let x be feasible,
+let q be ANY feasible objective value of its lower rational lift, and
+let W satisfy the endpoint block. A valid dual bound ell for the lower
+program gives the entirely algebraic interval
+
+  ell <= p <= q+(eta/2)TrW.
+
+This requires neither exact evaluation of D_minus(x), a Sylvester solve,
+nor a matrix logarithm. Its width is directly checkable from primal
+and dual certificates. At exact auxiliary minima it reduces to the
+note's formula. No uniform chi-squared cap guarantees that this local
+width is small or that the lower optimizer has a finite boundary gap;
+those conclusions must come from the evaluated certificate itself.
+
+If the domain is implemented by the PSD extension, finite candidate
+certificates still require the support condition in section 3. Strict
+positive definiteness can alternatively be kept as the stated domain,
+or encoded by an additional inverse-epigraph block if a literal SDP
+projection description is desired. These domain blocks and other
+problem constraints are separate from the 2m kernel-block count.
+
+The sufficient LMI rho<=kappa*sigma gives the claimed R=kappa-1:
+with C=sigma^(-1/2)rho sigma^(-1/2), trace cyclicity gives
+Tr[rho^2 sigma^(-1)]=Tr[sigma*C^2]<=kappa*Tr[sigma*C]=kappa.
+At R=0 the states coincide and D=0. Noncommutativity does not invalidate
+this trace calculation.
+
+8. CONE COUNTS, BARRIER COMPARISON AND WHAT THEY DO NOT PROVE
+-----------------------------------------------------------
+A complex Hermitian cone of order d has d^2 real coordinates and
+logdet barrier parameter d. Thus the old m order-(n^2+1) blocks have
+m(n^2+1)^2 cone coordinates and parameter m(n^2+1), whereas the
+new 2m order-2n blocks have exactly 8mn^2 cone coordinates and
+parameter 4mn. The one final affine trace inequality adds one scalar
+nonnegative cone. The upper approximation adds one order-2n cone
+and n^2 auxiliary real coordinates. Other feasible-set cones add their
+own parameters; the note states this explicitly.
+
+The quoted square-root-barrier iteration comparison is appropriate
+under the usual short-step assumptions, with initialization/gap/tolerance
+and any extra cones accounted for. It says nothing by itself about the
+size or cost of the Newton system. The note correctly excludes an
+end-to-end n^2/n^3 solver bound and any bit/conditioning claim.
+
+Realification doubles the complex block order and only changes these
+scalings by constants. For real symmetric data, taking real parts of
+a complex optimal split preserves feasibility and cannot increase the
+quadratic objective, so real optimal variables suffice. The count
+n^2+n(n+1)=2n^2+n real auxiliaries per node is correct; X remains
+unrestricted real rather than symmetric.
+
+9. PRIMARY-SOURCE AND NOVELTY SCOPE
+----------------------------------
+I independently read the actual FF Theorem 5. It already states an
+O(m)-block order-2n convex SDP approximation with a Petz-chi-squared
+weighted global entropy error. Its preceding paragraph explicitly
+offers the result without proof and invokes forthcoming Fawzi work.
+The note correctly credits that statement, supplies its own elementary
+lift, and uses the independently proved sharper scalar exponent.
+This neither establishes a first small-block lift nor proves that the
+specific lift differs from the intended unpublished construction.
+
+The Hirche--Tomamichel primary text explicitly defines a different
+hockey-stick-integral divergence; its equation 1.7 gives the BKM-type
+chi-squared integral rather than Tr[rho^2 sigma^(-1)]-1 in general.
+The Kossmann--Schwonnek primary abstract states provable sublinear
+discretization convergence and small SDP matrix dimensions. Their
+useful scope is not negated by the note's separate fixed-hinge
+obstruction.
+
+That obstruction's elementary constant checks: f1''>=1/2 on [1,2].
+On an affine piece of length h, the second midpoint difference is
+at least h^2/8. Three value errors contribute at most 4E, so a
+piecewise-linear approximant with at most m+1 pieces has
+E>=1/[32(m+1)^2]. Since f2<=1/2 on this interval, a relative f2
+error epsilon entails epsilon>=1/[16(m+1)^2]. This is a scoped
+obstruction to fixed hinge quadrature, not a lower bound for all
+algorithms or all quantum SDP representations.
+
+I did not perform an exhaustive search for the unpublished Fawzi work
+or certify the historical priority of every resulting corollary. The
+source accurately states these limitations and does not infer a
+general quadratic matrix algorithm from its small cones.
+
+10. ADDITIONAL FINITE 25-NODE INTERVAL CERTIFICATE
+------------------------------------------------
+After the proof note was frozen, its author supplied:
+  matmul/quantum-product-certificate.py
+  SHA256 94bad25950c9c83ab42f0152d48903baa9b2394be4b04f69b795ca82830afb50
+
+I read every line and independently audited its DEFAULT computation
+n=12, target_e=5e-7, tail_u=-30. This is a separately reviewed artifact;
+it does not change the frozen proof-note hash. A concurrent workspace
+reorganization moved the research files from docs/ to matmul/ without
+changing either reviewed source's contents.
+
+VERDICT: PASS, conditional on the documented standard-library arithmetic
+contract, for a reproducible interval proof of e_m<=5e-7 for the ideal
+exact balanced Ganelius construction with n=12 and rational m=25.
+It is not formal verification of Python or its decimal implementation.
+
+I independently opened the official Python Decimal documentation:
+  https://docs.python.org/3.14/library/decimal.html
+It supplies correctly rounded exp/ln, context-precision square roots,
+directed basic arithmetic and adjacent-representable next_minus/next_plus.
+The code applies the latter around nearest-rounded elementary results
+to enclose them; it does not rely on the weaker guarantee for a
+noninteger Decimal power operation. That operation is not used.
+
+10.1 Interval arithmetic and the exact node definition
+
+The rational Machin pi bounds use exact Fraction arithmetic and the
+two adjacent alternating arctangent sums. Multiplying their intervals
+by 16 and -4 with the correct endpoint choices encloses pi. Directed
+division then encloses those exact fractions in 64-digit Decimal
+endpoints. Integer/string Decimal constructors used here are exact.
+
+Every basic interval addition, subtraction and multiplication is
+outward-rounded; multiplication checks all four endpoint products.
+The sqrt/ln enclosures follow monotonicity and one outward adjacent
+number around each correctly rounded endpoint evaluation. For the
+fixed n=12 run, the only default-context arithmetic, n0 minus 0.5,
+is exact. This audit does not assert an arbitrary-large-n robustness
+theorem for all optional function arguments.
+
+The interval for ceil(pi*sqrt(n)/8) has the same integer at both
+ends, verified by an assertion. It gives n0=10, satisfying the
+modified-node formula's conditions. The first logarithmic nodes are
+2pi*(sqrt(j-1)-sqrt(n0)), the special node is
+2pi*(sqrt(n0-1/2)-sqrt(n0)), and the final rational-node logarithm is
+enclosed by directed ln. These are exactly the r=1/4 nodes in the
+audited Ganelius construction, not a perturbed alternative rule.
+
+10.2 Uniform cell bounds and coverage
+
+For s=exp(u), the balanced product quantity is exactly
+
+  d(exp(u))=exp(u/2)*prod_j tanh(|u-log(a_j)|/2)^2.
+
+On a cell [lo,hi], interval subtraction bounds every u-log(a_j).
+The maximum absolute endpoint bounds its absolute value. Since tanh
+is increasing on nonnegative arguments, this supplies an upper bound
+for each product factor. The implementation uses
+tanh(distance/2)=(1-w)/(1+w), w=exp(-distance). It rounds w DOWN,
+the numerator UP and the denominator DOWN before an UP division.
+All quantities have the required nonnegative signs, so each resulting
+factor is a valid upper bound. Multiplying their squares and the
+upper bound exp(hi/2) therefore bounds d on the ENTIRE cell.
+
+The coefficient 2pi+4 and final squares/products are also rounded UP.
+For u<=-30, |B(exp(u))|<=1 yields d^2<=exp(-30), handled separately.
+The initial pending cell covers [-30,0]. Every split uses a midpoint
+strictly between its endpoints; exact midpoint evaluation is unnecessary
+for coverage, though the actual shallow dyadic splits are exact here.
+The two closed children cover their parent. Every terminal cell is
+accepted only after its outward error bound is <=5e-7. Thus finite
+termination certifies all u<=0, not just sampled grid points.
+
+Run with assertions enabled, as its header requires. The depth/work
+guards can fail the certificate but cannot turn an unresolved cell
+into a success. No uncertified fallback is present.
+
+10.3 Independent reproduction
+
+I ran the source with CPython 3.14.8's C decimal implementation, then
+executed an in-memory copy changing ONLY its Decimal import to the
+independent pure-Python _pydecimal implementation. Both produced:
+
+  precision: 64
+  Ganelius n=12, n0=10, rational m=25
+  lower/upper block counts: 50 / 51, each of order 2N
+  tail e upper bound:
+    9.622617102330350486995416535516299483111996073512824102645537170e-13
+  largest accepted cell e upper bound:
+    4.994114350714728263239613770381684941663056029317722671594824757e-7
+  visited cells: 275; accepted cells: 138; maximum depth: 10
+  partition SHA256:
+    38289b7b49b96decf42d1e905dba66d691bc4bdec28bc7f42d8ab9b7625c7c58
+
+Consequently e=5e-7 is a certified rescaling bound. Directed division
+gives
+
+  eta=2e/(1+e)
+   <=9.999995000002499998750000624999687500156249921875039062480468760e-7
+   <1e-6.
+
+This proves existence of the corresponding exact lower/upper entropy
+SDPs with 50/51 order-2N blocks and bracket difference
+eta*chi_P^2/2 at each state. It is a chi-squared-scaled guarantee,
+not an absolute entropy error of 1e-6 for arbitrary states.
+
+The computer-assisted certificate encloses the IDEAL exact interpolation
+node products and hence the ideal rational rule's proved scalar error.
+It does not yet compute/certify finite-precision poles and residues of
+the 25-node positive quadrature, construct a validated numerical SDP,
+or certify any particular solver output. These distinct tasks and
+numerical-conditioning issues are not hidden by the finite scalar
+certificate or by its very small verification runtime.

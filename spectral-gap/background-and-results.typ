@@ -1,4 +1,4 @@
-// Build: typst compile docs/spectral-gap-results.typ
+// Build: typst compile spectral-gap/background-and-results.typ
 // This document uses no external Typst packages.
 #set document(
   title: "Spectral gaps: background and results",
@@ -22,7 +22,7 @@
 ]
 #v(0.6em)
 
-The new material in #link("../spectral-gap/README.md")[spectral-gap/]
+The new material in #link("README.md")[spectral-gap/]
 contains two main developments. One concerns how adding a vertex changes
 the extreme eigenvalues of a random graph. The other gives exact bounds
 and increasingly accurate formulas for products of entries of a random
@@ -187,7 +187,9 @@ right degrees are $d_R$. Its adjacency matrix has the form
 
 $ A=mat(0,X;X^T,0), $
 
-where $X$ records edges from left to right. Nonzero adjacency eigenvalues
+where $X$ records edges from left to right. Singular values are the
+nonnegative stretching strengths of a matrix, equivalently the square
+roots of the eigenvalues of $X^T X$. Nonzero adjacency eigenvalues
 are plus and minus the singular values of $X$. The two structural
 extremes are $plus.minus sqrt(d_L d_R)$. The tree's positive spectral
 band is
@@ -196,7 +198,8 @@ $ [abs(sqrt(d_L-1)-sqrt(d_R-1)),sqrt(d_L-1)+sqrt(d_R-1)]. $
 
 Brito, Dumitriu, and Harris [BDH] establish asymptotically sharp spectral
 bounds for fixed degrees $d_L,d_R>=3$, with a full-rank consequence when
-the degrees differ. Unequal side sizes still force zero adjacency
+the degrees differ. Rank counts independent columns, and full rank
+means the smaller of the row and column counts. Unequal side sizes still force zero adjacency
 eigenvalues. These zeros do not contradict a positive lower edge for
 the nonzero band.
 
@@ -231,8 +234,9 @@ edge ends as its degree, and left ends are matched to right ends. The
 permutation size is the common half-edge count
 $L=n_L d_L=n_R d_R$, so the centering is $1/L$.
 Products of matching indicators appear in expected counts of walks.
-For example, $"tr"(A^k)=sum_i lambda_i^k$ also counts closed walks of
-length $k$. This is the link between matching expectations and eigenvalues.
+For example, the trace $"tr"(A^k)$, the sum of its diagonal entries,
+equals $sum_i lambda_i^k$ and counts closed walks of length $k$.
+This is the link between matching expectations and eigenvalues.
 
 == Refined mixed bounds and exact maxima
 
@@ -403,6 +407,7 @@ threshold $k=o(N^((p-1)/(p+1)))$. At the threshold itself a nontrivial
 positive factor remains. Thus each extra correction extends the useful
 range in a precisely quantified way.
 
+#block(breakable: false)[
 SG-09 and SG-12 quantify the error of the shorter formula on the
 square-root range. If
 
@@ -412,6 +417,7 @@ then, for fixed $C>0$,
 
 $ sup_(2<=k<=C sqrt(N)) abs(W_(N,k)-1)
   =(sqrt(C)/2+2C^(5/2)/15) N^(-1/4)+o(N^(-1/4)). $
+]
 
 The paper gives an explicit finite bound as well. The exponent $1/4$
 is optimal for this formula and range. Its signed error depends on
@@ -477,18 +483,24 @@ host, $d=3$, the outcomes are:
   table.hline(stroke: 0.5pt),
 ), caption: none)
 
+#block(breakable: false)[
 The report also determines the first finite-size displacement of the
 eigenvalue near $d$. Define
 
 $ g_d=(d-1)/(d(d-2)). $
+]
 
+#block(breakable: false)[
 If $Delta g_d>d$, then
 
 $ n(d-lambda_2) arrow.r Delta^2/(Delta g_d-d). $
+]
 
+#block(breakable: false)[
 If $Delta g_d<d$, then
 
 $ n(lambda_1-d) arrow.r Delta^2/(d-Delta g_d). $
+]
 
 For example, at $d=3,Delta=6$, the first limit is 36, so
 $lambda_2=3-36/n+o_P (1/n)$. The subscript $P$ denotes a remainder
@@ -585,7 +597,9 @@ A periodic graph repeats a fixed pattern across an integer grid.
 A finite quotient identifies vertices after a chosen collection of
 periods, producing a torus-like graph. Its spectrum is obtained by
 sampling the infinite periodic graph's frequency bands at the allowed
-frequencies, the Bloch decomposition.
+frequencies, the Bloch decomposition. A frequency describes an oscillating
+pattern across repeated cells. A band records an eigenvalue as that
+frequency varies.
 
 Under a positive-definite quadratic curvature assumption at the top
 band, the gap is controlled by the smallest nonzero allowed frequency
@@ -595,6 +609,9 @@ orders $N^(-2)$ and $N^(-2/q)$ for different quotient shapes. Thus the
 number of cells alone does not determine the gap. The result requires
 nondegenerate curvature. A claimed extension to singular curvature was
 not accepted, and the known periodic-graph exponent is not improved.
+Positive-definite curvature here means that the drop from the top band
+value is, to leading order, a strictly positive quadratic function of
+each small nonzero frequency.
 
 == Hypergraphs
 
@@ -744,10 +761,12 @@ $a<=N$.
 
 #heading(numbering: none)[Appendix B. The full-range diagonal approximation]
 
+#block(breakable: false)[
 Keep $R_k,L_k,H_k,K$ from Section 5. Put
 
 $ eta=k-K in {0,1}, quad x=sqrt(K/N), quad D_k=N^k/(N)_k, $
 $ q(x)=x+(x^2-1)log(1+x)-x^2/2-2x^3/3. $
+]
 
 Then define
 
@@ -758,6 +777,7 @@ The full-range statement is
 $ sup_(2<=k<=N) abs(a_k/(L_k cal(A)_(N,k))-1)
     =C_* N^(-1/3)+o(N^(-1/3)). $
 
+#block(breakable: false)[
 Every factor is finite and positive, including at $k=N$. Keeping the
 falling factorial exact is important near that endpoint. The complete
 signed error profile can be written using
@@ -765,6 +785,7 @@ signed error profile can be written using
 $ ell(c)=(2/3)c^(3/2), $
 $ p_0 (t)=t tanh(t), quad p_1 (t)=t coth(t)-1, $
 $ Phi_eta (c)=(3(2eta-1))/(4c)(p_eta (ell(c))-ell(c)). $
+]
 
 The functions are $tanh(t)=sinh(t)/cosh(t)$ and
 $coth(t)=cosh(t)/sinh(t)$ for $t>0$.
@@ -778,20 +799,20 @@ $c approx 1.16540187318$.
 #heading(numbering: none)[Sources]
 
 #set text(size: 9pt)
-#set par(justify: false, leading: 0.45em, spacing: 0.6em)
+#set par(justify: false, leading: 0.35em, spacing: 0.45em)
 
-[M] #link("../spectral-gap/manuscript-round-01/output/pdf/centered-permutation-products.pdf")[Centered permutation products: sharp envelopes and uniform asymptotics.]
+[M] #link("manuscript-round-01/output/pdf/centered-permutation-products.pdf")[Centered permutation products: sharp envelopes and uniform asymptotics.]
 Latest reading manuscript, frozen revision 10, 41 pages. Local working paper, November 2026.
 
-[L] #link("../spectral-gap/CLAIM_LEDGER.md")[Authoritative claim ledger],
-#link("../spectral-gap/CONTRIBUTION.md")[contribution statement], and
-#link("../spectral-gap/extension-round-02/PRIORITY_SYNTHESIS.md")[priority assessment].
+[L] #link("CLAIM_LEDGER.md")[Authoritative claim ledger],
+#link("CONTRIBUTION.md")[contribution statement], and
+#link("extension-round-02/PRIORITY_SYNTHESIS.md")[priority assessment].
 These distinguish known inputs, new refinements, and review scope.
 
-[D] #link("../spectral-gap/snapshot/results/050-finite-defect.md")[Finite-defect resolvent and limiting eigenvalues].
-[A] #link("../spectral-gap/snapshot/results/spectral-research/batch-060/review-adjacent-accepted.md")[Accepted adjacent-attachment family].
-[I] #link("../spectral-gap/snapshot/results/040-internal-gap-theorem.md")[Internal-gap assessment].
-[S] #link("../spectral-gap/snapshot/results/030-spectral-research-synthesis.md")[Synthesis of eight spectral research directions].
+[D] #link("snapshot/results/050-finite-defect.md")[Finite-defect resolvent and limiting eigenvalues].
+[A] #link("snapshot/results/spectral-research/batch-060/review-adjacent-accepted.md")[Accepted adjacent-attachment family].
+[I] #link("snapshot/results/040-internal-gap-theorem.md")[Internal-gap assessment].
+[S] #link("snapshot/results/030-spectral-research-synthesis.md")[Synthesis of eight spectral research directions].
 Later result records take precedence over its older open-problem list.
 
 [F] J. Friedman. #link("https://arxiv.org/abs/cs/0405020")[A proof of Alon's second eigenvalue conjecture and related problems]. Memoirs of the AMS, 2008.
@@ -812,4 +833,4 @@ Later result records take precedence over its older open-problem list.
 
 [BZ] C. Bordenave, Y. Zhu. #link("https://arxiv.org/abs/2611.07104")[A second eigenvalue lower bound for the directed configuration model]. Preprint, November 2026.
 
-For further elementary background: D. Spielman, #link("https://www.cs.yale.edu/homes/spielman/eigs/lect1.pdf")[Spectral Graph Theory and its Applications, Lecture 1]. The priority synthesis [L] gives the detailed comparisons with permanent inequalities and classical special-function asymptotics. External sources were checked on 14 November 2026. This is a summary of the packet and its immediate context, rather than an exhaustive survey of spectral graph theory.
+Further background: D. Spielman, #link("https://www.cs.yale.edu/homes/spielman/eigs/lect1.pdf")[Spectral Graph Theory and its Applications, Lecture 1]. External sources checked on 14 November 2026.

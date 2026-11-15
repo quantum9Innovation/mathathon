@@ -124,6 +124,7 @@ theorem absoluteAlgorithmProgram_work
   change 4+((mainSketchProgram I.seed g.1).work+
     ((coarseSupportProgram kernels S.initialA S.initialB).work+
       (absoluteCoreProgram kernels I S C ⟨absoluteThreshold I,absoluteThreshold_positive I⟩ g.2).work)) = _
+  dsimp only [S,C]
   omega
 
 def absolutePreprocessingWorkCap (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)

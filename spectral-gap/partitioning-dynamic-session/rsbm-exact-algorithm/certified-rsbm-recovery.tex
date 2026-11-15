@@ -1,0 +1,382 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue]{hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{remark}[theorem]{Remark}
+\newcommand{\F}{\mathbb F}
+\newcommand{\one}{\boldsymbol 1}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\nnz}{\operatorname{nnz}}
+\newcommand{\kerQ}{\ker_{\mathbb Q}}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Prob}{\mathbb P}
+\title{Certified exact planted-eigenvector recovery in nearly quadratic bit work}
+\author{Partitioning dynamic session; exact-algorithm supplement}
+\date{November 15, 2026}
+\begin{document}
+\maketitle
+
+\paragraph{Scope and novelty boundary.}
+This is an explicit algorithmic consequence of a simple integer
+eigenvalue with a balanced sign eigenvector. It uses classical
+Wiedemann recurrences and black-box preconditioning; no new sparse
+linear-algebra primitive is claimed. All arithmetic in the algorithm
+is exact. The finite-field prime used computationally grows with
+dimension, justified by a deterministic minor bound, independently
+of the fixed-prime mixing theorem used in the companion RSBM proof.
+There is no numerical eigengap or outlier hypothesis.
+
+\section{Deterministic reduction and algorithmic statement}
+Let $A$ be the adjacency matrix of a simple undirected $d$-regular
+graph on $n\ge2$ vertices, supplied by adjacency lists, and let
+$\lambda\in\mathbb Z$, $|\lambda|\le d$ be specified. Put
+\[
+ M=A-\lambda I_n,\qquad m=n-1,\qquad
+ H=M_{[m],[m]},\qquad c=-M_{[m],n}.
+\]
+Here $d$ is fixed; the explicit field-operation bounds below also
+display its linear contribution. Every vertex has ordinary unit mass.
+Balanced means exactly $\one^T\sigma=0$ for $\sigma\in\{-1,1\}^n$.
+
+\begin{lemma}[Any pinned coordinate works]\label{lem:minor}
+If $\kerQ M=\operatorname{span}\{\sigma\}$ with
+$\sigma\in\{-1,1\}^n$, then every principal minor of order $n-1$
+is nonzero. In particular $H$ is nonsingular over $\mathbb Q$,
+and $H^{-1}c=(\sigma_1/\sigma_n,\ldots,\sigma_m/\sigma_n)^T$.
+\end{lemma}
+\begin{proof}
+Since $M$ is symmetric of rank $n-1$, its adjugate is nonzero and
+every column and row lies in its one-dimensional kernel. Hence
+$\operatorname{adj}(M)=a\sigma\sigma^T$ for a nonzero rational $a$.
+Every diagonal cofactor is $a\sigma_i^2=a\ne0$.
+The final assertion follows from $M\sigma=0$.
+\end{proof}
+
+\begin{theorem}[Certified result or abstention]\label{thm:algorithm}
+For every $0<\eta<1/2$ there is an exact randomized algorithm which,
+on every such graph, returns either \textnormal{\textsc{Unresolved}}, or a balanced
+$\widehat\sigma\in\{-1,1\}^n$ with a deterministically checkable
+certificate that
+\[
+ M\widehat\sigma=0,\qquad \rank_{\mathbb Q}M=n-1.
+\]
+It never returns a false certificate. If
+$\kerQ M=\operatorname{span}\{\sigma\}$ for a balanced sign vector,
+then for all sufficiently large $n$ (depending only on fixed $d$),
+it returns $\widehat\sigma=\pm\sigma$ with probability at least
+$1-\eta$. Its expected bit work is
+\[
+ \widetilde O_d\bigl(n^2\log(1/\eta)\bigr),
+\]
+and it stores $\widetilde O_d(n)+O(\log\log(2/\eta))$ bits,
+apart from the input (the second term is the trial counter).
+Each trial uses $O(n)$ sparse matrix-vector products, $O(n^2)$
+additional field operations in a prime field with $O_d(\log n)$-bit
+elements, and $O(n)$ field-element storage. A certificate is checked
+in $\widetilde O_d(n^2)$ bit work and has $O_d(n\log n)$ bits.
+\end{theorem}
+
+\section{The certifying modular trial}
+Choose an odd prime $p$ as specified below, reduce $H,c$ modulo $p$,
+choose independently
+\[
+ D=\operatorname{diag}(d_1,\ldots,d_m),\quad
+ d_i\text{ uniform in }\F_p^*,\quad
+ u,v\text{ uniform in }\F_p^m,
+ \qquad T=DH.
+\]
+The diagonal entries $d_i$ in this section are random field elements;
+they are unrelated to the internal graph degree used later.
+Form exactly the $2m$ scalars
+\begin{equation}\label{eq:shift}
+ s_j=u^TT^{j+1}v,\qquad j=0,\ldots,2m-1.
+\end{equation}
+Compute their finite-sequence linear complexity $L$ and a shortest
+recurrence using exact Berlekamp--Massey. Reject the trial unless
+$L=m$. Its monic recurrence polynomial then has the form
+\[
+ f(z)=z^m+f_{m-1}z^{m-1}+\cdots+f_1z+f_0.
+\]
+As an extra consistency check, reject if $f_0=0$.
+
+\begin{lemma}[A shifted recurrence certifies full rank]\label{lem:cert}
+For any $m$ by $m$ matrix $T$ over any field, if the $2m$ scalars
+in~\eqref{eq:shift} have linear complexity $m$, then $T$ is
+nonsingular. In this event $f$ is its characteristic polynomial.
+\end{lemma}
+\begin{proof}
+The vector $Tv$ lies in the invariant subspace $\operatorname{im}T$,
+whose dimension is $r=\rank T$. Cayley--Hamilton on this subspace
+gives a recurrence of order at most $r$ for the infinite scalar
+sequence. Every prefix has complexity at most $r$. Thus a prefix
+of complexity $m$ forces $r=m$.
+
+An infinite scalar sequence generated by an $m$-dimensional operator
+has minimum recurrence degree at most $m$, and its first $2m$ terms
+determine that recurrence exactly; this is the standard scalar
+Wiedemann/Berlekamp--Massey fact \cite[Section II]{wiedemann}.
+Our finite complexity forces degree $m$. The scalar minimum polynomial
+divides the characteristic polynomial of $T$; equality of their
+degrees gives the final assertion. In particular $f_0\ne0$.
+\end{proof}
+
+The shift in~\eqref{eq:shift} is useful: full complexity alone
+certifies rank by the invariant-range argument. Without the shift,
+a singular cyclic nilpotent matrix can also have complexity $m$;
+then a separate nonzero-constant-term check is essential.
+
+Once the trial has passed, solve $Hx=c$ using $Tx=Dc$ and
+Cayley--Hamilton:
+\begin{equation}\label{eq:solve}
+ x=-f_0^{-1}\sum_{i=1}^m f_iT^{i-1}(Dc),\qquad f_m=1.
+\end{equation}
+Evaluate the sum by Horner's rule, and verify $Hx=c$ modulo $p$.
+Reject unless every coordinate of $x$ is $1$ or $-1$ modulo $p$.
+Lift these coordinates uniquely to $\{-1,1\}$, append final coordinate
+$1$, and call the vector $\widehat\sigma$.
+Verify \emph{in integer arithmetic} that
+\[
+ \one^T\widehat\sigma=0,\qquad M\widehat\sigma=0.
+\]
+Return the vector only if both tests pass.
+
+The certificate consists of $p,D,u,v$ and the recovered sign vector;
+$f$ may also be included for convenience. A verifier first checks
+$p\in(P,2P]$, all vector lengths and residue encodings, then primality,
+nonzero diagonal entries, recomputes~\eqref{eq:shift} and its exact
+linear complexity, and checks the two integer equalities.
+The complexity-$m$ condition proves $\det H\ne0\pmod p$, hence
+$\rank_{\mathbb Q}M\ge n-1$. The verified nonzero integer kernel
+vector proves the opposite inequality. This is a deterministic
+verification argument; there is no Freivalds error or unverified
+Monte Carlo rank estimate.
+
+\section{Success probability and bit costs}
+\paragraph{Classical preconditioning input.}
+Chen--Eberly--Kaltofen--Saunders--Turner--Villard
+\cite[Theorem 4.2]{chen} prove that for any nonsingular $H$ over
+$\F_p$, random nonzero diagonal scaling makes $DH$ cyclic with
+failure probability at most
+\[
+ \frac{m(m-1)}{2(p-1)}.
+\]
+This theorem has no symmetry, generic-minor, or characteristic
+restriction for the nonsingular case. Its stronger squarefree-spectrum
+variant is unnecessary here. For a cyclic nonsingular $T$, the two
+Krylov determinants for random $v$ and random $u$ are nonzero
+polynomials of degree $m$ each. Schwartz--Zippel therefore bounds
+the probability of losing full scalar complexity by $2m/p$.
+The shift does not change cyclicity of $v$, since $T$ is invertible.
+
+\paragraph{Bad computational primes.}
+Let
+\[
+ R_d=\max\{2,\sqrt{d+d^2}\},\qquad
+ P=\left\lceil128(d+1)^2 n^2\right\rceil.
+\]
+Hadamard's inequality gives
+\[
+ 0<|\det H|\le R_d^m
+\]
+whenever the promise in Lemma~\ref{lem:minor} holds. Hence at most
+$m\log R_d/\log P$ primes in $[P,2P]$ can divide $\det H$.
+The classical prime-interval lower bound
+\[
+\pi(2P)-\pi(P)>\frac{3P}{5\log P}\qquad(P\ge20.5)
+\]
+is available in Rosser--Schoenfeld \cite[p.~69, Corollary 3]{rs}.
+Thus a uniform prime in that interval is bad with probability at most
+\begin{equation}\label{eq:badprime}
+ \frac{5m\log R_d}{3P}=O_d(1/n).
+\end{equation}
+The interval convention at a prime endpoint can be handled by using
+$(P,2P]$; no endpoint affects the bound. On a good prime, the total
+failure probability of the diagonal and probe choices is at most
+$m(m-1)/(2(p-1))+2m/p$. In particular every independent trial
+succeeds with probability at least $1/2$ for sufficiently large $n$.
+Under the promised simple sign kernel, a successful nonsingularity
+trial necessarily solves to the actual normalized sign vector, so
+all exact output checks pass.
+
+\paragraph{Prime generation is charged.}
+Sample integers uniformly from $(P,2P]$ and test primality exactly
+by trial division up to their square root. Conditional on being prime,
+the accepted integer is uniform over the interval's primes.
+The displayed prime count gives $O(\log P)$ expected candidates.
+Each test uses $O_d(n)$ divisions of $O_d(\log n)$-bit integers,
+so its expected total bit work is $\widetilde O_d(n)$ per trial.
+This elementary sampler has no probable-prime error and requires
+only logarithmic workspace; a sieve is an alternative within the
+overall quadratic budget, but is not needed for the space bound.
+
+\paragraph{Matrix and recurrence costs.}
+One application of $T$ costs $O(dn)$ field operations and $O(n)$
+storage. The shifted sequence requires $2m$ applications and
+$O(m^2)$ dot-product operations. Exact Berlekamp--Massey costs
+$O(m^2)$ field operations and $O(m)$ storage.
+Horner evaluation in~\eqref{eq:solve} uses at most $m-1$ further
+applications, and all candidate checks cost $O(dn)$ arithmetic work.
+Thus each trial costs $O(dn^2+n^2)$ field operations and $O(n)$
+field-element storage, plus the graph representation.
+Prime elements have $O_d(\log n)$ bits. Elementary integer arithmetic
+therefore converts this to $\widetilde O_d(n^2)$ bit operations.
+Uniform random choices require $O_d(n\log n)$ random bits in
+expectation, charged within the same bound.
+
+Run at most $\lceil\log_2(1/\eta)\rceil$ independent trials, returning
+\textsc{Unresolved} if none is accepted. This proves
+Theorem~\ref{thm:algorithm}. Small dimensions may be handled by exact
+elimination, without affecting its asymptotic statement.
+
+\begin{remark}[What is, and is not, Las Vegas]
+Repeating until success is Las Vegas under the promise of a simple
+balanced sign kernel, with expected $\widetilde O_d(n^2)$ bit work.
+It need not terminate on a graph for which $H$ is singular over
+$\mathbb Q$. The bounded version terminates with a certified answer
+or abstention and is valid on \emph{every} graph.
+One can add exact rational elimination after the cap to obtain an
+always-terminating exact algorithm with polynomial worst-case bit
+work. However, a qualitative $o(1)$ probability of a bad graph does
+not imply nearly quadratic unconditional expected time for that
+fallback: its contribution may be $n^C o(1)$.
+\end{remark}
+
+\section{RSBM consequence and unknown integer eigenvalue}
+Let $n=2N$, fix $d_1>d_2>0$ with $d_1\ge3$, and let $N$ tend to
+infinity through even values. On two hidden blocks of cardinality $N$,
+sample independent uniform simple $d_1$-regular internal graphs and
+any independent simple $d_2$-regular bipartite cross graph. Put
+$d=d_1+d_2$ and $\lambda_*=d_1-d_2$.
+The companion simplicity proof establishes uniformly over the cross
+graph that
+\[
+ \Prob\bigl(\ker_{\mathbb R}(A-\lambda_*I)
+                 =\operatorname{span}\{\sigma\}\bigr)=1-o(1).
+\]
+That proof is for even $N$ and $d_1\ge3$; this algorithm does not
+extend its model range.
+
+\begin{corollary}[Specified planted eigenvalue]\label{cor:known}
+On this RSBM, the algorithm of Theorem~\ref{thm:algorithm} recovers
+the planted partition up to exchange with probability at least
+$1-o(1)-\eta$, in expected
+$\widetilde O_d(N^2\log(1/\eta))$ bit work, with a deterministically
+verifiable uniqueness certificate whenever it returns an answer.
+The $o(1)$ term has no effective rate in the companion proof.
+\end{corollary}
+
+For completeness, the same fixed-prime mixing input excludes all
+other fixed integer adjacency eigenvalues except the two quotient
+eigenvalues. This justifies enumeration when $\lambda_*$ is unknown.
+
+\begin{proposition}[Integer eigenvalue isolation]\label{prop:integer}
+In the preceding model, for every fixed integer
+$t\notin\{d_1+d_2,d_1-d_2\}$,
+\[
+ \sup_B\Prob\bigl(t\in\operatorname{spec}(A_B)\bigr)=o(1).
+\]
+Consequently, with high probability the only integer eigenvalues in
+$[-d,d]$ belong to $\{d,\lambda_*\}$.
+\end{proposition}
+\begin{proof}
+We give the new shift calculation explicitly and use exactly the
+fixed-prime mixing and contiguity inputs of the companion note.
+Set $a=d_1-t$ and fix an odd prime $p$ not dividing
+$d_2(a^2-d_2^2)\ne0$.
+For the matching-sum model, write $q_x(r)$ for the reference atom
+and $e_N=\sum_x\sup_r|\Prob(Cx=r)-q_x(r)|\to0$ from
+M\'esz\'aros's theorem. For every affine shift $b$,
+\[
+ \sum_xq_x(tx+b)\le2p,\qquad
+ \sum_x\Prob(Cx=tx+b)\le2p+e_N.
+\]
+Indeed nonconstant $x$ contribute at most $p$ (even if $a=0$),
+and constants contribute at most $p$.
+
+Replacing the two factors in the kernel first moment by their
+reference atoms therefore incurs total error at most
+$4p e_N+e_N^2$, uniformly over $B$.
+For both vectors nonconstant, the scalar constraints are
+\[
+ a\,s(x)+d_2s(y)=0,\qquad d_2s(x)+a\,s(y)=0.
+\]
+Our prime choice makes this system invertible, so both sums vanish.
+There are at most $p^{2N-2}$ pairs, each with mass $p^{-2N+2}$,
+contributing at most one. For both vectors constant, the same
+invertible two-by-two system forces both constants to be zero,
+contributing exactly one. If $x=c\one$ and $y$ is nonconstant,
+then $By=-ac\one$ permits at most $p^{N-r_B}$ choices for each
+$c$, where $r_B=\rank_{\F_p}B$. This orientation contributes at
+most $p^{2-r_B}$, as does the opposite one. Hence
+\[
+ \E|\ker_{\F_p}(A_B-tI)|
+ \le2+2p^{2-r_B}+4p e_N+e_N^2.
+\]
+The deterministic disjoint-row-support argument gives
+$r_B\ge N/(d_2(d_2-1)+1)$ over every field.
+Real singularity of an integer matrix implies singularity modulo
+every prime, so its probability has limsup at most $2/p$.
+Let arbitrarily large admissible \emph{fixed} primes tend to infinity.
+This proves the $o(1)$ statement in the matching model. The same
+uniform-sequence contiguity and simplicity conditioning as in the
+companion proof transfer this vanishing probability to the stated
+uniform simple model. No fixed-prime constant-probability estimate
+is pushed through contiguity. A finite union handles all integers
+in $[-d,d]\setminus\{d,\lambda_*\}$.
+\end{proof}
+
+\begin{corollary}[Unknown internal and cross degrees]\label{cor:unknown}
+If only total degree $d$ is given, enumerate the $O(d)$ integers
+$t\in[-d,d)$. Apply the certified algorithm with trial error
+$\eta/(2d+1)$ at each. In the above fixed-degree model, with
+probability $1-o(1)-\eta$ the only returned balanced sign kernel
+is the planted partition (up to exchange), and it is returned.
+Expected bit work is
+$\widetilde O_d(N^2\log(1/\eta))$.
+\end{corollary}
+\begin{proof}
+The planted value succeeds on its simple-kernel event. On the event
+of Proposition~\ref{prop:integer}, every other enumerated integer
+is not an eigenvalue, so the exact integer output check cannot pass.
+The trivial eigenvalue $d$ is excluded from enumeration.
+The factor $O(d)$ and the allocation of the algorithmic error are
+absorbed in the fixed-degree bound.
+\end{proof}
+
+Each returned certificate proves uniqueness of the eigenspace at its
+reported integer $t$. It does not itself certify that no other integer
+eigenvalue has a balanced sign eigenvector; that simultaneous exclusion
+is the probabilistic graph statement of Proposition~\ref{prop:integer}.
+
+\paragraph{Rational baseline.}
+Exact fraction-free Gaussian elimination on $A-\lambda I$ remains
+a polynomial-bit fallback without a spectral gap. Hadamard bounds
+all minors by numbers with $O_d(n)$ bits, so a coarse elementary
+implementation takes polynomial work and can certify higher nullity.
+The modular algorithm avoids reconstructing those long rational
+entries on the promised sign-kernel event: one good polynomial-size
+prime identifies the signs, and integer verification finishes.
+
+\begin{thebibliography}{9}
+\bibitem{wiedemann} D.~H.~Wiedemann,
+\emph{Solving Sparse Linear Equations Over Finite Fields},
+IEEE Transactions on Information Theory 32 (1986), 54--62.
+Sections II and V.
+\url{https://www.csd.uwo.ca/~mmorenom/CS424/Ressources/WIEDEMANN-IEEE-1986.pdf}.
+\bibitem{chen} L.~Chen, W.~Eberly, E.~Kaltofen, B.~D.~Saunders,
+W.~J.~Turner, G.~Villard,
+\emph{Efficient matrix preconditioners for black box linear algebra},
+Linear Algebra and its Applications 343--344 (2002), 119--146.
+Theorem 4.2.
+\url{https://kaltofen.math.ncsu.edu/bibliography/02/CEKSTV02.pdf}.
+\bibitem{rs} J.~B.~Rosser, L.~Schoenfeld,
+\emph{Approximate formulas for some functions of prime numbers},
+Illinois Journal of Mathematics 6 (1962), 64--94.
+Corollary 3, p.~69.
+\url{https://projecteuclid.org/journals/illinois-journal-of-mathematics/volume-6/issue-1/Approximate-formulas-for-some-functions-of-prime-numbers/10.1215/ijm/1255631807.full}.
+\end{thebibliography}
+\end{document}

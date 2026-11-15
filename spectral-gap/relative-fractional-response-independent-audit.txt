@@ -1,0 +1,150 @@
+Independent actual-source mathematical audit, 2026-11-15
+========================================================
+Reviewer: spectral_audit worker, separate from manuscript author.
+Decision: PASS at the exact mathematical scope stated below.
+This is an informal independent proof audit, not external refereeing,
+formal verification, or historical-priority certification.
+
+Reviewed actual source:
+ spectral-gap/relative-fractional-response.tex
+ SHA256 9a410f1fdde492eb21223e14b6820d9994eedaec574966cdea29d3203c0f4286
+The full source was read and the main arguments reconstructed independently.
+One wording issue about norm convergence to an arbitrary coordinate matrix
+was corrected before this frozen review. The current mass-path lemma states
+relative eigenvalue-list convergence, with orthogonal identification when
+speaking of matrix norm convergence.
+
+A. Complete fixed-dimensional spectral closure
+----------------------------------------------
+Checked necessity: the positive Stieltjes difference integral gives Q>=I,
+and the determinant lemma gives product eigenvalues=(1+tau)^alpha.
+The admissible set is closed. This needs and states 0<alpha<1.
+At alpha=1 the asserted full closure would be false for n>1; that endpoint
+is explicitly excluded. At tau=0 SPD implies u=0, exactly as stated.
+
+Independently derived the proposed lower construction. For ai=delta^(n-i),
+zi=(ri-1)product_(j>i)rj, ui=sqrt(ai zi), relative entries equal
+
+ c_alpha sqrt(zi zj)(ai aj)^((1-alpha)/2)
+ integral_0^infty t^alpha /[(ai+t)(aj+t)
+                    (1+sum_k ak zk/(ak+t))] dt.
+
+For i=j, t=ai s gives exactly manuscript eq. (diag). For each s>0 the
+contributions from k<i tend to zero, k=i remains zi/(1+s), and k>i
+tend to zk. The fixed integrable majorant is s^alpha/(1+s)^2.
+Its limit is the scalar difference ri^alpha-1 because
+1+sum_(k>i)zk=product_(k>i)rk and zi divided by that quantity is ri-1.
+The case zi=0 is an exact zero row/column and causes no division issue.
+
+For i<j, dropping the denominator (which is >=1) bounds the off-diagonal
+by sqrt(zi zj) x^((1-alpha)/2)(1-x^alpha)/(1-x), x=ai/aj->0.
+This tends to zero. The divided-difference identity follows directly
+from the scalar Stieltjes formula, so no eigenvector asymptotic is hidden.
+Fixed dimension then gives operator-norm convergence. Telescoping zi
+preserves leverage exactly at every finite delta. All requested q_i
+are obtained by ri=q_i^(1/alpha), with ordering restored afterwards.
+No restriction beyond positivity/product remains in the closure.
+
+B. Exact strict-count law
+-------------------------
+If m correction eigenvalues are >epsilon, their log increments sum to
+strictly more than m log(1+epsilon). Since all the remaining increments
+are nonnegative, m<R with R=alpha log(1+tau)/log(1+epsilon).
+This gives max(0,ceil(R)-1), with min(n,...) in fixed dimension.
+For every allowed m>0, the equal target q=(1+tau)^(alpha/m) is strictly
+above 1+epsilon, so the closure theorem supplies an actual finite witness
+retaining all m strict inequalities. This is an attained integer count,
+not merely a limiting count. At integral R, exactly R is correctly
+excluded. The O(1) remainder in the 1/epsilon asymptotic is valid.
+
+C. Positive-mass path transfer
+------------------------------
+Reconstructed the Lanczos/Jacobi and grounding algebra. For cyclic SPD
+T with negative off-diagonals, d=T^-1 e1 is strictly positive; DTD has
+row sum d1 e1. Ground-edge conductance d1 and vertex masses di^2 give
+exactly T as grounded normalized operator. Adding ground mass R^2 yields
+H_R with top-left d1/R^2, off-diagonal -e1/R. The update vector is
+(-d1/R,e1), multiplied by sqrt(kappa). Its physical edge increment is
+kappa d1^2, so increment/base ratio is kappa d1=tau exactly.
+Both endpoints have kernel span(R,d). As R grows they tend to 0 direct
+sum T and its update; there remains exactly one zero eigenvalue and a
+uniform positive gap for all other eigenvalues. Continuous functional
+calculus therefore applies to positive and pseudoinverse negative powers.
+No singular inverse is taken across a vanishing positive eigenvalue.
+
+The noncyclic approximation is valid: simple SPD matrices are dense,
+cyclic vectors for each are dense, and the rescaling factor enforcing
+exact tau tends to one. Relative matrices are continuous on the SPD
+cone. This justifies all desired zero correction eigenvalues and preserves
+the original dimension before adding the ground vertex.
+
+D. Unit-mass ordinary weighted path transfer
+--------------------------------------------
+The block construction preserves the graph being a path. All edges have
+positive conductance. For fixed integer block sizes, S has kernel spanned
+by block constants. Compressing external edges to normalized block
+indicators yields H_s exactly. The changed edge remains an interblock
+bridge, and base/increment are both multiplied by s, so tau is preserved
+independently of internal conductance T.
+
+Verified the diverging fast modes, a potentially delicate point. The
+resolvent converges by finite-dimensional Schur complement. The difference
+integral is uniformly dominated by
+ t^alpha min(2/t,||E||/t^2),
+which is integrable because 0<alpha<1. Therefore fractional DIFFERENCES
+converge in operator norm despite both endpoint powers diverging on fast
+modes. For negative pseudoinverse powers, the low nonzero eigenvalues
+converge to those of the connected quotient and remain separated from
+zero, the common constant kernel stays exact, and the fast eigenvalues
+diverge linearly. Their negative powers tend to zero. Multiplication of
+these convergent factors gives the stated relative convergence.
+
+The final s->infinity step is finite-dimensional continuity with constant
+rank (quotient size minus one), and common support dimension; kernel
+vectors may rotate continuously without obstructing pseudoinverse
+continuity. The two limits are correctly sequential, so no uniform-in-s
+fast-mode claim is required. Unrestricted enlargement of path dimension
+and conductance ratios is explicit and essential.
+
+E. Consequences and limits
+---------------------------
+The updated-energy reciprocal-spectrum assertion is correct even when
+A,B do not commute: XX^T and X^TX have the same positive spectra with
+X=A^(-alpha/2)B^(alpha/2), and inverse generalized pairs give reciprocal
+lists. The strict-count threshold 1/(1-epsilon) is therefore correct.
+The multi-rank determinant identity is correct. The residual inequality
+for a truncated relative correction follows by congruence with L^(alpha/2).
+
+This is a structural spectral-closure and exact worst-case rank theorem.
+It supplies no algorithm for computing the relative truncation, no bit
+complexity or stability bound, no result for unweighted paths, and no
+fixed-size or bounded-conductance-ratio lower construction. Those limits
+are accurately stated. Historical novelty remains to be investigated.
+
+F. Independently executed finite diagnostic
+--------------------------------------------
+A separate retained program was written without using the author's program:
+ spectral-gap/check_relative_unit_mass_transfer_independent.py
+ output spectral-gap/check_relative_unit_mass_transfer_independent.json
+
+It compares a quotient path with masses (9,4,1), edge conductances (6,2),
+and an increase of its first edge to 12, with ordinary 14-vertex paths
+whose three fast blocks have those sizes. The leverage is exactly one.
+For alpha=.2,.5,.8 and internal conductance 100,1000,10000,100000,
+all 12 support-projected eigensolver comparisons pass. Errors decrease
+for each alpha; at the final scale the largest errors are respectively
+4.571e-5, 1.363e-4, 2.099e-4. Reconstructed logdet-budget errors remain
+below 2.1e-11. This specifically corroborates the unit-mass fast-block
+passage, and is not a proof or priority certificate.
+
+Executed using:
+ /nix/store/42856hjvwmzn09j192vqsgq0s9655pmc-python3-3.14.8-env/bin/python
+ spectral-gap/check_relative_unit_mass_transfer_independent.py
+
+No unresolved mathematical defect was found in the frozen source.
+
+Diagnostic hashes:
+ check_relative_unit_mass_transfer_independent.py
+ 4ef2c40fcfab5fa8b7bc2541df0bf890179d4ee32c23ecf4bd625405e4f9fa69
+ check_relative_unit_mass_transfer_independent.json
+ 304dc9b3a83abe7b2640e6bbb7c041f0acf1c31d648d7898d48de03b4ff74a3a

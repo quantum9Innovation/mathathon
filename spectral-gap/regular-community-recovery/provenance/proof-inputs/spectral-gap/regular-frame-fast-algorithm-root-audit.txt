@@ -1,0 +1,376 @@
+SOURCE-BOUND AUDIT: CERTIFIED FAST NONSYMMETRIC INTERTWINER ENUMERATION
+November 15, 2026. graph_breakthrough.
+Only this audit file is written for this task. No source or fixture is edited.
+
+Verdict
+-------
+PASS for the algorithmic composition, with its exact statistical dependency
+stated below. Symmetric block linearization computes and certifies the
+COMPLETE RIGHT kernel of a square nonsymmetric intertwiner. Projecting
+and rank-reducing the doubled basis BEFORE enumeration preserves the
+single raw moment E p^h; neither E p^(2h) nor E[h p^h] is needed.
+
+For fixed quotient order r, fixed graph/quotient degree bounds, and one
+fixed ODD prime p, assume the ACTUAL graph law satisfies
+
+  sup_n E p^{h_R(A)}<infinity,
+  h_R(A)=nullity_Fp(I_r tensor A-R^T tensor I_n),            (M)
+
+for every quotient candidate R in the fixed finite search family.
+Then the supplied all-input symmetric primitive and this reduction
+list all verified integer one-hot intertwiners in unconditional expected
+soft-O(n^2) bit work, with expected soft-O(n) working storage and O(n)
+expected output bits. They have no algorithmic error and no corank-one
+or numerical-gap promise. A separate identifiability theorem determines
+whether the planted partition is the unique finest answer.
+
+No mathematical gap was found in the two new algorithm sources. This
+audit does NOT reprove the new random-lift bounded-moment/CLT theorem;
+it makes the moment input (M) explicit and does not replace it by a
+coarse polynomial bound, contiguity, or high-probability real simplicity.
+The optional weighted-Gram route is not needed or certified as part of
+this verdict. Historical novelty is not asserted.
+
+Sources actually read and hashes
+-------------------------------
+Base: spectral-gap/partitioning-dynamic-session/rsbm-full-kernel/
+
+intertwiner-extension.txt
+  cb893b0def524ba101a4419adf922f0dec60ad3156348c8e91d600887e743df9
+intertwiner-independent.txt
+  b538cdc887287c97153f60a05d10ef4f6171915500cb6f83d4567afc167b9026
+
+Previously audited symmetric primitive, read at its theorem/interface,
+descent, verification, field, and cost passages for this composition:
+certified-full-kernel.tex
+  bb6ec1086a2d46f4a1d0b66c69aadc2d120b07157ba8e95f3c08ffb187843473
+full_kernel.py (read-only fixture execution of its existing routines)
+  d57957a6d4c5535513ce700609ed5336a15e60284c578053c86f56a7c501b3ed
+
+Complete prior root primitive audit taken as a dependency, not silently
+reproved here:
+spectral-gap/rsbm-full-kernel-root-audit.txt
+  572d0d5c2a78f9c27e93442f9a696450bad2e9d4db44ecdbddac6a5253db1f06
+
+The moment theorem statement read to identify the application interface:
+spectral-gap/rsbm-cubic-moment-session/regular-lift-moments/
+  bounded-moment-theorem.md
+  f2259d3b14e3775a9cd899941ee6c09d1e488d62224f20e6b4e5c68a884a29da
+Its all-bipartite assembly is a separate statistical audit; no fresh
+local-CLT verdict is attributed to this algorithm audit.
+
+
+1. Exact operator and sparse complexity
+---------------------------------------
+Let A=A^T be n-by-n, R be r-by-r, and X n-by-r. Stack the COLUMNS
+of X. Then exactly
+
+  vec(AX-XR)=K vec(X),
+  K=I_r tensor A-R^T tensor I_n.                          (A1)
+
+Its transpose acts as vec(Y)->vec(AY-YR^T). The transpose on R in
+(A1) is necessary. For nonsymmetric R, replacing it by R solves
+a different equation. Both K and K^T can be applied from A and R;
+there is no hidden transpose-oracle assumption.
+
+Set m=rn, w=nnz(K). Both products cost
+
+  O(r nnz(A)+n nnz(R))
+
+field operations. With fixed r and bounded graph/quotient degrees,
+m=O(n), w=O(n). A dense Kronecker matrix is unnecessary; the
+structured black boxes or explicit sparse block representation have
+the claimed linear cost. Integer quotient entries are bounded neighbor
+counts, so the final integer-check bit lengths are controlled as well.
+
+
+2. Block linearization and the right projection
+------------------------------------------------
+Over Fp form the implicitly applied symmetric matrix
+
+  S=[0 K; K^T 0],                   size 2m.
+
+For (u,v), S(u,v)=(Kv,K^Tu). Consequently
+
+  ker S=ker K^T direct-sum ker K,
+  rank S=2 rank K,
+  nullity S=2h,            h=m-rank K.                    (A2)
+
+The identities hold over every field and remain true under extension.
+No positivity, Gram identity, or semisimplicity of K is used. One S
+product uses one K and one K^T product and its sparse count is 2w.
+
+Apply the PER-INPUT symmetric full-kernel primitive to S, of order
+2m and corank 2h. Its conditional expected bit work becomes
+
+  soft-O_p((2m)(2w+2m)(2h+1))
+     =soft-O_p(m(w+m)(h+1)).                             (A3)
+
+This computes a basis, not an enumeration of the doubled kernel.
+There is no application of a graph moment theorem to S as if it
+were an adjacency matrix.
+
+Let B be any full basis of ker S. Its bottom m-coordinate projections
+span ker K: every v in ker K gives (0,v) in ker S, and expanding
+that vector in B gives v from the projections. Their rank is exactly
+h. Select h independent projected columns by exact elimination;
+do not take an arbitrary first h columns, which may vanish or be
+dependent. The top projection would instead give the LEFT kernel.
+
+Choose h pivot rows J and normalize the selected matrix B_right as
+
+  C=B_right(B_right[J,:])^(-1),      C[J,:]=I_h.
+
+Projection, selection, pivoting, and normalization cost
+O(mh^2+h^3), bounded by O(m^2(h+1)). This fits (A3) because w+m>=m.
+Their storage is O(mh), even if the complete doubled basis is retained
+temporarily. At h=0 the right basis is empty; at h=m the procedure
+returns the whole right space. These boundary cases are covered.
+
+
+3. Exact base-field descent
+---------------------------
+The primitive may first produce an extension-field basis. Either
+descend the full S-kernel by its previously audited pivot normalization
+before projection, or project first and normalize a complete right
+basis. In the latter case the target subspace is still ker K, which
+is defined over Fp. Frobenius x->x^p preserves it.
+
+For fixed pivot rows J, restriction from ker K to the h pivot
+coordinates is an isomorphism. Thus the basis normalized to identity
+on J is unique. Its coefficientwise Frobenius transform is another
+such normalized basis, so equals C. Hence every entry lies in Fp.
+Explicitly check positive-degree extension coefficients vanish,
+extract the base coefficients, and recheck KC=0 over Fp.
+
+This does not attempt to enumerate arbitrary extension-field probes
+using only base-field coefficients. It first obtains a complete
+base-defined space and uses its unique normalized basis. No division
+by a graph cell size is involved, so p dividing a fiber size is
+irrelevant to this step.
+
+
+4. Compact right-kernel certificate and its soundness
+------------------------------------------------------
+The final certificate need not include the unused left basis or the
+entire 2m-by-2h S-basis. Retain the primitive's verified extension-field
+definition, invertible diagonal preconditioner D, scalar probes u,v,
+and shifted sequence information. Include only the base-field C,
+its distinct pivot rows J, and the claimed length ell.
+
+The checker reconstructs S, regenerates the shifted scalar sequence
+
+  u^T(DS)^(j+1)v,             0<=j<4m,
+
+and recomputes its TRUE shortest finite BM length ell. It does not
+trust a polynomial display degree, padding, a supplied recurrence,
+or a claim of generic rank. The old unconditional argument gives
+
+  ell<=rank(DS)=rank S=2 rank K.                           (A4)
+
+It is valid for every random draw, including nilpotent blocks and
+unlucky probes: the shifted start lies in the invariant image of DS.
+Require ell=2(m-h), where h is the number of C columns, and verify
+KC=0 and C[J,:]=I_h. The latter gives independence and rank K<=m-h.
+Together with (A4),
+
+  m-h=ell/2<=rank K<=m-h.
+
+Thus every ACCEPTED certificate proves a COMPLETE right kernel with
+zero verification error. An odd length or inconsistent claimed corank
+is rejected; no division by two in the field is used, only integer
+dimension arithmetic. The chain also handles h=0 and h=m.
+
+Verification costs soft-O_p(m(w+m)): O(m) sparse S products and
+quadratic BM work, plus O(wh+h^2) base residual/pivot checks, all
+within that bound because h<=m. Certificate size is
+O_p(mh+m log m) bits. Extension construction and irreducibility
+checks remain exactly those of the primitive, at order 2m; its
+extension degree is O(log m), so all arithmetic and random-bit
+charges remain polylogarithmic per operation.
+
+This compact certificate certifies the full RIGHT KERNEL. Individual
+integer partition checks then certify each listed partition. To check
+an untrusted claim of list completeness one can replay enumeration
+from C; its cost is charged separately below. A worst-case compact
+kernel-verifier bound is not being conflated with a worst-case
+polynomial verifier of an exponentially long partition list.
+
+
+5. Enumeration needs neither a squared nor a weighted moment
+------------------------------------------------------------
+Enumerate the h-dimensional right kernel over Fp using C. Never
+enumerate ker S, whose size p^(2h) can have an unbounded expectation
+even when E p^h is bounded. The source's example h=n with probability
+p^(-n), and zero otherwise, correctly exhibits that failure.
+
+A further hidden factor h is also avoided. Maintain the current
+vector under a base-p odometer or Gray code. Across all p^h states,
+the total digit changes are O_p(p^h); each adds a scalar multiple
+of one basis column in O(m) operations. Generation is O_p(m p^h),
+not a fresh O(mh) multiplication for each state. E p^h alone would
+not control E[h p^h], so this distinction is mathematically necessary.
+
+Reshape according to column-stacked vectorization. Require EXACTLY
+one coordinate equal to 1 and all others 0 in every row, not merely
+a row sum of 1 modulo p. Lift those entries to integer 0/1 and check
+
+  AX=XR over the INTEGERS.
+
+Require nonempty classes and any sizes genuinely specified by the
+recovery task. For a blind unknown-frame search, no prescribed cell
+sizes are known: use nonemptiness, integer verification, and the
+maximum-class criterion from the identifiability theorem instead
+of imposing a nonexistent size promise. These checks still have
+O_(r,d)(n) cost per candidate. Keeping column-size counters adds
+at most logarithmic bit factors.
+
+Every true integer one-hot intertwiner reduces to this field kernel,
+and distinct one-hot labels stay distinct at any prime. Conversely
+integer verification rejects modular artifacts. Thus the list is
+complete on EVERY input, including rare graphs with high modular
+corank and extra real eigenspaces. A scalar sign-kernel theorem
+or a corank-one theorem is not substituted for this vector statement.
+
+
+6. The exact expectation and storage calculation
+------------------------------------------------
+For a fixed input A,R, the complete conditional expected work is
+
+  soft-O_p(m(w+m)(h+1)+m p^h).                           (A5)
+
+Projection and descent are included in the first term. If the actual
+input law satisfies (M), h+1<=p^h implies E(h+1)<=C_R. Taking graph
+expectation in (A5) gives, at fixed r and bounded degree,
+
+  E total work=soft-O_(p,r,d,C_R)(n^2).
+
+The order of expectation is legitimate: the primitive is Las Vegas
+with its per-input bound on EVERY matrix. Rare large-corank graphs
+are charged through their actual p^h moment, not discarded or sent
+to an uncharged dense fallback. No statistical good-input event is
+conditioned on in this runtime expectation.
+
+Per-input working storage is soft-O_p(m(h+1)+w), with fixed factors
+for the doubled basis. Under (M) its expectation is soft-O(n).
+Stream the partition list so output is not scratch storage. At most
+p^h candidate assignments can pass, each with O(n) bits at fixed r,
+so expected output is O(n). The kernel certificate has expected
+O(n log n) size as well. Retaining only a best partition uses O(n)
+extra storage for a recovery application.
+
+
+7. Finite unknown quotient family and integer balance
+------------------------------------------------------
+At fixed upper bounds K,d, there are only finitely many nonnegative
+integer quotient candidates of orders r<=K with row sums<=d. Apply
+the SAME field p and construction separately to every candidate.
+If (M) holds for each, the maximum/sum of their finitely many moment
+constants is finite. Linearity of expectation preserves near-quadratic
+total work without any independence requirement between the runs.
+Reusing workspace preserves the expected linear storage bound.
+
+All actual candidate class sizes may be unequal. For undirected A,
+integer one-hot AX=XR implies
+
+  X^TAX=diag(N_1,...,N_r)R is symmetric,
+  N_i R_ij=N_j R_ji.                                     (A6)
+
+If equal positive sizes are PRESCRIBED, R must be symmetric and one
+may reject nonsymmetric R immediately. This cannot be inferred merely
+because the TRUE planted lift fibers have equal sizes while the search
+also permits unequal-size coarsenings. The generic blind search must
+retain nonsymmetric balanced quotients, and the block reduction does.
+Equation (A6) is over integers and survives p dividing any N_i.
+
+For a fixed prescribed R, arbitrary permutations of columns need not
+preserve its equation; use the allowed quotient automorphisms for
+unlabeled deduplication. In an unknown-R search one may simultaneously
+canonicalize the pair (X,R), accepting only its canonical relabeling.
+At fixed K this costs a constant number of O(n) scans and needs no
+exponential-memory hash table. Simply retaining the largest-class
+verified candidate also tolerates constant label multiplicities.
+
+The structural regular-frame theorem then says that every bounded-class
+partition coarsens the planted one with high probability. Selecting a
+maximum class count recovers its finest planted partition on that
+event. This statistical uniqueness statement is a separate input;
+on exceptional ambiguous graphs the algorithm still computes correct
+complete kernels and valid complete candidate lists.
+
+
+8. Statistical dependency and what is NOT being promoted
+---------------------------------------------------------
+The moment required is for the SAME fixed odd p and the vector
+intertwiner operator for every candidate R on the ACTUAL law. A
+binary-only moment is not automatically a moment over the odd field
+used by the audited primitive. A scalar bound for A-lambda I does
+not automatically bound arbitrary nonsymmetric vector intertwiners.
+
+The new bounded-moment statement read above is for independent uniform
+N-lifts of a fixed connected SIMPLE d-regular base, d>=3, with fixed
+p,r,R. It explicitly proposes a bounded supremum in N and a finite
+maximum over R, so its mathematical interface is exactly (M). The
+nonbipartite scope has a separate frozen root audit; the all-bipartite
+assembly was being audited independently while this algorithm audit
+was written. No local-limit or zero-phase theorem is being newly
+certified here. Once that model theorem is accepted, its bounded
+actual-law moments compose directly with Sections 1--7.
+
+The similarly named general regular/biregular-factor bounded-moment
+extension file was marked UNAUDITED PROPOSAL at inspection. The
+algebraic algorithm applies to those models too IF their own version
+of (M) is proved, but the earlier polynomial moment by itself gives
+only polynomial expected listing work. It does NOT justify the
+near-quadratic conclusion for every regular factor model.
+
+Raw expectations proved in a configuration law may transfer by
+E[Z|simple]<=E Z/P(simple) when that probability stays positive.
+Qualitative contiguity or high-probability real simplicity alone
+does not transfer the unbounded variable p^h. No such shortcut is
+used in the two actual intertwiner sources.
+
+
+9. Fresh read-only numerical/interface checks
+---------------------------------------------
+I ran existing prototype ROUTINES on new fixed examples by importing
+them with Python -B; no main test driver or artifact writer was invoked.
+No pycache, certificate JSON, source, or existing fixture was written.
+The read-only harness compared projected right spaces to its separate
+base-field Gaussian elimination, verified compact right certificates,
+enumerated only right vectors, and rejected dimension-consistent
+incomplete certificates (remove one column and increase ell by two).
+
+All five examples over F3 passed:
+
+  3-by-3 nilpotent Jordan block: h=1, 3 right vectors, not 9.
+  Nonsymmetric matrix with different left/right kernels: h=1, 3, not 9.
+  Zero 3-by-3: h=3, 27, not 729.
+  Full-rank triangular 3-by-3: h=0, one zero right vector.
+  Rank-one matrix with isotropic first column (1,1,1): h=2, 9, not 81.
+
+Every nonempty incomplete basis forgery was rejected by the regenerated
+BM length despite its altered dimensions being mutually consistent.
+These finite checks supplement the rank-chain proof, and are not a
+benchmark or a substitute for the full per-input probability analysis.
+
+The unweighted Gram temptation is genuinely unsafe: that last F3
+example has K^TK=0 despite rank K=1. Likewise diagonal scaling of
+a nonsymmetric nilpotent K does not restore the symmetric primitive's
+zero-semisimplicity guarantee. The audited block construction avoids
+both mistakes. The optional random weighted-Gram route is unnecessary
+for this verdict and is not relied on.
+
+
+10. Final assessment
+---------------------
+No required correction was found in the source-bound nonsymmetric
+algorithm composition. The full-basis projection, compact certificate,
+base-field descent, O(m p^h) enumeration, finite quotient union,
+and unconditional expectation charges are valid. The statistical
+assumption (M), actual-law scope, integer size/balance filters, and
+the distinction between a kernel certificate and statistical recovery
+are essential and explicit above.
+
+No new preconditioner, fast primitive, CLT proof, or historical priority
+claim is supplied by this audit.

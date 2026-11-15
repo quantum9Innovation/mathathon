@@ -1,0 +1,2077 @@
+                                                 Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+
+                                                                                          Steinar Laenen 1 He Sun 1
+
+
+                                                                 Abstract                                      proposed model considers not only edge insertions but also
+                                             This paper studies clustering algorithms for dy-                  vertex insertions; as such the underlying graph can gradu-
+                                             namically evolving graphs {Gt }, in which new                     ally form a new cluster-structure with a different number of
+                                             edges (and potential new vertices) are added into                 clusters from the initial graph.
+
+
+
+
+arXiv:2406.03152v1 [cs.DS] 5 Jun 2024
+                                             a graph, and the underlying cluster structure of                  As the second and algorithmic result, we design a ran-
+                                             the graph can gradually change. The paper proves                  domised graph clustering algorithm that works in the above-
+                                             that, under some mild condition on the cluster-                   mentioned model, and our result is as follows:
+                                             structure, the clusters of the final graph GT of nT
+                                                                                                               Theorem 1.1 (Informal statement of Theorem 4.6). Let
+                                             vertices at time T can be well approximated by                                                                         e
+                                                                                                               G1 = (V1 , E1 ) be a graph of n1 vertices and k = O(1)
+                                             a dynamic variant of the spectral clustering algo-                         1
+                                                                                                               clusters. Assume that new edges, which could be adjacent
+                                             rithm. The algorithm runs in amortised update
+                                                                                                               to new vertices, are added to Gt at each time t to obtain
+                                             time O(1) and query time o(nT ). Experimental
+                                                                                                               Gt+1 , and there are O(poly(n1 )) added edges in total at
+                                             studies on both synthetic and real-world datasets
+                                                                                                               time T = O(poly(n1 )) to form GT of nT vertices and k ′
+                                             further confirm the practicality of our designed
+                                                                                                               clusters. Then, there is a randomised algorithm such that
+                                             algorithm.
+                                                                                                               the following hold with high probability:
+
+                                        1. Introduction                                                           • The initial k clusters of G1 can be approximately com-
+                                                                                                                              e 1 |) time.
+                                                                                                                    puted in O(|E
+                                        For any graph G = (V, E) and parameter k ∈ N as input,
+                                                                                                                  • The new k ′ clusters of GT can be approximately com-
+                                        the objective of graph clustering is to partition the vertex set
+                                                                                                                    puted with amortised update time O(1) and query time
+                                        of G into k clusters such that vertices within each cluster
+                                                                                                                    o(nT ).
+                                        are better connected than to the rest of the graph. Since
+                                        large-scale graphs are commonly used to model practical
+                                        datasets, designing efficient graph clustering algorithms is           To examine the result, we notice that, although the num-
+                                        an important problem in machine learning and related fields.           ber of clusters k in G1 can be identified with the classical
+                                                                                                               eigen-gap heuristic (Ng et al., 2001; von Luxburg, 2007),
+                                        In practice, these large-scale graphs usually evolve over              computing an eigen-gap is expensive and cannot be directly
+                                        time: not only are new vertices and edges added into a                 applied to determine the change of k in dynamically evolv-
+                                        graph, but the graph’s clusters could also change gradually,           ing graphs. Our result shows that the new number of clusters
+                                        resulting in a new cluster-structure in the long term. Instead         k ′ can be computed by a dynamic clustering algorithm with
+                                        of periodically running a clustering algorithm from scratch,           sublinear query time. Secondly, as the running time of a
+                                        it is important to design algorithms that can quickly identify         clustering algorithm is at least linear in the number of edges
+                                        and return the new clusters in dynamically evolving graphs.            in GT and it takes Ω(nT ) time to output the cluster mem-
+                                        In this paper we study clustering for dynamically evolving             bership of all the vertices, obtaining an o(nT ) amortised
+                                        graphs, and obtain the following results. As the first and con-        query time2 is significant. To the best of our knowledge, our
+                                        ceptual contribution, we propose a model for dynamic graph             work presents the first such result with respect to theoretical
+                                        clustering. In contrast to the classical model for dynamic             guarantees of the output clusters, and time complexity.
+                                        graph algorithms (Thorup, 2007; Beimel et al., 2022), our              Our algorithm not only achieves strong theoretical guaran-
+                                             1
+                                              School of Informatics, University of Edinburgh,
+                                                                                                               tees, but also works very well in practice. For instance, for
+                                        United Kingdom.       Correspondence to: Steinar Laenen                input graphs with 300,000 vertices and up to 490,000,000
+                                        <steinar.laenen@ed.ac.uk>, He Sun <h.sun@ed.ac.uk>.                    edges generated from the stochastic block model, our algo-
+
+                                        Proceedings of the 41 st International Conference on Machine
+                                                                                                                  1
+                                                                                                                    We use O(n)
+                                                                                                                            e     to represent O(n · logc (n)) for constant c.
+                                                                                                                  2
+                                        Learning, Vienna, Austria. PMLR 235, 2024. Copyright 2024 by                Throughout the paper we use T to denote query time, and t as
+                                        the author(s).                                                         arbitrary time throughout the sequence of graphs {Gt }.
+
+                                                                                                           1
+                              Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+rithm runs more than 100 times faster than repeated exe-                 2019)). However, most works in dynamic graph algorithms
+cution of spectral clustering on the updated graphs, while               focus on the design of dynamic algorithms in a general
+obtaining a comparable clustering result.                                graph, while for dynamic clustering one needs to assume the
+                                                                         presence of cluster-structures in the initial and final graphs,
+1.1. Overview of the Algorithm                                           such that the algorithm’s performance can be rigorously
+                                                                         analysed. Nevertheless, some of our presented techniques,
+For any input graph G1 with a well-defined cluster structure,            like the adaptive sampling, are inspired by the dynamic
+we first construct a cluster-preserving sparsifier H1 of G1 ,            graph algorithms literature.
+which is a sparse subgraph of G1 that maintains its cluster-
+structure, and employ spectral clustering on H1 to obtain
+the initial k clusters of G1 . After this, with a new edge               2. Preliminaries
+arriving at every time t, our designed algorithm applies two             2.1. Notation
+components to track the cluster-structure of Gt .
+                                                                         Let G = (V, E, w) be an undirected graph with |V | = n
+The first component is a dynamic algorithm that maintains                vertices, |E| = m edges, and weight function w : V × V →
+a cluster-preserving sparsifier Ht for Gt . Our designed                 R⩾0 . For any edge e = {u, v} ∈ E, we write wG (u, v)
+algorithm is based on sampling edges with probability pro-               or wG (e) to express the weight of e.P  For a vertex u ∈ V ,
+portional to the degrees of their endpoints, and these edges             we denote its degree by degG (u) ≜ v∈V wG (u, v), and
+get resampled if their degrees have significantly changed.
+We show that Ht always preserves the cluster-structure of                P volume for any S ⊆ V is defined as volG (S) ≜
+                                                                         the
+Gt , and the algorithm’s amortised update time complexity                   u∈S degG (u). For any S, T ⊂ V , weP  define the cut value
+is O(1).                                                                 between S and T by wG (S, T ) ≜            e∈EG (S,T ) wG (e),
+                                                                         where EG (S, T ) is the set of edges between S and T . More-
+Our second component is an algorithm that dynamically                    over, for any S ⊂ V , the conductance of S is defined as
+maintains a contracted graph G  e t of Gt , and this contracted
+graph is used to sketch the cluster-structure of Gt . For the
+                                                                                                     wG (S, V \ S)
+first input graph G1 and the output of spectral clustering                         ΦG (S) ≜
+                                       e 1 consists of k super                                 min{volG (S), volG (V \ S)}
+on H1 , our initial contracted graph G
+vertices with self-loops: these super vertices correspond
+to the k clusters in G1 , and are connected by edges with                if S ̸= ∅, and ΦG (S) = 1 if S = ∅. For any integer k ⩾ 2,
+weight equal to the cut values of the corresponding clusters             we call subsets of vertices A1 , . . . , Ak a k-way partition of
+                                                                               Sk
+in H1 . After that, when new edges (and potentially new                  G if i=1 Ai = V and Ai ∩ Aj = ∅ for different i and j.
+vertices) arrive over time, our algorithm updates G       e t such       We define the k-way expansion of G by
+that (new) clusters are represented by either the same super
+vertices, newly added vertices, or a combination of both.                         ρG (k) ≜          min          max ΦG (Ai ).
+                                                                                             partitions A1 ,...,Ak 1⩽i⩽k
+The algorithm further updates the edge weights between
+the super vertices. With slight increase in the number of
+            e t over time, we prove that the cluster-structure
+vertices of G                                                            Our analysis is based on the spectral properties of graphs,
+in Gt is approximately preserved in G  e t . In particular, when         and we list the basics of spectral graph theory. For a graph
+new clusters are formed in Gt , this new cluster-structure               G = (V, E, w), let DG ∈ Rn×n be the diagonal matrix de-
+of Gt can be identified by the eigen-gap of G    e t ’s Laplacian        fined by DG (u, u) = degG (u) for all u ∈ V . We denote by
+matrix. See Figure 1 for the illustration of our approach.               AG ∈ Rn×n the adjacency matrix of G, where AG (u, v) =
+                                                                         wG (u, v) for all u, v ∈ V . The normalised Laplacian ma-
+1.2. Related work                                                                                            −1/2      −1/2
+                                                                         trix of G is defined as LG ≜ I − DG AG DG , where I
+Our work directly relates to a number of works on incremen-              is the n × n identity matrix. The normalised Laplacian LG
+tal spectral clustering algorithms (e.g., (Dhanjal et al., 2014;         is symmetric and real-valued, and has n real eigenvalues
+Martin et al., 2018; Ning et al., 2007)). These works usually            which we write as 0 = λ1 (LG ) ⩽ . . . ⩽ λn (LG ) ⩽ 2; we
+rely on analysing the change of approximate eigenvectors                 use fi ∈ Rn (1 ⩽ i ⩽ n) to express the eigenvector of LG
+and don’t show the approximation guarantee of the returned               corresponding to λi .
+clusters. Many works along this direction further employ                 Lemma 2.1 (Higher-order Cheeger inequality, (Lee et al.,
+matrix perturbation theory in their analysis, requiring that             2014)). There is an absolute constant C2.1 such that it holds
+the total number of vertices in a graph is fixed.                        for any graph G and k ⩾ 2 that
+Our work is also linked to related dynamic graph algorithm
+problems (e.g., (Bernstein et al., 2022; Saranurak & Wang,                        λk (LG )                      p
+                                                                                           ⩽ ρG (k) ⩽ C2.1 · k 3 λk (LG ).           (1)
+                                                                                      2
+                                                                     2
+                                 Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+
+                                      Sparsify                           Cluster + contract
+            Gt                                       Ht                                       et
+                                                                                              G
+
+
+
+
+                  Graph update                            Dynamic sparsifier                        Dynamic contracted graph
+
+            Gt′                                     Ht′                                       et′
+                                                                                              G
+
+
+
+
+                    (a)                                      (b)                                      (c)
+
+Figure 1. Illustration of our technique. The black and red edges in Figure (a) are the edges in Gt and the added ones in Gt′ ; the dashed
+black and red edges in Figure (b) are the ones added in Ht and Ht′ ; the black and red edges in Figure (c) are the ones in G
+                                                                                                                           e t and G
+                                                                                                                                   e t′ .
+
+
+2.2. Spectral Clustering                                                For convenience of notation, we always order the output
+                                                                        of spectral clustering by P1 , . . . , Pk such that volG (P1 ) ⩽
+Spectral clustering is a popular clustering algorithm used in
+                                                                        . . . ⩽ volG (Pk ).
+practice (Ng et al., 2001), and it can be described with a few
+lines of code (Algorithm 1).
+                                                                        2.3. Model for Dynamic Graph Clustering
+Algorithm 1 SpectralClustering(G, k)                                    We assume that the initial graph G1 = (V1 , E1 ) with
+ 1: Input: Graph G = (V, E, w), number of clusters k ∈                  n1 vertices satisfies λk+1 (LG1 ) = Ω(1) and ρG1 (k) =
+    N                                                                   O(k −8 log−2γ (n1 )) for some constant γ ∈ R+ . This con-
+ 2: Output: Partitioning P1 , . . . , Pk                                dition is similar to lower bounding ΥG1 (k), and ensures
+ 3: Compute eigenvectors f1 , . . . , fk of LG                          that the initial input graph G1 has k well-defined clusters.
+ 4: for u ∈ V do                                                        After this, the underlying graph is updated through an edge
+ 5:   F (u) ← √ 1        · (f1 (u), . . . , fk (u))⊺                    insertion at each time, and let Gt = (Vt , Et ) be the graph
+                    degG (u)
+ 6: end for
+                                                                        constructed at time t. We assume that every edge insertion
+ 7: P1 , . . . , Pk ← k-means({F (u)}u∈V , k)
+                                                                        introduces at most one new vertex; as such the underly-
+ 8: Return P1 , . . . , Pk
+                                                                        ing graph is always connected, and the number of vertices
+                                                                        nt ≜ |Vt | could increase over time. We further assume
+                                                                        that, after every Θ(logγ (nt )) steps, there is time t′ such
+To analyse the performance of spectral clustering, we ex-               that Gt′ = (Vt′ , Et′ ) presents a well-defined structure of
+amine the scenario in which there is a large gap between                k ′ clusters, which is characterised by λk′ +1 (LGt′ ) = Ω(1)
+λk+1 (LG ) and ρG (k). By the higher-order Cheeger inequal-
+                                                                        and ρGt′ (k ′ ) = O(k ′−8 · log−2γ (nt′ )) for some k ′ ∈ N.
+ity, a low value of ρG (k) ensures that V can be partitioned
+into k clusters, each of which has conductance at most                  Notice that, since both the number of vertices nt in time t
+ρG (k); on the other hand, a large value of λk+1 (LG ) im-              and the number of clusters could change, our above-defined
+plies that any (k + 1) partition of V would introduce some              dynamic gap assumption allows the underlying graph to
+A ⊂ V with ΦG (A) ⩾ ρG (k + 1) ⩾ λk+1 (LG )/2. Based                    gradually form a new cluster structure, e.g., O(logγ (n1 ))
+on this, Peng et al. (2017) introduced the parameter                    newly added vertices and their adjacent edges could initially
+                                                                        form a small new cluster which gradually “grows” into a
+                                  λk+1 (LG )
+                    ΥG (k) ≜                 ,                (2)       large one. On the other side, our assumption prevents the
+                                    ρG (k)                              disappearance of the underlying graph’s cluster-structure
+and showed that a large value of ΥG (k) is sufficient to                throughout the edge updates, which would make the objec-
+guarantee a good performance of spectral clustering. They               tive function of a clustering algorithm ill-defined.
+further showed that, for a graph G with m edges, spectral
+clustering runs in O(m · logβ m) time for constant β ∈ R+ .
+
+                                                                    3
+                            Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+3. Dynamic Cluster-Preserving Sparsifiers                             us to apply spectral clustering on H, and reason about the
+                                                                      conductance of its returned clusters in G.
+A graph sparsifier is a sparse representation of an input
+graph that inherits certain properties of the original dense          Lemma 3.2. Let G be a graph with ΥG (k) = Ω(k) for
+graph, and their efficient construction plays a key role in           some k ∈ N with optimal clusters {Si }ki=1 , and H its clus-
+designing a number of nearly-linear time graph algorithms.            ter preserving sparsifier. Let {Pi }ki=1 be the output of spec-
+However, typical constructions of graph sparsifiers are based         tral clustering on H, and without loss of generality let the
+on fast Laplacian solvers, making them difficult to imple-            optimal correspondence of Pi be Si for any 1 ⩽ i ⩽ k.
+ment in practice. To overcome this, Sun & Zanetti (2019)              Then, it holds with high probability for any 1 ⩽ i ⩽ k that
+studied a variant of graph sparsifiers for graph clustering,                                                 
+and introduced the notion of a cluster-preserving sparsifier:                                           k2
+                                                                               volG (Pi △Si ) = O               · volG (Si ),
+                                                                                                      ΥG (k)
+Definition 3.1 (Cluster-preserving sparsifier). Let G =
+(V, E) be any graph with k clusters, and {Si }ki=1 a k-                                                                
+                                                                                                                k2
+way partition of G corresponding to ρG (k). We call a                            ΦG (Pi ) = O ΦG (Si ) +                    ,
+                                                                                                               ΥG (k)
+re-weighted subgraph H = (V, F ⊂ E, wH ) a cluster-
+preserving sparsifier of G if (i) ΦH (Si ) = O(k · ΦG (Si ))          where A△B ≜ (A \ B) ∪ (B \ A).
+for 1 ⩽ i ⩽ k, and (ii) λk+1 (LH ) = Ω(λk+1 (LG )).
+                                                                      3.2. Construction of Dynamic Cluster-Preserving
+To examine the two conditions of Definition 3.1, notice that
+                                                                           Sparsifiers
+graph G = (V, E) has exactly k clusters if (i) G has k dis-
+joint subsets S1 , . . . , Sk of low conductance, and (ii) any        Now we design an algorithm that constructs a cluster-
+(k + 1)-way partition of G would include some A ⊂ V                   preserving sparsifier under edge and vertex insertions, and
+of high conductance, which would be implied by a lower                our algorithm works as follows. Initially, for the input G1
+bound on λk+1 (LG ) due to (1). With the well-known eigen-            with n1 vertices, a well-defined structure of k clusters and
+gap heuristic and theoretical analysis on spectral cluster-
+ing (Peng et al., 2017), these two conditions ensure that the                                        C
+                                                                                            τ⩾                                   (3)
+k optimal clusters in G have low conductance in H as well.                                       λk+1 (LG1 )
+
+3.1. The SZ Algorithm                                                 for some constant C ∈ R+ , we run the SZ algorithm and
+                                                                      obtain a cluster-preserving sparsifier of G1 . In addition to
+We first present the algorithm in (Sun & Zanetti, 2019) for           storing the sparsifier H1 of G1 , the algorithm employs the
+constructing a cluster-preserving sparsifier; we call it the SZ       vector sp∗1 to store the values log n1 /degG1 (u) for every
+algorithm for simplicity. Given any input graph G = (V, E),           vertex u, which are used to sample adjacent edges of vertex
+the algorithm computes                                                u. See Algorithms 2 and 3 for formal description.
+                                                      
+                                1          log n                      Algorithm 2 SampleEdge(e, G, τ )
+       pu (v) ≜ min C ·                ·           ,1
+                           λk+1 (LG ) degG (u)                         1: Input: edge e = {u, v}, graph G = (V, E) of n ver-
+                                                                        tices, parameter τ ∈ R+
+                           1       log n                                  Output: edge e′ with weight w(e′ )
+      pv (u) ≜ min C ·           ·         ,1 ,
+                       λk+1 (LG ) degG (v)                                p(u, v) ← pu (v) + pv (u) − pu (v) · pv (u)
+for every e = {u, v}, where C ∈ R+ is some constant.                      Sample e with probability p(u, v)
+                                                                       2: if e is sampled then
+Then, the algorithm samples e = {u, v} with probability                3:    e′ ← e, w(e′ ) ← 1/p(u, v)
+pe ≜ pu (v) + pv (u) − pu (v) · pv (u), and sets the weight            4: else
+of every sampled e = {u, v} in H as wH (u, v) ≜ 1/pe .                 5:    e′ ← ∅, w(e′ ) ← 0
+By setting F as the set of the sampled edges, the algorithm            6: end if
+returns H = (V, F, wH ). Sun & Zanetti (2019) proved that,             7: Return e′ , w(e′ )
+                                e
+with high probability, H has O(n)    edges and is a cluster-
+preserving sparsifier of G.
+                                                                      Next, given the graph Gt currently constructed at time
+On the other side, while Definition 3.1 shows that the op-            t, its sparsifier Ht , and edge insertion e = {u, v}, the
+timal clusters Si (1 ⩽ i ⩽ k) of G have low conductance               algorithm compares for every vertex w the parameter
+in H, it doesn’t build the connection from the vertex sets            log nt+1 /degGt+1 (w) with sp∗t (w), the quantity used to
+of low conductance in H to the ones in G. In this paper,              sample the adjacent edges of w the last time, and checks
+we prove that such a connection holds as well; this allows            whether the two values change significantly. If it is the case,
+
+                                                                  4
+                             Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+                                                                    then the used sampling probability is too far from the “cor-
+Algorithm 3 StaticSZSparsifier(G, τ )                               rect” one when running the static SZ algorithm on Gt+1 ,
+ 1: Input: G = (V, E) of n vertices, parameter τ ∈ R+
+                                                                    and hence we resample all the edges adjacent to w with
+ 2: Output: Cluster preserving sparsifier H = (V, F, wH ),
+                                                                    the right sampling probability. Otherwise, we simply use
+    degree list sp∗                                                 the values stored in sp∗t to sample the upcoming edge e,
+ 3: F ← ∅
+                                                                    and include it in Ht+1 if e is sampled. See Algorithm 4 for
+ 4: for e ∈ E do
+                                                                    formal description3 , and Theorem 3.3 for its performance:
+ 5:   e′ , w(e′ ) ← SampleEdge(e, G, τ )                            Theorem 3.3. Let G1 = (V1 , E1 ) be a graph with n1 ver-
+ 6:   F ← F ∪ e′ , wH (e) ← w(e′ )                                  tices and a well-defined structure of k = e   O(1) clusters,
+ 7: end for n                    o                                  and {Gt } the sequence of graphs of {nt } vertices con-
+                 log n
+ 8: sp∗ ← deg            | u ∈ V                                    structed sequentially through an edge insertion at each
+                   G (u)
+ 9: Return H, sp∗                                                   time. Assuming graph GT at time T = O(poly(n1 ))
+                                                                                                      e
+                                                                    has a well-defined structure of O(1)    clusters and nT =
+                                                                    O(poly(n1 )), Algorithm 4 returns a cluster-preserving spar-
+                                                                    sifier HT = (VT , FT , wHT ) of GT with high probability,
+                                                                                  e T ). The algorithm’s amortised running
+                                                                    and |FT | = O(n
+Algorithm 4 UpdateSparsifier(Gt , Ht , sp∗t , e, τ )
+                                                                    time is O(1) per edge update.
+ 1: Input: Gt = (Vt , Et ), Ht = (Vt , Ft , wHt ), sp∗t , in-
+      coming edge e = {u, v}, parameter τ                           4. Dynamic Spectral Clustering Algorithm
+ 2: Output: Ht+1 = (Vt+1 , Ft+1 , wHt+1 ), sp∗t+1
+ 3: Vnew ← {u, v} \ Vt                                              This section presents our main dynamic spectral cluster-
+ 4: Gt+1 ← (Vt ∪ Vnew , Et ∪ e)                                     ing algorithm, and is organised as follows: In Section 4.1,
+ 5: Ht+1 ← (Vt ∪ Vnew , Ft , wHt )                                  we present the construction and update procedure of a con-
+ 6: sp∗t+1 ← sp∗t                                                   tracted graph, which is the data structure that summarises
+ 7: if Vnew ̸= ∅ then                                               the cluster structure of an underlying input graph and al-
+ 8:    e′ , w(e′ ) ← SampleEdge(e, Gt+1 , τ )                       lows for quick updates to the clusters. The properties of
+ 9:    Ft+1 ← Ft+1 ∪ e′ , wHt+1 (e) ← w(e′ )                        dynamic contracted graphs are analysed in Section 4.2. We
+10:    if u ∈ Vnew then                                             present the main algorithm and analyse its performance in
+                         log nt+1
+11:        sp∗t+1 (u) ← deg     (u)
+                                                                    Section 4.3.
+                           Gt+1
+
+12:     end if
+13:     if v ∈ Vnew then                                            4.1. Construction and Update of Contracted Graphs
+                         log nt+1
+14:        sp∗t+1 (u) ← deg     (v)                                 For any input graph Gt = (Vt , Et ) of nt vertices, its dy-
+                           Gt+1
+
+15:   end if                                                        namic cluster-preserving sparsifier Ht = (Vt , Ft , wHt ), and
+16: end if            n                                             its k clusters P1 , . . . , Pk returned from running spectral clus-
+                                             log nt+1
+      Vdoubled ←        v̂ ∈ Vt+1 \ Vnew | deg           > 2·       tering on Ht , we apply Algorithm 5 to construct a contracted
+                                               Gt+1 (v̂)
+                                    ∗
+                                           o                        graph G e t = (Vet , Eet , w e ) of Gt . Notice that we introduce
+                    log nt+1      spt (v̂)                                                       Gt
+      sp∗t (v̂) or deg     (v̂) <
+                   Gt+1             2                               the set of non-contracted vertices Vetnc = ∅, which will be
+17: if |Vdoubled | > 0 then                                         used later.
+18:    for û ∈ Vdoubled do                                         Lemma 4.1. The algorithm ContractGraph(Ht , P) returns
+19:      Ft+1 ← Ft+1 \ EHt+1 (û)                                   Ge t = (Vet , E
+                                                                                  et , w e ) in O (|Ft |) time.
+                                                                                        Gt
+20:      for ê ∈ EGt+1 adjacent to û do
+21:          ê′ , w(ê′ ) ← SampleEdge(ê, Gt+1 , τ )              Next we discuss how the contracted graph is updated under
+22:          Ft+1 ← Ft+1 ∪ ê′ , wHt+1 (ê) ← w(ê′ )               edge and vertex insertions. Given the graph Gt = (Vt , Et )
+23:      end for                                                    with nt vertices that satisfies λk+1 (LGt ) = Ω(1) and
+                             log nt+1
+24:      sp∗t+1 (û) ← deg
+                           Gt+1     (û)                            ρGt (k) = O(k −8 log−2γ (nt )) for some constant γ ∈ R+ ,
+25:    end for                                                      its cluster-preserving sparsifier Ht = (Vt , Ft , wHt ), the cor-
+26: else                                                            responding contracted graph G    e t = (Vet , E
+                                                                                                                  et , w e ), and the
+                                                                                                                        Gt
+27:    e′ , w(e′ ) ← SampleEdge(e, Gt+1 , τ )                           3
+28:    Ft+1 ← Ft+1 ∪ e′ , wHt+1 (e) ← w(e′ )                              Notice that, since λk+1 (LGt ) = Ω(1) for any graph Gt ex-
+                                                                    hibiting a well-defined structure of k clusters and it holds for
+29: end if                                                          GT at time T = O(poly(n1 )) that nT = O(poly(n1 )), i.e.,
+30: Return Ht+1 , sp∗t+1                                            log nT = O(log n1 ), by setting C to be a sufficiently large con-
+                                                                    stant, τ · log n1 is the right parameter for defining the sampling
+                                                                    probability at time T = O(poly(n1 )).
+
+                                                                5
+                             Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+Algorithm 5 ContractGraph(Ht , P)                                       for each e ∈ Enew . We assume that |Enew | ⩽ logγ (nt ) for
+ 1: Input:         Cluster preserving sparsifier Ht            =        some γ ∈ R+ .
+    (Vt , Ft , wHt ), partition P = {P1 , . . . Pk }                    We first prove that the clusters returned by spectral cluster-
+ 2: Output: Contracted graph G         e t = (Vet , E
+                                                    et , w e )
+                                                          Gt            ing on Ht also have low conductance in Gt . Notice that, as
+ 3: Let pi be a representative super vertex for each cluster            the underlying graph Gt could be dense over time, running
+    Pi ∈ P.                                                             a clustering algorithm on its sparsifier Ht with e
+                                                                                                                         O(nt ) edges
+ 4: Vetc ← {pi | Pi ∈ P}, Vetnc ← ∅
+                                                                        is crucial to achieve the algorithm’s quick update time.
+     e
+ 5: Vt ← V  etnc ∪ Vetc
+                                                                        Lemma 4.3. Itholds with high probability that ΦHt (Pi ) =
+     e
+ 6: Et ← ∅                                                              O k 2 · ρGt (k) and ΦGt (Pi ) = O k 2 · ρGt (k) for all
+ 7: for {pi , pj } ∈ V  etc × Vetc do
+                                                                        Pi ∈ P.
+ 8:     et ← E
+        E        et ∪ {pi , pj }
+ 9:     wGet (pi , pj ) ← wHt (Pi , Pj )                                Next, we define the event E1 that
+10: end for                                                                                                            
+                e t = (Vet , E
+                             et , w e )                                               ΦHt (Pi ) = O k −6 · log−2γ (nt )
+11: Return G                       Gt
+                                                                        and                                            
+                                                                                      ΦGt (Pi ) = O k −6 · log−2γ (nt )
+                                                 e t+1
+upcoming edge insertion e = {u, v}, we construct G                      hold for all Pi ∈ P. By the fact that λk+1 (Gt ) = Ω(1),
+     e
+from Gt as follows:                                                     ρGt (k) = O(k −8 · log−2γ (nt )) and Lemma 4.3, E1 holds
+                                                                        with high probability. We further define the event E2 that
+   • If either u or v is a new vertex, the algorithm adds the                 (1/2) · degGt (u) ⩽ degHt (u) ⩽ (3/2) · degGt (u)
+     vertex to Ge t as a non-contracted vertex. The algorithm
+     sets Vnew = {u, v} \ Vt , and Vt+1 = Vt ∪ Vnew .                   hold for all u ∈ Vt , and know from the proof of Theorem 3.3
+                                                                        that E2 holds with high probability. In the following we
+   • For every existing vertex w ∈ {u, v} \ Vnew that                   assume that both of E1 and E2 happen.
+     belongs to some Pi , the algorithm checks whether
+     degGt+1 (w) > 2 · degGr (w), where degGr (w) for                   Next, we study the relationship between the cluster-structure
+                                                                        in Gt′ and the one in Ge t′ . Recall that the number of vertices
+     r ⩽ t is the degree of w when the contracted graph
+                                                                           e
+                                                                        in Gt′ is much smaller than the one in Gt′ . We first prove
+     was constructed. If it is the case, the algorithm pulls
+     w out of pi , and adds it to Vet+1 , i.e., the uses a single       that there are ℓ disjoint vertex sets of low conductance in
+               e t+1 to represent w.                                    Gt′ if and only if there are ℓ such vertex sets in Ge t′ .
+     vertex in G
+                                                                        Lemma 4.4. The following statements hold:
+   • The algorithm adjusts the edge weights in the con-
+     tracted graph based on the type of the vertices. For                  • If ρGt′ (ℓ) ⩽    log−α (nt′ ) holds for some
+     instance, the algorithm sets wGet+1 (u, v) = 1 if both                  ℓ ∈ N and α > 0, then ρGe ′ (ℓ) =
+     of u and v are non-contracted vertices, and decreases                                                         t    
+                                                                             max O log−0.9α (nt′ ) , O k −6 · log−γ (nt′ ) .
+     the value of wGet+1 (Pu , Pu ) if vertex u pulls out of
+     Pu ∈ P.                                                               • If ρGe ′ (ℓ)  ⩽   log−δ (nt′ ) holds for some
+                                                                                   t
+                                                                             ℓ ∈n     N and δ  > 0 , then ρGt′ (ℓ)     =
+                                                                                          −δ           −6     −γ
+                                                                                                                    o
+See Algorithm 7 in the appendix for the formal description                   max O log (nt′ ) , O k · log (nt′ ) .
+of the algorithm UpdateContractedGraph(Gt , G  e t , e).
+Lemma 4.2. The amortised time complexity                      of        Secondly, we show that there is a close connection between
+                           e t , e) is O(1).
+UpdateContractedGraph(Gt , G                                            λℓ+1 (LGt′ ) and λℓ+1 (LGe ′ ) for any ℓ ∈ N.
+                                                                                                    t
+
+                                                                        Lemma 4.5. The following statements hold:
+4.2. Properties of the Contracted Graph
+                                                                           • If λℓ+1 (LGe ′ ) = Ω(1) for some ℓ ∈ N, then
+Now we analyse the properties of the contracted graph.                                    t               
+Since the amortised time complexity for every edge up-                       λℓ+1 LGt′ = Ω log−α (nt′ )/ℓ6 for constant α >
+date (Theorem 3.3 and Lemma 4.2) remains valid when we                       0.
+                                                                                             
+consider a sequence of edge updates at every time, without                 • If λℓ+1 LGt′ = Ω(1) holds for some ℓ ∈ N, then
+loss of generality let Gt′ = (Vt ∪ Vnew , Et ∪ Enew ) be the                 λℓ+1 (LGe ′ ) = Ω(1).
+                                                                                       t
+graph after a sequence of edge updates from Gt = (Vt , Et )
+with nt vertices, and Ge t′ be the contracted graph of Gt′ con-         Lemmas 4.4 and 4.5 imply that the cluster-structures in Gt′
+structed by sequentially running UpdateContractedGraph                      e t′ are approximately preserved.
+                                                                        and G
+
+                                                                    6
+                               Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+4.3. Main Algorithm                                                        λℓ+1 (LGT ) = Ω(1) and ρGT (ℓ) = O(ℓ−1 log−α (nT )) for
+                                                                           α ∈ R+ . Then, with high probability Algorithm 6 returns
+Our main algorithm consists of the preprocessing stage, up-
+                                                                           P1 , . . . Pℓ with ΦGT (Pi ) = O ℓ · log−0.9α (nT ) for every
+date stage, and query stage. They are described as follows:
+                                                                           1 ⩽ i ⩽ ℓ. The algorithm’s running time for returning
+Preprocessing Stage. For the initial input graph G1 =                                              e 1 |). Afterwards, the algorithm’s
+                                                                           the clusters of G1 is O(|E
+(V1 , E1 ), we apply (i) StaticSZSparsifier(G1 , τ ) to ob-                amortised update time is O(1), and amortised query time is
+tain H1 = (V1 , F1 , wH1 ), (ii) SpectralClustering(H1 , k)                o(nT ).
+to obtain initial partition P = {P1 , . . . Pk }, and (iii)
+ContractGraph(H1 , P) to obtain G e 1 = (Ve1 , E
+                                               e1 ).
+                                                                           Proof. The algorithm’s running time and approximation
+Update Stage. When a new edge arrives at time t, we apply                  guarantee on G1 follows from (Macgregor & Sun, 2022), so
+Algorithm 4 and the update procedure of the contracted                     we only need to analyse the dynamic update stage. We first
+graph (Section 4.1) to dynamically maintain Ht and Get .                   analyse the conductance of every output Pi . Notice that, if
+                                                                           Lines 4–6 of Algorithm 6 are executed, then by Lemmas 3.2,
+Query Stage. When a query for a new clustering starts at
+                                                                           4.4 and 4.5 the approximation guarantee holds. Otherwise,
+time T , the algorithm performs the following operations,
+                                                                           Lines 7–12 are executed, then by the dynamic gap condition
+where γ is the constant satisfying γ > β and γ > 0.9α:
+                                                                           and Lemma 3.2 the approximation guarantee holds as well.
+
+   • For r being the last time at which G e t is recomputed,               Next, we prove the running time guarantee. The O(1) amor-
+     the algorithm checks if T − r ⩽ logγ (nr ), i.e., the                 tised update time of Ht and G  e t follows by Theorem 3.3
+     number of added edges after the last reconstruction of                and Lemma 4.2. For the query at time T , notice that if
+     the contracted graph is less than logγ (nr ). If it is the            Lines 4–6 are executed, then the query time is at most
+     case, then the algorithm runs spectral clustering on the              O(|VeT |3 ) = O((k + logγ (nT ))3 ) = eO(1). Note, the super
+     contracted graph G eT .                                               vertices are used as sketches to quickly update the clus-
+                                                                           ter assignment of each vertex; otherwise, Lines 7–12 are
+   • Otherwise, the algorithm runs spectral clustering on                  executed, and the query time isdominated by spectral   clus-
+     HT . It also recomputes Ge T , by first computing Ge r′ ,                                                           
+                                                                                                                    β
+                                                                           tering’s time complexity of O nT · log (nT ) . Since this
+     where r′ is the last time at which the dynamic gap
+     assumption holds, and updating G   e r′ to G
+                                                e T with the               only happens every logγ (nr ) = O(logγ (nT )) edge updates,
+     edge updates between time r′ and T .                                  the amortised query time is O(nT · logβ−γ (nT )) = o(nT ).
+                                                                           Finally, we show that the number of clusters ℓ can be iden-
+See Algorithm 6 for formal description.                                    tified with our claimed time complexity. Notice that, if
+                                                                           Lines 4–6 of the algorithm are executed, then by Lem-
+Algorithm 6 QuerySpecClustering(GT , HT , G              e T , γ, ℓ)       mas 4.4 and 4.5 we can detect the spectral gap in GT us-
+                                                                           ing Ge T ; hence we can choose ℓ in o(nt ) time. Otherwise,
+ 1: Input: Graphs GT , HT , and G        e T , γ ∈ R+ , and ℓ ∈ N
+                                                                           Lines 7–12 are executed. In this case, we run spectral clus-
+ 2: Output: Partition P = {P1 , . . . Pℓ }
+                                                                           tering with different values of ℓ′ and find the correct value
+ 3: Let r be the last time at which G      e T is recomputed.                                                                e r′ ). Since
+                                                                           of ℓ (The same procedure is done to recompute G
+ 4: if T − r ⩽ logγ (nr ) then                                                         e
+                                                                           there are O(1) clusters in total, we achieve the same query
+ 5:    P1 , . . . , Pℓ ← SpectralClustering(G      e T , ℓ)                time guarantee.
+ 6:    Return {P1 , . . . , Pℓ }
+ 7: else
+ 8:    P1 , . . . , Pℓ ← SpectralClustering(HT , ℓ)
+ 9:    Recompute G       e r′ , where r′ is the last time at which         5. Experiments
+       the dynamic gap assumption holds                                    We experimentally evaluate the performance of our algo-
+10:    Update G     e r′ to G e T with the edge updates between
+                                                                           rithm on synthetic and real-world datasets. We report the
+                ′
+       time r and T                                                        clustering accuracy of all tested algorithms using the Ad-
+11:    Return {P1 , . . . , Pℓ }                                           justed Rand Index (ARI) (Rand, 1971), and compute the
+12: end if                                                                 average and standard deviation over 10 independent runs.
+                                                                           Algorithms were implemented in Python 3.12.1 and exper-
+Theorem 4.6. Let G1 = (V1 , E1 ) be a graph with n1 ver-                   iments were performed using a Lenovo ThinkPad T15G,
+tices and k = eO(1) clusters, and {Gt } the sequence of                    with an Intel(R) Xeon(R) W-10855M CPU@2.80GHz pro-
+graphs of {nt } vertices constructed through an edge in-                   cessor and 126 GB RAM. Our code can be downloaded
+sertion at each time satisfying the dynamic gap assump-                    from https://github.com/steinarlaenen/Dynamic-Spectral-
+tion. Assume that GT at query time T has ℓ clusters, i.e.,                 Clustering-With-Provable-Approximation-Guarantee.
+
+                                                                       7
+                                       Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+
+                                                    SC on GT          SC on HT                     eT
+                                                                                             SC on G
+                                                  Increase k                                  Decrease k
+                                     1.00                                     1.00
+
+                         ARI         0.95                                     0.95
+
+
+                                     0.90                                     0.90
+                                            2 3 4 5 6 7 8 9 10 11                    2 3 4 5 6 7 8 9 10 11
+                                                      (a)                                           (b)
+
+
+                                     100
+
+                          Time (s)
+                                                                                20
+                                      50
+
+                                       0                                         0
+                                            2 3 4 5 6 7 8 9 10 11                    2 3 4 5 6 7 8 9 10 11
+                                                      (c)                                           (d)
+
+Figure 2. Results on the two versions of our dynamic SBM. Figures (a) and (b) report the average ARI score at each time T for the
+clustering results on GT , HT , and G
+                                    e T ; Figures (c) and (d) report the running time in seconds at each time T . Shaded regions indicate the
+standard deviation.
+
+
+5.1. Results on Synthetic Data                                                3. We construct a cluster-preserving sparsifier H1 using
+                                                                                 Algorithm 3, which we dynamically update using Al-
+We study graphs generated from the stochastic block
+                                                                                 gorithm 4 with sampling parameter τ = 3, and cluster
+model (SBM), and introduce two dynamic extensions to
+                                                                                 each subsequent HT .
+generate new clusters and merge existing clusters.
+SBM with increasing number of clusters. We generate the                   At each time T , we run spectral clustering with k = 10 +
+first graph G1 based on the standard SBM, and set k = 10                  T − 1 on all three graphs, and report the running times
+and the number of vertices in each cluster {Si }ki=1 as nk =              and ARI scores. We set p = 0.1, q = 0.01, r1 = 0.95, and
+10, 000. For every pair of u ∈ Si and v ∈ Sj we include                   s = 0.00001, and plot the results in the left plots of Figure 2.
+edge {u, v} with probability p if i = j, and with probability             We can see that at every time T , spectral clustering on GT
+q if i ̸= j.                                                              returns the perfect clustering, and spectral clustering on GeT
+To update the graph, we generate a batch of edge updates                  and HT returns marginally worse clustering results. On
+in two steps: first, we randomly select a subset Q ⊂ V (G1 )              the running time, we see that running spectral clustering
+                                                                          on GT , HT and G  e T takes around 100 seconds, 50 seconds,
+such that |Q| = nnew = 400, and for any u, v ∈ Q we
+include edge e = {u, v} in the graph with probability r1 ;                and less than 1 second respectively. This highlights that our
+setting r1 sufficiently large ensures that the set Q forms a              algorithm returns nearly-optimal clusters with much faster
+new cluster in the graph. Second, for any u, v ∈ V (G1 )                  running time than running spectral clustering on GT or HT .
+we include edge e = {u, v} with probability s. The edges                  Next, we compare the spectral gaps of LGT and LGeT for ev-
+sampled from these two processes form one edge update                     ery T , and Table 1 reports that these gaps are well preserved.
+batch. We sample 10 such batches (ensuring no new clusters                This demonstrates that, as what we prove earlier, the new
+overlap), each inducing a new cluster and additional noise.               cluster-structure of GT can be indeed identified from G   eT .
+To cluster each GT , we run spectral clustering (SC) on three
+graphs:                                                                   Table 1. Spectral gaps in LGT and LGe T for SBM with increasing
+                                                                          number of clusters. We report λk+T (LGT )/λk+T −1 (LGT ) and
+  1. We run spectral clustering on the full graph GT .                    λk+T (LGe T )/λk+T −1 (LGe T ) at each time T .
+
+  2. We construct the contracted graph G  e 1 at time T = 1,              T      2     3      4       5     6     7     8     9     10    11
+     and incrementally update G  e 1 using the procedure de-
+                                                                          GT     6.3   5.8    5.8     5.7   5.7   5.7   5.6   5.6   5.6   5.5
+     scribed in Section 4.1. Then, we run spectral clustering             eT
+              eT .                                                        G      9.3   9.2    9.0     8.7   8.5   8.1   7.8   7.5   7.1   6.8
+     on each G
+
+                                                                      8
+                                                 Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+
+                                                               SC on GT         SC on HT                       eT
+                                                                                                         SC on G
+                                                              MNIST                                       EMNIST
+                                               0.80
+
+                                                                                        0.50
+                         ARI
+                                               0.60
+
+                                                                                        0.00
+                                                      2 10 18 26 34 42 50 58                   2   22     42     62     82     102
+                                                                (a)                                             (b)
+
+
+
+
+                         Cumulative Time (s)
+                                               400
+                                                                                        1000
+
+                                               200
+                                                                                         500
+
+                                                 0                                         0
+                                                      2 10 18 26 34 42 50 58                   2   22     42     62     82     102
+                                                                (c)                                             (d)
+
+Figure 3. Results on MNIST and EMNIST. Figures (a) and (b) report the average ARI scores at each time T for the clustering results on
+GT , HT , and G
+              e T ; Figures (c) and (d) report the average cumulative running time in seconds at each time T . Shaded regions indicate the
+standard deviation.
+
+
+SBM with decreasing number of clusters. We set k = 25,
+                                                                                    Table 2. Spectral gaps in LGT and LGe T for SBM with decreasing
+and the first graph G1 is generated based on the standard
+                                                                                    number of clusters. We report λk−T +2 (LGT )/λk−T +1 (LGT )
+SBM with parameters p and q. For clusters {Si }5i=1 we set                          and λk−T +2 (LGe T )/λk−T +1 (LGe T ) at each time T .
+|Si | = 20, 000, and for {Si }25
+                              i=6 we set |Si | = 500; hence
+there are 5 large and 20 small clusters.                                            T      2       3      4       5      6       7     8     9     10    11
+To update the graph, we generate a batch of edge updates as                         GT     4.5     4.4    4.2     4.0    4.0     3.9   3.8   3.8   3.8   3.6
+follows: we randomly choose two clusters Si and Sj such                             eT
+                                                                                    G      8.3     8.0    7.5     7.4    7.4     7.0   6.8   6.3   5.8   5.4
+that |Si | = |Sj | = 500, and for any u ∈ Si and v ∈ Sj we
+include edge e = {u, v} in the graph with probability r2 .
+Setting r2 sufficiently large ensures that clusters Si and Sj
+merge. Similarly as before, for any u, v ∈ V (G1 ) we also                          classes of handwritten letters and has 145, 600 images. We
+include edge e = {u, v} with probability s. All the edges                           construct a k-nearest neighbour graph for each dataset, and
+sampled by these two processes form a single batch update.                          set k = 100 (resp. k = 200) for MNIST (resp. EMNIST).
+We sample 10 such batches, and there are k = 15 clusters                            We select four classes (clusters) at random; the chosen ver-
+at final time T = 11. At each time T , we run spectral                              tices and adjacent edges in the k-nearest neighbour graph
+clustering with k = 25 − T + 1 on all three graphs. We set                          form G1 . To construct the sequence of updates, we select
+p = 0.1, q = 0.001, r2 = 0.95, and s = 0.00001, and plot                            one new cluster (resp. two) at random for MNIST (resp.
+the results in the right plots of Figure 2.                                         EMNIST), and add the edges inside the new cluster as
+Similar to the SBM with increasing number of clusters, at                           well as the ones between the new and existing clusters.
+every time T , spectral clustering on all three graphs returns                      We randomly partition these new edges into 10 batches of
+similar results. We further see that spectral clustering on                         equal size, and add these to the graph sequentially. We
+ e T has lower running time than the one on GT and HT .                             recompute G e T after one class (resp. two) is streamed for
+G
+The spectral gaps in GT and G   e T are reported in Table 2.                        MNIST (resp. EMNIST), and report the results in Figure 3.
+                                                                                    The update/reconstruction time is included in the running
+5.2. Results on Real-World Data                                                     time.
+
+We further evaluate our algorithm on the MNIST dataset (Le-                         Our experiments on real-world data further confirm that, as
+cun et al., 1998), which consists of 10 classes of handwritten                      the size of the underlying graph and its number of clusters
+digits and has 70, 000 images, and the “letter” subset of the                       increase over time, our designed algorithm has much lower
+EMNIST dataset (Cohen et al., 2017), which consists of 26                           running time compared with repeated execution of spectral
+                                                                                    clustering, while producing comparable clustering results.
+
+                                                                                9
+                           Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+Impact Statement                                                       ternational Conference on Machine Learning (ICML’18),
+                                                                       pp. 3420–3429, 2018.
+This paper presents work whose goal is to advance the field
+of Machine Learning. There are many potential societal               Ng, A. Y., Jordan, M. I., and Weiss, Y. On spectral cluster-
+consequences of our work, none of which we feel must be                ing: Analysis and an algorithm. In Advances in Neural
+specifically highlighted here.                                         Information Processing Systems 15 (NeurIPS’01), pp.
+                                                                       849–856, 2001.
+Acknowledgements                                                     Ning, H., Xu, W., Chi, Y., Gong, Y., and Huang, T. Incre-
+This work is supported by an EPSRC Early Career Fellow-                mental spectral clustering with application to monitoring
+ship (EP/T00729X/1). Part of this work was done when                   of evolving blog communities. In Proceedings of the
+He Sun was visiting the Simons Institute for the Theory of             2007 SIAM International Conference on Data Mining
+Computing in Fall 2023.                                                (SDM), pp. 261–272, 2007.
+
+                                                                     Peng, R., Sun, H., and Zanetti, L. Partitioning Well-
+References                                                             Clustered Graphs: Spectral Clustering Works! SIAM
+                                                                       Journal on Computing, 46(2):710–743, 2017.
+Beimel, A., Kaplan, H., Mansour, Y., Nissim, K., Saranu-
+  rak, T., and Stemmer, U. Dynamic algorithms against                Rand, W. M. Objective criteria for the evaluation of cluster-
+  an adaptive adversary: generic constructions and lower               ing methods. Journal of the American Statistical Associ-
+  bounds. In 54th Annual ACM Symposium on Theory of                    ation, 66(336):846–850, 1971.
+  Computing (STOC’22), pp. 1671–1684, 2022.
+                                                                     Saranurak, T. and Wang, D. Expander decomposition
+Bernstein, A., van den Brand, J., Gutenberg, M. P.,                    and pruning: Faster, stronger, and simpler. In 30th
+  Nanongkai, D., Saranurak, T., Sidford, A., and Sun, H.               Annual ACM-SIAM Symposium on Discrete Algorithms
+  Fully-dynamic graph sparsifiers against an adaptive adver-           (SODA’19), pp. 2616–2635, 2019.
+  sary. In 49th International Colloquium on Automata, Lan-
+  guages, and Programming (ICALP’22), pp. 20:1–20:20,                Sun, H. and Zanetti, L. Distributed graph clustering and
+  2022.                                                                sparsification. ACM Transactions on Parallel Computing,
+                                                                       6(3):17:1–17:23, 2019.
+Chung, F. and Lu, L. Concentration inequalities and mar-
+  tingale inequalities: a survey. Internet mathematics, 3(1):        Thorup, M. Fully-dynamic min-cut. Combinatorica, 27(1):
+  79–127, 2006.                                                        91–127, 2007.
+
+Cohen, G., Afshar, S., Tapson, J., and Schaik, A. V. Emnist:         Tropp, J. A. User-friendly tail bounds for sums of random
+  Extending MNIST to handwritten letters. In 2017 Inter-               matrices. Foundations of Computational Mathematics,
+  national Joint Conference on Neural Networks (IJCNN),                12(4):389–434, 2012.
+  pp. 2921–2926, 2017.                                               von Luxburg, U. A tutorial on spectral clustering. Statistics
+                                                                       and Computing volume, 17(4):395–416, 2007.
+Dhanjal, C., Gaudel, R., and Clémençon, S. Efficient eigen-
+  updating for spectral graph clustering. Neurocomputing,
+ 131:440–452, 2014.
+
+Lecun, Y., Bottou, L., Bengio, Y., and Haffner, P. Gradient-
+  based learning applied to document recognition. Proceed-
+  ings of the IEEE, 86(11):2278–2324, 1998.
+
+Lee, J. R., Gharan, S. O., and Trevisan, L. Multiway spec-
+  tral partitioning and higher-order Cheeger inequalities.
+  Journal of the ACM, 61(6):1–30, 2014.
+
+Macgregor, P. and Sun, H. A tighter analysis of spectral
+ clustering, and beyond. In 39th International Confer-
+ ence on Machine Learning (ICML’22), pp. 14717–14742,
+ 2022.
+
+Martin, L., Loukas, A., and Vandergheynst, P. Fast approxi-
+ mate spectral clustering for dynamic networks. In 35th In-
+
+                                                                10
+                                 Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+A. Omitted Details from Section 3
+The section presents the details omitted from Section 3, and is organised as follows. We prove Lemma 3.2 in Section A.1,
+and prove Theorem 3.3 in Section A.2.
+
+A.1. Proof of Lemma 3.2
+We first prove a structure theorem. We define the vectors χ1 , . . . χk to be the indicator vectors of the optimal clusters
+S1 , . . . , Sk in G, where χi (u) = 1 if u ∈ Si , and χi = 0 otherwise. We further use ḡ1 , . . . , ḡk to denote the indicator
+vectors of the optimal clusters S1 , . . . Sk in G, normalised by the degrees in H, i.e.,
+                                                                                   1
+                                                                               DH
+                                                                                2
+                                                                                  χi
+                                                                      ḡi ≜        1       .                                         (4)
+                                                                              ∥DH
+                                                                                2
+                                                                                  χi ∥
+
+Theorem A.1. Let S1 , . . . , Sk be a k-way partition of G achieving ρG (k), and ΥG (k) = Ω(k), and {fi }ki=1 be first k
+eigenvectors of LH and let {ḡi }ki=1 be defined as in (4) above. Then, the following statements hold:
+
+  1. For any i ∈ [k], there is fbi ∈ Rn , which is a linear combination of f1 , . . . , fk , such that ∥ḡi − fbi ∥2 = O (k/ΥG (k)) .
+                                                                                                                   Pk              2
+  2. There are vectors
+                        gb1 , . . . , gbk , each of which is a linear combination of ḡ1 , . . . , ḡk , such that i=1 ∥fi − gbi ∥ =
+          2
+     O k /ΥG (k) .
+
+                   Pk                                                                                                Pn
+Proof. Let fbi = j=1 ⟨ḡi , fj ⟩fj , and we write ḡi as a linear combination of the vectors f1 , . . . , fn by ḡi = j=1 ⟨ḡi , fj ⟩fj .
+Since fbi is a projection of ḡi , we have that ḡi − fbi is perpendicular to fbi and
+                                                                                              
+                                 2                       2      Xn                 k
+                                                                                   X                 n
+                                                                                                     X
+                     ḡi − fbi       = ∥ḡi ∥ − fbi
+                                             2
+                                                             =  ⟨ḡi , fj ⟩2  −  ⟨ḡi , fj ⟩2  =   ⟨ḡi , fj ⟩2 .
+                                                                     j=1                           j=1                       j=k+1
+
+
+Now, let us consider the quadratic form
+                                                                                                                    
+                                                              Xn                                   n
+                                                                                                   X
+                                            ḡi⊺ LH ḡi =           ⟨ḡi , fj ⟩fj⊺  LH                  ⟨ḡi , fj ⟩fj 
+                                                              j=1                                  j=1
+                                                             n
+                                                             X
+                                                        =          ⟨ḡi , fj ⟩2 λj (LH )
+                                                             j=1
+                                                                                           2
+                                                        ⩾ λk+1 (LH ) ḡi − fbi
+                                                                                                   2
+                                                        = Ω (λk+1 (LG )) ḡi − fbi                     ,                             (5)
+
+where the second to last inequality follows by the fact that λi (LH ) ⩾ 0 holds for any 1 ⩽ i ⩽ n, and the last inequality
+follows because H is a cluster preserving sparsifier of G. This gives us that
+                                                                                                                             !2
+                                                       X                               ḡi (u)                   ḡi (v)
+                                     ḡi⊺ LH ḡi =              wH (u, v)        p                         −p
+                                                     (u,v)∈EH
+                                                                                       degH (u)                 degH (v)
+                                                                                                                              !2
+                                                       X                               χi (u)                     χi (v)
+                                               =                wH (u, v)        p                         −p
+                                                     (u,v)∈EH
+                                                                                       volH (Si )                volH (Si )
+                                                     wH (Si , V \ Si )
+                                               =
+                                                       volH (Sj )
+                                               = O (k · ρG (k)) ,                                                                    (6)
+
+                                                                              11
+                           Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+where the last line holds because H is a cluster preserving sparsifier of G. Combining (5) with (6), we have that
+                                                                                           
+                                    b
+                                      2        ḡi⊺ LH ḡi    O (k · ρG (k))           k
+                              ḡi − fi ⩽                   ⩽                  =O              ,
+                                           Ω (λk+1 (LG ))     Ω (λk+1 (LG ))        ΥG (k)
+
+which proves the first statement of the theorem.
+                                                                                            Pk
+Now we prove the second statement. We define for any 1 ⩽ i ⩽ k that gbi =                           j=1 ⟨fi , ḡj ⟩ḡj , and have that
+
+                                        k
+                                        X                      k 
+                                                               X                                
+                                                       2                     2              2
+                                              ∥fi − gbi ∥ =          ∥fi ∥ − ∥b
+                                                                              gi ∥
+                                        i=1                    i=1
+                                                                     k X
+                                                                     X k
+                                                           =k−                   ⟨ḡj , fi ⟩2
+                                                                     i=1 j=1
+                                                               k            k
+                                                                                                     !
+                                                               X            X
+                                                           =             1−   ⟨ḡj , fi ⟩2
+                                                               j=1           i=1
+                                                               k 
+                                                               X                                2
+                                                                                                    
+                                                                      ∥ḡj ∥ − fbj
+                                                                            2
+                                                           =
+                                                               j=1
+                                                               k
+                                                               X                    2
+                                                           =         ḡj − fbj
+                                                               j=1
+                                                               k
+                                                               X                       
+                                                                      k
+                                                           =         O
+                                                            j=1
+                                                                   Υ G (k)
+                                                                      
+                                                                 k2
+                                                           =O            ,
+                                                                ΥG (k)
+
+where the last inequality follows by the first statement of Theorem A.1.
+
+Proof Sketch of Lemma 3.2. The proof follows Theorem 1.2 of (Peng et al., 2017) and Theorem 2 of (Macgregor & Sun,
+2022), which imply that every returned cluster Pi (1 ⩽ i ⩽ k) from spectral clustering on G satisfies that
+                                                                            
+                                                                  volG (Si )
+                                          volG (Pi △Si ) = O k ·
+                                                                    ΥG (k)
+
+and                                                                                        
+                                                                     k
+                                           ΦG (Pi ) = O ΦG (Si ) +                              ,
+                                                                   ΥG (k)
+where Si is the optimal correspondence of Pi in G. Since H is a cluster-preserving sparsifier of G, we know that
+ρH (k) = O(k · ρG (k)) and λk+1 (LH ) = Ω(λk+1 (LG )), which implies that
+                                                                                    
+                                       λk+1 (LH )   Ω(λk+1 (LG ))          1
+                             ΥH (k) =             =                =Ω        · ΥG (k) .                      (7)
+                                         ρH (k)      O(k · ρG (k))         k
+
+On the other side, compared with their work, we need to apply the bottom k eigenvectors of LH instead of LG to run
+spectral clustering. As such, combining (7) with the adjusted structure theorem (Theorem A.1) one can prove Lemma 3.2
+using the proof technique from (Macgregor & Sun, 2022) and (Peng et al., 2017).
+
+A.2. Proof of Theorem 3.3
+Let                                                 [ n                              o
+                                  Eresampled ≜ e       {u, v} ∈ EGt+1 | u ∈ Vdoubled
+
+                                                                12
+                               Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+be the set of all the edges that have been (re)-sampled by Algorithm 4, and
+
+                                                       Eold ≜ Et+1 \ Eresampled .
+
+Moreover, let                                                       (                    )
+                                                                        τ · log(nt+1 )
+                                                 p(t+1)
+                                                  u     (v) ≜ min                      ,1
+                                                                         degGt+1 (u)
+
+be the “ideal” sampling probability of an edge {u, v} if one runs the SZ algorithm from the scratch on Gt+1 , and let
+
+                                  q (t+1) (u, v) ≜ p(t+1)
+                                                    u     (v) + p(t+1)
+                                                                 v     (u) − p(t+1)
+                                                                              u     (v) · p(t+1)
+                                                                                           v     (u)
+
+be the probability that edge e is sampled if one runs the SZ algorithm from scratch at time t + 1. For any edge {u, v}, we use
+
+   • qe(u, v) ≜ q (r) (u, v)
+                 (r)
+   • peu (v) ≜ pu (v)
+                 (r)
+   • pev (u) ≜ pv (u)
+
+for some 1 ⩽ r ⩽ t + 1 to denote the sampling probability last used for edge {u, v} throughout the sequence of edge
+updates. Hence, we have qe(u, v) = q (t+1) (u, v) if {u, v} ∈ Eresampled , and qe(u, v) = q (r) (u, v) for some 1 ⩽ r ⩽ t + 1 if
+edge {u, v} ∈ Eold . By the algorithm description (Line 16 in Algorithm 4), we know that
+
+                                        τ · log(nt+1 )   τ · log(nr )   2 · τ · log(nt+1 )
+                                                       ⩽              ⩽                    .                                 (8)
+                                       2 · degGt+1 (u)    degGr (u)        degGt+1 (u)
+
+The following two concentration inequalities will be used in our analysis.
+Lemma A.2 (Bernstein’s Inequality (ChungP& Lu, 2006)). Let P  X1 , . . . ,Xn be independent random variables such that
+                                              n                n
+|Xi | ⩽ M for any i ∈ {1, . . . , n}. Let X = i=1 Xi , and R = i=1 E Xi2 . Then, it holds that
+                                                                                             
+                                                                           t2
+                                       P [|X − E [X] | ⩾ t] ⩽ 2 exp −                              .
+                                                                      2(R + M t/3)
+
+Lemma A.3 (Matrix Chernoff Bound (Tropp, 2012)). Consider a finite  P sequence {Xi } of independent,
+                                                                                                 P random, PSD
+matrices of dimension d that satisfy ∥Xi ∥ ⩽ R. Let µmin ≜ λmin (E [ i Xi ]) and µmax ≜ λmax (E [ i Xi ]). Then, it
+holds that                    "              !              #
+                                      X                                        µmin /R
+                                                                        e−δ
+                           P λmin          Xi ⩽ (1 − δ)µmin ⩽ d
+                                       i
+                                                                    (1 − δ)1−δ
+
+for δ ∈ [0, 1], and
+                                  "                    !                  #                      µmax /R
+                                           X                                             eδ
+                                P λmax            Xi       ⩾ (1 + δ)µmax ⩽ d
+                                             i
+                                                                                     (1 + δ)1+δ
+
+for δ ⩾ 0.
+
+We first prove the following result on the relationship of cut values between Gt+1 and Ht+1 .
+Lemma A.4. Let Gt+1 be a graph, and Ht+1 the sparsifier returned by Algorithm 4. Suppose for every {u, v} ∈ Et+1 that
+peu (v) < 1, then it holds for any non-empty subset A ⊂ Vt+1 that
+                                                                                             
+                                                                             1
+                        P |wHt+1 (A, Vt+1 \ A) − wGt+1 (A, Vt+1 \ A)| ⩾ · wGt+1 (A, Vt+1 \ A)
+                                                                             2
+                                                                              
+                                           −τ · log nt+1 · wGt+1 (A, Vt+1 \ A)
+                               ⩽ 2 · exp
+                                                     10 · volGt+1 (A)
+
+                                                                    13
+                             Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+Proof. For any edge e = {u, v}, we define the random variable Ye by
+                                             (
+                                                  1
+                                                       with probability qe(u, v)
+                                       Ye ≜ qe(u,v)
+                                                0      otherwise.
+
+We also define                                                         X
+                                                     Z≜                                   Ye ,
+                                                            e∈EGt+1 (A,Vt+1 \A)
+
+and have that
+                           X                                           X
+    E[ Z ] =                                E[ Ye ] =                                        qe(u, v) · qe(u, v)−1 = wGt+1 (A, Vt+1 \ A).
+                e={u,v}∈EGt+1 (A,Vt+1 \A)               e={u,v}∈EGt+1 (A,Vt+1 \A)
+
+
+
+To prove a concentration bound on this degree estimate, we apply the Bernstein inequality (Lemma A.2), for which we need
+to bound the second moment                               X
+                                          R≜                            E[ Ye2 ].
+                                                    e={u,v}∈EGt+1 (A,Vt+1 \A)
+
+We get that
+
+                                   X                                            2                  X
+                                                                         1                                               1
+                   R=                                qe(u, v) ·                       =
+                                                                      qe(u, v)                                        qe(u, v)
+                         e={u,v}∈EGt+1 (A,Vt+1 \A)                                        e={u,v}∈EGt+1 (A,Vt+1 \A)
+                                   X                      1
+                     ⩽                                                                                                                       (9)
+                                                       peu (v)
+                         e={u,v}∈EGt+1 (A,Vt+1 \A)
+
+                                   X                   2 · degGt+1 (u)
+                     =                                                                                                                      (10)
+                                                        τ · log(nt+1 )
+                         e={u,v}∈EGt+1 (A,Vt+1 \A)
+
+                         2 · ∆Gt+1 (A)                  X
+                     ⩽                  ·                                   1
+                         τ · log(nt+1 )
+                                            e={u,v}∈EGt+1 (A,Vt+1 \A)
+
+                         2 · ∆Gt+1 (A) · wGt+1 (A, Vt+1 \ A)
+                     =                                       ,
+                                    τ · log(nt+1 )
+
+where ∆Gt+1 (A) ≜ maxu∈A degGt+1 (u), (9) holds since qe(u, v) = peu (v) + pev (u) − peu (v) · pev (u) ⩾ peu (v), and (10)
+holds because of (8).
+Note, by (8), for any edge e = {u, v} ∈ EGt+1 (A, Vt+1 \ A) we have that
+
+                                                           1          1      2 · ∆Gt+1 (A)
+                                            0 ⩽ Ye =             ⩽         ⩽               .
+                                                        qe(u, v)   peu (v)    τ · log nt+1
+
+Then, by applying Bernstein’s inequality, we have that
+                                                                                                                
+                                                                                          2
+                            1                                           wGt+1 (A, Vt+1 \ A) /4
+          P |Z − E[ Z ]| ⩾ E[ Z ] ⩽ 2 · exp − ∆                                                                                           (11)
+                            2                          Gt+1 (A)·wGt+1 (A,Vt+1 \A)    ∆Gt+1 (A)·wGt+1 (A,Vt+1 \A)
+                                                              τ ·log(nt+1 )       +          3·τ ·log(nt+1 )
+                                                                                               
+                                                    τ · log(nt+1 ) · 3 · wGt+1 (A, Vt+1 \ A)
+                                      = 2 · exp −                                                                                           (12)
+                                                                   16 · ∆Gt+1 (A)
+                                                                                         
+                                                    τ · log(nt+1 ) · wGt+1 (A, Vt+1 \ A)
+                                      ⩽ 2 · exp −                                             ,                                             (13)
+                                                                10 · volGt+1 (A)
+
+which proves the lemma.
+
+                                                                       14
+                            Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+Proof of Theorem 3.3. We first analyse the number of edges in Ht+1 , i.e., the size of Ft+1 . We have that
+               X           X                      X          X             2 · τ · log nt+1
+                                     peu (v) ⩽                                              = 2 · τ · nt+1 · log nt+1 ,
+                                                                            degGt+1 (u)
+              u∈Vt+1 e={u,v}∈EGt+1               u∈Vt+1 e={u,v}∈EGt+1
+
+
+where the first inequality holds by (8). Therefore, it holds by the Markov inequality that the number of edges {u, v} with
+peu (v) ⩾ 1 is O (τ · nt+1 log nt+1 ). Without loss of generality, we assume that these edges are included in Ft+1 , and we
+assume for the remaining part of the proof that it holds that peu (v) < 1.
+We now show that the degrees of the vertices in Gt+1 are approximately preserved in Ht+1 . Let u be an arbitrary vertex of
+Gt+1 . Observing that volGt+1 (u) = wGt+1 (u, V \u) = degGt+1 (u) and wHt+1 (u, Vt+1 \u) = degHt+1 (u), by Lemma A.4
+it holds that
+                                                         
+                                             1
+           P |degHt+1 (u) − degGt+1 (u)| ⩾ degGt+1 (u) = 2 exp (−(1/10) · τ · log nt+1 )
+                                             2
+                                                                                                              
+                                                            = 2 exp −(1/10) · (log nt+1 · C)/λk+1 (LGt+1 )
+                                                                  = o(1/n2t+1 ).
+Hence, by taking C to be sufficiently large and the union bound, it holds with high probability that the degrees of all the
+vertices in Gt+1 are preserved in Ht+1 up to a constant factor. Throughout the rest of the proof, we assume this is the case.
+This implies for any subset A ⊆ Vt+1 that volHt+1 (A) = Θ(volGt+1 (A)).
+Secondly, we prove it holds that ΦHt+1 (Si ) = O(k · ΦGt+1 (Si )) for any 1 ⩽ i ⩽ k, where S1 , . . . , Sk are the optimal
+clusters corresponding to ρGt+1 (k). For any 1 ⩽ i ⩽ k, it holds that
+                                                         X                          1
+                    E[ wHt+1 (Si , Vt+1 \ Si ) ] =                  qe(u, v) ·            = wGt+1 (S, Vt+1 \ Si ).
+                                                                                 qe(u, v)
+                                                     e={u,v}∈Et+1
+                                                              ∈Si
+                                                       u∈Si ,v /
+
+Hence, by Markov’s inequality and the union bound, it holds with constant probability that wHt+1 (Si , Vt+1 \ Si ) =
+O(k · wGt+1 (Si , Vt+1 \ Si )). Therefore, it holds with constant probability that
+                      ρHt+1 (k) ⩽ max ΦHt+1 (Si ) = max O(k · ΦGt+1 (Si )) = O(k · ρGt+1 (k)).
+                                    1⩽i⩽k                  1⩽i⩽k
+
+
+Next, we prove that λk+1 (LHt+1 ) = Ω(λk+1 (LGt+1 )). Let LGt+1 be the projection of LGt+1 on its top nt+1 −k eigenspaces,
+and notice that LGt+1 can be written as
+                                                      nt+1
+                                                      X
+                                           LGt+1 =         λi (LGt+1 ) · fi fi⊺
+                                                          i=k+1
+                                                             −1/2
+where f1 , . . . , fnt+1 are the eigenvectors of LGt+1 . Let LGt+1 be the square root of the pseudoinverse of LGt+1 . We prove
+that the top nt+1 − k eigenvalues of LGt+1 are preserved, which implies that λk+1 (LHt+1 ) = Θ(λk+1 (LGt+1 )).
+To prove this, for each edge e = {u, v} ∈ EGt+1 we define a random matrix Xe ∈ Rnt+1 ×nt+1 by
+                          (                 −1/2         −1/2
+                            wHt+1 (u, v) · LGt+1 be b⊺e LGt+1 if e = {u, v} is sampled by the algorithm
+                    Xe =
+                            0                                 otherwise,
+
+where be ≜ χu − χv is the edge indicator vector and χv ∈ Rn is defined by
+                                                  
+                                                  q 1             if a = v
+                                                      degGt+1 (v)
+                                         χv (a) ≜
+                                                  0               otherwise.
+
+Notice that              X               X                          −1/2          −1/2      −1/2         −1/2
+                                Xe =             wHt+1 (u, v) · LGt+1 be b⊺e LGt+1 = LGt+1 LHt+1
+                                                                                             ′   LGt+1 ,
+                      e∈EGt+1          e={u,v}
+                                       e∈EGt+1
+
+
+                                                               15
+                              Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+where                                                              X
+                                                LHt+1
+                                                  ′   ≜                    wHt+1 (u, v) · be b⊺e
+                                                              e∈EGt+1
+
+is LHt+1 normalised with respect to the degree of the vertices in Gt+1 . We prove that, with high probability, the top nt+1 − k
+eigenvalues of LHt+1
+                  ′  and LGt+1 are approximately the same. Then, to finish the proof, we also show that this is the case for
+                                                                                                                  
+the top nt+1 − k eigenvalues of LHt+1 and LHt+1 ′   , from which we get that λk+1 (LHt+1 ) = Ω λk+1 (LGt+1 ) .
+First, from (8) we get that for any edge e it holds that
+                                                                                                              !
+                                                                           τ · log(nt+1 ) τ · log(nt+1 )
+                              qe(u, v) ⩽ peu (v) + pev (u) ⩽ 2 ·                         +                        ,                         (14)
+                                                                            degGt+1 (u)    degGt+1 (v)
+
+and                                                                                                                   !
+                                    1                     1  τ · log(nt+1 ) τ · log(nt+1 )
+                         qe(u, v) ⩾ · (e
+                                       pu (v) + pev (u)) ⩾ ·               +                                              .                 (15)
+                                    2                     4   degGt+1 (u)    degGt+1 (u)
+                                           P
+We start by calculating the first moment of e∈EG Xe , and have that
+                                                             t+1
+
+                                         
+                               X                    X                                        −1/2          −1/2   −1/2
+                         E           Xe  =                  qe(u, v) · wHt+1 (u, v) · LGt+1 be b⊺e LGt+1 LGt+1
+                            e∈EGt+1               e={u,v}
+                                                  e∈EGt+1
+                                                    X                         1        −1/2         −1/2
+                                              =               qe(u, v) ·            · LGt+1 be b⊺e LGt+1
+                                                                           qe(u, v)
+                                                  e={u,v}
+                                                  e∈EGt+1
+                                                   −1/2              −1/2
+                                              = LGt+1 LGt+1 LGt+1 .
+
+Moreover, for any sampled e = {u, v} we have that
+                                         −1/2     −1/2
+          ∥Xe ∥ ⩽ wHt+1 (u, v) · b⊺e LGt+1 LGt+1 be
+                     1           −1/2 −1/2
+                =         · b⊺ L      L      be
+                  qe(u, v) e Gt+1 Gt+1
+                     1              1
+                ⩽         ·                 · ∥be ∥2
+                  qe(u, v) λk+1 (LGt+1 )
+                                                                                                                                        !
+                                 4λk+1 (LGt+1 )                                   1                     1                     1
+                 ⩽                                                      ·               ·                           +                     (16)
+                                                                            λk+1 (LGt+1 )           degGt+1 (u)           degGt+1 (v)
+                   C · log nt+1 · deg 1 (u) + deg 1
+                                          Gt+1                Gt+1 (v)
+
+                           4
+                 =                ,
+                     C · log nt+1
+where the second inequality follows by the min-max theorem of eigenvalues, and (16) holds by (15).
+                                                                                                 hP Now we applyithe
+                                                                P
+matrix Chernoff bound (Lemma A.3) to analyse the eigenvalues of e∈EG Xe . We set λmax E              e∈EGt+1 Xe    =
+      −1/2         −1/2
+                                                                      t+1
+                                          4
+λmax LGt+1 LGt+1 LGt+1 = 1, R = C·log nt+1 and δ = 1/2, and have that
+                                                      
+                                  X                                                        C·log nt+1 /4
+                                                     3                          e1/2
+                   P λmax               Xe  ⩾        ⩽ nt+1 ·                                             = O(1/nct+1 )
+                                e∈EGt+1
+                                                     2                       (1 + 1/2)3/2
+
+for some constant c. Therefore we get that
+                                                                             
+                                                         X                    3
+                                      P λmax                     Xe  <        = 1 − O(1/nct+1 ).                                         (17)
+                                                                              2
+                                                    e∈EGt+1
+
+
+                                                                       16
+                            Dynamic Spectral Clustering with Provable Approximation Guarantee
+                      hP             i         −1/2        −1/2
+                                                                   
+Similarly, since λmin E   e∈EGt+1 X e    = λmin  L     L    L
+                                                   Gt+1 Gt+1 Gt+1 = 1, the other side of the matrix Chernoff bound
+gives us that                                            
+                                             X            1
+                                P λmin           Xe  >  = 1 − O(1/nct+1 ).                                 (18)
+                                                          2
+                                                e∈EGt+1
+
+Combining (17) and (18), it holds with probability 1 − O(1/nct+1 ) for any non-zero x ∈ Rnt+1 in the space spanned by
+fk+1 , . . . , fnt+1 that
+                                                −1/2    ′        −1/2
+                                            x⊺ LGt+1 LHt+1 LGt+1 x
+                                                                   ∈ (1/2, 3/2).
+                                                     x⊺ x
+Since dim(span{fk+1 , . . . , fnt+1 }) = nt+1 − k, there exist nt+1 − k orthogonal vectors whose Rayleigh quotient with
+             ′                                                                                                  
+respect to LHt+1 is Ω λk+1 LGt+1 . The Courant-Fischer Theorem implies that λk+1 (L′Ht+1 ) = Ω λk+1 LGt+1 .
+                                                                                                                 
+It only remains to show that λk+1 (LHt+1 ) = Ω(λk+1 (L′Ht+1 )), which implies that λk+1 (LHt+1 ) = Ω λk+1 LGt+1 . By
+definition of λk+1 (L′Ht+1 ), we have that
+                                                     −1/2       1/2      ′      1/2        −1/2
+                                        LHt+1 = DHt+1 DGt+1 LHt+1 DGt+1 DHt+1 .
+                                          1/2    −1/2
+Therefore, for any x ∈ Rnt+1 and y ≜ DGt+1 DHt+1 x, it holds that
+                                                            ′                          ′      !
+                                       x⊺ LHt+1 x   y ⊺ LHt+1 y                 y ⊺ LHt+1 y
+                                                  =             =Ω                                ,
+                                          x⊺ x          x⊺ x                          y⊺ y
+where the final guarantee follows from the fact that the degrees in Ht+1 are preserved up to a constant factor. The conclusion
+of the theorem follows from the Courant-Fischer Theorem.
+Finally, it remains to analyse the amortised update time of the algorithm. Notice that, if one only needs to sample the
+incoming edge at time t + 1, then the update time is O(1). Otherwise, all the edges adjacent to some vertex w need to be
+resampled, and the running time for this step is O(degGt+1 (w)). However, this means that either degGt+1 (w) > 2·degGt (w)
+or log(nt+1 ) > 2 · log(nt ). In the first case, this only occurs at most every degGt (w) edge updates, which results in the
+amortised update time of O(1). The second case only happens after every n2t vertex additions, and in the worst case we only
+have to resample all the edges in present in Gt every n2t edge updates, which again leads to the amortised update time of
+O(1).
+
+B. Omitted Details from Section 4
+This section contains the omitted details from Section 4, and is organised as follows. In Section B.1 we introduce
+additional notation to analyse our constructed contracted graphs. In Section B.2 we present the omitted proofs for
+Lemmas 4.1, 4.2, 4.3, 4.4, and 4.5, and we formally describe the UpdateContractedGraph procedure.
+
+B.1. Notation
+                             e ≜ A ∩ Ve nc
+For any subset A ⊂ Vt′ , let A                                                                                e
+                                        t′ be the representation of A among the non-contracted vertices of Gt′ . Recall that
+for any subset of vertices A ⊂ Vt′ , we use A(t) ≜ A ∩ Vt to denote the set of vertices present at time t. Let
+                                 n                                                                           o
+              Eadded ≜ Enew ∪ {u, v} ∈ Et | degGt′ (u) > 2 · degGr (u) or degGt′ (v) > 2 · degGr (v)
+                                                       e t , where degG (w) for r ⩽ t is the degree of w used to construct the
+be the set of edges that have been directly added into G                r
+
+contracted graph. These edges are the ones directly added as new edges or their endpoints are pulled out from clusters in G et .
+                   e
+For a subset B ⊂ Vt , let B̂ be the representation of the set B in Gt , i.e.,
+                      ′                                               ′
+                                                                               
+                                                            [     [       (t′
+                                                                              )
+                                                B̂ ≜ B nc            Pi  ,
+                                                                      pi ∈B c
+          ′                                                                                           ′
+where Pi ≜ Pi \ (Pi ∩ Vetnc
+        (t )                        nc                                             (t )
+                             ′ ), B    ≜ B ∩ Vtnc        c        c
+                                                ′ , and B ≜ B ∩ Vt′ . One can see Pi    as the vertices in Pi that are still
+represented by the respective super vertex in e
+                                              G.
+
+                                                                 17
+                             Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+B.2. Omitted Proofs
+Our analysis is based on approximation guarantee of spectral clustering. The following result, which can be shown easily by
+combining the proof technique of (Peng et al., 2017) and the one of (Macgregor & Sun, 2022), will be used in our analysis.
+Lemma B.1. There is an absolute constant CB.1 ∈ R>0 , such that the following holds: Let G be a graph with k optimal
+clusters {Si }ki=1 , and ΥG (k) ⩾ CB.1 · k. Let {Pi }ki=1 be the output of spectral clustering and, without loss of generality,
+the optimal correspondence of Pi is Si for any 1 ⩽ i ⩽ k. Then, it holds for any 1 ⩽ i ⩽ k that
+
+                                                                k · CB.1
+                                             volG (Pi △Si ) ⩽            · volG (Si ),
+                                                                3ΥG (k)
+
+where A△B for any sets A and B is defined by A△B ≜ (A \ B) ∪ (B \ A). It also holds that
+                                                                     
+                                                                 k
+                                       ΦG (Pi ) = O ΦG (Si ) +          .
+                                                               ΥG (k)
+
+Moreover, these P1 , . . . , Pk can be computed in nearly-linear time.
+
+Proof of Lemma 4.1. The running time of the algorithm is dominated by computing the total weight wHt (Pi , Pj ) between
+every Pi , Pj ∈ P (Lines 7–10), which takes O(|Ft |) time as there are |Ft | edges in Ht .
+
+Proof of Lemma 4.2. The running time of the update operation is dominated by the case in which a vertex is pulled out from
+a contracted vertex (Lines 7–22). It’s easy to see that, if this does not happen, then the running time is O(1) as the edge is
+                et .
+just added into G
+Let {u, v} be the added edge, and we assume Lines 7–22 are triggered. The running time for this case is O(degGt+1 (u) +
+degGt+1 (v)), since at least one of u and v is pulled out from their respective contracted vertices and all the adjacent edges are
+placed into the contracted graph. Notice that this only happens if degGt+1 (u) > 2 · degGt (u) or degGt+1 (v) > 2 · degGt (v).
+Since at least degGt (u) or degGt (v) edge insertions are needed before running Lines 7–22, the amortised per edge update
+time is O(1).
+
+Proof of Lemma 4.3. Notice by Lemma B.1 we know it holds with high probability for all 1 ⩽ i ⩽ k that ΦHt (Pi ) =
+O (k · ρHt (k)). By applying Theorem 3.3, it holds with high probability
+                                                                        that ΦHt (Pi ) = O k 2 · ρGt (k) . By Lemma 3.2,
+we also have with high probability that ΦGt (Pi ) = O k 2 · ρGt (k) . This proves the statement.
+
+The next lemma shows that, starting from Gt and Ht , one can easily construct a cluster preserving sparsifier of Gt′ .
+Lemma B.2. Let Ht′′ ≜ (Vt′ , Ft ∪ Eadded , wHt′′ ) be a graph, where
+                                                      
+                                                      
+                                                      1       e ∈ Eadded
+                                           wHt′′ (e) ≜ wHt (e) e ∈ Ft \ Eadded
+                                                      
+                                                      
+                                                        0      otherwise.
+
+Then, it holds with high probability that Ht′′ is a cluster preserving sparsifier of Gt′ .
+
+Proof. First, for any e ∈ Eadded we know that it is included in Ht′′ with probability 1. For any other edge e = {u, v} ∈
+Ft \ Eadded , we know by the construction of Ht using the dynamic cluster-preserving sparsifier that the parameter used to
+sample e from the perspective of u is
+
+                                         τ · log(nt )   τ · log(nr )   2 · τ · log(nt )
+                                                      ⩽              ⩽                  ,
+                                        2 · degGt (u)    degGr (u)       degGt (u)
+
+for some 1 ⩽ r ⩽ t. We also know by construction that for any e = {u, v} ∈ Ft \ Eadded that
+
+                                                  degGt′ (u) ⩽ 2 · degGt (u).
+
+                                                                18
+                             Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+
+
+
+                                       e t , e)
+Algorithm 7 UpdateContractedGraph(Gt , G
+                                                   e t = (Vet , E
+ 1: Input: Graph Gt = (Vt , Et ), contracted graph G            et , w e ), incoming edge e = {u, v}.
+                                                                      Gt
+                             e t+1 = (Vet+1 , E
+ 2: Output: Contracted graph G                et+1 , w e )
+                                                      Gt+1
+ 3: Vnew ← {u, v} \ Vt
+ 4: Gt+1 ← (Vt ∪ Vnew , Et ∪ e)
+    e t+1 ← (Vet ∪ Vnew , E
+ 5: G                     et , w e ) = (Vet+1 , E
+                                                et+1 , w e )
+                                Gt                      Gt+1
+    e nc ← Ve nc ∪ Vnew
+ 6: V t+1    t+1
+ 7: for w ∈ {u, v} \ Vnew do
+ 8:    Let Gr be the graph at time r when the contracted graph is constructed, and Hr = (Vr , Fr , wHr ) the cluster
+       preserving sparsifier at time r.
+ 9:    if w ∈/ Vet+1
+                  nc
+                      and degGt+1 (w) > 2 · degGr (w) then
+10:       Let pj be the super node such that w ∈ Pj
+11:       Vet+1
+             nc
+                 ← Vet+1
+                       nc
+                            ∪w
+12:       Eet+1 ← E  et+1 ∪ EG (w, Ve nc )
+                                 t+1      t+1
+13:       for v̂ ∈ Vet+1
+                      nc
+                           adjacent to w do
+14:          wGet+1 (pj , v̂) ← wGet+1 (pj , v̂) − 1
+15:       end for
+16:       for {w, pi } ∈ w × Vet+1c
+                                      do
+17:           e          e
+             Et+1 ← Et+1 ∪ {w, pi }
+                                                (t+1)
+18:          wGet+1 (w, pi ) ← wGt+1 (w, Pi           )
+                                                             (t+1)
+19:         wGet+1 (pi , pj ) ← wGet+1 (pi , pj ) − wHr (w, Pi       )
+20:      end for
+21:    end if
+22: end for
+           e nc and v ∈ Ve nc then
+23: if u ∈ Vt+1               t+1
+24:    et+1 ← E
+       E         et+1 ∪ {u, v}
+                e nc or v ∈ Ve nc then
+25: else if u ∈ V t+1         t+1
+26:    Without loss of generality, let u ∈ Vet+1 nc
+                                                          / Vet+1
+                                                    and v ∈    nc
+                                                                  . Let pj be the supernode such that v ∈ Pj
+27:    et+1 ← E
+       E          et+1 ∪ {u, pj }
+28:    wGet+1 (u, pj ) ← wGet+1 (u, pj ) + 1
+29: else
+30:    Let pi and pj be the supernodes such that u ∈ Pi and v ∈ Pj
+31:    wGet+1 (pi , pj ) ← wGet+1 (pi , pj ) + 1
+32: end if
+33: Return Gt+1 = (V     et+1 , E
+                                et+1 , w e )
+                                         Gt+1
+
+
+
+
+                                                                 19
+                             Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+Finally, it holds that log(nt ) ⩽ log(nt′ ) ⩽ 2 log(nt ). From this we get that e is sampled from vertex u with the following
+parameter
+                                        τ · log(nt′ )      τ · log(nr )   4 · τ · log(nt′ )
+                                                       ⩽                ⩽                   .
+                                       4 · degGt′ (u)       degGr (u)       degGt′ (u)
+Following almost the same analysis as the proof of Theorem 3.3, it holds with high probability that Ht′′ is a cluster preserving
+sparsifier of Gt′ .
+
+Our next lemma proves several useful properties about the contracted graph as it is updated.
+Lemma B.3. The following statements hold:
+
+(C1) It holds for any subset B ⊂ Vt′ \ Vetnc
+                                          ′  that volGt′ (B) ⩽ 2 · volGt (B).
+
+(C2) Suppose for a subset A ⊂ Vt′ with volGt′ (A) ⩽ vol(Gt′ )/2 we have that ΦGt (A(t) ) ⩾ 1/c1 and ΦGt′ (A) ⩽
+     log−ε (nt′ ) for any positive c1 , ε such that 4 · c1 ⩽ logε (nt′ ), then it holds that
+
+                                                                  e ⩽ 21ε · c1 .
+                                                           ΦGe ′ (A)
+                                                              t      log (nt′ )
+
+(C3) For any super node pi ∈ Vetc , it holds that
+                                                                                   
+                                                 ΦGet (pi ) = O k −6 · log−2γ (nt ) ,
+
+      and                                                                             
+                                                    ΦGe ′ (pi ) = O k −6 · log−γ (nt ) .
+                                                       t
+
+
+
+Informally speaking, Property (C1) of Lemma B.3 shows that the volume of any vertex set B ⊂ Vt′ that are not directly
+               e t′ remains approximately the same in Gt and Gt′ ; Property (C2) states that, if the conductance of any
+represented in G
+set A ⊂ Vt′ in Gt′ becomes much lower than the one in Gt , then its representative set A    e ⊂ Vet′ has low conductance;
+Property (C3) further shows that the conductance of all the contracted vertices doesn’t change significantly over time.
+
+Proof of Lemma B.3. For (C1), by construction we have that for any u ∈ Vt′ \ Vetnc
+                                                                                ′  it holds that degGt′ (u) ⩽ 2 · degGt (u),
+from which the statement follows.
+Next, we prove (C2). The following two claims will be used in our analysis.
+                                            volGt (A(t) )·logε (nt′ )
+Claim B.3.1. It holds that volEnew (A) ⩾             2·c1             .
+
+                                                           volGt (A(t) )·logε (nt′ )
+Proof. Assume by contradiction that volEnew (A) <                   2·c1             . We have that
+
+                                           wGt (A(t) , Vt \ A(t) ) + wEnew (A, Vt \ A)
+                             ΦGt′ (A) =
+                                                 volGt (A(t) ) + volEnew (A)
+                                            wGt (A(t) , Vt \ A(t) )
+                                       ⩾
+                                         volGt (A(t) ) + volEnew (A)
+                                                                                                  
+                                         1         wGt (A(t) , Vt \ A(t) ) wGt (A(t) , Vt \ A(t) )
+                                       ⩾ min                              ,
+                                         2             volGt (A(t) )            volEnew (A)
+                                                                           (t)
+                                                                                 
+                                         1                        volGt (A )
+                                       ⩾ min ΦGt (A(t) ),
+                                         2                      c1 · volEnew (A)
+                                             1
+                                       >             ,
+                                         logε (nt′ )
+
+where on the last line we used the contradictory assumption. This contradicts the condition of ΦGt′ (A) ⩽ log−ε (nt′ ), and
+hence the statement holds.
+
+                                                                    20
+                             Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+Notice that this claim implies that
+
+                                    volGt′ (A) = volGt (A(t) ) + volEnew (A)
+                                                                   
+                                                        logε (nt′ )
+                                               ⩾ 1+                   · volGt (A(t) )
+                                                          2 · c1
+                                                                                
+                                                        logε (nt′ ) logε (nt′ )
+                                               ⩾ 1+                 +                · volGt (A(t) )
+                                                          4 · c1         4 · c1
+                                                                   
+                                                        logε (nt′ )
+                                               ⩾ 2+                   · volGt (A(t) )                                 (19)
+                                                          4 · c1
+where the last inequality follows from the fact that 4 · c1 ⩽ logε (nt′ ).
+                                            ε
+Claim B.3.2. It holds that vol e (A)e ⩾ log (nt′ ) · volG (A(t) ).
+                                 G t′                  4·c1                   t
+
+
+                                                                          ε
+Proof. Assume by contradiction that volGe ′ ( e
+                                             A) < log4·c(n1t′ ) · volGt (A(t) ). Then, it holds that
+                                                       t
+
+
+                                        volGt′ (A) = volGe ′ ( e
+                                                              A) + volGt′ (A \ e
+                                                                              A)
+                                                                      t
+
+                                                           ⩽ volGe ′ ( e
+                                                                      A) + 2 · volGt (A \ e
+                                                                                         A)
+                                                                      t
+
+                                                             logε (nt′ )
+                                                           <             · volGt (A(t) ) + 2 · volGt (A(t) ),
+                                                               4 · c1
+where the first inequality holds by statement (C1). Hence, we reach a contradiction with (19), and the claim holds.
+
+Now we are ready to prove statement (C2). We have that
+                                                   e Vet′ \ A)
+                                            wGe ′ (A,       e
+                                e =
+                         ΦGe ′ (A)                t
+                             t                             e
+                                                  volGe ′ (A)
+                                                           t
+
+                                                                         e A)
+                                            wGt′ (A, Vt \ A) + wGt′ (A \ A, e
+                                        ⩽
+                                                                e
+                                                         vol e (A)    G t′
+
+                                            log   −ε                                   e
+                                                       (n ) · volGt′ (A) + volGt′ (A \ A)
+                                                           t′
+                                        ⩽
+                                                                vol e ( e
+                                                                        A) Gt′
+
+                                                      volGt′ (A)                         8 · c1 · volGt (A(t) )
+                                        ⩽                                         +                                   (20)
+                                                                   e
+                                            logε (nt′ ) · volGe ′ (A)                  volGt (A(t) ) · logε (nt′ )
+                                                                      t
+
+                                            volGt (A(t) ) + volEnew (A)     8 · c1
+                                        ⩽                               +
+                                              log (nt′ ) · vol e ( e
+                                                  ε
+                                                                  A)      logε (nt′ )
+                                                                          Gt′
+                                                                (t)   e
+                                            3 · volGt (A ) + volGe ′ (A)                         8 · c1
+                                                                                  t
+                                        ⩽                                                  +                          (21)
+                                                  log (nt′ ) · volGe ′ ( e
+                                                       ε
+                                                                        A)                     logε (nt′ )
+                                                                              t
+
+                                           3 · volGt (A(t) ) · c1 · 4     volGe ′ (A)          8 · c1
+                                                                               t
+                                        ⩽                             +                    +     ε                    (22)
+                                              2ε                  (t)   ε               e
+                                          log (nt′ ) · volGt (A ) log (nt′ ) · volGe ′ (A)   log   (nt′ )
+                                                                                                             t
+
+                                            12 · c1          1         8 · c1
+                                        ⩽              +    ε        +  ε
+                                          log2ε (nt′ ) log (nt′ ) log (nt′ )
+                                          1 + 20 · c1      21 · c1
+                                        ⩽              ⩽             ,
+                                           logε (nt′ )   logε (nt′ )
+                                                              e ⩽ 2 · volG (A \ A)
+where (20) holds by Claim B.3.2 and the fact that volGt′ (A \ A)                e ⩽ 2 · volG (A(t) ) by statement (C1).
+                                                                          t                 t
+                                                            e               e            e + 2 · volG (A(t) ), and (22)
+(21) holds because by construction volEnew (A) ⩽ volGe ′ (A) + volGt′ (A \ A) ⩽ volGe ′ (A)           t
+                                                         t                           t
+holds because of Claim B.3.2.
+
+                                                                                      21
+                              Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+Finally, we prove statement (C3). For any Pi ∈ P, we have by construction that
+                                                                                          
+                                            ΦGet (pi ) = ΦHt (Pi ) = O k −6 · log−2γ (nt ) ,                                    (23)
+
+where the last equality holds by Lemma 4.3. This proves the first part of the statement. Next, notice that for any pi ∈ Vetc ,
+because Gt is connected and each Pi has almost identical volume as the corresponding optimal Si in Gt (Lemma 3.2), by
+construction it holds that
+                                            volGet (pi ) = Ω(k 6 · log2γ (nt )),                                       (24)
+
+and
+                                                  volGet (Vet \ pi ) = Ω(k 6 · log2γ (nt )).                                    (25)
+
+Taking this into account, we get that
+                                                                                                             
+                wGe ′ (pi , Vet′ \ pi ) ⩽ wGet (pi , Vet \ pi ) + |Enew | + wGt′ Pi ∩ Vetnc             e nc
+                                                                                         ′ , Pi \ (Pi ∩ Vt′ )
+                   t
+                                                                                               
+                                        ⩽ wGet (pi , Ve \ pi ) + logγ (nt ) + volGt′ Pi ∩ Vetnc
+                                                                                             ′
+
+
+                                     ⩽ ΦGet (pi ) · min{volGet (pi ), volGet (Ve \ pi )} + logγ (nt ) + 2 · logγ (nt )          (26)
+                                                              
+                                     = O k −6 · log−2γ (nt ) · min{volGet (pi ), volGet (Ve \ pi )} + 3 · logγ (nt ),           (27)
+
+where (26) holds because volGt′ (Pi ∩ Vetnc           γ
+                                         ′ ) ⩽ 2 · log (nt ) as every vertex that is pulled out of pi needs to at least double
+
+in degree, so adding |Enew | edges ensures at most 2 · |Enew | volume can be pulled out of pi , (27) holds because of (23).
+Moreover, we also have that
+
+                    min{volGe ′ (pi ), volGe ′ (Vet′ \ pi )} ⩾ min{volGet (pi ) − 2 · logγ (nt ), volGet (Vet \ pi )}           (28)
+                             t              t
+                                                                                                      
+                                                             = Ω min{volGet (pi ), volGet (Vet \ pi )} ,                        (29)
+
+where (28) holds because volGe ′ (pi ) ⩾ volGet (pi ) − volGt′ (Pi ∩ Vetnc                         γ
+                                                                        ′ ) ⩾ vol e (pi ) − 2 · log (nt ), and (29) holds because
+                                                                                 G t′
+                              t
+
+of (24) and (25). Combining (27) and (29), we have for any pi ∈ Vetc that
+
+                                                     wGe ′ (pi , Vet′ \ pi )                                 
+                            ΦGe ′ (pi ) =                  t
+                                                                                       = O k −6 · log−γ (nt ) ,
+                               t
+                                            min{volGe ′ (pi ), volGe ′ (Vet′ \ pi )}
+                                                       t              t
+
+
+which proves the second part of statement (C3).
+
+                                                                                                e > (21 · c1 ) · log−ε (nt′ )
+Corollary B.4. Suppose for a subset A ⊂ Vt′ with volGt′ (A) ⩽ vol(Gt′ )/2, it holds that ΦGe ′ (A)
+                                                                                                          t
+and ΦGt′ (A) ⩽ log−ε (nt′ ) for any positive c1 , ε satisfying 4 · c1 ⩽ logε (nt′ ). Then, it holds that ΦGt (A(t) ) < 1/c1 .
+
+
+Proof of Corollary B.4. Assume by contradiction that ΦGt (A(t) ) ⩾ 1/c1 . Then, by statement (C2) in Lemma B.3 and the
+                                                        e ⩽ (21 · c1 ) · log−ε (nt′ ), which is a contradiction. Hence, it holds
+fact that ΦGt′ (A) ⩽ log−ε (nt′ ), it holds that ΦGe ′ (A)
+                                                           t
+that ΦGt (A(t) ) < 1/c1 .
+
+                                                          e t′ with respect to the spectral gap in the full graph Gt′ , we show
+Before analysing the spectral gap in the contracted graph G
+that for any small subset of vertices A ⊂ V with a low value of ΦGt′ (A), the conductance of its corresponding set in the
+                        e is low as well.
+contracted graph ΦGe ′ (A)
+                      t
+
+Lemma B.5. Let C ⊂ Vt′ be a subset of vertices such that volGt′ (C) ⩽ k 6 · log2γ (nt ) and ΦGt′ (C) ⩽ log−ε (nt′ ) for
+some constant ε > 0. Then, it holds that
+                                         ΦGe ′ ( e
+                                                C) = O(log−0.9ε (nt′ )).
+                                                           t
+
+
+                                                                       22
+                            Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+Proof. We prove this by contradiction. Assume by contradiction that
+                                              21                                   21
+                              ΦGe ′ ( e
+                                     C) >        · log0.1ε (nt′ ) · log−ε (nt′ ) =    · log−0.9ε (nt′ ).
+                                   t           4                                    4
+Setting c1 ≜ (1/4) · log0.1ε (nt′ ), it holds by Corollary B.4 that
+
+                                                   ΦGt (C (t) ) < 4 · log−0.1ε (nt′ ).                                   (30)
+
+We will show that C (t) can be used to create a (k + 1)-partition in Gt with low outer conductance, contradicting with the
+fact that λk+1 (Gt ) = Ω(1).
+Let S1 , . . . Sk be theoptimal clusters in Gt corresponding to ρGt (k).
+                                                                        Given that Gt is a connected graph and ρGt (k) =
+O k −8 · log−2γ (nt ) , it holds that volGt (Si ) = Ω k 8 · log2γ (nt ) for all 1 ⩽ i ⩽ k. We then create the following
+(k + 1)-partition:                                      n                        o
+                                             A ≜ C (t) ∪ S1 \ C (t) , . . . , Sk \ C (t) ,
+
+which is a valid partition as we know that volGt (C (t) ) ⩽ volGt′ (C) ⩽ k 6 · log2γ (nt ) by the conditions of the lemma. Now
+we will compute the conductance of each cluster in A.
+First of all, we have from (30) that
+                                                   ΦGt (C (t) ) < 4 · log−0.1ε (nt′ ).                                   (31)
+                                 (t)
+Second, for any cluster Sj \ C         we have that
+
+                                                         wGt (Sj \ C (t) , Vt \ (Sj \ C (t) ))
+                            ΦGt (Sj \ C (t) ) =                                                         .
+                                                   min{volGt (Sj \ C (t) ), volGt (Vt \ (Sj \ C (t) ))}
+
+Our proof is by the following case distinction:
+Case 1: min{volGt (Sj \ C (t) ), volGt (Vt \ (Sj \ C (t) ))} = volGt (Vt \ (Sj \ C (t) )).
+
+                                                  wGt (Sj \ C (t) , Vt \ (Sj \ C (t) ))
+                           ΦGt (Sj \ C (t) ) =
+                                                      volGt (Vt \ (Sj \ C (t) ))
+                                                wGt (Sj , Vt \ Sj ) + wGt (C (t) , Vt \ C (t) )
+                                              ⩽
+                                                    volGt (Vt \ Sj ) + volGt (C (t) ∩ Sj )
+                                                                                                        
+                                                           wGt (Sj , Vt \ Sj ) wGt (C (t) , Vt \ C (t) )
+                                              ⩽ 2 · max                       ,
+                                                            volGt (Vt \ Sj )        volGt (Vt \ Sj )
+                                                        n                        o
+                                              ⩽ 2 · max ΦGt (Sj ), ΦGt (C (t) )                                          (32)
+                                                                             
+                                              ⩽ max{O k −8 · log−2γ (nt ) , 4 · log−0.1ε (nt′ )},
+
+where for (32) it holds that min{volGt (Sj ), volGt (Vt \ Sj )} = volGt (Vt \ Sj ) because we know that vol(Gt )/2 ⩾
+volGt (Vt \ (Sj \ C (t) )) ⩾ volGt (Vt \ Sj ), and we also know that volGt (Vt \ Sj ) ⩾ volGt (C (t) ).
+Case 2: min{volGt (Sj \ C (t) ), volGt (Vt \ (Sj \ C (t) ))} = volGt (Sj \ C (t) ).
+
+                                                  wGt (Sj \ C (t) , Vt \ (Sj \ C (t) ))
+                          ΦGt (Sj \ C (t) ) =
+                                                         volGt (Sj \ C (t) )
+                                                  wGt (Sj , Vt \ Sj ) + wGt (C (t) , Vt \ C (t) )
+                                              ⩽
+                                                          volGt (Sj ) − volGt (C (t) )
+                                                wGt (Sj , Vt \ Sj ) + wGt (C (t) , Vt \ C (t) )
+                                              ⩽                                                                          (33)
+                                                              Ω (volGt (Sj ))
+                                                                                 
+                                              = O (ΦGt (Sj )) + O ΦGt (C (t) )                                           (34)
+                                                                                                
+                                              = 2 · max O k −8 · log−2γ (nt ) , O log−0.1ε (nt′ )                        (35)
+
+                                                                   23
+                            Dynamic Spectral Clustering with Provable Approximation Guarantee
+                                                                                                            
+where (33) holds because volGt (Si ) = Ω k 8 · log2γ (nt ) and volGt (C (t) ) = O k 6 · log2γ (nt ) , (34) holds because
+wGt (Sj , Vt \ Sj ) ⩽ ΦGt (Sj ) · volGt (Sj ) and wGt (C (t) , Vt \ C (t) ) ⩽ ΦGt (C (t) ) · volGt (C (t) ).
+Combining both cases, we have for every 1 ⩽ j ⩽ k that
+                                                                                            
+                         ΦGt (Sj \ C (t) ) = 2 · max O k −8 · log−2γ (nt ) , O log−0.1ε (nt′ ) .                          (36)
+
+Therefore, by combining (31) and (36), we have shown that
+                                                                                               
+                  ρGt (k + 1) ⩽ max ΦGt (Aj ) = 2 · max O k −8 · log−2γ (nt ) , O log−0.1ε (nt′ ) ,
+                                  Aj ∈A
+
+
+                                                  λk+1 (LGt )
+which contradicts the fact that ρGt (k + 1) ⩾         2       = Ω(1). Hence, the statement of the lemma follows.
+
+
+
+Proof of Lemma 4.4. We first prove the first statement. Let S = S1 , . . . , Sℓ be a set of clusters that achieve ρGt′ (ℓ). For
+ease of notation we set
+                                                       (t′ )                   
+                                            Ssmall ≜ Ssmall k 6 · log2γ (nt )
+
+to be the clusters in S with volume at most k 6 · log2γ (nt ), and similarly
+
+                                                           (t′ )                  
+                                                 Slarge ≜ Slarge k 6 · log2γ (nt ) .
+
+                                                                                                      e t′ with low r-way
+We will use the partition S, which has low outer conductance in Gt′ , to create an r-way partition in G
+expansion. We construct this r-way partition, denoted by R, as follows:
+                                                 n                                             o
+                                              R ≜ Se1 , . . . , Seℓ1 , p1 , . . . , pk−1 , p∗k
+
+
+where ℓ1 ≜ |Ssmall |, and we define
+                                                                                               
+                                                                                 [
+                                                 p∗k ≜ pk ∪ Vetnc
+                                                                ′  \                       Sej 
+                                                                              Sj ∈Ssmall
+
+
+to be the union of the super node pk with the leftover non-contracted vertices which do not belong to any Sej . We start by
+showing that R has low r-way expansion:
+
+                                                                                                      
+   • By Lemma B.5, we know that for every Sj ∈ Ssmall , it holds that ΦGe ′ (Sej ) = O log−0.9α (nt′ ) .
+                                                                                            t
+
+
+
+
+   • By Property (C3) of Lemma B.3, we know that for every super node pi ∈ {pk1 , . . . pk−1 } it holds that ΦGe ′ (pi ) =
+                                                                                                               t
+     O k −6 · log−γ (nt′ ) .
+
+   • Finally, for p∗k we know that
+
+                                                                 wGe ′ (p∗k , Vet′ \ p∗k )
+                                          ΦGe ′ (p∗k ) =      n       t
+                                                                                                    o.                    (37)
+                                                           min volGe ′ (p∗k ), volGe ′ (Vet′ \ p∗k )
+                                             t
+
+                                                                          t                 t
+
+
+
+     We split the computation of this conductance into two cases.
+
+                                                                     24
+                             Dynamic Spectral Clustering with Provable Approximation Guarantee
+                        n                                     o
+     Case 1: Suppose min volGe ′ (p∗k ), volGe ′ (Vet′ \ p∗k ) = volGe ′ (p∗k ). Then, we have that
+                                         t                  t                            t
+
+
+
+                                                            wGe ′ (p∗k , Vet′ \ p∗k )
+                                    ΦGe ′ (p∗k ) =              t
+                                             t                   volGe ′ (p∗k )
+                                                                       t
+
+                                                            wGet (pk , Vet \ pk ) + logγ (nt′ ) + volGe ′ (Vetnc
+                                                                                                              ′ )
+                                                                                                            t
+                                                      ⩽                                                                          (38)
+                                                                           volGet (pk ) − volGe ′ (Vetnc
+                                                                                                      ′ )
+                                                                                               t
+
+                                                        ΦGet (pk ) · volGet (pk ) + 3 · logγ (nt′ )
+                                                      ⩽                                                                        (39)
+                                                                     Ω volGet (pk )
+                                                                                 
+                                                        O k −6 · log−2γ (nt ) · volGe ′ (pk ) + 3 · logγ (nt′ )
+                                                      =                                  t
+                                                                                                                                (40)
+                                                                             Ω volGet (pk )
+                                                                                              
+                                                        O k −6 · log−2γ (nt ) · volGe ′ (pk )
+                                                      =                             t                                          (41)
+                                                                    Ω volGet (pk )
+                                                                                 
+                                                      = O k −6 · log−2γ (nt ) ,
+
+     where (38) holds because |Enew | ⩽ logγ (nt ) is the maximum amount of weight that can be added between pk
+     and its complement, (39) holds because volGe ′ (Vetnc     ′ ) ⩽ 2 · |Enew | is the maximum volume of non-contracted
+                                                        t
+                                      e
+     vertices that can be added to Gt′ and (40) holds because of statement (C3) of Lemma B.3, and (41) holds since
+     volGe ′ (pk ) ⩾ vol(Gt )/k ⩾ nt /k.
+          t
+                             n                                o
+     Case 2: Suppose min volGe ′ (p∗k ), volGe ′ (Vet′ \ p∗k ) = volGe ′ (Vet′ \ p∗k ). Then it holds that the conductance of p∗k is
+                                  t           t                       t
+     upper bounded by the maximum conductance of every other cluster in R, i.e.,
+
+                                                    wGe ′ (p∗k , Vet′ \ p∗k )
+                             ΦGe ′ (p∗k ) =             t
+                                t
+                                                    volGe ′ (Vet′ \ p∗k )
+                                                         t
+                                                   P                      e e         e       Pk−1                  e
+                                                     Sj ∈Ssmall wG  e ′ (Sj , Vt′ \ Sj ) +       j=1 wG   e ′ (pj , Vt′ \ pj )
+                                                                      t                                    t
+                                                 ⩽          P                                 P
+                                                                                      e          k−1
+                                                               Sj ∈Ssmall volG   e ′ (Sj ) +
+                                                                                  t              j=1 volG   e ′ (pj )
+                                                                                                              t
+                                                                      n              o                       n             o
+                                                 ⩽ max        max                 e
+                                                                          ΦGe ′ (Sj ) ,         max             ΦGe ′ (pj )
+                                                           Sj ∈Ssmall        t            pj ∈{p1 ,...,pk−1 }       t
+                                                                  −0.9α
+                                                                                          −6         −γ
+                                                                                                                
+                                                 = max O log               (nt′ ) , O k · log (nt′ ) ,
+
+     where the last inequality follows by the mediant inequality.
+
+Combining the two cases, we have that
+                                                                                         
+                               ΦGe ′ (p∗k ) = max O log−0.9α (nt′ ) , O k −6 · log−γ (nt′ ) .
+                                     t
+
+
+We have so far analysed the conductance of each of the clusters in the partition R, and have shown that
+                                                                                       
+                              ρGe ′ (r) = max O log−0.9α (nt′ ) , O k −6 · log−γ (nt′ ) .                                        (42)
+                                     t
+
+
+Before reaching the final contradiction, we prove the following claim.
+Claim B.5.1. It holds that r ⩾ ℓ.
+
+Proof. Assume by contradiction that r < ℓ. In this case, we know that r = |Ssmall | + |P|, and ℓ = |S|. Therefore, the
+condition of r < ℓ gives us that |Ssmall | + |P| < |S|, which implies that |P | < |S| − |Ssmall | = |Slarge |. This means that
+the number of large clusters in S is greater than the number of clusters in P.
+
+                                                                                  25
+                                 Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+It therefore holds that |Slarge | > |P| = k. Furthermore, since it holds that for every Sj ∈ Slarge that volGt′ (Sj ) >
+k 6 · log2γ (nt ), and the number of new edges is |Enew | ⩽ logγ (nt ), it also holds that
+                                                                                
+                             ΦGt (Sj ) = O ΦGt′ (Sj ) = max O log−α (nt′ ) , k 6 · logγ (nt ) .
+
+This means that Slarge is a set of |Slarge | ⩾ k + 1 disjoint subsets in Gt with low conductance, which contradicts the
+higher-order Cheeger inequality and proves the claim.
+
+Combining (42) with Claim B.5.1 gives us that
+                                                                                  
+                           ρGe ′ (ℓ) = max O log−0.9α (nt′ ) , O k −6 · log−γ (nt′ ) ,
+                                        t
+
+
+and this proves the first statement.
+                                                                                                            
+Next we prove the second statement. Let A1 , . . . Aℓ be the partition such that ΦGe ′ (Ai ) = O log−δ (nt′ ) for every
+                                                                                               t
+
+1 ⩽ i ⩽ ℓ. Recall that Âi is the representation of the set Ai in the full graph Gt′ , i.e.,
+                                                                               
+                                                            [      [      (t′
+                                                                              )
+                                                Âi ≜ Anci
+                                                                       Pj  ,
+                                                                      pj ∈Aci
+
+          ′                                                                                        ′
+where Pj = Pj \ (Pj ∩ Vetnc
+        (t )                       nc                                               (t )
+                             ′ ), Ai  ≜ Ai ∩ Vtnc       c          c
+                                               ′ , and Ai ≜ Ai ∩ Vt′ . One can see Pj    as the vertices in Pj that have not
+been pulled out into the contracted graph yet.
+Notice that, when Aci = ∅, it holds by construction that ΦGt′ (Ai ) = ΦGe ′ (Ai ) ⩽ log−δ (nt′ ). So we only look at the case
+                                                                          t
+where Aci ̸= ∅. Without loss of generality, we assume that Aci does not contain all the contracted nodes p1 , . . . , pk . If it did,
+then                                                               
+                                                            [
+                                      ΦGt′ (Âi ) = ΦGt′        Aj  ⩽ log−δ (nt′ ).
+                                                                   Acj =∅
+
+                                                                                          γ
+Therefore, given that for any 1 ⩽ i ⩽ ℓ it holds that volGt′ (Anc
+                                                               i ) ⩽ 2 · |Enew | ⩽ 2 · log (nt ), and for any 1 ⩽ j ⩽ k it
+                     (t′ )
+holds that volGt′ (Pi        ) = Ω(k 6 · log2γ (nt )), we get that
+                                                                       
+                                                               [      ′
+                                                                    (t )                        
+                                 ΦG ′ (Âi ) = O ΦG ′ 
+                                    t                t
+                                                                   Pj  = O k −6 · log−γ (nt′ ) ,
+                                                         pj ∈Aci
+
+where the last line holds because of property (C3) of Lemma B.3. This proves the second statement.
+
+Proof of Lemma 4.5. We first prove the first statement, and we will prove this by contradiction. Assume by contradiction
+                            −α
+that λℓ+1 (LGt′ ) < C · log(ℓ+1)
+                               (nt′ )
+                                 6    for some constant C. Then, by the higher-order Cheeger inequality, there exists an optimal
+(ℓ + 1)-way partition S = {S1 , . . . Sℓ+1 } such that for all 1 ⩽ i ⩽ ℓ + 1
+                                                                      p                                
+                      ΦGt′ (Si ) ⩽ ρGt′ (ℓ + 1) ⩽ C2.1 · (ℓ + 1)3 · λℓ+1 (Gt′ ) = O log−0.5α (nt′ ) .
+                                                                                                   
+By Lemma 4.4, it then holds that ρGe ′ (ℓ + 1) = max O log−0.45α (nt′ ) , O k −6 · log−γ (nt′ ) , which contradicts the
+                                         t
+fact that
+                                                               λℓ+1 (LGe ′ )
+                                                                        t
+                                               ρGe ′ (ℓ + 1) ⩾               = Ω(1),
+                                                  t                 2
+from which the first statement of the lemma follows.
+Next we prove the second statement. We prove this by analysing the spectrum of LGe ′ with respect to LGt′ through LHt′′ .
+                                                                                       t
+As proven in Lemma B.2, Ht′′ is a cluster preserving sparsifier of Gt′ , and therefore we know that
+
+                                                  λℓ+1 (LHt′′ ) = Ω(λℓ+1 (LGt′ )).                                              (43)
+
+                                                                    26
+                               Dynamic Spectral Clustering with Provable Approximation Guarantee
+
+Our next analysis is inspired by the work on meta graphs of Macgregor and Sun (Macgregor & Sun, 2022). We will
+analyse the spectrum of LHt′′ with respect to the spectrum of LGe ′ , and for simplicity we denote Ht′′ ≜ H, Ge t′ ≜ G,
+                                                                                                                      e
+                                                                   t
+
+and nt′ ≜ n. For every vertex uj ∈ V (G)   e in the contracted graph, we associate it with a non-empty group of vertices
+                                      e nc
+Aj ⊂ V (H) as follows: for all uj ∈ Vt′ , we associate uj with its unique corresponding single vertex v ∈ V (H), and for
+                                                                                                  (t′ )
+every uj = pr ∈ Vetc′ for some r, we associate it with its corresponding vertices in the cluster Pr ⊂ V (H). Then, let
+χj ∈ Rn be the indicator vector for the vertices Aj ⊂ V (H) corresponding to the vertex uj ∈ V ( eG).
+We define e                 e and let the eigenvalues of L e be γ1 ⩽ γ2 ⩽ . . . ⩽ γen with corresponding eigenvectors
+                  n = |V (G)|,                                        G
+                         n
+g1 , g2 , . . . , gen ∈ R . We further define vectors ḡ1 , . . . ḡen which will represent the eigenvectors g1 , . . . gen of the normalised
+                         e
+
+Laplacian LGe , but blown up to size Rn . Formally, we define
+                                                                              1
+                                                                    n
+                                                                    X DH
+                                                                       2
+                                                                         χj
+                                                                    e
+                                                            ḡi ≜             1      gi (j).
+                                                                    j=1 ∥DH χj ∥
+                                                                              2
+
+
+
+We can readily check that these vectors form an orthonormal basis. First,
+                                                            n X               p                 !2
+                                                            X
+                                                            e
+                                                                                   dH (u)
+                                               ḡi ḡi⊺ =                    p           gi (j)
+                                                            j=1 u∈Aj
+                                                                              volH (Aj )
+                                                            n
+                                                            X               X       dH (u)
+                                                            e
+                                                      =           gi (j)2
+                                                            j=1
+                                                                                   volH (Aj )
+                                                                            u∈Aj
+                                                            n
+                                                            X
+                                                            e
+                                                      =           g(j)2 = 1.
+                                                            j=1
+
+And similarly for any i1 ̸= i2 ,
+                                                             n
+                                                             X X             dH (u)
+                                                             e
+                                              ḡi1 ḡi⊺2 =                            gi (j)gi2 (j)
+                                                             j=1 u∈Aj
+                                                                            volH (Aj ) 1
+                                                             n
+                                                             X
+                                                             e
+                                                       =            gi1 (j)gi2 (j) = 0.
+                                                             j=1
+
+We also get the useful property that for the eigenvalues λ1 , . . . , λn of LH and γ1 , . . . , γen of the contracted Laplacian LGe , it
+holds that λi ⩽ 2 · νi . In particular,
+                                           n X n X X
+                                                                                                        !2
+                                      ⊺
+                                          Xe   e
+                                                                                ḡi (u)        ḡi (v)
+                             ḡi LH ḡi =                    wH (u, v) p                −p
+                                          x=1 y=x u∈Ax v∈Ay                      dH (u)         dH (v)
+                                           n X n
+                                                                                                        !2
+                                          Xe   e
+                                                                         gi (x)            gi (y)
+                                        =         wH (Ax , Ay ) p                     −p
+                                          x=1 y=x                       volH (Ax )       volH (Ay )
+                                         = 2 · gi LGe gi⊺ .
+
+Therefore we have an i-dimensional subspace Xi such that
+                                                                  x⊺ L H x
+                                                             max           = 2 · γi ,
+                                                             x∈Xi  x⊺ x
+from which it follows by the Courant-Fischer theorem that λi ⩽ 2 · γi . Combining this with (43), we get that
+                                                       1                                 
+                                    λℓ+1 (LGe ′ ) ⩾      · λℓ+1 (LHt′′ ) = Ω λℓ+1 (LGt′ ) = Ω(1),
+                                              t        2
+which proves the lemma.
+
+
+                                                                            27
+

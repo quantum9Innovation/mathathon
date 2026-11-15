@@ -1,0 +1,2654 @@
+                                                     Reweighted Spectral Partitioning Works:
+                                         A Simple Algorithm for Vertex Separators in Special Graph Classes
+                                                                                         Jack Spalding-Jamieson              #
+
+
+
+                                                                                                       Abstract
+
+
+
+
+arXiv:2506.01228v5 [cs.DS] 15 Oct 2026
+                                                       We establish that a practical polynomial-time algorithm obtains near-optimal 23 -balanced vertex
+                                                   separators for a number of graph classes, including genus-g graphs, Kh -minor-free graphs, and
+                                                   geometric graphs. For many of these classes, our polynomial-time separator bounds improve on
+                                                   previous work. Moreover, unlike previous work, all these separators are produced by a single
+                                                   unified algorithm that has no specialization for the graph class, and this algorithm admits a scalable
+                                                   implementation with good empirical results. Furthermore, our approach is robust to graphs falling
+                                                   just outside these classes, making it appropriate for practical applications like road networks.
+                                                       A key distinction of our approach, compared to previous work, is the disentanglement of our
+                                                   algorithm and its analysis for specific graph classes. Our algorithm is based on a newly improved
+                                                   form of a recent Cheeger-style inequality relating the value of a special semidefinite program to vertex
+                                                   expansion. Our analysis then only has to directly bound the value of this semidefinite program for
+                                                   each graph class, and constructions for these bounds need not be algorithmic. Finally, we obtain
+                                                   several results of independent interest. These include an improved (existential) separator theorem for
+                                                   intersection graphs of k-ply d-dimensional balls, an improved bound on the Fiedler value of genus-g
+                                                   graphs, and a complete spectral proof of the planar separator theorem.
+
+
+                                         1        Introduction
+                                         Let G = (V, E) be a graph with n vertices. For β ∈ (1/2, 1), a set S ⊆ V is an β-balanced vertex
+                                         separator, or just a separator, if every connected component of G[V \ S] has at most β n vertices. Small
+                                         separators are a basic primitive for divide-and-conquer algorithms, dynamic programming on graphs,
+                                         nested dissection, graph layout, and graph decomposition methods [RH01].
+                                                                                                                                 p
+                                             Almost half a century ago, Lipton and Tarjan showed that planar graphs admit O( n)-sized separa-
+                                         tors [Ung51, LT79]. A planar embedding may be found in linear time [HT74], so this gives a linear time
+                                         algorithm for finding such separators. This dependence on n is tight for square grids.
+                                             Since this landmark result, a large number of other separator theorems have been discovered. In
+                                         1984, Gilbert, Hutchinson, and Tarjan published a generalization to genus-g graphs (planar graphs have
+                                                                                  p
+                                         genus 0), showing that they admit O( g n)-sized separators [GHT84]. More recently, in 2010, a long
+                                         line of work culminated in an almost complete generalization to Kh -minor-free graphs (genus-g graphs
+                                                                                                           p
+                                         are KO(p g) -minor-free), resulting in a proof that they admit O(h n + f (h))-sized separators [KR10] for
+                                         a function f .1
+                                             Unfortunately, unlike the planar case, neither of the corresponding algorithms are efficient in general.
+                                         The result for genus-g graphs can be run in linear time once a surface embedding is computed, but
+                                         computing such an embedding requires time exponential in g [KMR08]. The result for Kh -minor-free
+                                         graphs is even worse, requiring a time complexity consisting of multiple tower functions in h [KR10].
+                                         Both of these algorithms are fixed-parameter tractable, but that remains undesirable in a number of
+                                             1
+                                                 f involves multiple tower functions, and a full proof of this result has not yet been published.
+
+
+
+                                                                                                           1
+scenarios, and significant effort has been put into attaining slightly weaker results in truly polynomial
+time (see Table 1).
+
+      Year    Reference Separator size                                Running time         Notes
+                              p                                              p
+      1990    [AST90b] O(h3/2 n)                                      O(h1/2 n · m)
+              [PRS94]   O(h n log n)                                  O(h n log n · m)
+                           p                                              p
+      1994
+              [BLR10]   O(h3 n log h)                                 O
+                                                                      e (poly(n))
+                            p
+      2008
+              [BLR10]   O(∆h3 n log h)                                O
+                                                                      e (nm)
+                              p
+      2008
+                                    2
+                           O(h2 )                                          2
+                                    3 −δ                              2O(h ) n1+δ          For a parameter δ ∈ 0, 12
+                                                                                                                     
+      2009    [RW09]      2    n
+                             p
+      2010    [KR10]      O(h n + f (h))                              O( f (h)n1+ε )       ε > 0 is an arbitrary constant, f is a very
+                                                                                           fast-growing function. Full proof absent.
+      2011    [WN11]      O(poly(h)n4/5+ε )                           O(poly(h) n)         ε > 0 is an arbitrary constant
+              [WN11]      O(h n log n)                                O(poly(h) n5/4+ε )   ε > 0 is an arbitrary constant
+                             p
+      2011
+                               p
+      2026    [BKL+ 26]   O(h11 n)                                    O(h11 n)
+                                                                 p
+                          O(min{log h, log ∆} · h log h log log h n) O(n4 · polylog(n)) Robust to outliers
+                                      p
+        This paper
+                                                      p
+                          O( log ∆ · h log h log log h n)             O(n2 m · polylog(n)) Robust to outliers
+                            p
+        This paper
+                                                                           p
+                                                      Genus-g only (h = Θ( g))
+                            p                                           O(poly(g))
+     1984 &   [GHT84,     O( g n)                                     2            n
+      2008    KMR08]
+                                  p
+      2004    [Kel06b] O(poly(∆) g n)                                 O
+                                                                      e (nm)
+                             3/2 p
+      2008    [BLR10]  O(∆g        n)                                 O
+                                                                      e (nm)
+                               p
+      2010    [LS10]   O(log g g n)                                   O
+                                                                      e (poly(n))          Citation’s claim differs. See Section B.
+                               p
+      2018    [ACS18]  O(∆3/2 g n)                                    O
+                                                                      e (nm)
+                  +               p
+      2026    [BKL 26] O(poly(g) n)                                   O(poly(g)n)
+                                              p
+        This paper     O(min{(log g)2 , log ∆} g n)                   O(n4 polylog(n))     Robust to outliers
+                                   p
+        This paper     O((log ∆) · g n)                               O(n3 polylog(n))     Robust to outliers
+
+Table 1. History of separator algorithms for Kh -minor-free graphs and genus- g graphs. n, m, and ∆ denote the counts of
+vertices, edges, and maximum degree, respectively.
+
+
+    Some remarkable results have arisen from the study of these polynomial-time algorithms, such as a
+                                                p
+polynomial-time algorithm to compute O(h3/2 n)-sized separators for a Kh -minor-free graph [AST90a,
+AST90b]. However, for these weaker results, and even for the case of planar graphs, two significant
+issues remain besides their separator sizes. First, the algorithms are quite brittle. Second, the algorithms
+are often quite complex and highly specialized. Both of these issues are well-demonstrated by the
+practical example of road networks. Road networks empirically admit good separators that are critical
+to modern navigation [DGRW11]. However, the best methods we have for computing these separators
+are heuristics. This is because road networks are only almost planar, due to the existence of outliers
+like bridges, overpasses, and similar structures. Moreover, while it is entirely possible that many road
+networks are, say, Kh -minor-free for a small h, the algorithms we have for this class are complex and
+would be impractical to implement.
+    Our main result overcomes these challenges, and simultaneously provides improved polynomial-time
+computable separator sizes in genus-g, Kh -minor-free, and geometric graph classes:
+
+Theorem 1.1 (Informal main theorem). There is a polynomial-time algorithm for computing vertex
+separators with the following sizes depending on the graph class (where ∆ denotes maximum degree):
+               p
+  • planar: O( n)
+                                      p
+  • genus-g: O(min{(log g)2 , log ∆} g n)
+                                                         p
+  • Kh -minor-free: O(min{log h, log ∆} h log h log log h n)
+                                  p
+
+  • d-dimensional geometric graph (either k-NN graph or k-ply ball graph): O( log ∆ k1/d n1−1/d )
+                                                                                p
+
+  • every subgraph with n′ vertices admits separator of size O (n′ )a : O( log ∆ · n(1+a)/2 ) (or better)
+                                                                         p
+
+
+
+                                                                  2
+Moreover, the same bounds hold even if the graph only falls into one of these classes after a small number
+of simple operations.
+
+    Furthermore, the algorithm used by Theorem 1.1 is practical, able to run on graphs with a few
+hundred thousand vertices and edges in a matter of seconds, or faster with GPU acceleration (see the
+larger graphs in Figure 1).
+
+
+
+
+Figure 1. Example separators produced by our algorithm. The first three panels show small grid, planar, and k-nearest-
+neighbour examples, respectively. The last two use the DIMACS shortest-path road-network instances for New York (264,346
+vertices, 365,050 edges) and Colorado (435,666 vertices, 521,200 edges) [DGJ09]. Separator vertices are highlighted.
+
+
+     Our proof involves two components. First, we use a semidefinite programming relaxation of “vertex
+expansion”, a quantity closely related to vertex separators. We denote the SDP by γ(n) (G), and round
+it through a new Cheeger-style inequality. Second, we analyze the performance of this algorithm for
+special graph classes by giving specialized bounds on the value of γ(n) (G).
+     Our analysis of this algorithm applied to special graph classes uses two different kinds of methods.
+First, we show that, for planar graphs, geometric graphs, and genus-g graphs, γ(n) (G) can be bounded
+geometrically via the theory of circle packings. Second, we bound γ(n) (G) in terms of some well-understood
+combinatorial quantities. Both methods are generalizations/improvements of prior methods bounding
+Laplacian eigenvalues of graphs. Specifically, the first method builds on and improves (and in some
+places fixes) works of Spielman and Teng [ST96, ST07] and Kelner [Kel04, Kel06b, Kel06a]. The second
+method builds on works of Biswal, Lee, and Rao [BLR08].
+
+1.1    SDP Relaxation of Vertex Expansion: An Improved Cheeger-style Inequality
+Throughout this subsection, let G = (V, E) be a graph with n = |V | vertices, m = |E| edges, and maximum
+degree ∆, and write a ≲ b to mean a = O(b).
+   For a parameter d ∈ N, we define the optimization problem
+                                            P
+               (d)
+                                                     y(v)
+             γ (G) :=             min     P v∈V
+                                             x∈V || f (x)||2
+                                                           2
+                               f :V →Rd
+                              y:V →R≥0            X                                                   (1)
+                             subject to                f (v) = 0
+                                                       v∈V
+                                                   y(u) + y(v) ≥ || f (u) − f (v)||22 ∀uv ∈ E.
+
+Our SDP relaxation is exactly γ(n) . Note that γ(n) ≤ γ(d) and γ(1) ≤ dγ(d) for any d ≤ n.
+   Roch observed that γ(n) (G) is a relaxation of the vertex expansion of G [Roc05]:
+
+Definition 1.2. For a subset A ⊂ V with |A| ≤ n/2, let ∂ A denote the set of vertices in V \ A adjacent to
+                                                                        |∂ A|
+some vertex in A. The vertex expansion of a set A is the ratio ψ(A) := |A| . The vertex expansion of a
+graph G is the minimum vertex expansion over all possible sets |A| ≤ 2n , and it is denoted as ψ(G).
+
+   Specifically, Roch observed that γ(d) ≲ ψ(G) for any d ≥ 1. It wasn’t until 2022 that a partial inverse
+was found, when Olesker-Taylor and Zanetti showed that ψ(G)2 / log n ≲ γ(n) [OTZ22, OTZ24]. This
+
+
+                                                             3
+               Year        Reference                  Inequality
+               2005        [Roc05]                    γ(n) (G) ≲ ψ(G)
+               2022        [OTZ22]                    ψ(G)2 / log n ≲ γ(n) (G) ≲ ψ(G)
+               2022        [JPV22, KLT22]             ψ(G)2 / log ∆ ≲ γ(n) (G) ≲ ψ(G)
+                        This paper                    ψ(G)2 / min{log ∆, α(G)2 } ≲ γ(n) (G) ≲ ψ(G)
+
+Table 2. History of Cheeger-style inequalities for vertex expansion and γ(n) (G). α(G) denotes the extremal padding parameter
+of G .
+
+
+inequality is also algorithmic, in the sense that a feasible solution to γ(n) can be converted to a set A
+so that ψ(A) matches this bound. Later in 2022, two different groups independently improved this
+dependence on log n to log ∆ [KLT22, KLT25, JPV22].
+    We further improve the log ∆ factor to min{log ∆, α(G)2 }, where we use α(G) to denote the extremal
+padding parameter of G, a quantity that we will define shortly. This is a significant improvement for a
+number of graph classes, including planar graphs, genus-g graphs, and Kh -minor-free graphs, where
+α(G) has values of O(1), O(log g), and O(log h), respectively [CF25]. The history of these Cheeger-style
+inequalities is summarized in Table 2, and our full Cheeger-style inequality follows.
+
+Theorem 1.3 (Improved Cheeger-Style Inequality for Vertex Expansion). For a graph G with n ver-
+tices and maximum degree ∆,
+
+                         ψ(G)2              γ(1) (G)
+                                      ≲                   ≲ γ(n) (G) ≲ γ(1) (G) ≲ ψ(G).
+                    min{log ∆, α(G)2 } min{log ∆, α(G)2 }
+
+Note that the earlier, weaker inequality ψ(G)2 / log ∆ ≲ γ(n) corresponds to a similar analytic guaran-
+tee. The algorithmic version of Theorem 1.3, including the SDP-solving and padded-decomposition
+subroutines, is stated in Theorems 7.1 and 7.2, or discussed briefly in Section 7.
+    We will prove this result in Section 3. Note that if for every n′ -vertex-subgraph of G, one can find
+such a set S with vertex expansion ψ(S) ≤ a/(n′ ) b for values a, b > 0 (where b = Θ(1)), then a standard
+recursive application (see e.g. [FHL05, FHL08, ST07]) obtains a separator of size O(an1−b ). Thus,
+Theorem 1.3 captures the analytic part of our algorithm; the remaining algorithmic aspects are isolated
+in Section 7.
+
+Padded Decompositions            We quickly discuss the significant aspects of padded decompositions.
+
+Definition 1.4. Let (X , d) be a metric space. The (weak) padding parameter of (X , d) is defined as the
+smallest value of α so that for every ∆ > 0, there exists a distribution µ of partitions of X with parts of
+diameter at most ∆, and
+                                                 ∆
+                                                          
+                                 inf Pr B x,          ⊂ P(x) ≥ Ω(1)
+                                 x∈X P∼µ         α
+where B(x, r) denotes the metric ball of radius r centred at x. We denote this quantity as α(X , d), and
+we call the distribution µ a padded decomposition of (X , d).
+
+   We define the extremal padding parameter on G to be the maximum value of α(V, dω ) for vertex-
+weight functions ω : V → R≥0 inducing shortest-path metrics dω on G. If G is not connected, we define
+
+
+
+
+                                                             4
+its extremal padding parameter to be the maximum such value over its connected components. As
+previously noted, we denote this quantity as α(G).2
+     For the algorithmic version of Theorem 1.3, we use generic routines for producing padded decompo-
+sitions. The details are deferred to Section 7.
+
+1.2      Class-Specific SDP Value Bounds
+As previously discussed, the other component required to prove our main theorem is to bound the value
+of the SDP γ(n) for each individual graph class we study. We will prove all of the below bounds.
+
+Theorem 1.5 (Bounds on γ(d) ). Let G be a graph with n vertices and maximum degree ∆. Then the
+following conditional bounds hold:
+
+• If G is planar, then γ(1) (G) ≲ 1n .
+                                                              g·min{(log g)2 ,log ∆}
+• If G has (oriented) genus g, then γ(1) (G) ≲                         n             .
+                                                   (h log h log log h)2
+• If G is Kh -minor-free, then γ(1) (G) ≲                    n          .
+                                                                                                                                    d2
+• If G is a spanning subgraph of a d-dimensional k-ply ball-intersection graph,3 then γ(d+1) (G) ≲                             k
+                                                                                                                               n           .
+                                                                                                                                   2
+• If G is a spanning subgraph of a d-dimensional k-nearest-neighbour graph, then γ(d+1) (G) ≲                              k
+                                                                                                                                  d
+                                                                                                                           n           .
+
+1.3      Robustness
+A vertex merge identifies two vertices, which may or may not be adjacent, and then deletes any resulting
+loops and suppresses parallel edges. Vertex merges capture ordinary edge contractions, but also allow us
+to contract a “fake” edge that is not present in G, such as an overpass vertex in a road network.
+
+Lemma 1.6 (Robustness under vertex merges). Let H be obtained from G by a sequence of vertex
+merge operations. Let b be the size of the largest collection of vertices in G merged into a single vertex
+in H. Then, for every d ≥ 1,
+                                          γ(d) (G) ≤ bγ(d) (H).
+In particular, if H is obtained by q vertex merge operations, then
+
+                                                  γ(d) (G) ≤ (q + 1)γ(d) (H).
+
+    Thus, if there is a sequence of O(1) vertex merge operations that turns G into a graph in one of the
+classes in Theorem 1.5, then the corresponding bound on γ(n) (G) is unchanged up to constants.
+
+Lemma 1.7 (Padded decompositions under vertex merges). Let H be obtained from G by q vertex
+merge operations. Suppose every induced subgraph of H has extremal padding parameter at most α0 .
+Then
+                                     α(G) ≲ α0 + log(q + 2).
+
+      Proofs of the statements above are given in Section 6.
+  2
+      A similar quantity can be defined for the more general case of edge-weighted shortest-path metrics, but this suffices for us.
+  3
+      Sometimes called a neighbourhood-system.
+
+
+
+
+                                                                    5
+1.4    Main Result
+Our main result is the combination of Theorem 1.3, Theorem 1.5, and Lemmas 1.6 and 1.7, together
+with the algorithmic form of the refined Cheeger inequality in Theorem 7.1.
+Theorem 1.8 (Main Theorem, formal version of Theorem 1.1). Let G be a graph with n vertices, m
+edges, and maximum degree ∆. Assume that there is a sequence of r ≤ n/2 vertex merge operations that
+turns G into a graph H. Then there exist polynomial-time randomized algorithms (succeeding w.h.p.)
+producing 23 -balanced vertex separators of G with several kinds of per-class guarantees.4
+1. There is an algorithm running in O(n2 m · polylog(n)) time producing the following separator sizes:
+
+   • If H is planar, the separator has size                Æ            
+                                                       O        r n log ∆ .
+   • If H has genus g, the separator has size
+                                     Æ                                  
+                                   O    r g n log ∆ min{(log g)2 , log ∆} .
+
+   • If H is Kh -minor-free, the separator has size
+                                                           Æ         
+                                       O (h log h log log h) r n log ∆ .
+   • If H is either a d-dimensional k-ply ball-intersection graph or a k-nearest-neighbour graph, the
+     separator has size                    Æ                     
+                                         O      r log ∆k1/d n1−1/d .
+
+2. There is an O(n4 · polylog(n))-time randomized algorithm with the following stronger guarantees, in
+   addition to the guarantees in Item 1:
+
+   • If H is planar, the separator has size
+                                             ¦Æ              ©p 
+                                        O min    log ∆, log r   rn .
+
+   • If H has genus g, the separator has size
+                              ¦Æ                       ©Æ                            
+                        O min      log ∆, log g + log r    r g n min{(log g)2 , log ∆} .
+
+   • If H is Kh -minor-free, the separator has size
+                                   ¦Æ                     ©                   p 
+                            O min      log ∆, log h + log r (h log h log log h) r n .
+
+3. If there is a fixed value a < 1 so that every induced subgraph of H with n′ vertices admits an unknown
+   2
+   3 -balanced vertex separator of size O((n ) ), then there is an algorithm running in O(nm ·polylog(n))
+                                              ′ a                                            2
+
+   time producing a separator of size
+                                                Æ                 
+                                              O     r log ∆n(1+a)/2 .
+
+4. Under the same separator premise as in Item 3, assume further that every induced subgraph of H
+   has extremal padding parameter at most α0 . Then there is an algorithm running in O((nm2 + n4 ) ·
+   polylog(n)) time producing a separator of the smaller size
+                                     ¦Æ                    ©p           
+                               O min      log ∆, α0 + log r    r n(1+a)/2 .
+
+We note that our practical implementation specifically corresponds to Item 3 above.
+   4
+     Note that, like some prior works, we are slightly abusing notation in the case of log a, which can be interpreted more
+literally to mean max{log a, 1} so that the bounds are not negative. Similarly, the bounds also assume r ≥ 1.
+
+
+                                                            6
+1.5      Additional Results
+We also leverage our methods to obtain some additional results of independent interest for genus-g
+graphs and geometric graphs.
+    Our bounds on γ(n) (G) also imply a new bound on the so-called “Fiedler value”. For a graph G
+with adjacency matrix A and degree vector d, the Laplacian is L(G) = diag(d) − A. Its eigenvalues
+are ordered as 0 = λ1 (G) ≤ λ2 (G) ≤ · · · ≤ λn (G), and λ2 (G) is the Fiedler value of G, also called its
+algebraic connectivity [Fie73]. Bounds on λ2 (G) for genus-g graphs have been the subject of much
+prior work [Kel04, Kel06b, Kel06a, BLR08, BLR10, KLPT09, KLPT11, LS10, ACS18].
+    Roch gives a dual form of γ(n) that can be used to show that λ2 (G) ≤ ∆γ(n) (G) [Roc05], so Theo-
+rem 1.5 implies a bound for genus-g graphs.
+
+Corollary 1.9. If G is an n-vertex genus-g graph with maximum degree ∆, then
+                                                   
+                                           ∆g · min log ∆, (log g)2
+                                  λ2 (G) ≲                          .
+                                                      n
+       Compared to earlier work, this is an improved bound on λ2 (G). See Table 3 for a history.
+
+                 Year Reference               Bound on λ2 (G)                  Scope
+                2004 [Kel06b]                 poly(∆)g/n                       triangulated genus-g 5
+                2008 [BLR08, BLR10] ∆g 3 /n                                    genus-g
+                2010 [LS10]                   ∆g(log g) /n2
+                                                                               genus-g
+                2018 [ACS18]                  ∆ g/n
+                                                2
+                                                                               genus-g
+                       This paper             ∆g min{(log g)2 , log ∆}/n genus-g
+                        Table 3. History of upper bounds on the Fiedler value for genus- g graphs.
+
+
+    The paper also gives direct separator algorithms for represented geometric inputs. For d-dimensional
+ball-intersection graphs of ply k and d-dimensional k-nearest-neighbour graphs, Miller, Teng, Thurston,
+and Vavasis proved the existence of O(d)-balanced vertex separators of size O(k1/d n1−1/d ) [MTTV97],
+which in turn imply the existence of 2/3-balanced vertex separators of size O(d k1/d n1−1/d ). We signifi-
+cantly improve on this loss.
+
+Corollary 1.10. Let G be the intersection graph of d-dimensional balls with ply k and maximum degree
+∆, provided by the center and radius of each ball. Then G admits a 23 -balanced vertex separator of size
+                                             Æ
+                                           O( min{d, log ∆}k1/d n1−1/d ).
+
+Corollary 1.11. Let G be a d-dimensional k-nearest-neighbour graph with maximum degree ∆, provided
+by the vertex coordinates and the value k. Then G admits a 23 -balanced vertex separator of size
+                                             Æ
+                                           O( min{d, log ∆}k1/d n1−1/d ).
+   5
+    Kelner originally claimed that his bound applied to general genus-g graphs, but the presented argument is incorrect. We
+discuss this briefly in the next section, and in more detail in Section 4.3.
+
+
+
+
+                                                              7
+2     Technical Ideas
+2.1     Bounds
+We use two different mechanisms for proving bounds on γ(n) (G), and more generally γ(d) (G).
+    The first is geometric: A feasible solution of γ(d) (G) is interpreted as a family of balls, and the
+objective is bounded by a surface-area calculation after mapping those balls to sphere caps. This is an
+adaptation of a framework used by Spielman and Teng for planar graphs and geometric graphs [ST07],
+as well as Kelner for genus-g graphs [Kel06a]. This method is quite involved, and requires a careful
+handling of the geometry in many cases. It has also proved quite tricky: We discovered notable errors
+in the proofs of both papers that we had to fix in order to adapt their methods. Our method to fix
+Kelner’s proof in particular required us to devise completely new methods that resulted in a significantly
+improved bound.
+    The second method more directly leverages combinatorial bounds and metric embeddings: We design
+an adapter based on “non-expansive embeddings” and padded decompositions that allows us to leverage
+part of a pipeline for bounds on λ2 (G) developed by Biswal, Lee, and Rao [BLR08, BLR10].
+    The improved Cheeger-style inequality in Theorem 1.3 is what converts our solution to γ(n) into a
+partition of the graph. Similar to the most recent improvement of this kind of Cheeger-style inequality,
+the improvement lies in a new dimension-reduction method to relate γ(n) and γ(1) . In our case, we apply
+padded decompositions over vertex-weighted shortest path metrics to create a “partially” non-expansive
+embedding into the line. This partial property is critical to our correctness.
+
+2.1.1    Geometric Bounds For Planar and Geometric Graphs
+
+The geometric methods primarily leverage one key fact: For a d-dimensional unit ball, we know its area
+exactly with an analytic formula.
+    In order to leverage this, we first show that γ(d) (G) is equivalent to a problem that embeds G into a
+spanned d-dimensional ball-intersection supergraph, at the loss of a constant factor. Then, we restrict
+ourselves to the special case where these balls have their centres on the surface of a unit (d − 1)-sphere
+embedded in Rd . Ultimately, for each class, we construct a feasible solution to γ(d) in the form of a circle
+packing of some spanned supergraph of G with some kind of bound on its ply.
+    Spielman and Teng used a very similar construction to bound λ2 (G) for planar graphs and geometric
+graphs. However, they had an error for geometric graphs in dimension d > 2. Their error was with
+respect to the unintuitive behaviour of higher-dimensional geometry. Fortunately, we are able to derive a
+replacement step that also recovers their bound.
+    We will show the following bounds with these methods:
+
+Proposition 2.1. Let G be a planar graph with n vertices. Then γ(1) (G) ≲ γ(3) (G) ≤ 8/n.
+
+Proposition 2.2. Let G be a spanning subgraph of the intersection graph of d-dimensional balls with
+ply k. Then γ(d+1) (G) ≲ (k/n)2/d .
+
+Corollary 2.3. Let G be a spanning subgraph of a d-dimensional k-nearest-neighbour graph with n
+vertices. Then γ(d+1) (G) ≲ (k/n)2/d .
+
+    For planar graphs, the required ball representation is a circle packing on the sphere, so the ply is
+1. For k-ply ball graphs, a homeomorphism used by Spielman and Teng [ST96, ST07] maps Euclidean
+balls to sphere caps and preserves ply. This is where the dimension increases by one. At this point, in
+either case, an inequality is needed relating the area of the sphere caps, and the radii of the balls they
+
+
+                                                     8
+represent. There is a natural inequality for the 2-sphere embedded in R3 , but it does not extend to
+higher dimensions, which is exactly the error in Spielman and Teng’s work. We replace this step with
+Lemma 4.7, which is enough for the k-ply surface-area charging argument.
+
+2.1.2   Bounded-Genus Graphs
+
+The techniques we perform for genus-g graphs are much more involved. First, we develop a theory of
+uniform shallow minors: A graph G is a uniform shallow minor of another graph H if, loosely speaking,
+H expands every vertex of G into a uniform number of new connected vertices. See Figure 2 for an
+example.
+
+
+
+
+    Figure 2. Two examples of uniform shallow minors: C4 with depth 2 on the left, and P4 with depth 1 on the right.
+
+
+    For those who work with minors, this definition may appear backwards, but it is the right way around
+for our purposes: In our constructions, we start with a graph G, and then construct a larger graph H
+for which G is a uniform shallow minor. We then show how to relate the values of γ(1) (G) and γ(1) (H),
+along with the depth (or “shallowness”) of the minor. In particular, to do this, we randomly embed G
+into H. The vertices of G get mapped to a subset of vertices of H, and the edges of G get mapped to
+paths in H. We then show that the needed relationship between the values of the corresponding feasible
+solutions for γ(1) holds with positive probability.
+    We apply this technique with carefully constructed larger graphs in order to show both of the following
+results.
+
+Lemma 2.4. Let G be a graph with genus g, n vertices, and maximum degree ∆. Then there exists a
+graph H with n∆ vertices, maximum degree 4, and genus g, such that
+
+                                            γ(1) (G) ≲ γ(1) (H)∆ log ∆.
+
+Lemma 2.5. Let G be a graph with genus g, n vertices, and maximum degree ∆. Then there is a
+triangulated genus-g graph H with (∆ + 1)n vertices and maximum degree O(∆), such that
+
+                                                γ(1) (G) ≲ ∆γ(1) (H).
+
+    These constitute our first two steps: First, we reduce to a surface graph with constant maximum
+degree. Second, we reduce to a triangulated surface graph. The constructions for each are visualized in
+Figure 3.
+    The degree reduction step replaces each high-degree vertex by a small binary tree whose leaves
+respect the rotation system. This leaves the genus unchanged, and reduces the maximum degree to a
+constant, while using depth O(log ∆) in the uniform shallow minor construction.
+    The triangulation step first adds buffer vertices around each face so that the remaining non-triangular
+faces can be triangulated independently by the zig-zag ear-cut construction of Kant and Bodlaender
+[KB92, KB97]. The buffer vertices are very important: Without them, it is not possible to even construct
+a cellular embedding, much less a triangulation, since the same edges may appear along the same input
+face twice in either opposing or identical orientations.
+
+                                                           9
+                       ∆ = 10
+
+Figure 3. The two local transformations used for genus- g graphs: degree reduction near a vertex on the left, and degree-
+preserving triangulation of a face on the right.
+
+
+    Our third step starts with a triangulated genus-g graph of constant maximum degree, and then
+performs repeated “subdivisions” until we obtain a sufficiently refined graph that it can be embedded
+onto the unit sphere so that it has ply at most O(g) almost everywhere.
+    Kelner performed this third step in order to bound λ2 (G), but incorrectly claimed that a much simpler
+construction sufficed for the second step of triangulation: Just add edges until the graph becomes a
+triangulated genus-g graph. Unfortunately, this construction is not just missing a proof; it is impossible
+for genus g > 0. Moreover, even if it were possible, it could increase the maximum degree, which is very
+problematic for Kelner’s bound, which skips our first degree-reduction step entirely and consequently
+depended heavily on the maximum degree. We give a concrete counterexample in Section 4.3.
+    Overall, our techniques allow us to obtain the following bound.
+
+Proposition 2.6. Let G be a graph with genus at most g, n vertices, and maximum degree ∆. Then
+γ(1) (G) ≲ g log ∆/n.
+
+2.2     Combinatorial Bounds
+Our other method builds on the work of Biswal, Lee, and Rao [BLR08, BLR10]. They work with a
+quantity called extremal spread, denoted s2 (G), defined as an optimization problem over a certain kind
+of normalized vertex-weighted shortest-path metrics in the graph G. They ultimately derive bounds for
+this optimization problem via highly combinatorial methods like the crossing number lemma for planar
+graphs, hence why we call these bounds “combinatorial”.
+    Biswal, Lee, and Rao gave a method based on embedding shortest-path metrics into the line in such
+a way that they recovered bounds on λ2 (G) by leveraging padded decompositions. We use an analogous
+method, although we require more intermediate quantities to obtain our eventual bounds γ(1) (G) (and
+consequently γ(n) (G)).
+    Biswal, Lee, and Rao essentially showed the following bounds on s2 (G):
+                                                                        p
+Proposition 2.7 ([BLR10, Theorem 3.1]). For a genus-g graph G with n ≥ 3 g vertices,
+                                                    p
+                                       s2 (G) ≳ n2 / g.
+
+Proposition 2.8 ([BLR10] combined with [DP25]). For a Kh -minor-free graph G on n ≳ h log log h
+vertices,
+                                  s2 (G) ≳ n2 /(h log log h).
+
+      In order to leverage these bounds, we relate γ(1) (G) and s2 (G) as follows.
+Proposition 2.9. For a graph G with maximum degree ∆,
+                                                                     n3
+                                             γ(1) (G) ≲ α(G)2 ·           .
+                                                                  s2 (G)2
+
+                                                          10
+2.3   Cheeger-Style Dimension-Reduction
+Our improved Cheeger-style inequality relies on a new dimension-reduction step relating γ(n) and γ(1) .
+Specifically, we will show that γ(1) (G) ≲ α(G)2 γ(n) (G).
+    To do this, we leverage two things. First, Biswal, Lee, and Rao give a useful metric embedding
+result into the line via padded decompositions that can be applied to shortest-path metrics on G [BLR10,
+Theorem 4.4]. The metric embeddings they construct are non-expansive (or Lipschitz), meaning no
+pairwise distance grows, while the squared distances do not decrease by too much on average. Second,
+since the metric of interest defined by a feasible solution to γ(n) (G) is not defined by a shortest-path metric
+over G, but rather by Euclidean embeddings, it is critical that we do not need the strong non-expansive
+property guaranteed by their embedding, but rather a weaker “partially non-expansive” property, where
+only distances between adjacent vertices must not grow, and non-adjacent distances have more freedom.
+    This construction is the topic of Section 3.
+
+2.4   Robustness
+For γ(n) (H) and γ(n) (G), we use the most natural lift from the feasible solution of the former to the latter.
+    For padded decompositions, we use a linear-programming relaxation and rounding algorithm of
+Krauthgamer and Roughgarden [KR11], for which we merge two solutions. One of the solutions
+corresponds to α(H), except without the problematic vertices, while the other captures a limited radius
+around the nontrivially mapped vertices in G.
+
+
+3     A Refined Cheeger Inequality
+In this section, we will prove Theorem 1.3. Fix a graph G = (V, E) with maximum degree ∆. Several of
+the inequalities stated in Theorem 1.3 are already known:
+
+Theorem 3.1 ([OTZ22, Theorem 2.10]). For a graph G,
+
+                                          ψ(G)2 ≲ γ(1) (G) ≲ ψ(G).
+
+   The result that ψ(G)2 ≲ γ(1) (G) was re-proven by Kwok, Lau, and Tung [KLT22], who gave a slightly
+simpler algorithm that takes the best of a set of candidate cuts via a sweep. Our Algorithm 4 further
+simplifies their algorithm and considers a superset of the cuts that they consider.
+
+Theorem 3.2 ([KLT22, Proposition 3.14]). For a graph G with maximum degree ∆,
+
+                                    γ(n) (G) ≲ γ(1) (G) ≲ γ(n) (G) · log ∆.
+
+   The proof that γ(1) (G) ≲ γ(n) (G) · log ∆ uses a random projection and succeeds in expectation, so
+Algorithm 1 replicates this guarantee with high probability.
+   Thus, the only remaining inequality in Theorem 1.3 left for us to prove is:
+
+                                         γ(1) (G) ≲ γ(n) (G) · [α(G)]2 .
+
+In order to prove the result, we must also do so in a way that shows Algorithm 2 produces a feasible
+solution for γ(1) (G) obtaining this bound with high probability.
+    We will do this in several steps. First, we define the following quantity:
+
+
+
+                                                       11
+Definition 3.3. For a graph G, we define the d-dimensional L p -extremal embedded spread as:
+                                        X
+                             max              || f (u) − f (v)|| pp
+                               y:V (G)→R≥0 ,
+                                                 u,v∈V (G)
+                Q(d)
+                 p (G) :=
+                                f :V (G)→Rd
+                                                           || y||1 ≤ 1
+                               subject to
+                                                     y(u) + y(v) ≥ || f (u) − f (v)|| pp                      ∀uv ∈ E(G).
+
+                                               (1)
+     For the purposes of this section, Q 2 will be a bit easier to work with than γ(1) , and the more general
+definition will also be useful in a later section when we try to relate γ(1) and the L 2 -extremal spread s2 .
+  (d)
+Q 2 (G) and γ(d) (G) are related as follows:
+
+Lemma 3.4. For a graph G, γ(d) (G) =                2n
+                                                   (d)   .
+                                                 Q 2 (G)
+
+Proof: We will make a sequence of transformations to each  P optimization problem.
+   We claim that for any function f : V → R for which v∈V f (v) = 0, it holds that
+                                               d
+
+                                  X                  X
+                               2n     || f (v)||22 =   || f (u) − f (v)||22 .
+                                           v∈V                      u,v∈V
+
+To prove this claim, let f i (v) denote the ith coordinate of the vector f (v). Then,
+                 X                          X X
+                      || f (u) − f (v)||2 =         ( f i (u) − f i (v))2
+                  u,v∈V                          u,v∈V i∈[d]
+                                                     X X
+                                                                    f i (u)2 + f i (v)2 − 2 f i (u) f i (v)
+                                                                                                           
+                                            =
+                                                 u,v∈V i∈[d]
+                                                     X XX
+                                                                       f i (u)2 + f i (v)2 − 2 f i (u) f i (v)
+                                                                                                              
+                                            =
+                                                 i∈[d] u∈V v∈V
+                                                                                                                              
+                                                     XX X                                                          X
+                                                                               2             2
+                                                                                                 
+                                            =                            f i (u) + f i (v)           − 2 f i (u)         f i (v)
+                                                 i∈[d] u∈V     v∈V                                                 v∈V
+                                                     X XX
+                                                                       f i (u)2 + f i (v)2
+                                                                                             
+                                            =
+                                                 i∈[d] u∈V v∈V
+                                                     X        X
+                                            =            2n         f i (x)2
+                                                 i∈[d]        x∈V
+                                                      X
+                                            = 2n            || f (x)||2 .
+                                                      x∈V
+
+   Therefore,
+                                                      P
+          (d)                                             v∈V y(v)
+         γ      (G) = 2n ·       min
+                                                 u,v∈V || f (u) − f (v)||2
+                                                                         2
+                                            P
+                                       d
+                                f :V →R
+                               y:V →R≥0                              X
+                            subject to                                      f (v) =              0
+                                                                     v∈V
+                                                                        || f (u) − f (v)||22 ∀uv ∈ E.
+                                                               y(u) + y(v) ≥
+
+   No vector f (u) − f (v) is affected by translation, so the constraint v∈V f (v) = 0 is unnecessary, and
+                                                                         P
+                                                                        (d)
+thus the reciprocal of the inner fractional program here is exactly Q 2 .                                □
+
+    The key lemma is as follows:
+
+                                                                    12
+Lemma 3.5. For any graph G, and any d, p ≥ 1, Q(d)                     p   (1)
+                                                   p (G) ≤ C p · [α(G)] · Q p (G), where C p is a constant
+dependent only on p. Moreover, given a feasible solution to Q(d)
+                                                              p (G), a corresponding feasible solution to
+ (1)
+Q p (G) satisfying this inequality can be found using Algorithm 2 with high probability.
+
+                                                                                       1
+Proof: Let f , y be the optimal solution to Q(d)
+                                             p . Let ω(v) := y(v) . Let dω be the shortest-path metric over
+                                                                      p
+
+
+G that uses ω as vertex weights, so a path v1 , . . . , vk has weight 2 ω(v1 ) + ω(v2 ) + · · · + ω(vk−1 ) + 12 ω(vk ).
+                                                                      1
+
+Biswal, Lee, and Rao [BLR10, Theorem 4.4] showed that applying Algorithm 2 (or a generalization of
+this algorithm for arbitrary p) embeds the metric (V, dω ) into R with a function f ′ : V → R so that:
+
+    • For every pair of vertices u and v, | f ′ (u) − f ′ (v)| ≤ dω (u, v).
+    • With high probability, C p′ · α(V, dω ) p u,v∈V | f ′ (u) − f ′ (v)| p ≥ u,v∈V dω (u, v) p , for some positive
+                                               P                              P
+
+      constant C p′ depending only on p.
+
+To verify that f ′ , y forms a feasible solution to Q(1)
+                                                     p , consider an edge uv ∈ E. For such an edge, the edge
+                                                  1                             ′       ′
+itself givesthe shortest path, so dω (u, v) = 2 [ω(u) + ω(v)]. Therefore, | f (u) − f (v)| ≤ dω (u, v) ≤
+                                                                                             p           p
+ ω(u)+ω(v) p   ω(u) p +ω(v) p
+     2       ≤        2       ≤ y(u) + y(v), where the penultimate inequality follows from Jensen on the
+                         p
+convex mapping x 7→ x .
+   We now bound the objective value. For each u, v ∈ V , there is some path u = w1 , w2 , . . . , w k = v ∈ V
+with
+                         1                          1
+             dω (u, v) =   ω(w1 ) + ω(w2 ) + · · · + ω(w k )
+                         2                          2
+                         1
+                        = [(ω(w1 ) + ω(w2 )) + (ω(w2 ) + ω(w3 )) + · · · + (ω(w k−1 ) + ω(w k ))] .
+                         2
+                                                                                                1
+For each i ∈ {1, . . . , k − 1} we have w i w i+1 ∈ E, so [ y(w i ) + y(w i+1 )] p ≥ || f (w i ) − f (w i+1 )|| p . Moreover,
+              1
+since x 7→ x p is subadditive for x ≥ 0,
+                                                1               1                                   1
+          ω(w i ) + ω(w i+1 ) = y(w i ) p + y(w i+1 ) p ≥ [ y(w i ) + y(w i+1 )] p ≥ || f (w i ) − f (w i+1 )|| p .
+
+The triangle inequality then gives dω (u, v) ≥ 12 || f (u) − f (v)|| p , and so
+                                   X                                  X                       1 X
+              C p′ · α(V, dω ) p           | f ′ (u) − f ′ (v)| p ≥           dω (u, v) p ≥             || f (u) − f (v)|| p .
+                                   u,v∈V                              u,v∈V
+                                                                                              2 p u,v∈V
+
+Picking C p := 2 p C p′ then gives the stated inequality.                                                                        □
+
+    The combination of Lemma 3.4 and Lemma 3.5 therefore proves Theorem 1.3 up to the algorithmic
+aspects, which are supplied by Theorem 7.2 and an algorithm for padded decompositions briefly explained
+in Section 7. These are combined in Theorem 7.1.
+
+
+4    Bounds via Geometric Intersection Graphs
+In this section, we prove Propositions 2.2, 2.6 and 4.5 and Corollary 2.3. Each of these is a bound on
+γ(d) for a different graph class (and a few different values of d). In particular, each of these bounds uses
+the relationships these classes have with a few special kinds of d-dimensional ball-intersection graphs,
+and how such ball-intersection graphs relate directly to γ(d) .
+    We start by defining a modified form of γ(d) :
+
+
+                                                                      13
+Figure 4. Two example sets of balls, and the corresponding geometric intersection graphs. The left example has ply 1, while
+the right example has ply 2.
+
+
+
+
+                                                     (s(v))2
+                                                P
+                 (d)
+                γ̇     (G) :=       min        P v∈V
+                                                x∈V || f (x)||2
+                                                              2
+                                   f :V →Rd
+                                  s:V →R≥0           X
+                                 subject to               f (v) =          0
+                                                       v∈V
+                                                     s(u) + s(v) ≥         || f (u) − f (v)||2 ∀uv ∈ E
+
+Lemma 4.1. For any graph G, and any value d ≥ 1, 12 γ(d) ≤ γ̇(d) (G) ≤ γ(d) (G).
+
+Proof: For any a, b ∈ R≥0 , Jensen’s inequality and superadditivity on x 7→ x 2 (x ≥ 0) imply that
+1
+2 (a + b) ≤ a + b ≤ (a + b) . Therefore, the first inequality in the statement holds
+           2       2   2             2
+                                                                                             if2 we choose
+                                                                                                         
+y(v) := 2s(v) , which satisfies the constraints since for any edge uv ∈ E, y(u)+ y(v) ≥ 2 s(u) + s(v)2 ≥
+                 2
+
+[s(u) + s(v)]2 ≥ || f (u) − f (v)||22 . Similarly, the second inequality in the statement holds if we choose
+                                                                                          2
+s(v) := y(v), in which case for any edge uv ∈ E, [s(u) + s(v)]2 ≥
+                                                                         p
+                                                                             y(u) + y(v) ≥ y(u) + y(v) ≥
+          p                                                                         p
+
+|| f (u) − f (v)||22 .                                                                                     □
+
+    Importantly, γ̇(d) (G) gives us a new geometric interpretation of the problem: A solution satisfying the
+constraints corresponds to a representation of G as a subgraph of a geometric intersection graph: For each
+vertex v, create a d-dimensional ball B v of radius s(v) centered at f (v). Construct a new graph H = (V, F )
+so that uv ∈ F if and only if Bu ∩ B v ̸= ;. Then H ⊃ G. As a consequence, if we can P     bound the sum of
+                                                                                             x∈V || f (x)||2 = 1
+                                                                                                           2
+squared  radii for such  a geometric  representation,  with the normalization  constraints
+and x∈V f (x) = 0, then we can bound γ(d) (G).
+     P
+
+    The special conditions we need for our ball-intersection graphs all involve the concept of ply: For a
+set of balls B in Rd , a point p ∈ Rd is said to have ply k if there are exactly k balls in B that contain
+p. Then, the ply of B itself is said to be the maximum ply value of any point not contained in the
+boundary of some ball. Note that, due to this boundary condition, sets of balls with even ply 1 can still
+contain intersections. For planar graphs and the geometric graph classes, we will be able to work with
+bounded ply for the full set of balls. However, for bounded-genus graphs, we instead will use a set of
+balls containing a very large subset that has bounded ply. See Figure 4 for some examples of balls with
+bounded ply, and their corresponding geometric intersection graphs. A set of 2-dimensional balls with
+ply 1 is also called a (univalent) circle packing.
+    It will also be helpful for the results in this section to note the following:
+
+
+                                                             14
+Lemma 4.2 ([OTZ22, Proof of Proposition 2.9]). For a graph G and any value d ≥ 1, γ(1) (G) ≲
+dγ(d) (G). Moreover, given a feasible solution to γ(d) (G), a feasible solution to γ(1) (G) satisfying this
+inequality can be found in polynomial time.
+
+4.1    Planar Graphs
+Planar graphs admit a very well-structured representation as a ball-intersection graph. This comes from
+the celebrated circle packing theorem:
+
+Theorem 4.3 (Planar Circle Packing Theorem [Koe36, And70, TM79]). Let G be a simple undirected
+graph. Then G is the geometric intersection graph of 2-dimensional balls with ply 1 (a circle packing) if
+and only if G is a planar graph. Moreover, if G is a maximal planar graph, then this representation is
+unique up to Möbius transformations.
+
+    Spielman and Teng [ST96, ST07] made use of this theorem to bound λ2 (G) for planar graphs G,
+hence giving a “spectral” proof of a weaker version of the planar separator theorem via the usual Cheeger
+inequality for edge expansion. We will use a similar argument to bound γ(1) (G), hence also implying a
+“spectral”-type of proof of the planar separator theorem in full generality via Theorem 1.3. We will make
+use of one key result of Spielman and Teng to accomplish this:
+
+Theorem 4.4 ([ST96, ST07, Theorem 4.5]). Let B1 , .. . , Bn be a collection of balls in Rd with centres
+c1 , . . . , cn , so that no point x ∈ Rd is contained in 2n of the balls. Then there is a homeomorphism
+α from Rd to a subset of the sphere S d ,6 so that α(Bi ) is exactly a geodesic ball (or sphere cap) in S d
+with metric centre ci′ ∈ S d , and moreover so that the centroid of the values c1′ , . . . , cn′ , in the natural
+representation of S d as the surface of the unit ball of d + 1 dimensions, is exactly the origin.
+
+    This theorem statement is slightly weaker than the statement used by Spielman and Teng, who also
+described the structure of the homeomorphism as a stereographic projection. However, this statement is
+sufficient for our purposes. In particular, it gives us a method of normalizing a geometric intersection
+graph of balls in Rd to be a geometric intersection graph of (geodesic) balls in the sphere S d . Importantly,
+since the theorem gives a homeomorphism, it preserves the ply of each individual point. From this, we
+can now obtain the desired bound on γ(1) for planar graphs:
+
+Proposition 4.5 (Extended restatement of Proposition 2.1). Let G be a planar graph with n vertices.
+Then,
+                                                         8
+                                    γ(1) (G) ≲ γ(3) (G) ≤ .
+                                                         n
+Hence, ψ(G)2 ≲ 1n .
+
+   The method to prove this will be analogous to a proof of Spielman and Teng [ST96, ST07, proof of
+Theorem 3.3].
+
+Proof: If we can show that γ(3) (G) ≤ 8n , the other inequalities in the statement follow from previous
+theorem statements.
+   By Theorem 4.3 and Theorem 4.4, there exists a representation of G as a circle packing on the sphere
+S ⊂ R3 . Let the centers be given by f : V → S 2 ⊂ R3 (i.e., || f (v)||22 = 1 for each v ∈ V ). For each v ∈ V ,
+ 2
+
+   6
+    We use the standard topological convention of S d as the d-dimensional surface of the (d + 1)-dimensional unit ball
+embeddable in Rd+1 . This differs from the notation of Spielman and Teng, who used S d to denote the (d − 1)-dimensional
+surface of the d-dimensional unit ball.
+
+
+                                                          15
+let s(v) be the longest Euclidean distance from f (v) to a point in its geodesic ball on S 2 , embedded
+in R3 . See Figure 5 for an example of these values. Note that the surface area of the geodesic ball
+                                                                                    (3)
+Pgiven exactly by πs(v) . We claim first that f , s form a feasible solution to γ̇ (G): The constraint
+                            2
+is
+   v∈V f (v) = 0 is exactly the statement that the centroid of the centres is the origin, which is given by
+Theorem 4.4. The other constraints follow from the fact that two balls intersect if and only if they share
+an edge. Next, we bound the objective value: It follows from the statement of Theorem 4.3 that the
+ply of all points in S 2 except for a set of measure 0 is Pat most 1. Hence, the total area of all balls is
+bounded by the area of S 2 itself, which is 4π. That is, v∈V πs(v)2 ≤ 4π. Therefore, we get a bound on
+the objective value of
+                                                     s(v)2
+                                              P
+                                                               4
+                                            P v∈V             ≤ .
+                                              x∈V || f (x)||2
+                                                            2  n
+Finally, the result follows from Lemma 4.1.                                                                               □
+
+
+                                                           f (v)
+
+                                                                   s( v
+                                                                          )
+
+
+
+
+Figure 5. Illustration of a geodesic ball (sphere cap) on the unit sphere S 2 embedded in R3 , along with its corresponding
+centre f (v). The distance s(v) is the longest Euclidean distance from f (v) to any point in the ball.
+
+
+
+
+4.2    Ball-Intersection Graphs and Nearest-Neighbour Graphs
+Spielman and Teng [ST96, ST07] also considered higher-dimensional geometric graphs with similar
+properties to planar graphs, and bounded λ2 for these classes. In particular, they obtained bounds for
+geometric intersection graphs of d-dimensional balls with ply k, and d-dimensional k-nearest-neighbour
+graphs. We can use similar techniques to prove Proposition 2.2 and Corollary 2.3.
+    Unfortunately, their proof also contains a minor error. Specifically, they used an inequality that
+does not hold for d ≥ 3 dimensions: Let Ad denote the area of the unit d-sphere S d , and let Vd denote
+the volume of the unit d-ball B d (both of these are d-dimensional measures).7 Let C be a sphere cap
+(geodesic ball) on the unit d-sphere S d embedded in Rd+1 . Let f be the centre of C on S d . Let r be the
+maximum Euclidean distance from f to a point in C. They claimed that Vd r d ≤ volume(B). This claim
+dates back to an earlier work on separators for ball-intersection graphs [EMT93, Section 3]. This is true
+for d ≤ 2. In fact, we implicitly make use of this fact in the previous subsection. However, we will now
+provide a counterexample for d = 3:
+
+Example 4.6. For d = 3 dimensions, any sphere cap C that covers strictly less than half the hypersurface
+of S 3 has 3-dimensional surface area strictly less than the volume of the 3-dimensional ball V3 of radius r,
+where r is the maximum Euclidean distance through R4 from the centre of the sphere cap to any other
+point inside it.
+   7
+     We again use the topological convention of the d-sphere S d as the d-dimensional surface of the (d + 1)-dimensional unit
+ball.
+
+
+                                                            16
+Proof: Define h, r, φ as in the 2-dimensional cross-section of the 4-dimensional unit ball given in Figure 6.
+
+                                                           f
+
+                                                          h       r
+                                                           sin(ϕ)
+                                                      1−h ϕ     1
+
+
+
+
+                     Figure 6. Cross-section of a unit ball, and the different associated quantities.
+
+
+    The 3-dimensional area of the 3-dimensional sphere cap with colatitude angle φ (equivalently, height
+      Rφ                  A
+h) is 0 A2 (sin θ )2 dθ = 22 (φ − cos φ sin φ). Note that A2 = 4π is the surface area of the unit 2-sphere,
+                                                                       p                          3
+and that cos φ = 1 − h, so φ = arccos(1 − h). For the volume, r = 2h, so V3 · r 3 = V3 · (2h) 2 . Using,
+say, h = 0.4, we can compare the values, and verify that the 3-dimensional surface area of the sphere
+cap is < 2.81, while V3 · r 3 > 2.99.                                                                    □
+
+    A weaker form of their bound still holds, fortunately. We will prove and use the following inequality:
+
+Lemma 4.7. Let d ≥ 2, and let C be a sphere cap on the d-dimensional unit sphere embedded in Rd+1 .
+Let f be its centre and let r be the maximum Euclidean distance in Rd+1 from f to a point in C. Assume
+C contains at most half the surface area of the sphere. Then the d-dimensional surface area of the sphere
+                         A rd
+cap satisfies area(C) ≥ 4d d .
+
+   We defer the proof of this inequality to Section D, since it is a fairly straightforward expansion of
+some Gamma and Beta functions. Using it, we can now prove the main result of this subsection:
+
+Proposition 4.8 (Restatement of Proposition 2.2). Let G be the intersection graph of d-dimensional
+balls with ply k and maximum degree ∆. Then,
+                                                                 2
+                                                                 k d
+                                                γ(d+1) (G) ≲         .
+                                                                 n
+Proof: The proof is very similar to that of Proposition 2.1, and again is based on the methods of Spielman
+and Teng [ST96, ST07, proof of Theorem 5.1]. By Theorem 4.4, we may realize G as the geometric
+intersection graph of a set of geodesic balls on S d , so that every point in S d is contained in at most k of
+these geodesic balls almost surely, and so that the centroid of the centres of the geodesic balls in Rd+1 is
+exactly the origin. Denote the geodesic balls (sphere caps) as C1 , . . . , Cn . For the geodesic ball Ci , let f i
+denote its centre and let ri denote the maximum Euclidean distance in Rd+1 from f i to a point in Ci . By
+                        A rd                                                                   Pn
+Lemma 4.7, area(Ci ) ≥ 4d d i . The total sum of all such areas is bounded above by kAd , so i=1 rid ≤ k4d .
+                                          Pn          Pn d  d2  d  2            2
+                                               ri2      i=1 ri          d
+By the power-mean inequality, we get i=1     n     ≤     n      ≤ k4n      ≤ 16 nk d .                          □
+
+   As previously mentioned, we will also apply this result to k-nearest neighbour graphs, again in a
+similar manner to Spielman and Teng [ST96, ST07, Corollary 5.2]. Let τd denote the kissing number in
+
+                                                           17
+d dimensions, which is the maximum number of non-overlapping unit balls in Rd arranged to all touch
+a central unit ball. It is known that as d → ∞, 20.2075d(1+o(1)) ≤ τd ≤ 20.401d(1+o(1)) [Wyn65, KL78].
+                           1
+Hence, log τd ≳ d and τdd ≲ 1. Miller, Teng, Thurston, and Vavasis [MTTV97] observed that every
+k-nearest neighbour graph is the subgraph of an intersection graph of balls with ply τd k, and moreover
+that every k-nearest neighbour graph has maximum degree bounded by τd k. Hence, we obtain the
+following corollary:
+
+Corollary 4.9 (Restatement of Corollary 2.3). Let G be a d-dimensional k-nearest neighbour graph
+with n vertices. Then,
+                                                     2
+                                        (d+1)        k d
+                                       γ      (G) ≲      .
+                                                     n
+                                   |∂ S|
+Note that the weaker bound on |S| stated in Theorem 1.8 for this class comes from the inequality
+log ∆ ≲ log τd k ≲ d + log k.
+    We will now give specialized algorithms for these graph classes, since the implied separator results
+are new.
+
+Corollary 4.10 (Restatement of Corollary 1.10). Let G be the intersection graph of d-dimensional
+balls with ply k and maximum degree ∆, provided as a set of d-dimensional coordinates and radii for
+each vertex. Then, in polynomial time, we can compute a balanced 2/3-vertex-separator of size
+                                                          1 
+                                        Æ                  k d
+                                    O     min{d, log ∆} ·        .
+                                                           n
+
+Proof: Instead of applying Theorem 1.3, perform the stereographic projection implicit in the proof of
+Theorem 4.4, and then directly apply Theorem 3.2 with Algorithm 1, as well as Lemma 4.2 (taking the
+best of the two). Finally, apply Theorem 3.1 with Algorithm 4.                                     □
+
+Corollary 4.11 (Restatement of Corollary 1.11). Let G be a d-dimensional k-nearest neighbour graph
+with maximum degree ∆, provided as a set of d-dimensional coordinates and a value k. Then, in
+polynomial time, we can compute a balanced 2/3-vertex-separator of size
+                                                        1 
+                                      Æ                  k d
+                                  O     min{d, log ∆} ·        .
+                                                         n
+
+Proof: We start by computing the graph itself. By using a simple construction of Kwok, Lau, and
+Tung [KLT22, Proof of Lemma 3.12], we can use the coordinates to obtain radii for a representation of the
+graph as a ball-intersection graph, while optimizing the objective function up to constant factors (relative
+to the fixed choice of coordinates). Then, instead of applying Theorem 1.3, perform the stereographic
+projection implicit in the proof of Theorem 4.4, and directly apply Theorem 3.2 with Algorithm 1, as
+well as Lemma 4.2 (taking the best of the two). Finally, apply Theorem 3.1 with Algorithm 4.              □
+
+     Another result of Spielman and Teng for a graph class they call α-overlap graphs also relied on the
+incorrect inequality for the area of sphere caps [ST07, Theorem 6.4]. Lemma 4.7 may also be applied to
+fix that result in essentially the same manner. The result could be generalized to a bound on γ(1) as well.
+
+
+
+
+                                                    18
+4.3     Bounded-Genus Graphs
+In this subsection, we will prove Proposition 2.6, which states that a genus-g graph G with maximum
+                         g log ∆
+degree ∆ has γ(1) (G) ≲ n .
+    This will involve several steps. At a high-level, we will use two different groups of techniques:
+    • Techniques involving uniform shallow-minors, which we will define shortly.
+    • Techniques based on the theory of circle packings for genus-g graphs, adapting constructions used
+      by Kelner to give a bound on the Fiedler value λ2 for triangulated genus-g graphs [Kel04, Kel06b,
+      Kel06a].
+    We will now briefly outline some important definitions and challenges related to genus-g graphs.
+Recall that a genus-g graph is one that can be drawn on a genus-g (oriented) surface without crossing
+edges. Such a drawing is called a surface embedding, and it implies the existence of a rotation system:
+A (circular) ordering of the edges around each vertex. Like a plane graph, we can define a face of a
+genus-g graph as any cycle that is formed by a tour induced by always moving counter-clockwise in
+the rotation system at a vertex to choose the next edge, starting from the previous. A rotation system
+(and a corresponding embedding) is called cellular if each edge is a part of exactly two such tours. Not
+every surface embedding is cellular, even for plane graphs: A face on a plane graph can include an edge
+twice, each time traversed in opposite directions. For instance, this is always true of cut edges in any
+embedding of a planar graph (see Figure 7). In a surface embedding for a genus-g graph with g ≥ 1, it
+can also be the case that an edge is included twice in the same direction (see Figure 7).
+
+
+
+
+Figure 7. Non-cellular embeddings: planar graph (left) and K5 in the flat torus (right). A non-cellular face in each is traced.
+
+
+    For simple graphs, we call a graph embedded in a surface with cellular faces a triangulation if
+all of its faces consist of exactly 3 edges. Planar triangulations correspond exactly to maximal planar
+graphs, which are graphs for which the addition of any edge would enforce the invalidation of planarity,
+regardless of embedding. For graphs of genus-g, this is no longer true:
+
+Example 4.12. K5 is a maximal graph of genus 1, and K5 admits no triangulated embedding into a
+surface of genus 1.
+
+      See Figure 7 for an embedding of K5 in the torus.
+
+Proof: The proof is by contradiction. Suppose this was not the case, and that it had a triangulated
+embedding in the torus. K5 has 5 vertices and 10 edges. By the Euler characteristic, an embedding
+of K5 in the torus must have 5 faces. We will now count the number of edge-face incidences in two
+different ways. Since the embedding is triangulated (and hence cellular), each edge is incident to exactly
+two faces, and there are 10 edges and hence 2 · 10 = 20 incidences in total. Since the embedding is
+triangulated, there are exactly 3 edges incident to each face, and hence there are 3 · 5 = 15 incidences in
+total, giving a contradiction.                                                                           □
+
+                                                             19
+    Kelner claimed to have bounded λ2 for all genus-g graphs, rather than just triangulations. The
+method he used to try and prove this was to reduce the case of general genus-g graphs to the case of
+triangulated genus-g graphs. However, the reduction used for this is actually incorrect. The claimed
+argument is as follows:
+
+   • Adding edges to a graph can only increase λ2 (this is also true for γ(1) ).
+   • Add edges until the graph is maximal.
+   • Apply the bound on triangulated genus-g graphs that Kelner proves in the rest of his paper. This
+     bound relies on a generalized circle packing theorem of He and Schramm [HS93] that applies only
+     to simple triangulations of genus-g surfaces.
+
+This argument has two separate issues:
+
+   • As mentioned, a maximal genus-g graph is not always a triangulation.
+   • Even in a planar graph, naively adding edges may increase the maximum degree, possibly up to
+     as large as Ω(n), and the bound that Kelner obtains for triangulations has a dependence on the
+     maximum degree.
+
+It is worth noting that both of these issues can be sidestepped for planar graphs: Maximal planar graphs
+are always planar triangulations, and there is a known result that triangulates a planar graph while
+asymptotically preserving the maximum degree [KB92, KB97]. It is possible that these issues could be
+amended for genus-g graphs by allowing augmentation to obtain a multigraph, but such a construction
+is not known, and it would need to be checked that Kelner’s construction can be made to work with a
+multigraph. Instead, we have both generalized and improved Kelner’s bound via our other techniques.
+     We now move onto the proof. This will involve several phases. Henceforth, we will fix a rotation
+system for our initial graph G. This rotation system need not be cellular, but we will assume that G is
+simple (as we do throughout this paper). Importantly for our purposes, so long as we carefully respect
+this rotation system, we will be able to make certain local transformations to a graph without changing
+its genus.
+
+4.3.1   Uniform Shallow Minors
+
+For the first phase of our transformations, we will make use of the following structure:
+
+Definition 4.13. Let G = (V, E) be a graph with n vertices, and let H = (V ′ , E ′ ) be a graph with r · n
+vertices. Suppose there is a function p : V ′ → V so that |p−1 (v)| = r for each v ∈ V , and p−1 (v)
+is a connected subset of vertices with diameter L. Suppose furthermore that for each edge uv ∈ E ′ ,
+p(u)p(v) ∈ E. Then we say that G is a uniform shallow minor of H with depth L.
+
+     See Figure 8 for some examples.
+     Usually when studying minors, we start with a graph, and then consider which minors it contains
+or does not contain. Often, we even “forbid” minors, resulting in classes like Kh -minor-free graphs.
+However, we will use uniform shallow minors in the exact opposite sense: Given a graph G, we will aim
+to find a graph H for which G is a uniform shallow minor. In particular, their use is characterized by the
+following technical lemma:
+
+Lemma 4.14. Let G = (V, E) be a graph with n vertices, and let H = (V ′ , E ′ ) be a graph with |V ′ | = r · n
+vertices. Suppose G is a uniform shallow minor of H with depth L. Then γ(1) (G) ≲ r · L · γ(1) (H).
+
+
+
+                                                     20
+Figure 8. Two examples of uniform shallow minors: A graph that admits C4 as a uniform shallow minor with depth 2 (left),
+and a graph that admits P4 as a uniform shallow minor with depth 1 (right).
+
+
+
+
+        Figure 9. Examples of the construction in Lemma 4.14 applied to the uniform shallow minors in Figure 8.
+
+
+     This lemma will be useful in the following sense: If we have a graph G of genus g, we may be able
+to find a graph H of genus g by performing local transformations at each vertex, so that G is a uniform
+shallow minor of H. In particular, we may be able to find an H with useful properties, such as a reduced
+maximum degree or faces that are easier to triangulate. Then, a bound on γ(1) (H) will imply a bound on
+γ(1) (G), with “loss” L.
+
+Proof: We start with a trivial case whose elimination we will use later: If γ(1) (H) · r · L ≥ 1, then the
+result holds since γ(1) (G) ≲ 1: We can obtain a solution validating this bound by picking two vertices u, v
+of the graph, and setting y(u) = y(v) = 2, f (u) = 1, f (v) = −1, and y(w) = f (w) = 0 for any w ̸∈ {u, v}.
+    At a high-level, our construction will randomly sample a representative vertex in H for each vertex in
+G, and then look at the edges along the shortest-paths between these representatives. This is visualized
+in Figure 9.
+    Let p : V ′ → V be the function that certifies the depth-L uniform shallow minor. Let f H , yH be a
+solution to γ(1) (H). We will construct a solution f G , yG to γ(1) (G) with random sampling as follows: Let
+π(v) be a random variable that is uniformly chosen over p−1 (v), so that each π(v) is independent. Let
+m(v) be samples of all such π(v) so that
+                                                                                              
+                   XX                                      XX
+                                                    2                                        2
+                          | f H (m(u)) − f H (m(v))| ≥ E           | f H (π(u)) − f H (π(v))| .
+                   u∈V v∈V                                     u∈V v∈V
+
+                             1
+Let f G (v) := f H (m(v)) − |V | x∈V f H (m(x)), and let yG (v) := 2(2L + 1) · v ′ ∈p−1 (v) yH (v ′ ).
+                               P                                               P
+                                            (1)
+    We check that                P of γ (G) are
+                  P the constraints                 Psatisfied by f G , yG . The normalization constraint is
+satisfied since v∈V f G (v) = v∈V f H (m(v)) − x∈V f H (m(x)) = 0. For the edge constraints, let e =
+uv ∈ E. There is a path of length k ≤ 2L + 1 in H from m(u) to m(v) using only vertices in p−1 ({u, v}).
+Denote this path as m(u) = v1 , . . . , vk+1 = m(v). Then,
+
+                                                          21
+                                                                                                                       
+                                                                          X                          X
+                      yG (u) + yG (v) = 2(2L + 1)                                   yH (u′ ) +                  yH (v ′ )
+                                                                       u′ ∈p−1 (u)                v ′ ∈p−1 (v)
+                                             ≥ 2(2L + 1) [ yH (v1 ) + · · · + yH (vk+1 )]
+                                                                 k
+                                                                 X
+                                             ≥ (2L + 1)                [ yH (vi ) + yH (vi+1 )]
+                                                                 i=1
+                                                                 Xk
+                                             ≥ (2L + 1)                | f H (vi ) − f H (vi+1 )|2
+                                                            i=1
+                                                              k
+                                                                                                    2
+                                                     2L + 1 X
+                                             ≥                    | f H (vi ) − f H (vi+1 )|
+                                                     k       i=1
+                                               2L + 1
+                                             ≥            | f H (v1 ) − f H (vk+1 )|2
+                                                     k
+                                               2L + 1
+                                             =            | f G (u) − f G (v)|2
+                                                     k
+                                             ≥ | f G (u) − f G (v)|2 ,
+where the preantepenultimate step follows from Cauchy-Schwarz, the antepenultimate step follows from
+the triangle inequality, and the last step uses k ≤ 2L + 1. Thus, the edge                  P constraints are satisfied.
+    It remains to verify the objective. To obtain a lower bound on v∈V | f G (v)|2 , we first bound the
+squared distances within each p−1 (v). For any vertex v ∈ V and any two vertices u′ , v ′ ∈ p−1 (v), there is
+a path u′ = v1′ , . . . , vl+1
+                           ′
+                               = v ′ of length l ≤ L contained entirely within p−1 (v). By the triangle inequality,
+Cauchy-Schwarz, and the constraint from γ(1) (H),
+                                                                                                                2
+                   | f H (u′ ) − f H (v ′ )|2 ≤ | f H (v1′ ) − f H (v2′ )| + · · · + | f H (vl′ ) − f H (vl+1
+                                                                                                           ′
+                                                 
+                                                                                                              )|
+                                              ≤ l | f H (v1′ ) − f H (v2′ )|2 + · · · + | f H (vl′ ) − f H (vl+1
+                                                                                                             ′
+                                                                                                                 )|2
+                                                                                                                    
+
+                                                         l
+                                                         X
+                                                               yH (vi′ ) + yH (vi+1
+                                                                                ′
+                                                                                    
+                                             ≤       L                              ) .
+                                                         i=1
+
+Summing over all pairs u′ , v ′ ∈ p−1 (v) and noting that each yH (w′ ) for w′ ∈ p−1 (v) appears in at most
+2|p−1 (v)|2 terms,
+                        X          X                                         X
+                                         | f H (u′ ) − f H (v ′ )|2 ≤ 2L r 2   yH (w′ ).
+                          u′ ∈p−1 (v) v ′ ∈p−1 (v)                                         w′ ∈p−1 (v)
+
+
+                                                                           v∈V | f G (v)| :
+                                                                                         2
+                                                                       P
+    Using this bound, we obtain a lower bound on
+
+
+
+
+                                                                    22
+                     X                        X
+           2|V | ·         | f G (v)|2 =             | f G (u) − f G (v)|2
+                     v∈V                     u,v∈V
+                                              X
+                                       =             | f H (m(u)) − f H (m(v))|2
+                                             u,v∈V
+                                                                                         
+                                                   X
+                                       ≥ E                | f H (π(u)) − f H (π(v))|2 
+                                                   u,v∈V
+                                  1 X             X             X
+                                       =                                | f H (u′ ) − f H (v ′ )|2
+                                 r 2 u̸= v∈V ′ −1
+                                             u ∈p (u) v ∈p (v)
+                                                              ′  −1
+                                                                                                                                       
+                                  1      X                                         X          X
+                             =                     | f H (u′ ) − f H (v ′ )|2 −                          | f H (u′ ) − f H (v ′ )|2 
+                                 r 2 u′ ,v ′ ∈V ′                                   v∈V u′ ,v ′ ∈p−1 (v)
+                                                                                                    
+                                  1              X
+                                                                 ′ 2              2
+                                                                                     X
+                                                                                                   ′
+                             ≥         2r|V |            | f H (v )| − 2L r                  yH (v )
+                                 r2             v ′ ∈V ′                            v ′ ∈V ′
+
+                                 2 v ′ ∈V ′ | f H (v ′ )|2 
+                                   P
+                                                                |V | − L rγ(1) (H)
+                                                                                          
+                             =
+                                             r
+                                 2(|V | − 1) v ′ ∈V ′ | f H (v ′ )|2
+                                                P
+                             ≥                                              ,
+                                                     r
+where the antepenultimate step uses u′ ,v ′ ∈V ′ | f H (u′ ) − f H (v ′ )|2 = 2|V ′ | | f H (v ′ )|2 and the bound on
+                                           P                                                         P
+
+                                                                 yH (v ′ ) = γ(1) (H) | f H (v ′ )|2 , and the
+                                                             P                                P
+within-set distances, the penultimate step uses                                                                           P last step            uses
+                                                                                                                                             ′ 2
+                     (1)                                                                                                    v ′ ∈V ′ | f H (v )|
+the assumption L rγ (H) ≤ 1 from the beginning of the proof. Thus, v∈V | f G (v)| ≳                                 2
+                                                                                                P
+                                                                                                                                     r            .
+    Finally, we verify the objective:
+
+                                   v∈V yG (v)                   2(2L + 1) v ′ ∈V ′ yH (v ′ )
+                                P                                              P
+                                                        =
+                                  v∈V | f G (v)|                           v∈V | f G (v)|
+                               P                                      P
+                                                 2                                           2
+
+                                                                2(2L + 1) v ′ ∈V ′ yH (v ′ )
+                                                                               P
+                                                        ≲
+                                                                      v ′ ∈V ′ | f H (v )| /r
+                                                                   P
+                                                                                         ′ 2
+
+                                                                  = 2r(2L + 1) · γ(1) (H)
+
+                                                                  ≲     r · L · γ(1) (H).
+                                                                                                                                                  □
+
+     We will now apply this result to prove the following lemma:
+
+Lemma 4.15 (Restatement of Lemma 2.4). Let G be a graph with genus g, n vertices, and maximum
+degree ∆. Then there exists a graph H with n∆ vertices, maximum degree 4, and genus g, so that
+γ(1) (G) ≲ γ(1) (H) · ∆ · log ∆.
+
+Proof: We create a set V ′ that contains ∆ vertices for each vertex in V (G). Let p : V ′ → V (G) denote the
+mapping of these vertices. Likewise, for each edge-vertex pair (e, v) ∈ E × V with e incident to v, map
+(e, v) to some vertex in p−1 (v), in such a manner that no two distinct edge-vertex pairs are mapped to
+the same vertex in V ′ . Use this second mapping to construct a set of endpoint-distinct edges E ′ . For each
+v ∈ V (G), construct a near-perfect binary tree Tv over the ∆ vertices in p−1 (v) so that some Euler tour of
+Tv contains the vertices mapped to the rotation system around v as a subsequence (it suffices to construct
+a near-perfect binary search tree over an arbitrary ordering of p−1 (v) containing this subsequence). Note
+
+
+                                                                        23
+that Tv will have max-degree 3 and diameter at most 2 log2 ∆. Let E ′′ be the union over all such trees.
+Let H := (V ′ , E ′ ∪ E ′′ ). Note that the maximum degree of H is 4, since each vertex in V ′ is incident to at
+most one edge in E ′ and at most 3 edges in E ′′ .
+    We claim that H is of genus exactly g: G is a minor of H (by contracting all edges in E ′′ ), so clearly
+the genus of H is at least g. Furthermore, a rotation system of G can be extended to a rotation system
+of H since the trees forming E ′′ are planar respecting the ordering induced by the rotation system (see
+Figure 10), so the genus of H is also at most g.
+
+
+
+
+                           ∆=6                                                     ∆ = 10
+
+Figure 10. Two examples of the degree-reduction construction for a genus- g graph, respecting a rotation system, local
+to a vertex. The vertex is replaced with ∆ vertices, at least one vertex for each incident edge, and these new vertices are
+connected with a near-perfect binary tree. In the left example, the displayed vertex is of maximum degree in its graph, while
+in the right example it is not (resulting in a degree-1 vertex).
+
+
+   It remains to show that γ(1) (G) ≲ γ(1) (H) · ∆ · log ∆. In fact, G is exactly a uniform shallow minor of
+H with depth 2 log2 ∆, so we simply apply Lemma 4.14.                                                     □
+
+    We will be able to leverage this lemma in order to turn a bound on γ(1) for bounded-genus graphs of
+constant maximum degree into a bound on γ(1) for bounded-genus graphs of arbitrary maximum degree
+at only a log ∆ loss. We will now use a similar technique to further reduce to the case of triangulated
+bounded-genus graphs with constant maximum degree:
+
+Lemma 4.16 (Restatement of Lemma 2.5). Let G be a graph of genus g with n vertices and maximum
+degree ∆. Then there is a triangulated genus-g graph H with (∆ + 1) · n vertices and maximum degree
+O(∆), so that γ(1) (G) ≲ (∆ + 1) · γ(1) (H).
+
+Proof: We will assume for simplicity that G is connected. O(1) edges can be added to each vertex to
+make this the case if it is not true.
+    Let H1 be the graph that adds ∆ vertices around each vertex to G, and ensure that between any two
+edges in the rotation system around a vertex in G, at least one such edge is added. Observe that H1
+is a genus-g graph with (∆ + 1)n vertices and maximum degree 2∆. Observe also that G is a uniform
+shallow minor of H1 of depth 2, and hence Lemma 4.14 shows that γ(1) (G) ≲ (∆ + 1)γ(1) (H1 ).
+    Now, we will add edges to H1 . In particular, we will construct a sequence of graphs that add edges
+to H1 , but never add vertices, and hence γ(1) will only increase for this sequence of graphs. Specifically,
+within each face of H1 , we create a cycle of all the newly added vertices in order around the face. The
+result is a graph we call H2 (with genus g, (∆ + 1)n vertices, and maximum degree max{3, 2∆}) that
+has no adjacent pair of faces both with size > 4. Moreover, any vertex incident to a face of size > 4 (i.e.,
+those in the created cycles) is incident exactly two other faces, and has degree exactly 3. For each face
+of exactly size 4 in H2 , triangulate it arbitrarily to get another new graph H3 (with genus g, (∆ + 1)n
+vertices, and maximum degree max{5, 4∆}). See Figure 11 for examples of each of these graphs around
+a particular face. It’s worth noting that for non-cellular embeddings of higher genus graphs, it is possible
+that a non-simple face may include the same edge twice in the same “direction” during a traversal around
+the face (as opposed to the example in the figure, where the doubly-included edge is included in opposite
+directions). Fortunately, this does not cause issues for the construction described here either. It is also
+worth noting that these steps are necessary even if all the faces are simple: Specifically, we would like
+
+                                                            24
+Figure 11. A demonstration of the triangulation steps on a face. From left to right, top to bottom: G , H1 , H2 , H3 , H . The
+same steps can also be performed on a non-cellular face.
+
+
+
+to handle the remaining non-triangular faces independently, and the separation ensures that we are
+not able to later produce parallel edges (see [KB97, Figure 6.3(b)] for a demonstration of the issues of
+adjacent simple faces).
+    It remains to triangulate the remaining non-triangular faces of H3 , none of which are adjacent, and
+all of which are simple. This can be accomplished by adding at most 2 edges per vertex. In particular,
+Kant and Bodlaender [KB92, KB97] gave an algorithm called “zig-zagging” that adds edges to a single
+face using a sequence of ear-cuts, triangulating the face. This algorithm applies in the case of faces on
+any rotation system, not just a rotation system on a planar graph. Call the final graph H, which is a
+triangulated genus-g graph with maximum degree max{7, 4∆}. See the last diagram in Figure 11 for a
+demonstration of this algorithm.
+    Since H has the same vertex set as H1 , and a strict superset of its edges, γ(1) (H) ≥ γ(1) (H1 ), so the
+lemma follows from the earlier argument.                                                                    □
+
+4.3.2    Circle Packings for Bounded-Genus Graphs
+
+Because of the lemmas in Section 4.3.1 we henceforth need only consider triangulated genus-g graphs
+of constant degree. We will now begin generalizing the arguments of Kelner [Kel04, Kel06b, Kel06a] to
+obtain bounds on γ(1) (G) for this class.
+    A genus-g graph naturally embeds into a genus-g surface. Moreover, a genus-g graph in fact has
+a circle packing on a genus-g surface. Both the surface and packing is unique up to a certain set of
+transformations [HS93]. However, to bound γ(3) in a similar manner to Proposition 2.1, we would need a
+circle packing on the unit sphere S 2 , likely of ply O(g). Unfortunately, as Kelner [Kel04, Kel06b, Kel06a]
+pointed out, such circle packings need-not exist. Instead, in order to bound λ2 , Kelner made use of two
+steps: First, a specific subdivision procedure is applied to the graph, and it is shown that a bound for
+the graph obtained by a sequence of subdivision procedures also induces a bound on the initial graph.
+Second, by applying this procedure a sufficient number of times, it is shown that a continuous analogue
+of the circle packing theory can be used to obtain a bound. We will apply analogues of each of these
+steps for γ(3) (and γ(1) , which differs only by a constant factor of at most 3) instead of λ2 .
+
+
+                                                             25
+Figure 12. The hexagonal subdivision procedure applied to small example triangulation subgraphs. The left and centre
+drawings show a single application of the procedure, while the right drawing shows many.
+
+
+
+   The subdivision procedure used by Kelner is the hexagonal subdivision of a triangulation G, which
+produces a graph G ′ by bisecting every edge in E(G), and then connecting all three bisection vertices
+around each resulting face to form a triangle with new edges. See Figure 12 for an example of this
+operation.
+   For a triangulation G, let G (k) denote the triangulation that results from k successive applications of
+hexagonal subdivision. The first step is to show that we can relate γ(1) (G) and γ(1) (G (k) ):
+
+Lemma 4.17. Let G be a triangulation of genus g with maximum degree ∆. Then there is some
+(universal) constant c so that |V (G)| · γ(1) (G) ≲ ∆c · |V (G (k) )| · γ(1) (G (k) ).
+
+    We defer the proof of Lemma 4.17 to Section C since it is similar to that of Lemma 4.14, and the details
+are quite technical. Essentially, it will make use of an argument of Kelner [Kel06a, Kel04, Kel06b] that
+randomly “embeds” G into G (k) . The main distinguishing feature compared to the proof of Lemma 4.14
+is that this randomized argument includes not just random vertices, but also random paths between
+vertices.
+    The second step is to show that a sufficient number of subdivisions allows us to obtain a bound. This
+step will make use of the following lemma essentially proved by Kelner:
+
+Lemma 4.18 ([Kel06b, Lemma 5.3, Lemma 5.4, proof of Theorem 2.3]). Let G be a graph of genus
+g. For each k, let F (k) denote a genus-g surface on which G (k) admits a circle packing. For each
+vertex v ∈ G (k) , let C v denote the disk in the packing corresponding to v, and let r v denote its radius.
+Let A(C) and D(C) denote the area (measure) and diameter (longest geodesic path between a point
+pair), respectively, of a compact and connected region C either in F (k) or S 2 . Then there is a sequence
+f (k) : F (k) → S 2 of analytic maps so that, for any ϵ > 0, there exists a threshold N such that for any
+                                  (k)    (k)
+k ≥ N a partition of S (k) into S1 ∪ S2 exists with the following properties:
+                                                (k)
+   • For any vertex v ∈ G (k) where C v ⊂ S1 ,
+                                                               2
+                                          r v2 ≲ D f (k) (C v ) ≲ A f (k) (C v ) .
+                                                                                
+
+
+                            (k)
+   • The projection of S1 with f (k) has ply O(g). That is: For each point p ∈ S 2 ,
+                                                              −1
+                                                      f (k)         (p) ≲ g,
+
+      almost surely.
+
+
+                                                         26
+                                             2
+                               D f (k) (C v ) ≲ ϵ.
+        P
+    •                  (k)
+            C v :C v ∩S2 ̸=;
+
+    • The mapping of the centres of each C v (v ∈ V (G (k) )) under f (k) , for S 2 embedded in R3 in the
+      standard manner, is exactly the origin.
+
+    This is a significant simplification of the sequence of results used by Kelner, tailored for our purposes.
+We note, for the interested reader, that Kelner gives a complete exposition of the required steps that
+can be used to prove the above statement only in the journal version of his work [Kel06b] and his
+thesis [Kel06a, Chapter 11]. Only a high-level outline is given in the original paper [Kel04].
+    This lemma gives us an analogous approximate circle packing construction for bounded-genus graphs
+after a sufficient number of hexagonal subdivisions. We will now use it to prove the following lemma:
+
+Lemma 4.19. Let G be a triangulation of genus g. Then, there is some threshold N ≥ 0 so that for all
+k ≥ N , γ(1) (G (k) ) ≲ γ(3) (G (k) ) ≲ |V (G (k) )| .
+                                            g
+
+
+
+Proof: Apply Lemma 4.18 with ϵ = O(1) to get N . Fix any k ≥ N . Denote n(k) := |V (G (k) )|. We will
+now choose the values y, f for the formulation of γ̇(3) to obtain a similar argument to the proof of
+Proposition 2.1. For each v ∈ V (G (k) ), choose s(v) :=     (k)
+                                                       P D( f (C v(k)
+                                                                   )). Choose f (v) as the image of the
+                     (k)
+centre of C v under f . Note that under this choice, v∈V (G (k) ) f (v) is exactly the origin.
+   For each uv ∈ E(G (k) ),
+
+                                  || f (v) − f (u)||2 ≤ D( f (k) (C v )) + D( f (k) (Cu )) = s(u) + s(v).
+
+Hence, all the P constraints are satisfied.
+     Note that v∈V (G (k) ) | f (k) (v)|2 = n(k) . Let V1 = {v ∈ V (G (k) ) : C v ⊂ S1 } and V2 = {v ∈ V (G (k) ) :
+C v ∩ S2 ̸= ;}. Then,
+                                       X                         X                     X
+               n(k) · γ̇(3) (G (k) ) =       D( f (k) (C v ))2 =   D( f (k) (C v ))2 +   D( f (k) (C v ))2
+                                           v∈V (G (k) )                    v∈V1                      v∈V2
+                                                X
+                                            ≲          A( f (k) (C v )) + ϵ ≲ g · A(S 2 ) + ϵ ≲ g,
+                                                v∈V1
+
+so γ̇(3) (G (k) ) ≲ n(k) .
+                        g
+                                                                                                                 □
+
+4.3.3     Combining the Lemmas
+
+The combination of Lemma 2.4, Lemma 2.5, Lemma 4.17 and Lemma 4.19 together imply the main
+result:
+
+Proposition 4.20 (Restatement of Proposition 2.6). Let G be a graph with n vertices, maximum de-
+gree ∆, and genus at most g. Then,
+                                                 g log ∆
+                                      γ(1) (G) ≲         .
+                                                    n
+Proof: Let G ′ be the genus-g graph on n∆ vertices with maximum degree at most 4 = O(1) produced by
+Lemma 2.4. Since the maximum degree of G ′ is constant, a triangulated genus-g graph G ′′ with O(n∆)
+vertices and constant maximum degree can be obtained by Lemma 2.5 so that γ(1) (G ′ ) ≲ γ(1) (G ′′ ). By
+Lemma 4.17, and Lemma 4.19 γ(1) (G ′′ ) ≲ n∆ , since the degree of G ′′ is constant. Hence,
+                                           g
+
+
+                                                                                                     g log ∆
+                                  γ(1) (G) ≲ γ(1) (G ′ ) · ∆ log ∆ ≤ γ(1) (G ′′ ) · ∆ log ∆ ≲                .
+                                                                                                        n
+                                                                                                                 □
+
+                                                                      27
+5    Bounds via 1-dimensional Extremal L p -Embedded Spread
+In this section, we will prove Proposition 2.9, which we restate here:
+
+Proposition 5.1 (Restatement of Proposition 2.9). For a graph G with maximum degree ∆,
+
+                                                                      n3
+                                          γ(1) (G) ≲ [α(G)]2 ·                 .
+                                                                  [s2 (G)]2
+
+   When combined with Proposition 2.7 and Proposition 2.8, this will imply the remaining bounds in
+Theorem 1.5.
+                                                                    (d)
+   To do this, we will use the definition of L p -embedded spread, Q p , given in Definition 3.3. Recall the
+                   (d)
+lemma relating Q2 and γ(d) :
+
+Lemma 5.2 (Restatement of Lemma 3.4). For a graph G, γ(d) (G) =                         2n
+                                                                                       (d)   .
+                                                                                     Q 2 (G)
+
+    Given this equivalence, Proposition 2.9 is equivalent to the following lemma:
+
+Lemma 5.3. Let G be a graph,
+                                                     (1)          [s2 (G)]2
+                                          [α(G)]2 · Q 2 (G) ≳               .
+                                                                      n2
+    To prove this, we will apply Cauchy-Schwarz directly to s2 (G), and then apply a metric embedding
+to the resulting quantity. The specific metric embedding result we will use was proven by Biswal, Lee,
+and Rao [BLR10]:
+
+Proposition 5.4 ([BLR10, Theorem 4.4]). For a metric (X , d) with padding parameter α(X , d), there
+exists an embedding f : X → R such that:
+
+    • For every x, y ∈ X , | f (x) − f ( y)| ≤ d(x, y) (i.e., f is non-expansive).
+    • α(X , d)2 x, y∈X | f (x) − f ( y)|2 ≳ x, y∈X d(x, y)2 .
+               P                             P
+
+
+We previously used a more general algorithmic form of this result in the proof of Lemma 3.5.
+   The first step is given by the following lemma:
+
+Lemma 5.5. For a graph G,
+
+                             [s2 (G)]2                              X          ω       2
+                                       ≤         sup                           dG (u, v) .
+                                 n2      ω:V (G)→R≥0 ,||ω||2 ≤1   u,v∈V (G)
+
+Proof: The result follows directly from Cauchy-Schwarz.                                                   □
+
+    The second step is then given by the following lemma:
+
+Lemma 5.6. For a graph G,
+                                    (1)
+                                                                           X        ω       2
+                         [α(G)]2 · Q 2 (G) ≳           sup                          dG (u, v) .
+                                               ω:V (G)→R≥0 ,||ω||2 ≤1 u,v∈V (G)
+
+
+
+
+                                                           28
+Proof: Apply Proposition 5.4 with p = 2 to get a non-expansive embedding f ′ : V → R from (V, dGω ) to
+                                                                              (1)
+R. Using y(v) := ω(v)2 and f (v) P := f ′ (v)/2, we claim the constraints of Q 2 (G) are satisfied: For the
+normalization constraint, || y||1 = v∈V ω(v) = ||ω||2 ≤ 1. For the edge constraints,
+                                               2        2
+
+
+                                                   1                 1
+         y(u) + y(v) = ω(u)2 + ω(v)2 ≥               [ω(u) + ω(v)]2 ≥ | f ′ (u) − f ′ (v)|2 ≥ | f (u) − f (v)|2 .
+                                                   2                 2
+                                                  (1)
+Thus, y, f forms a feasible solution to Q 2 (G). Finally, for the objective value, it follows that
+         X              2               X                                      X
+               dGω (u, v) ≲ [α(G)]2 ·          | f ′ (u) − f ′ (v)|2 ≲ [α(G)]2 ·      | f (u) − f (v)|2 .
+        u,v∈V (G)                               u,v∈V (G)                                            u,v∈V (G)
+
+                                                                                                                                            □
+
+    Finally, we can prove Lemma 5.3:
+
+Proof (Proof of Lemma 5.3): Combine Lemma 5.5 and Lemma 5.6.                                                                                □
+
+   Consequently, we have completed the proof of Proposition 2.9, and therefore we have proved the
+remaining bounds stated in Theorem 1.5.
+
+
+6    Robustness Proofs
+Proof (Proof of Lemma 1.6): Let π : V (G) → V (H) be the quotient map. By Lemma 3.4, it is enough
+to prove that
+                                    (d)       |V (G)| (d)
+                                  Q 2 (G) ≥          Q (H).
+                                             b|V (H)| 2
+                                                  (d)
+    Let ( f , y) be a feasible solution for Q 2 (H). For x ∈ V (H), write r x = |π−1 (x)|. Pull ( f , y) back to G
+by setting
+                                                              1
+                                                   f ′ (v) = p f (π(v))
+                                                                b
+and
+                                                             1
+                                                    y ′ (v) = y(π(v)).
+                                                             b
+Then
+                                                   1 X
+                                      || y ′ ||1 =           r x y(x) ≤ || y||1 ≤ 1.
+                                                   b
+                                                        x∈V (H)
+
+The edge constraints are preserved, since if uv ∈ E(G) and π(u) ̸= π(v), then π(u)π(v) ∈ E(H), while if
+                                                                                                  (d)
+π(u) = π(v), then the Euclidean distance evaluates to zero. Thus, ( f ′ , y ′ ) is feasible for Q 2 (G).
+    Its objective value is exactly
+                                     1 X
+                                                 r x rz || f (x) − f (z)||22 .
+                                     b
+                                       x,z∈V (H)
+
+By the weighted variance identity, and using r x ≥ 1 and x r x = |V (G)|,
+                                                                P
+
+      X                                                       X                             |V (G)|       X
+                r x rz || f (x) − f (z)||22 ≥ 2|V (G)| min             || f (x) − a||22 =                          || f (x) − f (z)||22 .
+                                                     a∈Rd                                   |V (H)|
+    x,z∈V (H)                                                x∈V (H)                                   x,z∈V (H)
+
+Therefore
+                                        (d)         |V (G)|       X
+                                      Q 2 (G) ≥                             || f (x) − f (z)||22 .
+                                                   b|V (H)|
+                                                                x,z∈V (H)
+
+
+                                                                  29
+Finally, this gives us
+                                         (d)          |V (G)| (d)
+                                       Q 2 (G) ≥             Q (H).
+                                                     b|V (H)| 2
+Using Lemma 3.4 again proves the first claim. The second claim follows because q merge operations can
+put at most q + 1 original vertices into a single vertex of H.                                      □
+
+Proof (Proof of Lemma 1.7): If q = 0, then the claim is trivial, so assume q ≥ 1.
+   Let π : V (G) → V (H) be the quotient map. Let R be the set of vertices of G whose image under π
+has more than one preimage. There are at most q such images in H. The sum over them of one less
+than their preimage size is q. Hence |R| ≤ 2q. Outside R, the map π identifies G − R with an induced
+subgraph of H. Thus every component of G − R has padding parameter at most α0 .
+   Fix a vertex-weighted shortest-path metric d on G and a scale ∆. We use the LP formulation and
+rounding theorem of Krauthgamer and Roughgarden [KR11, (3.4), Figure 2, and Theorem 3.9]. For a
+metric space (X , δ), their LP at scale ∆ and parameter β has nonnegative variables x av , yav for a, v ∈ X
+and constraints               P
+                                a∈X x av ≤ 1      ∀v ∈ X ,
+                                     yav ≤ x au ∀a, v ∈ X , u ∈ Bδ (v, ∆/β),
+                              P      x av = 0                / Bδ (v, ∆),
+                                                  ∀v ∈ X , a ∈
+                                     y
+                                a∈X av    ≥   c   ∀v ∈  X ,
+where c > 0 is a sufficiently small absolute constant. It is enough to make this LP feasible on (V (G), d)
+with
+                                         β = C(α0 + log(q + 2))
+for a sufficiently large constant C. Write
+                                                   ρ = ∆/β.
+    We use two partial LP solutions. First, on each component of G − R, use the LP solution supplied by
+the α0 bound, extend it by zero to the rest of G, and keep its y-variables only at vertices farther than ρ
+from R. These vertices are covered because their ρ-balls stay in one component. The third LP constraint
+remains true because intrinsic distances in a component are at least the ambient distances. The second
+LP constraint is checked entirely inside that component, again because the relevant ρ-balls avoid R.
+    Second, choose a nearest point p(v) ∈ R for every vertex within distance 2ρ of R. The metric on R
+has padding parameter O(log(q + 2)) by the standard finite-metric bound [CF25]. Use the corresponding
+LP solution on R at scale ∆/2. For a ∈ R and vertices u within distance 2ρ of R, copy the x-variable for a
+and p(u) from the LP on R. For a ∈ R and vertices v within distance ρ of R, copy the y-variable for a and
+p(v) from the LP on R. All remaining variables in this piece are zero. If C is large enough, the third LP
+constraint holds: a nonzero x au has d(a, u) ≤ d(a, p(u)) + 2ρ ≤ ∆. For the second LP constraint, suppose
+yav is nonzero and u ∈ Bd (v, ρ). Then d(v, R) ≤ ρ, so d(u, R) ≤ 2ρ and p(u) is defined. Moreover,
+
+                                               d(p(u), p(v)) ≤ 4ρ
+
+is within the ball radius in the second constraint of the LP on R, after increasing C by an absolute factor.
+Thus the needed inequality follows from the LP on R.
+    Average the two partial solutions. The first three LP constraints hold in both pieces, so they hold
+after averaging. For the fourth constraint, each vertex has total y-value at least c in one of the two pieces
+and nonnegative total y-value in the other. Thus the average satisfies the fourth constraint with c/2 in
+place of c. After decreasing the absolute constant c by a factor of two, this is a feasible LP solution on G.
+The rounding theorem of Krauthgamer and Roughgarden gives a padded decomposition with the same
+asymptotic parameter. Since d and ∆ were arbitrary, α(G) ≲ α0 + log(q + 2).                                □
+
+
+                                                      30
+7     Algorithmic Details and Implementation
+Here we detail our algorithmic form of the refined Cheeger inequality, then discuss some small experi-
+ments.
+
+7.1    Algorithmic Details
+Many pieces of the rounding algorithm are implicit in the proofs of Kwok, Lau, and Tung [KLT22, KLT25],
+although alternative algorithms are present in many other works for several steps.
+
+Theorem 7.1 (Algorithmic form of Theorem 1.3). Let G be a graph with n vertices, m edges, and
+maximum degree ∆. There is a randomized algorithm (succeeding w.h.p.) that runs in O((m2 + n3 ) ·
+polylog(n)) time and outputs a set S with |S| ≤ n/2 and
+                                        Æ
+                                ψ(S) ≲ γ(n) (G) · min{log ∆, α(G)2 }.
+
+There is also a randomized algorithm, succeeding with high probability, that runs in O((nm + n3 ) ·
+polylog(n)) time and outputs a set T with |T | ≤ n/2 and
+                                  Æ
+                         ψ(T ) ≲ (γ(n) (G) + O(1/n)) · min{log ∆, α(G)2 }.
+
+    As in previous work, there are two sub-steps in the algorithm: A dimension-reduction step and a
+threshold rounding step.
+
+Initial SDP solving. The input to the rounding step is a feasible and approximately optimal solution to
+γ(n) (G), consisting of an embedding f : V → Rn and weights y : V → R≥0 satisfying
+
+                                      y(u) + y(v) ≥ || f (u) − f (v)||22 ∀uv ∈ E.
+
+Theorem 7.2 (Solving the vertex-expansion SDP). Let G be an n-vertex, m-edge graph. For every
+ϵ > 0, one can compute a feasible solution for γ(n) (G) with objective value at most γ(n) (G) + ϵ in
+O(m · polylog(n)/ϵ) time. One can also compute a feasible solution with objective value O(γ(n) (G)) in
+O(m2 · polylog(n)) time.
+
+     The additive error bound above follows by applying the Matrix Multiplicative Weights Update
+method [AK16] to Roch’s formulation (see also [LTW24, Section 5.1]) and using approximate frac-
+tional matchings, which can be obtained using a positive LP solver (e.g. Young’s [You14]). The mul-
+tiplicative guarantee follows from the positive SDP solver of Jambulapati, Lee, Li, Padmanabhan, and
+Tian [JLL+ 21].8 Our implementation uses the latter approach.
+     To round, we perform two dimension-reduction steps, and take the best result of the two. One of
+these dimension-reduction methods is quite slow in practice, so our implementation only uses the faster
+one.
+   8
+     The original paper [JLL+ 20] corresponding to [JLL+ 21] claimed a faster time complexity that would imply O(m·polylog(n))
+time. This appears to match our empirical results, but a flaw was later found in their proof. A tight analysis remains open.
+
+
+
+
+                                                             31
+Dimension reduction.        The first dimension-reduction method is a Gaussian projection.
+
+Algorithm 1 ProjectionReduce( f : V → Rn , G = (V, E))
+  for i = 1 to Θ(log n) do
+      Sample ri ∼ N(0, I n )
+      f i′ (v) ← 〈 f (v), ri 〉 for all v ∈ V
+  end for
+  return f j′ maximizing u,v∈V [ f j′ (u) − f j′ (v)]2
+                                P
+
+
+
+    The second dimension-reduction method uses an average-squared-distortion embedding routine
+implicit in Biswal, Lee, and Rao [BLR10, Theorem 4.4], itself building on Rabinovich [Rab03]. Sampling
+the random partition uses a linear programming relaxation of Krauthgamer and Roughgarden [KR11],
+which can be solved efficiently using a positive LP solver [You14]. Note that we do not implement this
+option.
+
+Algorithm 2 DistanceReduce( y : V → R≥0 , G = (V, E))
+  Let d y (u, v) be the shortest-path metric in G with vertex weights y
+          Ç P
+  ∆2 ← n12 u,v∈V d y (u, v)2
+  if there exists x 0 ∈ V with Bd y (x 0 , ∆2 /4) ≥ n/10 then
+      S0 ← Bd y (x 0 , ∆2 /4)
+      return f0′ (u) = d y (u, S0 ) for all u ∈ V
+  end if
+  for i = 1 to Θ(log n) do
+      Pi ← RandomPartition(V, d y , ∆2 /4)
+      Let Si be the union of parts P ∈ Pi selected independently with probability 1/2
+      f i′ (u) ← d y (u, Si ) for all u ∈ V
+  end for
+  return f j′ maximizing u,v∈V [ f j′ (u) − f j′ (v)]2
+                               P
+
+
+
+   The output of the better of the two methods is used.
+
+Algorithm 3 BestReduce( f : V → Rn , y : V → R≥0 , G)
+  f1′ ← ProjectionReduce( f , G)
+  f2′ ← DistanceReduce( P
+                        y, G)
+  return f j′ maximizing u,v∈V [ f j′ (u) − f j′ (v)]2
+
+
+Threshold rounding. Given a one-dimensional embedding, we use a sweep over the vertices in sorted
+order to find the best cut induced by the ordering.
+
+
+
+
+                                                         32
+Algorithm 4 Sweep( f ′ : V → R, y : V → R≥0 , G = (V, E))
+  Sort vertices by f ′ value: v1 , . . . , vn
+  for k = 1 to n − 1 do
+      Ak ← {v1 , . . . , vk } and Bk ← {vk+1 , . . . , vn }
+      Sk ← ;
+      for each edge uv ∈ E with one endpoint in Ak and one endpoint in Bk do
+          if y(u) ≥ y(v) then
+              Sk ← Sk ∪ {u}
+          else
+              Sk ← Sk ∪ {v}
+          end if
+      end for
+      ψk ← |Sk |/ min{|Ak |, |Bk |}
+  end for
+  return the partition (Ak \ Sk , Bk \ Sk , Sk ) minimizing ψk
+
+
+      We can then attain sparse cuts by combining these steps.
+
+Algorithm 5 ReweightedSpectralPartitioning(G = (V, E))
+  Solve γ(n) (G), obtaining f : V → Rn and y : V → R≥0
+  f ′ ← BestReduce( f , y, G)
+  (A, B, S) ← Sweep( f ′ , y, G)
+  return (A, B, S)
+
+
+   One call gives a set of vertices with bounded vertex expansion. Repeating on the larger residual
+component gives a balanced separator.
+
+Algorithm 6 BalancedRSP(G = (V, E))
+  Sunion ← ;
+  Vresidual ← V
+  while |Vresidual | > 23 |V | do
+      Let Gresidual be the induced subgraph of G on Vresidual
+      (A, B, S) ← ReweightedSpectralPartitioning(Gresidual )
+      Sunion ← Sunion ∪ S
+      Vresidual ← arg maxX ∈{A,B} |X |
+  end while
+  return Sunion
+
+
+7.2     Experiments
+We ran some very limited experiments with our prototype implementation, using the DIMACS shortest-
+path road-network dataset [DGJ09], as well as some synthetic graphs. We hope that a better-tuned
+implementation with more expansive experiments will be the subject of future work. The CPU experiments
+were run using an AMD Ryzen 9 7950X CPU and 64 GB of RAM. Figure 13 shows the output on a synthetic
+planar instance.
+
+
+
+
+                                                    33
+                     Figure 13. Positive-SDP output on a 100,000-vertex synthetic planar instance.
+
+
+
+DIMACS road-network instances. We also ran the prototype on the DIMACS shortest-path road-
+network instances [DGJ09]. Note that this dataset is of directed graphs, and that we replace it with its
+undirected form. The table reports the number of undirected edges after loading and deduplication. The
+road-network separators and the corresponding one-dimensional projections are visualized in Figures 14
+and 15.
+
+  Region           Vertices           Edges          Separator vertices                Runtime (seconds)
+  NY               264346           365050                                    16                             38.07
+  BAY              321270           397415                                    18                             29.69
+  COL              435666           521200                                    21                             23.51
+
+                      Table 4. DIMACS road-network experiment summary. Runtime is in seconds.
+
+
+
+
+Figure 14. DIMACS road-network separators produced by the positive-SDP prototype. From left to right: New York, Bay Area,
+and Colorado.
+
+
+
+
+                                                          34
+Figure 15. 1D projection visualizations for the DIMACS road-network runs. From left to right: New York, Bay Area, and
+Colorado.
+
+
+
+8    Acknowledgements
+Thank you to Hung Le and Jonathan Conroy for helpful comments on presentation.
+    Thank you to Therese Biedl for pointing out that not every embedded graph in the torus can be
+simply triangulated, which led to the K5 example discussed at the start of Section 4.3.
+    Thank you to Arnold Filtser for pointing to the simple algorithm of Krauthgamer and Roughgarden
+for approximating padded decomposability [KR11].
+    Thank you also to Lap Chi Lau for his excellent course in 2022, in which some of the preliminary
+results of this work began as a course project.
+    In parallel to this work, and also as a part of the same course, Kam Chuen Tung independently
+derived essentially the same result as Proposition 4.5, and similar bounds for γ(1) based on L 2 -extremal
+spread for bounded-genus graphs and Kh -minor-free graphs. These results have appeared in his recent
+PhD thesis [Tun25, Chapter 7], which also includes some interesting generalizations.
+    After the initial preprint of this work, Lap Chi Lau notified the author that he was also independently
+aware of the bound on γ(1) for planar graphs stated in Proposition 4.5 prior to either work.
+    The implementation used for this project was written with significant LLM assistance, via a combi-
+nation of Claude Code and Codex. We take full responsibility for the claims and results present in this
+work.
+
+
+References
+[ACS18]         Omid Amini and David Cohen-Steiner. A transfer principle and applications to eigenvalue
+                estimates for graphs. Commentarii Mathematici Helvetici, 93(1):203–223, 2018.
+
+[AK16]          Sanjeev Arora and Satyen Kale. A combinatorial, primal-dual approach to semidefinite
+                programs. Journal of the ACM (JACM), 63(2):1–35, 2016.
+
+[And70]         Evgeny M Andreev. On convex polyhedra in lobačevskiı̆ spaces. Mathematics of the
+                USSR-Sbornik, 10(3):413, 1970.
+
+[AST90a]        Noga Alon, Paul Seymour, and Robin Thomas. A separator theorem for graphs with an
+                excluded minor and its applications. In Proceedings of the twenty-second annual ACM
+                symposium on Theory of computing, pages 293–299, 1990.
+
+[AST90b]        Noga Alon, Paul Seymour, and Robin Thomas. A separator theorem for nonplanar graphs.
+                Journal of the American Mathematical Society, 3(4):801–808, 1990.
+
+
+
+                                                         35
+[BKL+ 26]      Édouard Bonnet, Tuukka Korhonen, Hung Le, Jason Li, and Tomáš Masařík. Separator
+               theorem for minor-free graphs in linear time. In Proceedings of the 58th Annual ACM
+               Symposium on Theory of Computing, pages 61–71, 2026.
+
+[BLR08]        Punyashloka Biswal, James R. Lee, and Satish Rao. Eigenvalue bounds, spectral partition-
+               ing, and metrical deformations via flows. In Proceedings of the 2008 49th Annual IEEE
+               Symposium on Foundations of Computer Science, FOCS ’08, page 751–760, USA, 2008.
+               IEEE Computer Society.
+
+[BLR10]        Punyashloka Biswal, James R Lee, and Satish Rao. Eigenvalue bounds, spectral parti-
+               tioning, and metrical deformations via flows. Journal of the ACM (JACM), 57(3):1–23,
+               2010.
+
+[CF25]         Jonathan Conroy and Arnold Filtser. How to protect yourself from threatening skeletons:
+               Optimal padded decompositions for minor-free graphs. In Proceedings of the 57th Annual
+               ACM Symposium on Theory of Computing, STOC ’25, page 2281–2292, New York, NY, USA,
+               2025. Association for Computing Machinery.
+
+[DGJ09]        Camil Demetrescu, Andrew V Goldberg, and David S Johnson. The shortest path problem:
+               Ninth DIMACS implementation challenge, volume 74. American Mathematical Soc., 2009.
+
+[DGRW11]       Daniel Delling, Andrew V Goldberg, Ilya Razenshteyn, and Renato F Werneck. Graph
+               partitioning with natural cuts. In 2011 IEEE International Parallel & Distributed Processing
+               Symposium, pages 1135–1146. IEEE, 2011.
+
+[DLMF 5.6.4] NIST Digital Library of Mathematical Functions, 5.6.4. https://dlmf.nist.gov/5.6#E4,
+             Release 1.2.4 of 2025-03-15. F. W. J. Olver, A. B. Olde Daalhuis, D. W. Lozier, B. I. Schneider,
+             R. F. Boisvert, C. W. Clark, B. R. Miller, B. V. Saunders, H. S. Cohl, and M. A. McClain, eds.
+
+[DP25]         Michelle Delcourt and Luke Postle. Reducing linear hadwiger’s conjecture to coloring
+               small graphs. Journal of the American Mathematical Society, 38(2):481–507, 2025.
+
+[EMT93]        David Eppstein, Gary L Miller, and Shang-Hua Teng. A deterministic linear time algorithm
+               for geometric separators and its applications. In Proceedings of the ninth annual symposium
+               on Computational geometry, pages 99–108, 1993.
+
+[FHL05]        Uriel Feige, Mohammad Taghi Hajiaghayi, and James R. Lee. Improved approximation
+               algorithms for minimum-weight vertex separators. In Harold N. Gabow and Ronald Fagin,
+               editors, Proceedings of the 37th Annual ACM Symposium on Theory of Computing, Baltimore,
+               MD, USA, May 22-24, 2005, pages 563–572. ACM, 2005.
+
+[FHL08]        Uriel Feige, MohammadTaghi Hajiaghayi, and James R. Lee. Improved approximation
+               algorithms for minimum weight vertex separators. SIAM J. Comput., 38(2):629–657,
+               2008.
+
+[Fie73]        Miroslav Fiedler. Algebraic connectivity of graphs. Czechoslovak mathematical journal,
+               23(2):298–305, 1973.
+
+[Fri08]        Joel Friedman. A proof of Alon’s second eigenvalue conjecture and related problems. American
+               Mathematical Soc., 2008.
+
+[Gau59]        Walter Gautschi. Some elementary inequalities relating to the gamma and incomplete
+               gamma function. J. Math. Phys, 38(1):77–81, 1959.
+
+                                                    36
+[GHT84]     John R Gilbert, Joan P Hutchinson, and Robert Endre Tarjan. A separator theorem for
+            graphs of bounded genus. Journal of Algorithms, 5(3):391–407, 1984.
+
+[HLW06]     Shlomo Hoory, Nathan Linial, and Avi Wigderson. Expander graphs and their applications.
+            Bulletin of the American Mathematical Society, 43(4):439–561, 2006.
+
+[HS93]      Zheng-Xu He and Oded Schramm. Fixed points, koebe uniformization and circle packings.
+            Annals of Mathematics, 137(2):369–406, 1993.
+
+[HT74]      John Hopcroft and Robert Tarjan. Efficient planarity testing. Journal of the ACM (JACM),
+            21(4):549–568, 1974.
+
+[JLL+ 20]   Arun Jambulapati, Yin Tat Lee, Jerry Li, Swati Padmanabhan, and Kevin Tian. Positive
+            semidefinite programming: Mixed, parallel, and width-independent. In Proceedings of the
+            52nd Annual ACM SIGACT Symposium on Theory of Computing, pages 789–802, 2020.
+
+[JLL+ 21]   Arun Jambulapati, Yin Tat Lee, Jerry Li, Swati Padmanabhan, and Kevin Tian. Positive
+            semidefinite programming: Mixed, parallel, and width-independent, 2021.
+
+[JPV22]     Vishesh Jain, Huy Tuan Pham, and Thuy-Duong Vuong. Dimension reduction for maximum
+            matchings and the fastest mixing markov chain. arXiv preprint arXiv:2203.03858, 2022.
+
+[KB92]      Goos Kant and Hans L Bodlaender. Triangulating planar graphs while minimizing the
+            maximum degree. In Algorithm Theory—SWAT’92: Third Scandinavian Workshop on Algo-
+            rithm Theory Helsinki, Finland, July 8–10, 1992 Proceedings 3, pages 258–271. Springer,
+            1992.
+
+[KB97]      Goos Kant and Hans L Bodlaender. Triangulating planar graphs while minimizing the
+            maximum degree. information and computation, 135(1):1–14, 1997.
+
+[Kel04]     Jonathan A Kelner. Spectral partitioning, eigenvalue bounds, and circle packings for
+            graphs of bounded genus. In Proceedings of the thirty-sixth annual ACM symposium on
+            Theory of computing, pages 455–464, 2004.
+
+[Kel06a]    Jonathan A Kelner. New geometric techniques for linear programming and graph partitioning.
+            PhD thesis, Massachusetts Institute of Technology, 2006.
+
+[Kel06b]    Jonathan A Kelner. Spectral partitioning, eigenvalue bounds, and circle packings for
+            graphs of bounded genus. SIAM Journal on Computing, 35(4):882–902, 2006.
+
+[KL78]      GA Katabiansky and VI Levenshtein. Bounds for packings on a sphere and in space.
+            Problems of Information Transmission, 14(1):1–7, 1978.
+
+[KLPT09]    Jonathan A Kelner, James R Lee, Gregory N Price, and Shang-Hua Teng. Higher eigenvalues
+            of graphs. In 2009 50th Annual IEEE Symposium on Foundations of Computer Science,
+            pages 735–744. IEEE, 2009.
+
+[KLPT11]    Jonathan A Kelner, James R Lee, Gregory N Price, and Shang-Hua Teng. Metric uniformiza-
+            tion and spectral bounds for graphs. Geometric and Functional Analysis, 21(5):1117–1143,
+            2011.
+
+[KLT22]     Tsz Chiu Kwok, Lap Chi Lau, and Kam Chuen Tung. Cheeger inequalities for vertex expan-
+            sion and reweighted eigenvalues. In 2022 IEEE 63rd Annual Symposium on Foundations
+            of Computer Science (FOCS), pages 366–377, 2022.
+
+                                               37
+[KLT25]    Tsz Chiu Kwok, Lap Chi Lau, and Kam Chuen Tung. Cheeger’s inequalities for vertex
+           expansion and reweighted eigenvalues. SIAM Journal on Computing, 54(6):1568–1625,
+           2025.
+
+[KMR08]    Ken-ichi Kawarabayashi, Bojan Mohar, and Bruce Reed. A simpler linear time algorithm
+           for embedding graphs into an arbitrary surface and the genus of graphs of bounded
+           tree-width. In 2008 49th Annual IEEE Symposium on Foundations of Computer Science,
+           pages 771–780. IEEE, 2008.
+
+[Koe36]    Paul Koebe. Kontaktprobleme der konformen Abbildung. Hirzel, 1936.
+
+[KR10]     Ken-ichi Kawarabayashi and Bruce Reed. A separator theorem in minor-closed classes. In
+           2010 IEEE 51st Annual Symposium on Foundations of Computer Science, pages 153–162.
+           IEEE, 2010.
+
+[KR11]     Robert Krauthgamer and Tim Roughgarden. Metric clustering via consistent labeling.
+           Theory of Computing, 7(5):49–74, 2011.
+
+[Li11]     Shengqiao Li. Concise formulas for the area and volume of a hyperspherical cap. Asian
+           Journal of Mathematics & Statistics, 4(1):66–70, 2011.
+
+[LS10]     James R Lee and Anastasios Sidiropoulos. Genus and the geometry of the cut graph. In
+           Proceedings of the twenty-first annual ACM-SIAM symposium on Discrete Algorithms, pages
+           193–201. SIAM, 2010.
+
+[LT79]     Richard J Lipton and Robert Endre Tarjan. A separator theorem for planar graphs. SIAM
+           Journal on Applied Mathematics, 36(2):177–189, 1979.
+
+[LTW24]    Lap Chi Lau, Kam Chuen Tung, and Robert Wang. Fast algorithms for directed graph
+           partitioning using flows and reweighted eigenvalues. In Proceedings of the 2024 Annual
+           ACM-SIAM Symposium on Discrete Algorithms (SODA), pages 591–624. SIAM, 2024.
+
+[MTTV97]   Gary L Miller, Shang-Hua Teng, William Thurston, and Stephen A Vavasis. Separators for
+           sphere-packings and nearest neighbor graphs. Journal of the ACM (JACM), 44(1):1–29,
+           1997.
+
+[OTZ22]    Sam Olesker-Taylor and Luca Zanetti. Geometric bounds on the fastest mixing markov
+           chain. In 13th Innovations in Theoretical Computer Science Conference (ITCS 2022). Schloss
+           Dagstuhl-Leibniz-Zentrum für Informatik, 2022.
+
+[OTZ24]    Sam Olesker-Taylor and Luca Zanetti. Geometric bounds on the fastest mixing markov
+           chain: S. olesker-taylor, l. zanetti. Probability Theory and Related Fields, 188(3):1017–
+           1062, 2024.
+
+[PRS94]    Serge A Plotkin, Satish Rao, and Warren D Smith. Shallow excluded minors and improved
+           graph decompositions. In SODA, volume 90, pages 462–470, 1994.
+
+[Rab03]    Yuri Rabinovich. On average distortion of embedding metrics into the line and into L1.
+           In Lawrence L. Larmore and Michel X. Goemans, editors, Proceedings of the 35th Annual
+           ACM Symposium on Theory of Computing, June 9-11, 2003, San Diego, CA, USA, pages
+           456–462. ACM, 2003.
+
+
+
+                                               38
+[RH01]    Arnold L. Rosenberg and Lenwood S. Heath. Graph separators with applications. Frontiers
+          of computer science. Kluwer, 2001.
+
+[Roc05]   Sébastien Roch. Bounding fastest mixing. Electronic Communications in Probability,
+          10:282–296, 2005.
+
+[RW09]    Bruce Reed and David R Wood. A linear-time algorithm to find a separator in a graph
+          excluding a minor. ACM Transactions on Algorithms (TALG), 5(4):1–16, 2009.
+
+[ST96]    Daniel A Spielman and Shang-Hua Teng. Spectral partitioning works: Planar graphs and
+          finite element meshes. In Proceedings of 37th conference on foundations of computer science,
+          pages 96–105. IEEE, 1996.
+
+[ST07]    Daniel A Spielman and Shang-Hua Teng. Spectral partitioning works: Planar graphs and
+          finite element meshes. Linear Algebra and its Applications, 421(2-3):284–305, 2007.
+
+[TM79]    William P Thurston and John Willard Milnor. The geometry and topology of three-
+          manifolds, 1979.
+
+[Tun25]   Kam Chuen Tung. Reweighted Eigenvalues: A New Approach to Spectral Theory beyond
+          Undirected Graphs. PhD thesis, University of Waterloo, 2025.
+
+[Ung51]   Peter Ungar. A theorem on planar graphs. Journal of the London Mathematical Society,
+          1(4):256–262, 1951.
+
+[WN11]    Christian Wulff-Nilsen. Separator theorems for minor-free and shallow minor-free graphs
+          with applications. In 2011 IEEE 52nd Annual Symposium on Foundations of Computer
+          Science, pages 37–46. IEEE, 2011.
+
+[Wyn65]   A. D. Wyner. Capabilities of bounded discrepancy decoding. Bell System Technical Journal,
+          44(6):1061–1122, 1965.
+
+[You14]   Neal E Young. Nearly linear-work algorithms for mixed packing/covering and facility-
+          location linear programs. arXiv preprint arXiv:1407.3015, 2014.
+
+
+
+
+                                              39
+A    Graph Class Definitions
+There are a number of graph classes that are relevant to our results. The most notable is the well-known
+class of planar graphs, which are graphs that can be drawn on the plane without crossing edges. Most
+of the other classes we will consider generalize planar graphs in some manner.
+
+Definition A.1. A graph G is said to have genus g if it can be embedded into an orientable surface of
+genus g, and it cannot be embedded into an orientable surface of smaller genus. Planar graphs are
+exactly those that have genus 0.
+
+    Up to homeomorphism, there is only one orientable surface of genus g, for any particular g. For
+g = 0, it is the sphere. The orientable surface of genus g > 0 can be obtained from the orientable surface
+of genus g − 1 by attaching a “handle”. Alternatively, it can be expressed as g “doughnuts” merged
+together. See Figure 16 for examples of these surfaces, and see Figure 17 for an example of a graph
+drawn on a genus-3 surface.
+
+
+
+
+ Figure 16. Examples of (left to right) a genus-1 surface, a genus-2 surface, a genus-3 surface, and a genus 10 surface.
+
+
+
+
+            Figure 17. An example of a graph (left) and a drawing of the graph on a genus-3 surface (right).
+
+
+Definition A.2. For a graph G and a graph H, we say that H is a minor of G if it can be obtained from G
+by a sequence of edge deletions, vertex deletions, and edge contractions (that is, merging the two vertices
+incident to an edge into one). Equivalently, H is a minor of G if there are pairwise disjoint, nonempty
+vertex sets X v ⊆ V (G) for v ∈ V (H) such that every G[X v ] is connected and, for each uv ∈ E(H), some
+edge of G has one endpoint in X u and the other in X v .
+    We say a graph G is H-minor-free if it does not contain H as a minor.
+
+    We will also consider two much more fundamentally geometric graph classes:
+
+Definition A.3. A graph G is said to be the intersection graph of d-dimensional balls with ply k
+(sometimes called a d-dimensional k-ply neighbourhood system) if there is a collection of d-dimensional
+balls B1 , . . . , Bn with ply at most k for all points almost surely, so that each ball corresponds to a vertex,
+and each edge corresponds to a pair of vertices whose balls intersect.
+
+Definition A.4. A d-dimensional k-nearest neighbour graph is a graph G with n vertices v1 , . . . , vn
+corresponding to points p1 , . . . , pn ∈ Rd so that an edge vi v j exists if and only if pi is among the k-nearest
+neighbours of p j , or p j is among the k-nearest neighbours of pi .
+
+                                                          40
+B     A Disproof of a Genus Claim
+In 2010, Lee and Sidiropoulos claimed the following result [LS10, Theorem 4.2]:
+
+(⋆)   Let G =p(V, E) be a graph of orientable genus g. Let (V, d) be a metric space with the property
+      that (V, d) embeds isometrically into a Hilbert space, and let dG be the path metric arising from
+      an edge (u, v) having length d(u, v). Then for every p ≥ 1 and product weight ω, there exists a
+      mapping f : (V, dG ) → R with
+                                                                                  1/p
+                                                    x, y∈X ω(x, y)dG (x, y)
+                                             P                            p
+                         | f (x) − f ( y)|
+                                                                                               Æ
+                  max                       · P                                        ≲ C(p) ·   log g
+                 x̸= y∈X     dG (x, y)          x, y∈X ω(x, y)| f (x) − f ( y)|
+                                                                                p
+
+
+      where C(p) is some constant depending only on p.
+
+    Lee and Sidiropoulos deferred a proof of this claim to an absent    full version. This would im-
+    a polynomial-time algorithm to compute separators of size O( g n log g), and more generally an
+                                                                  p
+plyp
+O( log g)-approximation, by applying it to existing techniques [FHL05, FHL08]. Unfortunately, the
+theorem as-stated appears to be incorrect, even for uniform ω and p = 1, and the existence of such
+algorithms remains open. We provide a short counter-example here. We emphasize that it is the precise
+statement for which we give a counter-example. In fact, our counter-example uses no special properties
+about genus. There may be a straightforward fix for their methods as a whole.
+
+Example B.1. Let {Gn = (Vn , En )}n∈Z , for some countably-large set Z ⊂ N of integers, be an infinite
+collection of 4-regular spectral expander graphs [Fri08, Corollary 1.4]. That is,pif An is the adjacency
+matrix of Gn , and its eigenvalues are 4 = α1 (An ) ≥ α2 (An ) ≥ · · · , then αi (An ) ≤ 12 + 0.1 for all i ≥ 2.
+    For each n ∈ Z, define the metric (Vn , dn ) by
+                                                      ¨
+                                                        0 u=v
+                                          dn (u, v) =              ,
+                                                        1 u ̸= v
+
+and define the uniform product weights ωn (u, v) = 1/n2 . Then, with p = 1, for every n ∈ Z, Gn , (Vn , dn ),
+and ωn all satisfy the premises of (⋆), but there is some sufficiently large n for which they cannot satisfy
+the conclusion.
+                                    p
+Proof: Denote the constants λ := 12 + 0.1 and γ := 4 − λ > 0. Since α2 (An ) ≤ λ < 4, the graph Gn is
+connected [HLW06, Section 2.3]. Let Dn = dGn denote its shortest-path metric. The hypotheses of (⋆)
+are satisfied since (Vn , dn ) = (Vn , dn ). Let f n : Vn → R be any map for which the denominator in the
+                         p
+
+conclusion of (⋆) is nonzero.
+    Set
+                                                       | f n (x) − f n ( y)|
+                                           L n = max                         .
+                                                 x̸= y       Dn (x, y)
+The quantity in the conclusion of (⋆) is invariant under rescaling f n , so assume without loss of generality
+that L n = 1. Hence, | f n (u) − f n (v)|
+                                       P≤ 1 for every uv ∈ En . Moreover, the same quantity is translation-
+invariant, so further assume that v∈Vn f n (v) = 0.
+    Since Gn is connected andP     4-regular, the largest eigenvalue of An is 4, with eigenspace spanned by
+1 [HLW06, Section 2.3]. Since v∈Vn f n (v) = 0, we have f n ⊥ 1. By the Rayleigh quotient characterization
+of the second eigenvalue [HLW06, Section 5.2.3],
+                                                           h T An h
+                                            α2 (An ) = max          .
+                                                       h̸=0 h T h
+                                                       h⊥1
+
+
+                                                      41
+α2 (An ) ≤ λ, so applying this to h = f n gives
+                                                                            X
+                                                        f nT An f n ≤ λ            f n (v)2 .
+                                                                            v∈Vn
+
+Therefore,                     X                                 X                      X
+                           γ          f n (v)2 = (4 − λ)                f n (v)2 ≤ 4            f n (v)2 − f nT An f n .
+                               v∈Vn                              v∈Vn                   v∈Vn
+
+    From here, we perform some standard transformations. First,
+                                                   X
+                                   f nT An f n = 2   f n (u) f n (v).
+                                                                        uv∈En
+
+Second,                 X                                   X                                           X
+                               ( f n (u) − f n (v))2 =             ( f n (u)2 + f n (v)2 ) − 2                 f n (u) f n (v).
+                       uv∈En                               uv∈En                                      uv∈En
+
+Third, by using 4-regularity,                 X                                        X
+                                                     ( f n (u)2 + f n (v)2 ) = 4                f n (v)2 .
+                                             uv∈En                                     v∈Vn
+
+Combining these we get
+                                          X                                   X
+                                      4          f n (v)2 − f nT An f n =             ( f n (u) − f n (v))2 .
+                                          v∈Vn                                uv∈En
+
+    Using | f n (u) − f n (v)| ≤ 1 for every uv ∈ En , and |En | = 2n, we get
+                                                  X
+                                                γ       f n (v)2 ≤ 2n.
+                                                             v∈Vn
+
+Hence, using Cauchy-Schwarz,
+                                                                                          !1/2                                !1/2
+          1 X                                      1 X                                                       2X                        2
+                    | f n (x) − f n ( y)| ≤                  ( f n (x) − f n ( y))2                 =              f n (v)2          ≤p .
+          n2 x, y∈V                                n2 x, y∈V                                                 n v∈V                      γ
+                   n                                          n                                                   n
+
+
+   On the other hand, every ball of radius r in a 4-regular graph has size at most
+                                                                  r−1
+                                                                  X
+                                                       1+4              3 j = 2 · 3 r − 1.
+                                                                  j=0
+
+    Let
+                                                            rn = ⌊log3 (n/4)⌋.
+Then 3 rn ≤ n/4, and hence
+                                                     2 · 3 rn − 1 ≤ n/2 − 1 ≤ n/2.
+Thus every ball of radius rn has size at most n/2. Hence, for every x ∈ Vn , at least n/2 vertices y satisfy
+Dn (x, y) > rn , so
+                                      1 X                   rn
+                                                Dn (x, y) ≥    ≳ log n.
+                                      n2 x, y∈V             2
+                                                             n
+
+Since ωn (x, y) = 1/n , we get
+                          2
+
+
+                                                       x, y∈Vn ωn (x, y)Dn (x, y)
+                                                   P
+                                      Ln · P                                                       ≳ log n.
+                                                  x, y∈Vn ωn (x, y)| f n (x) − f n ( y)|
+
+
+                                                                         42
+   Since Gn has 2n edges, it can be embedded into a surface of orientable genus O(n) by creating a
+handle for each edge. Thus, the conclusion of (⋆) would imply, for some admissible f n ,
+
+                                   x, y∈Vn ωn (x, y)Dn (x, y)
+                                P
+                                                                            Æ
+                        Ln · P                                        ≲ C(1) log(n).
+                               x, y∈Vn ωn (x, y)| f n (x) − f n ( y)|
+
+This contradicts the lower bound above for all sufficiently large n ∈ Z.                                       □
+
+
+C     Deferred Proof of Subdivision Lemma
+We now prove Lemma 4.17 by adapting an argument of Kelner [Kel04, Kel06b, Kel06a].
+
+Lemma C.1 (Restatement of Lemma 4.17). Let G be a triangulation of genus g with maximum degree
+∆. Then there is some (universal) constant c so that |V (G)| · γ(1) (G) ≲ ∆c · |V (G (k) )| · γ(1) (G (k) ).
+
+    The proof will be similar to, but not quite the same as, that of Lemma 4.14. The primary differences
+will be that the paths corresponding to edges will be randomly sampled, and that the “uniformity” is
+only approximate. It seems quite plausible that a more general form of Lemma 4.14 could be extracted
+from the below proof, but the most straightforward proof method using these random paths results in an
+extra factor of ∆. This factor is perfectly fine for proving Lemma 4.17, but poses issues for a generalized
+form of Lemma 4.14, so we have kept this proof and construction separate.
+
+Proof: Denote G = (V, E), n := |V |, H := G (k) = (V ′ , E ′ ), and n′ := |V ′ |. For the remainder of this proof,
+we will use the notation O∆ () and Θ∆ () to hide polynomial factors in ∆. Note that the maximum degree
+of H is max{6, ∆}, since no new vertices of degree > 6 are added from a hexagonal subdivision, nor
+does any existing vertex have its degree changed. Each edge in G is split into 2k pieces in H, and each
+triangle in G is partitioned into 4k triangles in H. The number of triangles incident to any vertex of
+                                                                  ′
+degree > 6 remains constant during subdivision. Hence, nnP∈ Θ∆ (4k ). Let yH , f H denote the optimal
+solution to γ(1) (H). Assume without loss of generality that x ′ ∈V ′ | f H (x ′ )|2 = 1. This assumption will
+allow us to slightly simplify some later steps.
+    Kelner [Kel04, Kel06a, Proof of Lemma 5.2] is able to show that there exist random variables
+πV : V → V ′ and π E : E → {paths through H} with the following properties:
+
+    1. For each uv ∈ E, π E (uv) is a path in H from πV (u) to πV (v).
+    2. For each v ∈ V , πV (v) is a uniform distribution over its support, which we denote p(v). Moreover,
+       every vertex v ′ ∈ V ′ is contained in some p(v) for a v ∈ V .
+    3. For each u ̸= v ∈ V , πV (u) and πV (v) are independent and have disjoint supports.
+    4. For each uv ∈ E, π E (uv) is dependent only on πV (u) and πV (v).
+    5. Each path π E (e) (for e ∈ E) has length at most O∆ 2k .
+                                                              
+
+    6. For each v ′ ∈ V ′ , let v ∈ V be the unique vertex with v ′ ∈ p(v). Then Pr[πV (v) = v ′ ] = Θ∆ (1/4k ).
+    7. Each edge in H appears in the image of π E with probability O∆ (1/2k ), and moreover each edge
+       (and hence also vertex endpoint) in H appears in the support of O∆ (1) random variables π E (e) for
+       e ∈ E. Denote the support of edges in π E (e) as p(e).
+    8. Each vertex v ′ ∈ V ′ appears as an endpoint in the support of some π E (uv) only if it is contained in
+       p(u) ∪ p(v) (i.e., the vertices incident to elements of p(uv) are a subset of p(u) ∪ p(v)).
+
+
+
+                                                       43
+Essentially, this construction is similar to our earlier uniform shallow minors, except that the uniformity
+is approximate and ignores factors of ∆. Additionally, this construction also uses randomized paths that
+use only a small number of vertices in expectation. In contrast, our earlier construction for uniform
+shallow minors used an upper bound that accounted for every vertex in every path.
+    Using these properties, we obtain that for each pair u, v ∈ V ,
+                                                                                                   !
+                                                          1      X
+                E | f H (πV (u)) − f H (πV (v))|2 ∈ Ω∆                   | f H (u′ ) − f H (v ′ )|2 ,
+                                                
+                                                         16k ′      ′                  u ∈p(u),v ∈p(v)
+
+and if uv ∈ E then
+                                                                                                                                 !
+                              X                                                        1        X
+                                           yH (u′ ) + yH (v ′ )  ∈ O∆                                       yH (u′ ) + yH (v ′ ) .
+                                                                                                                                
+                   E
+                                                                                       2k
+                        u′ v ′ ∈π E (uv)                                                    u′ v ′ ∈p(uv)
+
+
+Hence, there is a deterministic choice π∗V , π∗E so that
+                                                          P                                                         
+                                      ′           ′
+                                                    
+               u′ v ′ ∈π∗E (uv) yH (u ) + yH (v )
+                                                                                                   ′              ′
+                                                                                               (u    ) +       (v   )
+     P       P                                                    P
+        uv∈E                                            E    uv∈E     u v ∈π E (uv)
+                                                                        ′ ′               y H             y H
+                                                      ≤
+                      (π  ∗
+                            (u))       (π ∗
+                                            (v))|
+       P                                                    P                                                      
+               |
+          u,v∈V Hf        V      − f H    V
+                                                  2
+                                                          E    u,v∈V  | f H (π V (u))      −   f H  (π  V (v))|   2
+
+                                                                                                             ′          ′
+                                                                                                                           
+                                                                                  ′ ,v ′ ∈p(uv) y H (u ) + y H (v )
+                                                                 P          P
+                                                                     uv∈E       u
+                                                      ∈ O∆ 8k P
+                                                                              u′ ∈p(u),v ′ ∈p(v) | f H (u ) − f H (v )|
+                                                                            P
+                                                                                                                ′         ′ 2
+                                                                  u̸= v∈V
+                                                                                                                             
+                                                                                                           ′
+                                                                                          v ′ ∈V ′ yH (v )
+                                                                                     P
+                                                      = O∆ 8  kP
+                                                                                                                                .
+                                                                               u′ ∈p(u),v ′ ∈p(v) | f H (u ) − f H (v )|
+                                                                            P
+                                                                                                                ′         ′ 2
+                                                                  u̸= v∈V
+
+Let ρ := maxuv∈E |π∗E (uv)| be thePmaximum length (in terms of edges)P of a sampled path, so ρ ∈ O∆ (2k ).
+                        ∗        1           ∗
+Choose f G (v) := f H (πV (v)) − n x∈V f H (πV (x)), and yG (v) := 2ρ u:uv∈E x∈p(v)∩π∗ (uv) yH (x).
+                                                                             P
+                                                                                      E
+    We start by showing that the constraints are satisfied. By definition, v∈V f G (v) = 0. Consider
+                                                                              P
+
+some edge uv ∈ E, and the corresponding path π∗E (uv) through H. By Cauchy-Schwarz and the triangle
+inequality (similar to the argument in Lemma 3.5),
+
+                                                      yG (u) + yG (v) ≥ | f G (u) − f G (v)|2 ,
+
+so the constraints are satisfied.
+    It remains only to check the objective value. First, note that
+                   X                 X                         X
+               2n      | f G (x)|2 =   | f G (u) − f G (v)|2 =   | f H (π∗V (u)) − f H (π∗V (v))|2 .
+                        x∈V                        u,v∈V                                u,v∈V
+
+Moreover,                                             X            X
+                                                                                 | f H (u′ ) − f H (v ′ )|2
+                                                    u̸= v∈V u′ ∈p(u),v ′ ∈p(v)
+                                    X                                           X       X
+                              =                  | f H (u′ ) − f H (v ′ )|2 −                       | f H (u′ ) − f H (v ′ )|2 .
+                                  u′ ,v ′ ∈V ′                                  v∈V u′ ,v ′ ∈p(v)
+
+For any v ∈ V , any two u′ , v ′ ∈ p(v), and any w′ ∈ V ′ \ p(v), the triangle inequality gives | f H (u′ ) −
+f H (v ′ )| ≤ | f H (u′ ) − f H (w′ )| + | f H (v ′ ) − f H (w′ )|, so by Jensen’s inequality on the convex function x 7→ x 2 ,
+1          ′            ′ 2            ′              ′ 2            ′         ′ 2
+2 | f H (u ) − f H (v )| ≤ | f H (u ) − f H (w )| + | f H (v ) − f H (w )| . In other words, every squared distance
+
+
+
+
+                                                                            44
+within p(v) can be bounded above by two squared distances crossing out of p(v). So long as there are at
+least two vertices, there are always more of the latter type (up to factors in ∆), so it follows that
+                                                                                                !
+                  X         X                                       X
+                                    | f H (u′ ) − f H (v ′ )|2 ∈ Ω∆   | f H (u′ ) − f H (v ′ )|2 .
+                 u̸= v∈V u′ ∈p(u),v ′ ∈p(v)                                  u′ ,v ′ ∈V ′
+
+    Finally,
+
+                                       4nρ v∈V u:uv∈E x∈p(v)∩π∗ (uv) yH (x)
+                                          P       P                P
+                      v∈V yG (v)
+                  P
+                                     =                                                 E
+
+                             (v)||                      (π   ∗
+                                                                 (u))            (π    ∗
+                                                                                          (v))|2
+                                         P
+                                   2
+                P
+                      || f G                      | f H                  −   f H
+                  v∈V              2
+                                          u,v∈V             V
+                                                                              P V                                  
+                                                                                                 ′
+                                                                                   v ′ ∈V ′ yH (v )
+                                     ∈ O∆ nρ · 8 kP
+
+                                                                         u′ ∈p(u),v ′ ∈p(v) | f H (u ) − f H (v )|
+                                                                    P
+                                                                                                    ′          ′ 2
+                                                        u̸= v∈V
+                                                                                                  
+                                                                                         ′
+                                                                     v ′ ∈V ′ yH (v )
+                                                                  P
+                                     = O∆ nρ · 8k P
+                                                         u′ ,v ′ ∈V ′ | f H (u ) − f H (v )|
+                                                                                ′              ′ 2
+                                                                                 ′
+                                                                      ′ y H (v )
+                                                        P                                 
+                                                                 ′
+                                     = O∆ nρ · 8k          Pv ∈V
+                                                     2n′ v ′ ∈V ′ | f H (v ′ )|2
+                                                            y (v ′ )
+                                             P                            
+                                            k P v ′ ∈V ′ H
+                                     = O∆ 4                                   .
+                                                v ′ ∈V ′ | f H (v )|
+                                                                   ′ 2
+
+
+                                                                                                                       □
+
+
+D       Deferred Proof of Area Inequality
+In this section, we prove Lemma 4.7.
+
+Lemma D.1 (Restatement of Lemma 4.7). Let d ≥ 2, and let C be a sphere cap on the d-dimensional
+unit sphere embedded in Rd+1 . Let f be its centre and let r be the maximum Euclidean distance in
+Rd+1 from f to a point in C. Assume C contains at most half the surface area of the sphere. Then the
+                                                                A rd
+d-dimensional surface area of the sphere cap satisfies area(C) ≥ 4d d .
+
+    The proof will use three important well-understood functions: The Gamma function Γ , the Beta
+function B, and the regularized incomplete Beta function I. We will not require the explicit representation
+of the Gamma function, but we will use Gautschi’s inequality:
+
+Proposition D.2 (Gautschi’s inequality [Gau59, DLMF 5.6.4]). For x ≥ 0, s ∈ (0, 1), it holds that
+
+                                                        Γ (x + 1)
+                                              x 1−s <             < (x + 1)1−s .
+                                                        Γ (x + s)
+
+    We will use the explicit forms of the Beta and regularized incomplete Beta functions:
+                                                                                                       Rx
+Definition D.3. For z1 , z2 , x > 0, the incomplete Beta function is defined as B(x; z1 , z2 ) := 0 t z1 −1 (1−
+t)z2 −1 d t. The Beta function is defined as B(z1 , z2 ) := B(1; z1 , z2 ), and it is also known to be equal to
+Γ (z1 )Γ (z2 )                                                                            B(x;z1 ,z2 )
+ Γ (z +z ) . The regularized incomplete Beta function is defined as I x (z1 , z2 ) := B(z ,z ) .
+    1   2                                                                                                     1   2
+
+
+    We also have the following important result for our purposes:
+
+
+
+                                                                45
+Proposition D.4 ([Li11, Equation (1)]).
+                       1             d 1
+                                           For a sphere cap C with height h ≤ 1 of the d-dimensional
+unit sphere, area(C) = 2 Ad · I2h−h2 2 , 2 .
+
+   Note that the convention for dimension differs in the reference.
+                                           2
+Proof (Proof of Lemma 4.7): Let h = r2 be the height of the sphere cap (see Figure 6). Then,
+                             Z 2h−h2                     Z 2h−h2                      d
+                      2 d 1                                                2(2h − h2 ) 2
+               
+                                        d          1                d
+                                          −1     −                    −1
+              B 2h − h ; ,   =        t 2 (1 − t) 2 d t ≥         t 2 dt =               .
+                        2 2    0                           0                    d
+
+   Next,                                               p                1
+                                  Γ d2 · Γ 21    Γ d2 · π p
+                                             
+                          d 1                                       d 1 −2
+                                                                
+                        B  ,    =             =             < π    −      ,
+                          2 2      Γ d2 + 12      Γ d2 + 12         2 2
+where the last inequality follows from Gautschi’s inequality.
+   Now, 2h − h2 = h(2 − h) ≥ h (since h ≤ 1), so
+                                               d
+                                          2(2h−h2 ) 2     d    1     d p
+                                d 1                    2h 2 d 1 2   2h 2 d − 1
+                                   
+                                              d
+                   I2h−h2        ,    ≥               ≥p      −    =p          .
+                                2 2     p d 1 − 12     πd 2 2       2π    d
+                                         π 2−2
+
+   Finally,
+                                                d p                  p
+                 1              d 1    1     2h 2 d − 1          rd    d −1       rd
+                                   
+        area(C) = Ad · I2h−h2    ,    ≥ Ad · p          = Ad · d p          ≥ Ad · d ,
+                 2              2 2    2      2π    d         2 2 2π    d         4
+
+where the last inequality holds since d ≥ 2.                                                       □
+
+
+
+
+                                                   46
+

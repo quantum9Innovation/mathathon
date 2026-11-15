@@ -1,0 +1,65 @@
+Possible expected nearly-quadratic recovery beyond the corank-one promise
+=======================================================================
+Root proposal, November15. Requires actual black-box linear algebra audit.
+This is not an implementation/performance claim or an audited theorem yet.
+
+Input moment: the derived ALL-PARITY configuration mixing proof for a>=3,
+and the separately root-audited cubic a2,b1 moment proof, appear to give
+for one FIXED odd prime p0>b:
+  E |ker_Fp0(A-(a-b)I)| <= C(a,b), uniformly N.
+This is a raw moment for the configuration model transferred by conditioning
+on simplicity, whose probability is a fixed positive constant. Unlike the
+older matching-model contiguity proof, this DOES transfer a bounded raw
+moment. The all-parity mixing proof still needs its root external audit.
+
+If available, every polynomial moment of the base-field corank r is bounded,
+and enumerating p0^r field vectors costs constant expectation. Exact integer
+checks retain only planted-parameter balanced sign vectors. Failure/abstention
+can then be restricted to genuine statistical ambiguity, whose sharp order
+is being investigated in rsbm-sharp-ambiguity-root-proof.txt.
+
+Potential black-box basis construction:
+1. Work for computational preconditioning in an extension F_(p0^s) of size
+   at least n^6; s=O(log n). Rank is unchanged from Fp0. Sparse multiplication
+   remains O(n) extension-field operations for fixed degree.
+2. For M=A-(a-b)I, choose invertible random diagonal left preconditioner D,
+   H=DM. Need a PRIMARY theorem that with probability 1-O(n^2/q), zero is
+   semisimple and all nonzero invariant factors are cyclic. For symmetric M
+   in odd characteristic, some rank-sized principal minor is nonzero; this
+   makes the generic zero semisimplicity plausible. Do not assume the
+   nonsingular-only diagonal theorem automatically proves the full claim.
+   If necessary, use a verified general black-box rank preconditioner with
+   O(n polylog n) matrix-vector cost, retaining its inverse transformations.
+3. Generate 2n terms of the SHIFTED scalar sequence u^T H^(j+1)v and apply
+   Berlekamp--Massey. Its finite complexity ell is ALWAYS <=rank(H), since
+   the entire sequence factors through im(H). Thus it is a deterministic
+   lower-rank certificate; it cannot overstate rank.
+4. On a good preconditioner/probe, ell=rank(H) and the returned polynomial
+   g annihilates its nonzero part, g(0)!=0. If zero is semisimple, g(H)
+   maps a random vector uniformly (up to a scalar) into ker(H).
+5. Apply g(H) to random vectors, VERIFY Hx=0 for every returned candidate,
+   and keep independent kernel vectors. Stop only after n-ell independent
+   verified vectors exist. Then rank>=ell and rank<=ell, so the nullspace
+   basis is certified even if random preconditioning/probing had failed.
+6. Cap each trial at n+1 probes. With q>=n^6, bad trials have sufficiently
+   small probability to absorb their O(n^3) cost. Good trials need expected
+   O(r+1) probes; each polynomial action is O(n) sparse matrix-vector calls,
+   hence O(n^2) field work. A valid proof should yield O~(n^2(r+1)) expected
+   work for every fixed M, then average over the bounded-corank moment.
+7. Descend the extension-field basis to Fp0, rather than enumerating the
+   enormous extension-field kernel. Either take coefficient components
+   of extension vectors and select a base-field basis, or normalize a
+   basis to identity on r pivot rows; the canonical solution basis has
+   base-field entries because M does. Verify the descent explicitly.
+8. Enumerate the base-field kernel, normalize signs and verify integer
+   degrees/balance. Bounded E p0^r gives bounded expected candidate work.
+
+Need to charge irreducible-polynomial/extension construction, randomness,
+all polynomial actions, probes, basis storage, descent, and certification.
+The main risk is the exact rank-deficient preconditioner theorem in step2;
+the existing corank-one acceptor does not establish it by itself.
+
+If the pipeline checks, this gives expected near-quadratic BIT work for
+full-model recovery/listing, with no eigengap, no real-corank-one promise,
+and statistical error limited by ambiguity. It is a derived application
+of classical black-box methods, not a claimed new linear algebra primitive.

@@ -1,0 +1,148 @@
+Adversarial model and computation audit of the positive RSBM theorem
+==================================================================
+Reviewer: structural subagent, independently reassigned for this audit
+Date: 2026-11-15
+Actual full source read:
+  spectral-gap/partitioning-rsbm-kernel-session/rsbm-kernel-even-blocks.tex
+SHA256:
+  64cf6365e5a864dee3752901b062304a5d6b993b86b9bd4b19b2fae1a1910d98
+
+VERDICT: PASS for the stated main simplicity theorem and polynomial-bit
+recovery consequence, under the stated prescribed/independent cross-graph
+model. No fatal issue found after the targeted adversarial checks below.
+The adaptive countermodel documented separately is outside these hypotheses.
+
+This is not a verification of historical priority. The companion low-degree
+Theta(N^-2) counting claims and its N=8 witness, which are not used in the
+main theorem, were not independently recomputed in this audit.
+
+1. Imported finite-field mixing statement: primary-source check
+-------------------------------------------------------------
+Read Mészáros 1806.03736v4, model definition and Theorem 1.6 with its
+preceding definitions (PDF pp.1,3-4):
+  https://arxiv.org/pdf/1806.03736v4
+
+The model really is a sum of d1 independent uniform perfect matchings on
+even N. The theorem supplies the UNSCALED sum, over all x in F_p^N, of
+maximum atom errors. It is stronger than a typical-vector statement.
+For the additive group F_p with p odd, a nonconstant coordinate vector
+has full minimal affine coset, and the symmetric tensor restriction is
+vacuous because the symmetrized generator 1 tensor 1+1 tensor 1 generates
+the whole tensor group. Constants have their deterministic target d1*a*1.
+Theorem 1.6 imposes no p-not-dividing-d1 restriction. In particular the
+paper's use of a prime dividing d1 is legitimate provided p does not
+divide d2. The source's notation d*MinC is Minkowski sum of the coset,
+not scalar dilation that would collapse F_p when p divides d.
+
+2. Affine bound and two-block replacement: reconstructed
+-------------------------------------------------------
+The nonconstant reference constraint for q_x(delta*x+b) is exactly
+  d2*s(x)=s(b),
+so it has at most p^(N-1) eligible vectors of mass p^(-N+1).
+The constant-vector contribution is at most one, because its condition
+is b=d2*a*1 and p does not divide d2. This proves the uniform bound two
+directly, including when p divides N or d1.
+
+Independence of C,D gives the displayed product kernel first moment.
+After replacing the C factor, summing the D factor over y at each fixed
+x invokes the affine bound with b=-B^T*x. Error <=(2+e_N)e_N.
+Replacing the D factor then costs <=2e_N, because at each fixed y the
+remaining reference sum over x is <=2. No exponential amplification of
+the mixing error is hidden. Total 4e_N+e_N^2 is correct and uniform in B.
+
+3. Adversarial cross matrices and reference moment: reconstructed
+----------------------------------------------------------------
+For two nonconstant vectors, the two reference constraints coincide and
+say s(x)+s(y)=0, using BOTH row and column sums d2 and p not dividing d2.
+The total contribution is bounded by p. Constants contribute exactly p.
+If exactly one vector is constant, a linear system with coefficient B
+or B^T gives the bound p^(2-rank_p B) in that orientation.
+
+The greedy disjoint-row-support argument gives
+  rank_p B >= N/[d2(d2-1)+1]
+over every field, with no spectral or connectivity hypothesis on B.
+Thus disconnected unions of complete bipartite pieces, repeated row
+patterns, and rank-deficient cross matrices do not break the proof:
+their rank is still at least linear in N for fixed d2. A permutation
+matrix at d2=1 has full rank. Allowing growing d2 would lose the claimed
+uniform asymptotic; the source explicitly fixes both degrees.
+
+If real nullity is >=2, all integer minors of order 2N-1 vanish and
+mod-p nullity is >=2. The Markov bound 2/p is valid. Letting fixed odd
+primes not dividing fixed d2 tend to infinity after taking limsup_N is
+legitimate. It does not use an N-dependent prime or produce a rate.
+
+4. Contiguity and uniformity over B: primary-source and direct check
+------------------------------------------------------------------
+Nguyen--Wood 1806.10068v2, proof of Theorem 1.6, Section4, PDF p.8,
+explicitly gives the required matching-union to loopless-configuration
+contiguity and subsequent simplicity conditioning:
+  https://arxiv.org/pdf/1806.10068v2
+Its chain names Janson Theorem11 and MRRW Theorem3. The primary MRRW
+publisher abstract also states the all-fixed-d>=3 contiguity result:
+  https://onlinelibrary.wiley.com/doi/10.1002/(SICI)1098-2418(199705)10:3%3C305::AID-RSA1%3E3.0.CO;2-%23
+
+The model chain is not an equality assertion about a matching union and
+a uniform simple regular graph. The distinction is handled correctly.
+
+Direct product argument: write Q contiguous with respect to P. For every
+epsilon>0 there are delta>0 and n0 such that P_n(E)<=delta implies
+Q_n(E)<=epsilon for all n>=n0; otherwise a violating subsequence yields
+an event sequence contradicting contiguity. If (P_n x P_n)(E_n)=a_n->0,
+the set of first coordinates whose P_n-section probability exceeds
+sqrt(a_n) has P_n probability <=sqrt(a_n), hence Q_n probability o(1).
+On its complement all Q_n-section probabilities are o(1), by the uniform
+small-set formulation. Therefore (Q_n x Q_n)(E_n)->0.
+
+This applies to any fixed deterministic sequence B_N. Conditioning each
+loopless configuration factor on simplicity costs a bounded factor for
+fixed d1 and yields independent uniform simple factors. If the supremum
+over prescribed B did not tend to zero, selecting a violating B_N would
+contradict this event-sequence result. Thus the supremum conclusion is
+not an illicit attempt to obtain quantitative uniform rates from
+qualitative contiguity. Independent random B follows immediately by
+averaging the already uniform conclusion.
+
+5. Exact bit complexity and recovery certificate
+------------------------------------------------
+Let n=2N, D=d1+d2 and H=sqrt(D+delta^2). The integer matrix M=A-delta*I
+has every row Euclidean norm at most H. Every k-minor is bounded by H^k,
+so numerator/denominator minors have O(N) bits for fixed degrees.
+Fraction-free elimination with pivoting and exact integer arithmetic
+therefore has polynomial bit complexity, including rank-deficient cases.
+An exact rational kernel basis has coordinate ratios of such minors.
+
+On the event of dimension one, the nonzero kernel is precisely Q*sigma,
+so its first coordinate is nonzero and normalizing to first coordinate
+one returns exactly +/-1 entries. No floating-point eigenvalue isolation
+or inverse eigengap precision is needed. A deterministic certificate can
+check x in {+/-1}^n and Ax=delta*x. Since A is D-regular and delta!=D,
+the equation also gives 1^T x=0; each vertex's same/cross degrees are
+(D+delta)/2=d1 and (D-delta)/2=d2. The stated algorithm is given delta;
+the source does not silently assume an unknown parameter can be guessed
+without additional argument.
+
+6. Parity and excluded parameters
+--------------------------------
+Matching inputs need N even. For odd d1 this is forced by handshake.
+For even d1>=4, odd N is genuinely outside this proof. d1<3 with positive
+d1>d2 has only (2,1), also outside the mixing input. d2>0 is essential:
+at d2=0 the two internal constant vectors force multiplicity at least two.
+The sets of simple graphs are nonempty for all sufficiently large even N
+at the fixed degrees, so finite inadmissible sizes do not affect the limit.
+
+7. Strong attempted counterexample and exact scope boundary
+----------------------------------------------------------
+For (d1,d2)=(3,1), seeing both internal graphs first and pairing clean
+cycles with the opposite boundary produces a second (3,1) partition.
+The accompanying adaptive-clean-cycle.md and adaptive_witness.py prove
+and exactly check this, including a 12-vertex K3 Cartesian C4 example.
+An adaptive rule can even be symmetrized so C,D,B have the same pairwise
+laws as the independent model while planted-eigenvalue simplicity fails.
+This does NOT contradict the positive theorem: B there is prescribed or
+independent of the JOINT pair (C,D). Uniformity over prescribed B cannot
+be moved inside probability to permit choosing B after seeing C,D.
+
+No source amendment is required for correctness of the present theorem,
+which explicitly uses prescribed B and independent sampling. The joint
+independence assumption should be retained in every external summary.

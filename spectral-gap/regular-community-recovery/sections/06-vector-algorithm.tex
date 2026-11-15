@@ -1,0 +1,258 @@
+\section{Certified vector intertwiners and fast unknown-base recovery}
+\label{sec:vector-algorithm}
+The symmetric full-kernel algorithm also handles nonsymmetric quotient
+matrices. The reduction computes a doubled kernel, then projects to its
+right component before enumeration. Its expected-work application needs
+one bounded moment for that right kernel in the actual graph law.
+
+\subsection{A complete right kernel on every input}
+Fix an odd prime $p$. Let $A=A^T$ be an integer adjacency matrix of a
+simple graph of maximum degree at most $D$, and let $R$ be a fixed
+$r\times r$ integer matrix with bounded entries. Stack matrix columns
+in the convention $\operatorname{vec}(X)=(X_{:,1},\ldots,X_{:,r})$.
+Over $\Fp$, put
+\begin{equation}\label{eq:vector-operator}
+ \mathcal K_R=I_r\otimes A-R^T\otimes I_n,\qquad
+ m=rn,\quad w=\operatorname{nnz}(\mathcal K_R),\quad
+ h=\nullity_{\Fp}\mathcal K_R.
+\end{equation}
+Then $\mathcal K_R\operatorname{vec}(X)=\operatorname{vec}(AX-XR)$;
+its transpose acts as $\operatorname{vec}(Y)\mapsto
+\operatorname{vec}(AY-YR^T)$. Each product costs
+$O(r\operatorname{nnz}(A)+n\operatorname{nnz}(R))$ field operations.
+At fixed $r,D$ and bounded quotient entries, $m=O(n)$ and $w=O(n)$.
+The structured products or an explicit sparse representation suffice.
+
+\begin{theorem}[Certified right kernels]\label{vec:thm:kernel}
+For every fixed input in \eqref{eq:vector-operator}, a Las Vegas
+algorithm returns the complete right-kernel basis
+$C\in\Fp^{m\times h}$, normalized on pivot rows $J$ by $C_{J,:}=I_h$.
+Its conditional expected bit work is
+\[
+ \widetilde O_p\bigl(m(w+m)(h+1)\bigr),
+\]
+and its working storage is
+$\widetilde O_p(m(h+1)+w)$ bits, apart from a retry counter.
+A certificate of $O_p(mh+m\log m)$ bits is deterministically
+checkable in $\widetilde O_p(m(w+m))$ bit work.
+Every accepted answer is correct, including on inputs with large
+nullity. No symmetry assumption on $R$ is imposed.
+\end{theorem}
+\begin{proof}
+Apply Theorem~\ref{fk:thm:kernel} to the symmetric matrix
+\begin{equation}\label{eq:vector-doubling}
+ \mathcal S_R=
+ \begin{pmatrix}0&\mathcal K_R\\\mathcal K_R^T&0\end{pmatrix}
+ \quad\text{of order }2m.
+\end{equation}
+For $(u,v)$ it acts as $(\mathcal K_Rv,\mathcal K_R^Tu)$, so
+\[
+ \ker\mathcal S_R=\ker\mathcal K_R^T\oplus\ker\mathcal K_R,
+ \qquad \rank\mathcal S_R=2\rank\mathcal K_R,
+ \qquad \nullity\mathcal S_R=2h.
+\]
+These are field identities; no Gram-matrix or positivity argument is
+used. One product uses one $\mathcal K_R$ and one $\mathcal K_R^T$
+product. The per-input theorem, with order $2m$, sparsity $2w$, and
+nullity $2h$, has the displayed work and storage bounds. Its verified
+extension-field construction, preconditioning retries and base-field
+descent are all included.
+
+The bottom $m$ rows of a complete $\mathcal S_R$-kernel basis span
+$\ker\mathcal K_R$: every right nullvector $v$ occurs as $(0,v)$.
+Select $h$ independent projected columns by exact elimination, choose
+$h$ invertible pivot rows, and normalize there. Arbitrary first columns
+need not be independent. Selection and normalization cost
+$O(mh^2+h^3)\le O(m^2(h+1))$, within the theorem's work bound.
+They use $O(mh)$ storage. The symmetric primitive has already returned
+a base-field basis. Equivalently, a projected extension-field basis
+can be normalized first: Frobenius preserves the base-defined right
+kernel and its uniquely pivot-normalized basis, so that basis lies in
+$\Fp$. Extract its base coefficients and check $\mathcal K_RC=0$.
+The cases $h=0$ and $h=m$ require no exception to these arguments.
+
+For a compact final certificate, retain the symmetric primitive's
+verified field definition, nonzero diagonal preconditioner $\mathcal D$,
+and scalar probes $u,v$, together with $C,J$. Its checker regenerates
+the $4m$ terms
+\[
+ u^T(\mathcal D\mathcal S_R)^{j+1}v,
+ \qquad 0\le j<4m,
+\]
+and recomputes their true shortest Berlekamp--Massey length $\ell$.
+Require $0\le h\le m$, the prescribed dimensions, distinct pivot
+rows $J$, and canonical base-field entries of $C$. Require
+$\ell=2(m-h)$ and check $\mathcal K_RC=0$ and $C_{J,:}=I_h$.
+The unconditional shifted-sequence bound of Lemma~\ref{fk:lem:lower}
+gives $\ell\le\rank\mathcal S_R=2\rank\mathcal K_R$ on every draw.
+The verified independent columns give $\rank\mathcal K_R\le m-h$.
+Thus acceptance forces
+\[
+ m-h=\ell/2\le\rank\mathcal K_R\le m-h,
+\]
+certifying completeness with zero verification error. This is an
+integer dimension comparison, not division by two in the field.
+The verifier checks field sizes and encodings before the primitive's
+irreducibility and sequence checks. Its $O(m)$ sparse products,
+quadratic recurrence computation, and residual/pivot checks cost
+$\widetilde O_p(m(w+m))$. Retaining the right basis and probes gives
+the stated certificate size; the unused left basis is unnecessary.
+\end{proof}
+
+\subsection{Enumeration under a single actual-law moment}
+\begin{theorem}[Moment-to-vector-list theorem]\label{vec:thm:moment}
+Fix $K,D$ and a finite family $\mathcal R$ of nonnegative integer
+quotient matrices of orders at most $K$, with row sums at most $D$.
+Suppose a law on simple graphs of maximum degree at most $D$ satisfies,
+for one fixed odd prime $p$ and every $R\in\mathcal R$,
+\begin{equation}\label{eq:vector-moment}
+ \sup_n\E p^{h_R(A)}\le C_R<\infty,\qquad
+ h_R(A)=\nullity_{\Fp}(I_r\otimes A-R^T\otimes I_n).
+\end{equation}
+There is an always-correct Las Vegas algorithm which lists all
+nonempty labeled equitable partitions with quotient in $\mathcal R$.
+Its unconditional expected bit work is $\widetilde O(n^2)$, its
+expected working storage is $\widetilde O(n)$ bits, and its expected
+output size is $O(n)$ bits. Constants may depend on
+$p,K,D,\mathcal R$ and the moment bounds. The algorithm is complete
+on every input; the moment assumption controls its expected cost.
+\end{theorem}
+\begin{proof}
+For each $R$, compute the certified right basis $C$ from
+Theorem~\ref{vec:thm:kernel}. Enumerate only its $p^h$ base-field
+coefficient vectors. Maintain the current vector using a base-$p$
+odometer or a Gray order. Across all states there are $O_p(p^h)$
+digit changes, each adding a scalar multiple of one column of $C$
+in $O(m)$ field operations. Total generation costs
+$\widetilde O_p(mp^h)$ bit work, with no extra factor $h$.
+The doubled kernel is never enumerated.
+
+Reshape each vector into $X\in\Fp^{n\times r}$. Require that every
+row has exactly one entry equal to one and all remaining entries
+zero, and that every column is nonzero. Lift these rows to integer
+zero-one rows and check $AX=XR$ over the integers. Check any class
+sizes actually prescribed by the task. A blind unknown-frame search
+has no such size promise and imposes only nonemptiness. At fixed
+$K,D$, these scans and sparse integer neighbor-count checks cost
+$\widetilde O(n)$ per candidate. Every true integer partition reduces
+to a field-kernel vector, and the integer check rejects modular
+artifacts. Hence the resulting list is exact on every input.
+
+For a fixed input and target the conditional expected work is
+\begin{equation}\label{eq:vector-per-input}
+ \widetilde O_p\bigl(m(w+m)(h+1)+mp^h\bigr).
+\end{equation}
+Because $h+1\le p^h$ and $m,w=O_{K,D}(n)$, assumption
+\eqref{eq:vector-moment} bounds its graph expectation by
+$\widetilde O(n^2)$. This averages the valid per-input Las Vegas
+bound, without excluding rare large kernels. Neither
+$\E p^{2h}$ nor $\E[h p^h]$ is used.
+The same bound gives expected $\widetilde O(n)$ working storage.
+Stream the output: at most $p^h$ candidates pass, and a partition
+uses $O_K(n)$ bits. Its expected output size is therefore $O(n)$.
+Finite summation over $\mathcal R$ preserves all these bounds;
+independence of different runs is unnecessary. Reuse their workspace.
+\end{proof}
+
+For unknown quotients, use every order $1\le r\le K$ and all
+nonnegative integer matrices with row sums at most $D$. There are
+at most $\sum_{r=1}^K(D+1)^{r^2}$ candidates. Retain a verified
+partition with the maximum number of classes, using only $O(n)$
+additional bits. On the rigidity event of
+Theorem~\ref{thm:unknown-frame}, every candidate coarsens the plant,
+so this maximum is the planted partition, up to class names.
+Completeness and zero algorithmic error hold outside that event too;
+statistical recovery there is a separate question.
+
+Nonsymmetric quotient candidates must remain in this blind search.
+For any accepted one-hot $X$ with class sizes $N_i>0$, symmetry of
+$A$ gives the integer balance identities
+\[
+ X^TAX=\diag(N_i)R=(\diag(N_i)R)^T,
+ \qquad N_iR_{ij}=N_jR_{ji}.
+\]
+Equal positive sizes, when prescribed, force $R=R^T$. Equal sizes
+of the true plant do not force its permitted coarsenings to have
+equal sizes, so they do not justify discarding nonsymmetric candidates.
+There is no division by a class size, including when $p\mid N_i$.
+For a fixed $R$, only its allowed label automorphisms preserve that
+target. To list unlabeled partitions in the unknown-$R$ search,
+canonicalize $(X,R)$ simultaneously under the at most $K!$ label
+permutations and output only the canonical representative. This
+uses a constant number of scans and no growing deduplication table.
+
+\subsection{Unknown certified frames in the actual simple law}
+\begin{corollary}[Nearly quadratic unknown-frame recovery]
+\label{vec:cor:frame}
+Under the omission certificate of
+Theorem~\ref{thm:unknown-frame}, the algorithm given only $A,K,D$
+lists all equitable partitions with at most $K$ classes in
+unconditional expected $\widetilde O_{K,D}(n^2)$ bit work, expected
+$\widetilde O_{K,D}(n)$ working bits, and expected $O_{K,D}(n)$
+output bits. Selecting a largest-class partition recovers the plant
+and its unknown frame with failure $O_{K,D}(n^{-(d_{\min}-2)})$.
+Varying total degrees, zero omission weights, internal degrees zero or
+one, unequal planted sizes, and all
+admissible sizes at which the simple factors exist are included.
+\end{corollary}
+\begin{proof}
+Connectedness and integer balance fix the planted size ratios.
+They can be written $N_i=c_iN$ for a primitive positive integer vector
+$(c_i)$; this is only a parametrization of all admissible sizes.
+Theorem~\ref{thm:frame-bounded-moment} gives
+\eqref{eq:vector-moment} in exactly the independent uniform-simple
+factor law, for $p=3$ and every reduction of every candidate $R$.
+There are finitely many permitted planted frames, size-ratio vectors,
+and candidate targets at fixed $K,D$, so a common moment constant
+exists. Apply Theorem~\ref{vec:thm:moment} and the structural failure
+bound of Theorem~\ref{thm:unknown-frame}.
+\end{proof}
+
+There is also a deterministic polynomial truncation preserving the
+structural failure rate. Over $\F_2$, use dense elimination for each
+candidate and cap its kernel size at $n^{d_{\min}-1}$, reading the minimum degree from the input. The bounded binary moment and a finite union give
+interruption probability $O_{K,D}(n^{-(d_{\min}-1)})$.
+If any cap is exceeded, return abstention rather than a partial maximum.
+Gray enumeration and
+integer checks then use bounded
+$\widetilde O_{K,D}(n^3+n^{d_{\min}})$ bit work and $O_K(n^2)$ space.
+Adding the structural failure preserves $O(n^{-(d_{\min}-2)})$.
+The expected nearly quadratic Las Vegas algorithm has no such cap.
+
+\subsection{The random-lift specialization}
+\begin{corollary}[Nearly quadratic unknown-base recovery]
+\label{vec:cor:lift}
+Let $H$ be a fixed connected simple $d$-regular graph, $d\ge3$,
+with $k\le K$ vertices, and let $A_N$ be its random $N$-lift,
+with independent uniform matchings above all base edges. Given only
+the lifted graph and fixed bounds $K,D\ge d$, the algorithm recovers
+the base fibers and $H$ up to isomorphism with probability $1-o(1)$.
+Its unconditional expected bit work is
+$\widetilde O_{H,K,D}(n^2)$, where $n=kN$, with expected
+$\widetilde O_{H,K,D}(n)$ working bits. Listing all equitable
+partitions with at most $K$ classes has expected $O_{H,K,D}(n)$
+output bits. All positive lift sizes are covered, including bipartite
+bases; no real-corank or eigengap promise is needed.
+\end{corollary}
+\begin{proof}
+Choose one fixed odd prime, for example $p=3$. The bounded lift
+moment theorem, Theorem~\ref{thm:lift-bounded-moment}, states that
+for this actual unconditioned lift law, every fixed $r$ and target
+$\overline R\in\Fp^{r\times r}$ satisfy
+\[
+ \sup_N\E\bigl|\{Y\in\Fp^{n\times r}:A_NY=Y\overline R\}\bigr|
+ <\infty.
+\]
+Apply it to the reductions of the finite integer quotient family
+above. Its solution count is exactly $p^{h_R(A_N)}$, so
+Theorem~\ref{vec:thm:moment} gives the work, space and output bounds.
+A lift of a simple base is automatically simple; there is no
+conditioning or change of graph law. Both $H$ and $R$ are analysis
+parameters in this moment invocation, not information supplied to
+the algorithm. Corollary~\ref{cor:random-lift} supplies the rigidity
+event, and maximum-class selection recovers the plant on that event.
+\end{proof}
+
+The omission certificate is sufficient; minimum degree three alone is
+not substituted for it. The nearly quadratic work is an expected bound,
+not a worst-case quadratic guarantee.

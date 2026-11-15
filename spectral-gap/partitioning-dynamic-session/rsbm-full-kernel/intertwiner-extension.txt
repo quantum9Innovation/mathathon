@@ -1,0 +1,254 @@
+NONSYMMETRIC INTERTWINERS: CERTIFIED KERNELS WITHOUT SQUARING THE MOMENT
+15 November 2026
+New supplement only. The frozen manuscript and full_kernel.py are unchanged.
+
+Verdict
+=======
+
+YES: symmetric block linearization extends the per-input full-kernel
+theorem to a square nonsymmetric intertwiner K. Computing the doubled
+kernel costs only a polynomial factor in its doubled dimension/nullity.
+Project to the RIGHT kernel before enumerating. Then a single bound
+E[p^h]<=C, h=dim ker(K), suffices; E[p^(2h)] is NOT required.
+
+The exact algebra and charging are proved below. A separate optional
+random diagonal weighted-Gram construction is also valid when kernel
+candidates are verified against K. Pure two-sided diagonal scaling and
+the deterministic unweighted Gram matrix are not adequate substitutes.
+These are derived uses of classical black-box tools, not new primitives.
+
+1. Exact vectorization and sparse costs
+=======================================
+
+Let A=A^T be an n-by-n graph adjacency matrix, R a prescribed t-by-t
+integer quotient matrix, and X an n-by-t indicator matrix. Stack COLUMNS:
+  vec(X)=(X[:,1],...,X[:,t]).
+Then
+  vec(A X-X R) = K vec(X),
+  K = I_t tensor A - R^T tensor I_n.                    (1)
+
+Write D=tn for K's dimension and w=nnz(K). For arbitrary R, K need not
+be symmetric. Its transpose acts on Y as
+  vec(Y) -> vec(A Y-Y R^T).
+In particular, using R instead of R^T in (1) silently solves the wrong
+intertwining equation when R is nonsymmetric.
+
+One product by K or K^T costs
+  O(t*nnz(A)+n*nnz(R))
+field operations. For fixed t and bounded graph/quotient degree, D=O(n),
+w=O(n), and both products cost O(n). Explicit sparse construction also
+has that cost. No dense D-by-D Kronecker matrix is required. Integer
+entries of an equitable bounded-degree quotient lie in [0,d], so their
+bit lengths are constant when d is fixed.
+
+2. Symmetric block linearization: full proof
+===========================================
+
+For square K over the fixed odd base field F_p, put
+  S = [ 0   K  ],   size2D,
+      [ K^T 0  ]
+and h=dim ker_Fp(K), k=D-h.
+
+For vectors (u,v), S(u,v)=(K v,K^T u). Therefore
+  ker(S) = ker(K^T) direct-sum ker(K),
+  rank(S)=rank(K)+rank(K^T)=2k,
+  corank(S)=2h.                                         (2)
+These identities are valid over every field. There is no positive-
+definite argument and no cancellation through a squared operator.
+
+Apply the PER-INPUT certified full-kernel theorem to S, not its
+moment-averaged corollary. A product by S calls K and K^T once each;
+nnz(S)=2w. The expected bit work for a full BASE-field kernel basis is
+  ~O_p((2D)(2w+2D)(2h+1))
+       = ~O_p(D(w+D)(h+1)).                             (3)
+
+If B is any complete basis of ker(S), its lower D-coordinate
+projections span ker(K). Indeed, every v in ker(K) has (0,v) in ker(S),
+and expressing this vector in B expresses v in those lower projections.
+Select h independent projected columns and normalize on h pivot rows.
+This is base-field arithmetic, since the S solver has already descended
+its basis. Selection/canonicalization costs
+  O(D*(2h)*h+h^3)=O(Dh^2+h^3),
+which is <=O(D^2(h+1)). No extra exponential factor is present.
+The resulting C has
+  K C=0,  C[J,:]=I_h.
+It is the complete RIGHT kernel basis of K.
+
+The left kernel is computational intermediate data only. It is not
+enumerated. The workspace is ~O_p(D(h+1)+w) bits, up to fixed factors
+from retaining the doubled basis.
+
+3. A smaller final certificate need not retain the doubled basis
+===============================================================
+
+Retain the S solver's field definition, diagonal preconditioner and
+scalar probes, but omit its full kernel basis from the final certificate.
+Include only C, its pivot rows J, and the reported shifted BM length ell.
+
+A deterministic checker:
+  * verifies the extension field and canonical encodings;
+  * regenerates the shifted scalar sequence of the preconditioned S,
+    recomputes its TRUE BM register length ell;
+  * requires ell=2(D-h), where h is the number of supplied C columns;
+  * verifies K C=0 and C[J,:]=I_h over F_p.
+
+The unconditional shifted-sequence argument gives
+  ell <=rank(S)=2rank(K).
+The verified independent C columns give rank(K)<=D-h. Thus
+  D-h=ell/2 <=rank(K)<=D-h,
+so every accepted certificate proves the complete right kernel, with
+ZERO verification error. The full S-kernel need not be trusted or sent.
+
+Verification costs ~O_p(D(w+D)) bit work and the certificate has
+  O_p(Dh+D log D)
+bits. The verifier recomputes only O(D) black-box products and BM;
+it does not perform a dense rank computation. An odd or otherwise
+inconsistent claimed ell is rejected. The honest solver has even ell
+by (2). The argument includes h=0 and h=D.
+
+4. Why only ONE exponential moment is needed
+============================================
+
+Suppose the ACTUAL input law has, for one fixed odd p,
+  E[p^h] <= C, h=dim ker_Fp(K).                          (4)
+Then E(h+1)<=C. Average the PER-INPUT bound (3): it costs
+  ~O_p,C(D(w+D))
+in expectation. This step never invokes a raw moment for S.
+
+Next enumerate only ker(K), using the projected h-column basis C.
+The incremental base-p counter/Gray algorithm costs O_p(D p^h)
+base operations overall, including maintaining each candidate vector.
+For fixed t,d, check in O(n) operations per candidate:
+  - reshape it into an n-by-t matrix;
+  - entries must lift to integer0 or1;
+  - every row must have exactly one1;
+  - column sizes must match the specified positive fiber sizes;
+  - A X=X R must hold over the INTEGERS.
+This returns the complete list of valid labeled equitable partitions.
+For fixed t, canonicalizing label permutations is a constant-factor
+operation if unlabeled partitions are requested.
+
+The expected enumeration/check cost is ~O_p,C(D). With D=tn and w=O(n),
+the overall expected bit work is ~O_p,t,d,C(n^2), including all lists.
+There is no algorithmic error, even if either kernel has large corank
+on an exceptional input. The promise (4) is a new application hypothesis;
+a scalar E|ker(A-lambda I)| bound alone does not automatically prove it
+for a general quotient R.
+
+If R is unknown but t,d are fixed, there are only finitely many bounded
+nonnegative integer quotient candidates, at most (d+1)^(t^2). Running
+the construction for each retains the expected near-quadratic bound
+provided (4) is established for those candidates. Unknown R does not,
+by itself, supply that moment hypothesis.
+
+Enumerating ker(S) instead would cost p^(2h), which (4) does NOT control.
+For example, let h_n=n with probability p^(-n) and0 otherwise. Then
+  E[p^h_n]=2-p^(-n) <=2,
+  E[p^(2h_n)]=1-p^(-n)+p^n ->infinity.
+This illustrates the exact logical gap avoided by projecting first.
+
+5. Important balance simplification for undirected graphs
+=========================================================
+
+For an INTEGER one-hot X with nonempty cell sizes N_1,...,N_t,
+X^T X=diag(N_i). If A=A^T and A X=X R, then
+  X^T A X=diag(N_i)R
+is symmetric. Consequently
+  N_i R_ij=N_j R_ji for every i,j.                      (5)
+
+If every fiber has the SAME prescribed positive size, (5) forces
+R=R^T. Therefore a genuinely nonsymmetric quotient candidate can be
+rejected immediately in an equal-size undirected random-lift search,
+without any kernel computation. This is an INTEGER condition and
+remains true even when p divides the fiber size.
+
+Nonsymmetric R is meaningful for unequal cell sizes. Example: the
+triangle graph with cells {u},{v,w} has
+  R=[[0,2],[1,1]],  (N_1,N_2)=(1,2).
+Then R is nonsymmetric and satisfies (5). Linearization handles it
+without introducing a weighted inner product or dividing by cell sizes.
+
+6. Two tempting replacements that fail
+======================================
+
+(a) Nonsingular left/right DIAGONALS do not generically remove zero
+nilpotent blocks of an arbitrary nonsymmetric K. For
+  K=[[0,1],[0,0]],
+every D_1 K D_2 remains a nonzero square-zero matrix. The nonsingular
+diagonal cyclicity theorem does not justify applying the old symmetric
+rank-deficient projection algorithm directly to this K.
+
+(b) The deterministic Gram matrix K^T K can have a larger kernel in a
+finite field, including odd characteristic. Over F5, take
+  K=[[1,0],[2,0]].
+It has rank1, but K^T K=0 because 1+2^2=0 modulo5. Thus the claimed
+identity ker(K^T K)=ker(K) is false. Symmetric block linearization
+avoids this isotropy problem entirely.
+
+7. Optional independently audited weighted-Gram alternative
+============================================================
+
+This route is algebraically valid but is NOT needed for (2)--(4) or
+implemented by the current intertwiner validation script. It can avoid
+the doubled left kernel, including for rectangular matrices.
+
+For arbitrary base-field K of size m-by-D and rank k, choose a random
+invertible diagonal E on its m rows over the same large extension F_q,
+and form only the BLACK-BOX operator
+  G=K^T E K.
+It is symmetric, rank(G)<=rank(K), and a product costs two sparse
+products plus the row scaling; the dense Gram matrix is never formed.
+
+Choose k independent columns J of K for the proof. Cauchy-Binet gives
+  det(G[J,J])=sum_{|I|=k} det(K[I,J])^2 product_{i in I} e_i.
+At least one coefficient is nonzero; the squarefree monomials are
+distinct. This degree-k polynomial is not identically zero in ANY
+characteristic. Hence
+  P[rank(G)<k] <=k/(q-1).                               (6)
+On rank preservation, ker(G)=ker(K).
+
+Use a fresh nonzero diagonal D on G and the same shifted BM/projection
+algorithm, BUT verify every candidate with Kx=0, not merely Gx=0.
+For every unlucky choice, the deterministic lower certificate obeys
+  ell<=rank(DG)=rank(G)<=rank(K).
+If D-ell independent verified K-nullvectors are obtained, their upper
+rank bound forces equality throughout. Acceptance is therefore sound,
+including bad E choices; a rank-dropping E cannot pass.
+
+On the good event in (6), the symmetric preconditioning results apply
+to G over F_q even though G has extension-field entries. Its kernel
+equals the base-defined ker(K), and fresh projections sample it
+uniformly. The additional failure in (6) is O(D/q), absorbed by the
+same capped-bad-trial analysis. For square K, expected work remains
+  ~O_p(D(w+D)(h+1)).
+For m-by-D K it is ~O_p(D(w+m+D)(h+1)), with h=D-rank(K), using both
+K and K^T products and selecting q polynomial in max(m,D).
+
+Descent must be justified using the ACCEPTED full basis of ker(K),
+which is base-defined. One must NOT assert that ker(G) is Frobenius-
+stable merely because the original K was base-field: G itself has
+extension-field entries. Acceptance/rank equality or the good-event
+ker(G)=ker(K) is the bridge that makes canonical descent valid.
+The certificate can contain E,D,u,v and a canonical base kernel C;
+the checker regenerates the implicit G sequence and uses the displayed
+lower/upper rank chain. Only p^h vectors are enumerated afterward.
+
+8. Validation and frozen-artifact status
+========================================
+
+A fresh original full_kernel.py run passed. Independent code inspection
+and expanded tests are recorded in fresh-run-audit.txt and its companion
+JSON artifacts. New intertwiner tests are in intertwiner-checks.json:
+  * nonsymmetric nilpotent K;
+  * an isotropic unweighted-Gram counterexample;
+  * zero and full-rank boundary cases;
+  * vectorization with the triangle's nonsymmetric quotient;
+  * compact right-kernel certificates and altered-certificate rejection;
+  * right-kernel enumeration only, matching direct base-field checks.
+
+The primary and derivation audit is in intertwiner-independent.txt.
+The new fixture harness uses small dense reference matrices to test
+identities; it is not an asymptotic performance or sparse-memory
+benchmark. The proved algorithm constructs/applies the sparse blocks.
+No frozen manuscript, original solver source, or model theorem is changed.
+The moment for a general intertwiner is an assumption, not proved here.

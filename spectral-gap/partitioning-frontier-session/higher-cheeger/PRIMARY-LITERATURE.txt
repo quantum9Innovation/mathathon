@@ -1,0 +1,143 @@
+Higher-order / multiway frontier review -- 2026-11-15
+===================================================
+
+All mathematical claims below are attributed to primary papers. This is a
+targeted source review, not a certification of the entire literature.
+
+1. CURRENT EXACT-k PREPRINT: Yunpeng Li, A sharp higher-order Cheeger
+   inequality, arXiv:2609.35369v2, revised October 5, 2026.
+   https://arxiv.org/abs/2609.35369v2
+   https://arxiv.org/html/2609.35369v2
+
+   Theorem1.1 claims phi_k <= C sqrt(lambda_k log(k+1)) for exactly k
+   disjoint nonempty sets, all conductances and degrees in the original
+   finite weighted graph. Sets need not cover V. Section7 uses the noisy
+   hypercube to match the logarithmic dependence. v1 had only log^5, so
+   search snippets can be materially stale. The proof was read through
+   its geometric partition, fixed-threshold mincut improvement, adaptive
+   coefficient projections, dyadic energy bound and local-eigenvalue count.
+   No independent full-proof audit or publication acceptance is claimed.
+   No nearly-linear runtime theorem is stated in the inspected text.
+
+   Consequence for target selection: do not advertise either a polylog(k)
+   exact-index/exact-count Cheeger bound, or the sqrt(log k) bound, as an
+   untouched open problem. Improving that factor for arbitrary weighted
+   graphs conflicts with the stated noisy-cube lower bound.
+
+2. CLASSICAL BASELINE: James R. Lee, Shayan Oveis Gharan, Luca Trevisan,
+   Multi-way spectral partitioning and higher-order Cheeger inequalities,
+   arXiv:1111.1055v6 (2014 version).
+   https://arxiv.org/abs/1111.1055v6
+
+   General phi_k lies between lambda_k/2 and O(k^2)sqrt(lambda_k).
+   The same paper proves logarithmic bounds after relaxing the spectral
+   index or number of output sets; its small-set noisy-hypercube example
+   underlies the sqrt(log k) obstruction. Do not mix lambda_k with
+   lambda_2k or k disjoint sets with a constant fraction of k.
+
+3. BUFFERS ARE A DIFFERENT OBJECTIVE: Konstantin Makarychev, Yury
+   Makarychev, Liren Shan, Aravindan Vijayaraghavan, Higher-Order Cheeger
+   Inequality for Partitioning with Buffers, arXiv:2308.10160, SODA2024.
+   https://arxiv.org/abs/2308.10160
+   https://doi.org/10.1137/1.9781611977912.80
+
+   The constructive buffered objective has upper bound
+   O_delta(log(k)/epsilon)*lambda_floor((1+delta)k), with each buffer
+   at most epsilon times its component size. Removing a square-root loss
+   here does not remove it for ordinary edge conductance: buffer-boundary
+   edges are excluded, and both the allowed buffers and index matter.
+   The paper also treats arbitrary vertex weights/edge costs. Its text
+   assumes exact spectral data rather than resolving numerical precision.
+
+4. CURRENT FULLY DYNAMIC COMPETITOR: Ben Jourdan, Peter Macgregor,
+   Gregory Schwartzman, Fully Dynamic Coreset Spectral Clustering,
+   ICML2026, PMLR306:54725--54740.
+   https://proceedings.mlr.press/v306/jourdan26a.html
+   https://raw.githubusercontent.com/mlresearch/v306/main/assets/jourdan26a/jourdan26a.pdf
+
+   Formal Theorem6 states a result for arbitrary dynamic weighted graphs, insertion
+   and deletion, with O(log n) worst-case edge update. Queries label Y
+   with alpha(1+epsilon)/(1-epsilon) consistency in time
+   O(k*dmax^2*log n + log n*log* n*k^2*epsilon^-4
+     + T_NC(epsilon^-4*k^2,k) + epsilon^-8*k^4
+     + min{|Y|*k^2*epsilon^-4, vol(Y)}).
+   Success is high constant probability. Consistency means the returned
+   labels extend to some approximate global normalized-cut partition;
+   this does not assert one persistent global labeling across queries.
+   No well-clustering/eigengap assumption appears in that theorem.
+
+   A separate algebraic scope audit in the sibling literature directory
+   shows that multiplicative kernel-k-means approximation alone does not
+   transfer to multiplicative average conductance after the additive
+   diagonal shift; see NORMALIZED_CUT_SHIFT_AUDIT.md. The statement above
+   is the paper's claim, not our certification of its objective conversion.
+   That audit does not show an actual run of the published algorithm fails.
+
+   Do not claim polylog edge update for dynamic clustering alone as new.
+   The degree-dependent query term and persistent-label/recourse scope
+   are meaningful comparison axes; fractional response construction in
+   this repository still costs nearly-linear work in the graph per edit.
+
+5. CLOSEST CLUSTER-REFINEMENT COMPARISON INSPECTED: Shayan Oveis Gharan,
+   Luca Trevisan, Partitioning into Expanders, arXiv:1309.3223v3, SODA2014.
+   https://arxiv.org/abs/1309.3223
+   https://arxiv.org/pdf/1309.3223
+
+   Theorem1.7 turns a gap between rho(k+1) and rho(k) into a clustering
+   with inside/outside expansion guarantees; the partition variant loses
+   factors of k. Lemma1.13 bounds some INDUCED subgraph lambda2 by
+   O(k^6 lambda_k) for a partition into at most k-1 parts. Our separate
+   pointwise-leakage lemma uses degree-preserving local masses instead:
+   a block comparison gives local lambda2<=lambda_k directly, but the
+   missing step is controlling global boundary conductance of its split.
+   This paper alone did not settle the average-leakage one-edge target;
+   the later Lau draft in item7 below DOES subsume its disjoint-set form.
+
+6. STABILITY IS ALREADY A LITERATURE: Pan Peng, Yuichi Yoshida,
+   Average Sensitivity of Spectral Clustering, arXiv:2006.04094, KDD2020.
+   https://arxiv.org/abs/2006.04094
+
+   Studies expected symmetric difference of output clusters under random
+   edge removal, including k-way clustering. Its stated two-way bound
+   depends on lambda2/lambda3^2. This is an average/random-deletion and
+   spectral-gap regime, distinct from arbitrary single-edit, gap-free
+   approximation guarantees or worst-case low recourse.
+
+7. CANDIDATE TARGET SUBSUMED BY CURRENT PRIMARY SOURCE: Lap Chi Lau,
+   Algorithmic Spectral Graph Theory, draft September16 2026, §7.7
+   pp99--104, Lemmas7.18--7.21 and Algorithm5.
+   https://cs.uwaterloo.ca/~lapchi/papers/ASGT.pdf
+
+   Core trimming plus outside search preserves a constant fraction of
+   every low-energy function on the cores. For k−1 inherited sparse sets,
+   local eigenvalue counting then finds one core with local lambda2 at
+   most 8lambda_k. Its two-way Cheeger split yields exactly k disjoint
+   sets with conductance at most max(h,4sqrt(2lambda_k))+8sqrt(lambda_k).
+   The weighted transcription replaces regular vertex masses with original
+   degree volumes. The specific average-leakage disjoint-set target first
+   proposed in this session is therefore a known-method specialization.
+   It is withdrawn as a frontier claim. Trimming does not itself ensure
+   that the sets cover all vertices or give a nearly-linear running time.
+
+Candidate status after primary-source correction
+-----------------------------------------------
+See inherited-repair-target.tex. The disjoint-set average-leakage problem
+is SUBSUMED by item7 and withdrawn as a frontier. A full covering partition
+with C*(h+sqrt(lambda_k(G'))) and explicit nearly-linear rounding work is
+a narrower unverified candidate; further completion-theorem comparisons
+are required before declaring it open. The pointwise-leakage full-cover
+special case is proved here by classical block minmax plus Cheeger.
+The degree-aware fractional logdet certificate is proved separately;
+it does not by itself supply a partitioning algorithm.
+
+Artifacts and verification
+--------------------------
+markov-form-budget.tex/pdf: exact monotonicity and logdet budget, count
+upper bound, uniform leverage bound, explicit cycle residual obstruction.
+local-repair-obstruction.tex/pdf: path8 + one unit edge forces remote split;
+leverage diverges there; bounded leverage cut-transfer inequality supplied.
+inherited-repair-target.tex/pdf: stronger-promise lemma + candidate target.
+check_markov_budget.py and diagnostics.json: 36 dense random budget
+checks and three exhaustive path8 locality cases passed. These are numerical
+corroboration; no timing, finite precision or nearly-linear implementation.
+jourdan26.pdf/txt: retrieved current primary competitor and local extraction.

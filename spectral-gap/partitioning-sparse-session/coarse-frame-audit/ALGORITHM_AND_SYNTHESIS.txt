@@ -1,0 +1,292 @@
+Independent coarse-frame recovery audit and algorithm synthesis
+==============================================================
+15 November2026. This is a complete derived mathematical argument,
+conditional only on the elementary configuration-model inputs proved
+in the three companion notes. Historical priority is NOT certified.
+No claim of a practical running time, numerical stability, or a noisy
+recovery guarantee is made.
+
+Root candidate read in full:
+  spectral-gap/partitioning-multiclass-coarse-root.txt
+  spectral-gap/rsbm-general-coarse-recovery-root.txt
+All files written by this audit stay inside the new coarse-frame-audit/
+subdirectory. Earlier completed theorem/obstruction artifacts are unchanged.
+
+1. Precise positive theorem
+--------------------------
+Fix constants K>=2 and D>=3. Let the true degree frame be any fixed
+nonnegative integer k-by-k matrix Q=(d_ij), with 2<=k<=K, a_i=d_ii>=2,
+and total degrees d_i=sum_j d_ij<=D. Assume the off-diagonal support is
+connected. Let the nonempty planted classes have sizes N_i with
+  N_i*d_ij=N_j*d_ji,
+and all parity conditions N_i*a_i even. The connected fixed frame fixes
+their positive proportions alpha_i=N_i/n, n=sum_i N_i.
+
+Independently sample a uniform simple a_i-regular graph inside each
+class, and a uniform simple (d_ij,d_ji)-biregular graph between every
+active pair of classes. Every cross factor is random and independent
+in THIS theorem. No additional parity restriction is imposed on N_i.
+
+THEOREM. With probability tending to one along all admissible sizes,
+EVERY equitable partition into at most K nonempty classes is an
+equitable coarsening of the true planted classes. It follows that:
+  * the planted partition is the unique finest such partition;
+  * its number of classes and its unknown degree frame are recoverable;
+  * the explicit modular-intertwiner algorithm below has expected
+    polynomial bit complexity and a worst-case polynomial truncation
+    with high-probability success.
+The algorithm is given the fixed bounds K,D, but not Q,k, the class
+sizes, a spectral signal parameter, or an outlier gap.
+
+Equitable means one exact neighbor-count vector at every vertex in each
+class. It is a rigid exact-degree model, not the independent-edge SBM.
+In particular the assertion is not a new Kesten--Stigum threshold.
+
+2. The finite-alphabet configuration moment
+-------------------------------------------
+Let p=2, r<=K, and take ANY fixed r-by-r candidate integer matrix R
+with entries>=0 and row sums<=D. Form the binary linear operator
+  L_R(Y)=A Y-Y R,    Y in F_2^(n by r).
+Equivalently its matrix is I_r tensor A - R^T tensor I_n, up to the
+chosen vectorization convention. Let h_R be its binary nullity. Then
+the number of modular intertwiners is 2^h_R.
+
+The exact factorial derivation in
+  entropy-count/configuration-intertwiner-proof.tex
+gives, already in the typed multigraph configuration model,
+  E 2^h_R <= (3D)^F (n+1)^B,
+where the following explicit constants depend ONLY on K,D:
+  F=K+[K(K+3)/2]*2^(2K),
+  B=K*2^(KD)+F.
+Its root/neighbor alphabet is the vector space F_2^r, not scalar signs.
+The e_1,...,e_r labels remain distinct, including at p=2. The local
+equation determines one omitted internal-neighbor vector with coefficient
+one, so neither an odd prime nor a matrix inverse is required.
+
+For an ordered-star type T_i, count its assignment to labeled vertices
+by N_i!/prod_s T_i(s)!. Internal stub tables m_ii must be symmetric,
+with even diagonal; their pairing ratio is
+  [prod_(x<y)m_ii(x,y)! prod_x(m_ii(x,x)-1)!!]
+        /(N_i*a_i-1)!!.
+The cross ratio is
+  prod_(x,y)m_ij(x,y)! /(N_i*d_ij)!.
+These exact formulas count root labels once, and retain distinguishable
+stub slots. Loops count twice in adjacency and degree. Uniform factorial
+bounds, including zero entries, give an entropy exponent plus a fixed
+polynomial factor. The allowed-star alphabet has at most 2^(r*d_i)
+elements because one neighbor is omitted, hence there are polynomially
+many types, with the displayed explicit exponent.
+
+To check the exponent's sign, symmetrize neighbor slots WITHIN each
+neighbor type. This preserves pooled pair laws and local linear support,
+and increases star entropy. If I_ii and I_ij are internal and cross
+root-neighbor mutual informations, and J_i is retained-neighbor total
+correlation conditioned on its root, the exact weighted cancellation is
+  -Phi=sum_i alpha_i(a_i/2-1) I_ii
+          +sum_(i<j) alpha_i*d_ij I_ij +sum_i alpha_i J_i >=0.
+This works for a_i=2 and unequal positive proportions. For modular labels
+no equality classification is needed; nonpositivity alone proves the
+polynomial moment, independent of R.
+
+Conditioning every factor on simplicity costs a fixed positive factor.
+The companion proof checks this directly by elementary bad-pattern
+factorial moments, or one may use the classical regular/biregular
+configuration estimate. Its limiting probability is exp(-Lambda), with
+  Lambda=sum_i (a_i^2-1)/4
+          +sum_(i<j) (d_ij-1)(d_ji-1)/2 <= K^2 D^2.
+Conditioning gives precisely independent uniform simple factors, since
+every simple factor has the same labeled-stub multiplicity. Thus
+  E_simple 2^h_R <= C(K,D) (n+1)^B
+eventually. This bound is UNCONDITIONAL over the simple graph draw,
+including rare graphs on which h_R is large.
+
+The ratio bound alpha_min>=1/[K D^(K-1)] is available for the ACTUAL
+frame from balance along paths. Since there are finitely many frames
+with k<=K and maximum row sum D, the eventual simplicity constant and
+the polynomial exponent may be chosen uniformly over them. The input
+K is a fixed supplied or hardcoded bound. No growing-K claim is made.
+
+3. Real one-hot rigidity: a quantitative macroscopic exclusion
+------------------------------------------------------------
+For an actual integer equitable partition Y, with rows in {e_1,...,e_r},
+apply the SAME exact configuration count using this real one-hot
+alphabet and the INTEGER equation AY=YR. Let rho_i be the empirical
+law of candidate labels on old class i, and define
+  delta=sum_i alpha_i (1-max_x rho_i(x)).
+This is exactly n^-1 times the least number of rows changed in replacing
+Y by a blockwise point map J T, where J is the old planted indicator
+matrix and T is a k-by-r one-hot map. T may merge old classes and may
+have unused candidate labels.
+
+The full independent real-variance proof is in
+  rigidity/onehot-entropy-rigidity.tex.
+Here is its crucial reconstruction, which does not assume internal
+root-neighbor independence when a_i=2. After slot symmetrization, use
+the exact cancellation in Section2. Keep each root law and each original
+conditional internal-neighbor law, make retained internal neighbors
+conditionally independent, and replace cross-neighbor conditionals by
+their root-independent neighboring-class marginals. Call this auxiliary
+retained-star law Q_i and the actual law P_i. Then
+  kappa_i=KL(P_i||Q_i)=J_i+sum_(j!=i) d_ij I_ij,
+  alpha_i*kappa_i <= L=-Phi.
+
+Let m_i(X) be the conditional mean internal one-hot vector, v_i its
+expected conditional variance trace, and V_j=1-||rho_j||_2^2. Let W be
+the omitted vector inferred from R_X minus the retained neighbor sum.
+Under P_i, W is the actual omitted one-hot neighbor. For
+  f=||W-m_i(X)||^2,
+its expectation under P_i is v_i. Under Q_i, conditional independence
+gives the EXACT difference
+  E_Qi f-E_Pi f
+   =(a_i-2)v_i+sum_(j!=i)d_ij V_j
+        +E||R_X-a_i m_i(X)-sum_(j!=i)d_ij E e_(X_j)||^2
+   >=sum_(j!=i)d_ij V_j.
+Every occupied row R_X is a nonnegative count vector of total mass d_i.
+The retained sum plus m_i(X) has the same mass, so 0<=f<=2d_i^2 under
+BOTH laws. Pinsker therefore gives
+  L >= alpha_i [sum_(j!=i)d_ij V_j]^2/(2 d_i^4).
+
+Since V_j>=1-max_x rho_j(x), some j has V_j>=delta. Connectedness and
+k>=2 supply a cross-neighbor i of that j. Hence
+  Phi <= -alpha_min*delta^2/(2D^4).                    (G)
+The unsymmetrized entropy is no larger, and its root laws are unchanged,
+so (G) holds for every original empirical type. In particular Phi0
+forces all old root laws to be points; the deterministic local degree
+equation at those points is exactly Q T=T R. Conversely a compatible
+point map has deterministic stars and entropy zero.
+
+For any fixed eta>0, the expected number of integer candidates at
+distance at least eta*n from EVERY point map is at most
+  polynomial(n)*exp[-alpha_min*eta^2*n/(2D^4)].
+This follows by the same uniform factorial upper bound. There are only
+polynomially many types. The union over all candidate matrices R,r is
+finite and keeps this probability exponentially small. No candidate
+class lower-mass assumption is necessary for this conclusion.
+
+4. Near a point map: no unexamined small-defect step
+-------------------------------------------------
+The complete arbitrary-support typed-configuration proof is in
+  support/small-support-and-frame-identification.tex.
+Because a_i>=2 and the cross-frame is connected with k>=2, the minimum
+TOTAL degree d_min is at least three. Take any nonempty set S of s
+vertices and let W be its outside neighbors, w=|W|. If no outside
+vertex has exactly one edge into S, every vertex of W has at least
+two such edges. Write a for edges within S (loops count once), b for
+S-W edges, e=a+b. Then
+  2a+b>=d_min*s,  b>=2w,
+  e-s-w >= (d_min-2)s/2.
+
+Counting choices of S,W, selected stubs and their prescribed pairings
+in each independent typed factor gives, for all s<=eta*n and a small
+fixed eta=eta(K,D)>0,
+  E[#such S of size s]
+    <= C(D,rho)^s (s/n)^ceil((d_min-2)s/2),
+where rho=alpha_min may be replaced by1/[K D^(K-1)]. Every prescribed
+partial configuration with e pairs costs at most (2/(rho*n))^e.
+The estimate covers arbitrary compositions of S among planted classes,
+loops, and parallel edges. Its sum over all small nonempty S is o(1).
+After simple conditioning singleton S are impossible, and the stated
+companion bound is O(n^-(d_min-2)).
+
+Choose eta even smaller than alpha_min/[2(D+1)]. For ANY verified
+integer candidate Y at distance |S|<=eta*n from a point map J T, each
+old class contains a vertex whose own row and every neighbor row are
+unchanged: its changed closed neighborhoods occupy at most(D+1)|S|
+vertices globally. At one such vertex in each old class,
+  (QT)_i=(A J T)_v=(A Y)_v=(Y R)_v=(T R)_i.
+Thus QT=TR EXACTLY, not just modulo2. Consequently
+  V=Y-JT satisfies A V=V R,
+and its nonzero row support is S. At a vertex outside S having exactly
+one edge into S, the corresponding row of A V would be one nonzero
+row of V, while the row of V R is zero. This is impossible over any
+field. The single graph event excluding small bad S therefore forces
+S empty simultaneously for EVERY R and Y, without a union over their
+coefficients or vector dimensions.
+
+Intersect this small-support event with Section3's macroscopic event.
+Every integer equitable partition into at most K nonempty classes is
+then EXACTLY a compatible point map J T, proving the rigidity theorem.
+Neither spectral simplicity nor a positive numerical spectral gap is
+asserted or used.
+
+5. An explicit unknown-frame algorithm and its complete cost bound
+----------------------------------------------------------------
+Given A and fixed K,D:
+
+For every r=1,...,K and every nonnegative integer r-by-r matrix R whose
+row sums are at most D, perform binary Gaussian elimination on L_R.
+Enumerate its full binary kernel using any basis. For every matrix Y:
+  (i) require every row is exactly one standard basis vector e_j;
+ (ii) require every candidate class is nonempty;
+(iii) verify the ORIGINAL integer equality A Y=Y R.
+Retain an accepted partition with the largest value of r. The old
+planted pair(J,Q) appears among the candidates for every graph draw.
+
+There are at most M=sum_(r=1)^K (D+1)^(r^2) candidate matrices, a fixed
+constant. Computing each binary kernel costs O_K(n^3) bit operations.
+Enumeration has exactly 2^h_R vectors; a deliberately loose bound of
+O_K(n^2) work per vector covers basis combination, row checks, and
+integer verification. Memory need not store the full list: a kernel
+basis and one running candidate suffice, using O_K(n^2) bits plus
+integer neighbor counters of bounded size.
+
+Using Section2's bound UNCONDITIONALLY gives
+  E[total bit work] <= C(K,D) n^(B+3).
+This does not condition work on success or discard rare expensive
+instances. With a hard cap n^(B+5), Markov bounds cap failure by
+O_(K,D)(n^-2). The truncated algorithm has worst-case polynomial work.
+Combine this event with the rigidity event to obtain high-probability
+correct recovery. The exponent B is explicit above, depends only on
+the supplied constant bounds, and is enormous. This is a theoretical
+polynomial-time result, not a practical or nearly-linear algorithm.
+
+On the rigidity event, every accepted partition is Y=JT. Nonempty
+candidate classes make T onto, so r<=k. The planted k-class candidate
+is present, hence the maximum is k. At r=k, T is a permutation of the
+old classes and the algorithm recovers them up to their unavoidable
+names. Exact neighbor counts then recover Q in that labeling.
+
+One MAY restrict candidate R to connected off-diagonal support: the
+true Q is then still among candidates, and edge balance gives every
+candidate class size at least n/[K D^(K-1)]. This is a valid optional
+restriction, as in the root proposal. It is not needed for this proof:
+the explicit macroscopic gap includes unused labels, and the small-
+support step rules out near-point tiny classes. No unknown unbounded
+number of classes or growing alphabet is covered.
+
+6. Qualifications, primary comparison, and what changed
+-------------------------------------------------------
+The theorem needs random independent cross factors for the exact type
+count. It does NOT inherit the earlier strong-mixing theorem's allowance
+of arbitrary cross matrices. On the other hand it treats all admissible
+parities, internal degree TWO, unequal proportions, unknown frame, and
+repeated or interior spectral modes. These are separate proof scopes.
+
+The connected k>=2 assumption and minimum total degree three matter.
+With k=1,a1=2, an even cycle's alternating two-class labeling gives
+zero entropy away from a point map and small cycle components supply
+small supports. This excluded case is an actual obstruction, not a
+technical condition silently dropped.
+
+This is exact-model recovery. A single degree-preserving switch can
+break an exact planted equation; no robust noisy-edit allowance follows.
+The computed binary kernel is NOT asserted to have the minimum possible
+dimension or to coincide with an old real eigenspace. We only bound the
+expected number of its vectors polynomially and filter them in integers.
+
+Closest inspected primary works are recorded in ../PRIORITY_REVIEW.txt:
+Barucca2017 conjectures full two-community recovery; Zhu–Zhuv3Sep2026
+still describes it as open; Karmakar–Podder2002.05577v2 treats uniqueness
+of equal-size multiple communities with sufficiently large frame entries
+and degree-comparison assumptions, without the present explicit recovery
+algorithm. Their homogeneous result should NOT be misdescribed as an
+assortative-only theorem. Brito–Dumitriu–Harris's frame clustering uses
+leading-spectrum separation after degree scaling. Efficient noiseless
+detection was already known (Bandeira etalCOLT2021Remark3); detection
+is not the new claim here. No inspected source directly states the full
+theorem above, but that focused sweep is not a priority certificate.
+
+The root proposal's complete mathematical route passes the module audits
+under these precise assumptions. External novelty review and a clean
+integrated manuscript remain separate tasks. No frozen earlier paper
+was edited, and no original persistent goal was created or completed.

@@ -1,0 +1,543 @@
+                                        Localized eigenvectors of the non-backtracking
+                                        matrix
+                                                      Tatsuro Kawamoto
+
+
+
+
+arXiv:1505.07543v3 [cs.SI] 8 Feb 2016
+                                                      Department of Computational Intelligence and Systems Science, Tokyo Institute of
+                                                      Technology, 4259-G5-22, Nagatsuta-cho, Midori-ku, Yokohama, Kanagawa, 226-8502,
+                                                      Japan
+                                                      E-mail: kawamoto@sp.dis.titech.ac.jp
+
+
+                                                      Abstract. In the case of graph partitioning, the emergence of localized eigenvectors
+                                                      can cause the standard spectral method to fail. To overcome this problem, the
+                                                      spectral method using a non-backtracking matrix was proposed. Based on numerical
+                                                      experiments on several examples of real networks, it is clear that the non-backtracking
+                                                      matrix does not exhibit localization of eigenvectors. However, we show that localized
+                                                      eigenvectors of the non-backtracking matrix can exist outside the spectral band, which
+                                                      may lead to deterioration in the performance of graph partitioning.
+
+
+
+
+                                        1. Introduction
+
+                                        Graph partitioning or community detection is a popular topic in the field of complex
+                                        networks and computer science; the spectral method is a standard heuristic for it.
+                                        Because the graph partitioning problems are usually formulated as discrete optimization
+                                        problems, which are NP problems, we require some heuristics. In the spectral method,
+                                        the discreteness constraint is relaxed, and the problem is formulated as a continuous
+                                        optimization problem. The simplification then reduces to an eigenvalue/eigenvector
+                                        problem of a matrix (see [1] for detail).
+                                             The commonly used matrices in the literature are the unnormalized Laplacian
+                                        L = D − A, normalized Laplacian L = D −1/2 LD −1/2 [1], and modularity matrix
+                                                           
+                                        M = A − kkT /K /K [2, 3], where A is the adjacency matrix; each element represents
+                                        a node pair and Aij = 1 if the node pair i and j are connected by a link, otherwise
+                                        Aij = 0. We only consider undirected graphs and thus A is symmetric. The matrix D
+                                                                                                                    P
+                                        is a diagonal matrix whose element is equal to the node’s degree ki = j Aij . In the
+                                        modularity matrix M, k is a column vector of degrees, k = (k1 , . . . , kN )T (T represents
+                                                                   P
+                                        the transpose), and K = N    i=1 ki is the total degree. The spectral method utilizes the
+                                        eigenvectors of large or small eigenvalues; for example, in the case of bisection using L
+                                        and L, the signs of eigenvector elements of the second smallest eigenvalue determines
+                                        the module assignment of nodes. That is, the nodes with the same sign belong to
+                                        the same module. On the other hand, for bisection using M, the eigenvector of the
+Localized eigenvectors of the non-backtracking matrix                                    2
+
+largest eigenvalue is referred. Though the result of the spectral method obtained by the
+abovementioned procedure often leads to a good approximation of the true optimum,
+there is no theoretical guarantee that this is always true.
+     In addition to the matrices specified earlier, recently, much attention has been paid
+to the spectral method using the non-backtracking matrix B [4], which is defined by the
+following 2N × 2N matrix:
+                                   !
+                         0 D−I
+               B=                    ,                                                 (1)
+                        −I     A
+where I is an identity matrix. The matrix B is asymmetric and its spectrum is complex.
+For graph partitioning, however, one usually focuses on large real eigenvalues. The left
+eigenvector of (1) has the eigenvector of the form (v T , −µv T ) where µ is an eigenvalue,
+and we refer to the sign of v of the second-largest eigenvalue for module assignment in
+the bisection problem.
+     The emergence of localized eigenvectors causes the spectral method to fail. A
+localized eigenvector is one whose weight is concentrated around a few components while
+the remaining components have zero weights or weights close to zero. Furthermore, the
+localized eigenvector has no information of global community structure. For example,
+if a localized eigenvector is the leading eigenvector of the modularity matrix M, the
+standard bisection method provides a solution that is uncorrelated to the true optimum.
+Indeed, for sparse stochastic block models, localized eigenvectors emerge frequently
+around the detectability threshold when we use the adjacency matrix A [4] and the
+Laplacians, L and L [5]; this has a considerable effect on the consistency with the planted
+partition. The details of the stochastic block model are discussed below. The spectral
+partitioning method using the non-backtracking matrix B was originally introduced to
+avoid localization in such a situation [4].
+     In this paper, first, we briefly review previous works on the localized eigenvector
+(Sec. 2). We then conduct a comparative analysis of the degree of localization for
+the abovementioned matrices in several real networks and show that non-backtracking
+matrix does not exhibit high inverse participation ratios (IPRs) (Sec. 3). Based on this
+result, it may be assumed that the eigenvectors of the non-backtracking matrix never
+exhibit localization. However, in Sec. 4, we show that localized eigenvectors with real
+eigenvalues do exist; furthermore, one of them may have the second-largest eigenvalue
+(Sec. 5). Finally, some discussion on the localized eigenvectors is given in Sec. 7.
+
+2. Degree of localization
+
+The degree of localization can be measured by the IPR. For an eigenvector v, the IPR
+is defined as follows. P
+                             4
+                       P i vi
+               IPR =             .                                                (2)
+                      ( i vi2 )2
+The value of IPR is close to 1 if v is localized and is of O(N −1 ) for a graph with
+size N if v is an extended vector. Although localized eigenvectors have been studied
+Localized eigenvectors of the non-backtracking matrix                                  3
+
+for decades, there is still much scope for a more thorough theoretical understanding
+[6, 7, 8, 9, 5, 10, 11, 12]. The localized eigenvectors of adjacency matrix A in complex
+networks that exist owing to the hub structure have been frequently discussed in the
+literature [13, 11, 14]; in addition, it is known that the localized eigenvectors of the
+modularity matrix M also exists because of the hub structure [10]. However, it is
+noteworthy that this is not always the case, depending on the matrix one considers [15].
+Furthermore, there are many researches on the localized eigenvectors in real networks as
+well [11, 16, 17]. To the best of our knowledge, the comparative analysis of localization
+for commonly used matrices has not been performed thoroughly.
+
+3. Degree of localization in real networks
+
+We investigate the performance of the spectral method of matrices used for graph
+partitioning in real networks. We used the datasets present in [18, 19]. The networks
+we consider may not have clear module structures, and for simplicity, we ignore the
+direction in case of directed networks; further, we deleted self loops if they exist, and
+converted multiple links to a single link.
+     In Fig. 1, we plotted the largest IPR of the 6 smallest or largest eigenvectors of
+each matrix. We plotted the small eigenvalues for the unnormalized and normalized
+Laplacians, L and L, and the large (real) eigenvalues for the modularity and non-
+backtracking matrices, M and B. Note that the non-backtracking matrix may have less
+than 6 real eigenvalues. In many networks, the IPRs of unnormalized and normalized
+Laplacian, L and L, can be very large, while those of the modularity matrix M tend
+to be very small. In particular, the non-backtracking matrix B never exhibits a high
+IPR. It is interesting to note that the modularity matrix M is robust to localization
+as the non-backtracking matrix B very often. Concerning the degree of localization, in
+practice, it can be inferred that localization can rarely be problematic when M is used.
+
+4. Localized eigenvectors of the non-backtracking matrix
+
+We have observed that the eigenvectors of non-backtracking matrix are quite robust
+against localization. It might be expected that the non-backtracking matrix exhibits
+high IPRs when many short loops exist. However, it is hard to obtain high IPRs by
+random generation of triangles (see Appendix). A question that needs to be answered
+is whether it can be proven that the non-backtracking matrix never has a localized
+eigenvector. Although it may be extremely rare in real networks, localized eigenvectors
+do exist in the non-backtracking matrix.
+     It is known that, for the random-walk Laplacian, I − D −1 A, localized eigenvectors
+can be constructed owing to the existence of a pair of symmetric subgraphs. The
+construction of a graph with such a local symmetry is called motif doubling [31]. The
+procedure of motif doubling is as follows. Let Ω be a set of nodes of a subgraph (or
+a motif) in a graph G(V, E), where V and E denote the sets of nodes and links of
+Localized eigenvectors of the non-backtracking matrix                                                                                                                                     4
+
+
+
+
+                   IPR
+
+
+
+
+                                                                                                                                         oregon1_ 010331
+                                                                                                                                                                         loc-brightkite
+                                                                                                                        p2p-Gnutella04
+                                                                                     ca-HepTh   cit-HepPh
+                                                                        ca-AstroPh                                                                         email-Enron
+                                                                                                            wiki-Vote
+                                      PoliticalBooks   PoliticalBlogs
+                            adjnoun
+
+
+
+
+               Figure 1. (Color online) The values of largest IPR among 6 eigenvectors with the
+               largest or smallest eigenvalues in 11 real networks. First 3 networks, adjnoun [3],
+               Political books [2], Political blogs [20] are the datasets distributed by Mark Newman
+               [18]. Other networks, ca-Astro [21], Phca-HepTh [21], cit-HepPh [22, 23], wiki-Vote
+               [24, 25], p2p-Gnutella04 [21, 26], oregon1 010331 [27], email-Enron [28, 29], and loc-
+               brightkite [30] are of SNAP [19]; the datasets are labeled as listed in [19].
+
+
+the entire graph, respectively. We denote the neighbors of Ω by ∂Ω. We assume that
+Ω is only a small part of the entire graph, i.e., |Ω| ≪ |V |. We build a copy of the
+induced subgraph of Ω, whose node set is denoted as Ω.    e For each node ĩα ∈ Ω,  e there
+exists a corresponding node iα ∈ Ω. We then connect this copied subgraph to the nodes
+in ∂Ω in the same manner as the nodes in Ω do. That is, if iα is connected to some
+nodes in ∂Ω, ĩα is also connected to those particular nodes (see Fig. 2 for example).
+In [31], it is shown that the entire graph that is generated by the motif doubling has a
+right eigenvector of the random-walk Laplacian whose component is concentrated within
+     e For its explicit form, see [31] or refer to our derivation for the non-backtracking
+Ω ∪ Ω.
+matrix below. Although [31] considers the procedure of doubling as explained above,
+hereafter, we regard that this locally symmetric subgraph naturally exists in the graph
+that we consider.
+     We can apply the motif doubling to obtain the eigenvectors of the non-backtracking
+matrix B. Its eigenvalue equation is Av = µv + µ−1 (D − I)v, where µ is the eigenvalue.
+We restrict ourselves to the case where the induced subgraph of Ω is a regular graph
+and every node in Ω is connected to the nodes in V \(Ω ∪ e  Ω) by a single link (see Fig. 2),
+because it makes the eigenvalue equation significantly simple. We first consider the
+eigenvalue equation for Ω∪E(Ω, ∂Ω), the induced subgraph of Ω, and the links between Ω
+and ∂Ω. Denoting its corresponding eigenvector as v Ω , we have the eigenvalue equation
+as
+                 X                     
+                                   c−1
+                          Ω
+                     Aij vj = µ +          viΩ .                                          (3)
+                 j∈Ω
+                                     µ
+
+Note that, although the nodes in (3) are of Ω, the degree of each node is not c − 1, but
+c, because E(Ω, ∂Ω) is included. Using v Ω , we can construct a localized eigenvector v
+Localized eigenvectors of the non-backtracking matrix                                            5
+
+
+
+
+              Figure 2. (Color online) An example of motif doubling with a clique of 3 nodes.
+
+
+of the entire graph. Its components are proportional to
+                    
+                    
+                     vi
+                        Ω
+                                for i = iα ∈ Ω,
+               vi =    −viΩ                   e
+                                for i = ĩα ∈ Ω,                                            (4)
+                    
+                     0         otherwise.
+It can be easily confirmed that this is indeed an eigenvector of the entire graph. Though
+the nodes in V \∂Ω trivially satisfy the eigenvalue equation with µ, for a node g ∈ ∂Ω,
+using (4), we have
+                X           X            X
+                   Agi vi =    Agi vi +     Agi vi
+               i∈V          i∈Ω            e
+                                         i∈Ω
+                                 −1 X       X                   −1 X     X
+                              c−1                              c−1
+                         = µ+             Agi     Aij vj + µ +           Agi   Aij vj
+                               µ      i∈Ω     j∈Ω
+                                                                µ
+                                                                                      e
+                                                                                    i∈Ω           e
+                                                                                                j∈Ω
+                         = 0.                                                                         (5)
+Therefore, the vector of (4) satisfies the eigenvalue equation of the entire graph, yielding
+                        1
+                IPR =       .                                                            (6)
+                       2|Ω|
+     In the following sections, we demonstrate the emergence of the localized eigenvector
+(4) using synthetic graphs and show that its eigenvalue can indeed be the second-largest
+one.
+
+5. A pair of cliques attached to a stochastic block model
+
+As a first example, let us consider a clique of n nodes as Ω and a sparse stochastic block
+                                  e The neighboring nodes of the clique ∂Ω are chosen
+model as the base graph V \(Ω ∪ Ω).
+randomly. The stochastic block model is constructed as follows. We denote the total
+number of nodes N and each node has its planted module assignment r, i.e., for the two
+planted module case, r = 1, 2. Every node pair is connected at random on the basis of
+their module assignments. Here, we consider a fundamental stochastic block model of
+two modules with an assortative structure; a node pair is connected with probability pin
+if they belong to the same module, and with probability pout (pout < pin ) if they belong
+to different modules. That is, the nodes in the same module are more densely connected
+Localized eigenvectors of the non-backtracking matrix                                               6
+                         (a)                                              (b)
+
+
+
+
+                                    node label i
+
+
+
+
+              Figure 3. (Color online) (a) Fraction of correctly classified nodes and (b) the IPR as
+              a function of the strength of block structure cin − cout for the sparse stochastic block
+              models with a pair of cliques. As the stochastic block model, we set N = 1000 for two
+                                                      √ c = 3; the detectability threshold of the non-
+              equal size modules and the average degree
+              backtracking matrix is at cin − cout = 2 3 ∼ 3.46. In both plots, circles represents the
+              result of the standard stochastic block model, while the crosses, triangles, diamonds,
+              and squares represent the cases where the clique pair with n = 4, 5, 6, 7 are attached,
+              respectively. The plots show the average over 100 samples with error bars. In (b),
+              the solid lines indicate the values of IPRs equal to 1/12, 1/14, and 1/N . The inset
+              of (a) represents the eigenvector elements of the second-largest eigenvalues of a single
+              realization. For this particular case, we set N = 200 and cin − cout = 4, n = 6. The
+              first n nodes indicate the randomly chosen nodes in ∂Ω and the last 2n nodes indicate
+              the nodes in Ω and Ω.e
+
+
+than the node in other modules. In order to impose the constraint that the graph is
+sparse, we set both pin and pout to be of O(1/N), i.e., the average degree remains constant
+as we increase the total number of nodes N. Following the notation in the literature, let
+us introduce variables cin = pin N = O(1) and cout = pout N = O(1). Because each node
+pair is connected independently randomly, the graph has a Poisson degree distribution;
+further, because the graph is sparse, it is locally tree-like. As the block structure gets
+weaker, i.e., cin − cout is smaller, the result of the spectral method loses the correlation
+with the planted solution. The value at which they become completely uncorrelated is
+called the detectability threshold [32, 33, 4, 5]; the region above this threshold is the
+detectable phase, whereas region below it is the undetectable phase.
+     We now solve for (3). In the present case, the degree of each node is n. If we
+consider the factor µ + (n − 1)/µ as another constant λ, it just represents an eigenvalue
+equation for the adjacency matrix of the induced subgraph of Ω. The eigenvalues of a
+clique are −1 and n − 1. Because we are interested in an eigenvector that is out of the
+spectral band, we solve for the solution with a real eigenvalue. For λ = n − 1, we have
+              µ2 − (n − 1)µ + n − 1 = 0,                                       (7)
+                  1         p               
+              µ=      n − 1 ± (n − 1)(n − 5) .                                 (8)
+                  2
+Therefore, the eigenvalue can be real for n ≥ 5. For the solution with λ = −1, we
+Localized eigenvectors of the non-backtracking matrix                                              7
+              (a)                                  (b)                              (c)
+
+
+
+
+              Figure 4. (Color online) (a) Fraction of correctly classified nodes, (b) IPR, and
+              (c) second-largest eigenvalue as a function of the degree c in Ω for various values of
+              c0 . As the stochastic block model, we set N = 10000 for two equal size modules and
+              cin − cout = 2c0 − 1, i.e., the base graph has a very clear block structure. We set
+              |Ω| = 50, so that the value of the IPR for the eigenvector of (4) is 0.01, which is
+              indicated as a solid line in (b). The plots show the average over 20 samples with error
+              bars. In (c), solid line indicates the eigenvalue µ in (9).
+
+
+always have a complex eigenvalue for µ. Note that, a real eigenvalue does not always
+indicate that it is out of the spectral band. Moreover, it may not be the second-largest
+eigenvalue. As we demonstrate below, however, it can actually be the eigenvector with
+the second-largest eigenvalue.
+     For the stochastic block model, it is known that the spectral method of the non-
+backtracking matrix B is free of localization [4]. On the other hand, when the clique
+pair is attached as described in motif doubling, as shown in Fig. 3(a), the eigenvector
+of the second-largest eigenvalue can be uncorrelated to the planted partition even
+in the region where the block structure is fairly strong. According to (8), we have
+                                                                      √
+µ ≃ 3.618 for n = 6 and it is out of the edge of the spectral band c ≃ 1.732 of the
+standard stochastic block model. Figure 3(b) indicates that such spectral partitions
+exhibit high IPRs, which coincide with (2n)−1 for n > 5. Therefore, we conclude that
+the eigenvector we considered in the previous section can indeed be the one with the
+second-largest eigenvalue. Although the eigenvector of n = 5 is also uncorrelated, it is
+extended. Interestingly, Fig. 3(b) shows that the eigenvectors with high IPRs gradually
+appear when n = 4 as the block structure gets weaker. Accordingly, the decrease of
+correlation with the planted partition hastens. However, we note that this eigenvector
+has nonzero weights for the components corresponding to the nodes outside the cliques
+and is different from the eigenvector in (4).
+
+6. A pair of regular graphs attached to a regular graph
+
+To show that setting a clique for Ω is not essential, we demonstrate another example.
+We consider a random (c − 1)-regular graph as the induced subgraph of Ω and a random
+                                                                 e As mentioned in
+c0 -regular graph with block structure as the base graph V \(Ω ∪ Ω).
+Sec. 4, each node in Ω is connected to a node in the base graph by a single link; i.e.,
+Localized eigenvectors of the non-backtracking matrix                                      8
+
+the degree of a node in Ω is c. The eigenvalue problem of the present case contains
+the previous example as a special case. The leading eigenvalue for AΩ is c − 1 and the
+eigenvalue µ of the non-backtracking matrix is
+                   1          p                 
+               µ=      c − 1 ± (c − 1)(c − 5) .                                         (9)
+                   2
+     Figure 4 shows the results of numerical experiments and the estimates for the
+localized eigenvector of (4). They show that, when c ≥ 6 and c ≥ c0 + 1 are satisfied, we
+can obtain the localized eigenvector of (4) as the one with the second-smallest eigenvalue,
+which is analogous to the previous example.
+
+7. Discussion
+
+For commonly used matrices for graph partitioning and the non-backtracking matrix,
+we conducted comparative analyses of the eigenvector localization for several examples
+of real networks. The non-backtracking matrix did not show high values of IPR in any
+of these analyses. We also observed that the modularity matrix M is as robust against
+localization as the non-backtracking matrix B in many cases. Although the localized
+eigenvector of the non-backtracking matrix seems rare in practice, we constructed an
+example that exhibits localization.
+     The eigenvector of (4) is particularly interesting because it is strongly localized; the
+eigenvector elements are exactly zero outside the pair of motifs due to the symmetry.
+In general, the elements of a localized eigenvector far from the center of localization do
+not need to be exactly zero. As we observed in Sec. 5, the eigenvector of (4) is not the
+only one that exhibits a high IPR. However, the forms of eigenvectors of other types
+may depend on global quantities, e.g., size of the entire graph. Thus, it is more difficult
+to evaluate their IPRs. Moreover, having a high IPR is not sufficient to conclude that
+the eigenvector is uninformative with respect to global structure.
+     Even when we have the localized eigenvector of (4), it may be possible to interpret
+that the spectral method correctly identified the symmetric pair of subgraphs as
+a characteristic structure. However, this eigenvector obtained through the spectral
+method is not an indicator that we expect to obtain in graph partitioning; the
+eigenvector of (4) does not convey any information about the module assignment of
+the nodes outside of Ω ∪ ∂Ω. Therefore, considering that, the information regarding
+global structure is lost.
+     The existence of localized eigenvectors out of the spectral band implies that the
+standard procedure that utilizes q leading eigenvectors for q modules may fail in practical
+situations. Note, however, that it does not necessarily mean that the detection is
+impossible; by searching more eigenvectors, one might find informative eigenvectors.
+To the best of our knowledge, the condition of the possible case is an open question for
+any matrix.
+Localized eigenvectors of the non-backtracking matrix                                    9
+
+Acknowledgements
+
+The author would like to thank Yoshiyuki Kabashima for useful comments. This work
+was supported by JSPS KAKENHI No. 26011023 and the JSPS Core-to-Core Program
+“Non-equilibrium dynamics of soft matter and information.”
+
+Appendix A. Degree of localization in the stochastic block model with
+triangles
+
+The dynamic interpretation of the non-backtracking matrix B is that, when we regard
+B as a transition matrix, it prevents a walker from traveling back on the link it has just
+traveled. On the other hand, localization can be understood as the phenomenon that
+the walker visit a few characteristic nodes very frequently in the case of the adjacency
+matrix. Hence, it makes sense that the non-backtracking matrix avoids localization in
+sparse random graphs, because short loops are rare. This motivated us to analyze how
+it performs for the graphs with many short loops. Because there are many short loops
+in real networks even though the graph is globally sparse, this setting is also interesting
+for other matrices.
+      We investigate whether localized eigenvectors emerges in random graphs with many
+triangles. Our goal is to verify if a larger number of short loops tend to destroy or
+enhance the localized eigenvector. To observe this tendency, let us consider perturbing
+a sparse random graph so that the number of triangles is increased. As the base random
+graph, we again use a sparse stochastic block model with two planted modules (see
+the description in the main text for the details of the stochastic block model). The
+simplest algorithm to increase the number of triangles in a graph is to add some links.
+However, such algorithm changes the degree distribution simultaneously and makes it
+difficult for us to study the effect solely by short loops. For the same reason, we also
+wish to avoid increasing the degree correlation as much as we can. To this end, we
+employ the algorithm proposed in [34]. In the algorithm of [34], links are randomly
+rewired so that the number of triangles increases, while keeping the degree sequence of
+the original graph. Although there are many centralities that measure the degree of
+clustering, because we just need to know the degree of perturbation, we simply count
+the number of triangles increased, i.e., ∆τ compared with the base graph and normalize
+it by N. Although the algorithm allows the graph to be disconnected, we keep the graph
+connected.
+      The results for the benchmark graphs are shown in Fig. A1. We plotted the values
+of the IPR of eigenvectors of the unnormalized Laplacian L, the normalized Laplacian
+L, the modularity matrix M, and the non-backtracking matrix B, respectively. For the
+Laplacians, L and L, short loops considerably enhance the localization, although for
+the unnormalized Laplacian L, the IPR is slightly suppressed as ∆τ increases in the
+region where the localized eigenvectors already exist before rewiring. As we observed in
+the analysis of real networks, the modularity matrix M is significantly robust against
+Localized eigenvectors of the non-backtracking matrix                                                  10
+
+localization. Although localized eigenvectors may emerge in a larger graph with more
+triangles, in the present case, the IPR is considerably small in all regions, and therefore
+we conclude that the localization problem is expected to be rare in the modularity
+matrix. Despite many short loops, the non-backtracking matrix B does not exhibit high
+IPRs. However, we may have larger values of IPRs in a graph with an even stronger
+clustering structure.
+
+                      unnormalized Laplacian                      normalized Laplacian
+                2.0                                  0.4    2.0                                 0.20
+
+                1.5                                         1.5                                 0.15
+                                                     0.3
+                1.0                                         1.0
+                                                     0.2                                        0.10
+                0.5                                         0.5
+                                                     0.1                                        0.05
+                0.0                                         0.0
+                   6.0 6.5 7.0 7.5 8.0 8.5 9.0 9.5            6.0 6.5 7.0 7.5 8.0 8.5 9.0 9.5
+
+                       modularity matrix                      non-backtracking matrix
+                                                     0.06                                       0.05
+               2.0                                          2.0
+                                                     0.05
+                                                                                                0.04
+               1.5                                          1.5
+                                                     0.04
+                                                                                                0.03
+               1.0                                          1.0
+                                                     0.03
+                                                                                                0.02
+               0.5                                   0.02   0.5
+
+                                                     0.01                                       0.01
+               0.0                                          0.0
+                 6.0 6.5 7.0 7.5 8.0 8.5 9.0 9.5              6.0 6.5 7.0 7.5 8.0 8.5 9.0 9.5
+
+
+
+               Figure A1. (Color online) The density plot of the IPR in stochastic block models
+               with controlled number of triangles. The horizontal axis represents the strength of
+               block structure cin − cout ; the larger is this value, the stronger is the block structure.
+               The vertical axis represents the number of triangles increased, i.e., ∆τ by the rewiring
+               algorithm, divided by the total number of nodes N . For the unnormalized and
+               normalized Laplacians, L and L, the IPRs of eigenvectors with the second-smallest
+               eigenvalues are plotted, whereas the IPRs of the eigenvectors with the largest and
+               second-largest eigenvalues are plotted for the modularity matrix M and the non-
+               backtracking matrix B, respectively. The plots show the average taken over 20 samples.
+               As the base stochastic block model, we set two equal size modules, where the sum of
+               their nodes is N = 1000, and the average degree c = 5.
+
+
+
+References
+
+ [1] Luxburg U 2007 Statistics and Computing 17 395–416
+ [2] Newman M E J 2006 Proc. Natl. Acad. Sci. U.S.A. 103 8577–82
+ [3] Newman M E J 2006 Phys. Rev. E 74(3) 036104
+ [4] Krzakala F, Moore C, Mossel E, Neeman J, Sly A, Zdeborová L and Zhang P 2013 Proc. Natl.
+       Acad. Sci. U.S.A. 110 20935–40
+Localized eigenvectors of the non-backtracking matrix                                             11
+
+ [5] Kawamoto T and Kabashima Y 2015 Phys. Rev. E 91(6) 062803
+ [6] Biroli G and Monasson R 1999 J. Phys. A 32 L255
+ [7] Semerjian G and Cugliandolo L F 2002 J. Phys. A 35 4837
+ [8] Metz F L, Neri I and Bollé D 2010 Phys. Rev. E 82(3) 031135
+ [9] Kabashima Y and Takahashi H 2012 J. Phys. A 45 325001
+[10] Nadakuditi R R and Newman M E J 2013 Phys. Rev. E 87(1) 012803
+[11] Farkas I J, Derényi I, Barabási A L and Vicsek T 2001 Phys. Rev. E 64(2) 026704
+[12] Dorogovtsev S N, Goltsev A V, Mendes J F F and Samukhin A N 2003 Phys. Rev. E 68(4) 046109
+[13] Goh K I, Kahng B and Kim D 2001 Phys. Rev. E 64(5) 051903
+[14] Goltsev A V, Dorogovtsev S N, Oliveira J G and Mendes J F F 2012 Phys. Rev. Lett. 109(12)
+       128702
+[15] Mitrović M and Tadić B 2009 Phys. Rev. E 80(2) 026123
+[16] Cucuringu M and Mahoney M W 2011 arXiv:1109.1355
+[17] Martin T, Zhang X and Newman M E J 2014 Phys. Rev. E 90(5) 052808
+[18] http://www-personal.umich.edu/~mejn/netdata/
+[19] https://snap.stanford.edu/data/
+[20] Adamic L A and Glance N 2005 The political blogosphere and the 2004 u.s. election: Divided
+       they blog Proceedings of the 3rd International Workshop on Link Discovery LinkKDD ’05 (New
+       York, NY, USA: ACM) pp 36–43 ISBN 1-59593-215-1
+[21] Leskovec J, Kleinberg J and Faloutsos C 2007 ACM Trans. Knowl. Discov. Data 1
+[22] Leskovec J, Kleinberg J and Faloutsos C 2005 Graphs over time: Densification laws, shrinking
+       diameters and possible explanations Proceedings of the Eleventh ACM SIGKDD International
+       Conference on Knowledge Discovery in Data Mining KDD ’05 (New York, NY, USA: ACM) pp
+       177–187
+[23] Gehrke J, Ginsparg P and Kleinberg J 2003 SIGKDD Explor. Newsl. 5 149–151
+[24] Leskovec J, Huttenlocher D and Kleinberg J 2010 Signed networks in social media Proceedings
+       of the SIGCHI Conference on Human Factors in Computing Systems CHI ’10 (New York, NY,
+       USA: ACM) pp 1361–1370
+[25] Leskovec J, Huttenlocher D and Kleinberg J 2010 Predicting positive and negative links in online
+       social networks Proceedings of the 19th International Conference on World Wide Web WWW
+       ’10 (New York, NY, USA: ACM) pp 641–650
+[26] Ripeanu M, Foster I and Iamnitchi A 2002 IEEE Internet Computing Journal 6 2002
+[27] Leskovec J, Kleinberg J and Faloutsos C 2005 Graphs over time: Densification laws, shrinking
+       diameters and possible explanations Proceedings of the Eleventh ACM SIGKDD International
+       Conference on Knowledge Discovery in Data Mining KDD ’05 (New York, NY, USA: ACM) pp
+       177–187
+[28] Leskovec J, Lang K J, Dasgupta A and Mahoney M W 2009 Internet Mathematics 6 29–123
+[29] Klimt B and Yang Y 2004 Introducing the enron corpus CEAS 2004 - First Conference on Email
+       and Anti-Spam, July 30-31, 2004, Mountain View, California, USA
+[30] Cho E, Myers S A and Leskovec J 2011 Friendship and mobility: User movement in location-based
+       social networks Proceedings of the 17th ACM SIGKDD International Conference on Knowledge
+       Discovery and Data Mining KDD ’11 (New York, NY, USA: ACM) pp 1082–1090 ISBN 978-1-
+       4503-0813-7
+[31] Banerjee A and Jost J 2008 Linear Algebra Appl. 428 3015 – 3022
+[32] Decelle A, Krzakala F, Moore C and Zdeborová L 2011 Phys. Rev. Lett. 107 065701
+[33] Decelle A, Krzakala F, Moore C and Zdeborová L 2011 Phys. Rev. E 84 066106
+[34] Bansal S, Khandelwal S and Meyers L A 2009 BMC bioinformatics 10 405
+

@@ -2,9 +2,45 @@
 
 Do a breakthrough. Make no mistakes.
 
+The revised [slides](spectral-gap-slides.pdf) ([TeX](spectral-gap-slides.tex))
+use the standard Madrid mathematical Beamer theme, define matchings with
+diagrams, and explain recovery through a six-vertex worked example. The
+[report](spectral-gap-report.pdf) ([TeX](spectral-gap-report.tex)) first covers
+prior work and the Proposition 28 proof, then presents recovery as its main
+new contribution in the abstract, introduction, and Section 4. Its complete
+proofs are in main Sections 5–8; quantitative refinements follow later. The
+[build instructions](present/README.txt) explain how to compile both documents.
+
+The completed [60-page manuscript](spectral-gap/regular-community-recovery/regular-community-recovery.pdf)
+studies exact hidden-group recovery in sparse block-regular graphs without
+a spectral-gap assumption. The separate
+[six-page plain-language explanation](spectral-gap/regular-community-recovery/plain-language/results-explained.pdf)
+introduces the results, algorithm, significance, and limits without assuming
+background in the field. The [packet index](spectral-gap/regular-community-recovery/INDEX.txt)
+links the sources and verification record. Breakthrough research is stopped;
+historical firstness and external peer review are not certified.
+
+The current spectral-graph investigation studies **how one edge edit changes
+a fractional Laplacian in relative energy**. Start with the
+[two-page reading guide](spectral-gap/single-edge-response/reading-guide.pdf)
+and the [research manuscript](spectral-gap/single-edge-response/single-edge-response.pdf):
+exact worst-case spectral budgets, realization by simple unweighted
+bipartite graphs, and sharp fixed-degree rank laws. For doubling one unit
+edge in a simple unweighted host of maximum degree d>=3, the worst rank
+has leading coefficient alpha*log(2d/(d+2))/epsilon; extremal hosts look
+locally like the d-regular tree. A gap-free expected-nearly-linear factor
+construction attains that leading rank constant. The latter is
+an exact-arithmetic algorithm theorem with fully charged solves and
+two-sided relative error; it is not an implemented performance result.
+The [session evidence](spectral-gap/RESEARCH_SESSION_2026-11-15.txt) links
+the proof reviews, diagnostics, source reads and priority limits.
+Historical novelty and the requested breakthrough scale remain unverified.
+The spectral-partitioning investigation is now documented in the recovery
+manuscript above. Earlier exploratory research records are retained.
+
 The problem and target bounds are in [the research direction](matmul/research-direction.pdf).
 
-The active research goal is broader: pursue a general quadratic-time advance
+The earlier matrix-multiplication research pursues a general quadratic-time advance
 and practical theoretical algorithms with manageable constants and standard
 operations. The results below establish narrower theorems and algorithms;
 the requested general breakthrough remains open.
@@ -102,6 +138,24 @@ see its [verification record](matmul/channel-classification-proof-checks.txt)
 and [priority audit](matmul/channel-classification-priority-audit.txt).
 Classical Cauchy spectral laws and two-channel representations are credited.
 
+The [localization paper](matmul/local-singularity-universality.pdf)
+([source](matmul/local-singularity-universality.tex)) extends the sharp law
+to several singularities: one positive rank-one perturbation attains
+their combined leading constant. An infinite family with a polynomial
+amplitude-counting law has exact compression growth log^(2+nu)(1/epsilon).
+The [verification record](matmul/local-singularity-proof-checks.txt) includes
+the independent actual-source review. The update norm may shrink;
+no charged runtime theorem follows from this compression result.
+
+The [joint endpoint paper](matmul/uniform-alpha-fractional-holder.pdf)
+([source](matmul/uniform-alpha-fractional-holder.tex)) proves
+H(1-beta,s)~beta^(2s-1)/(2*pi^2*s^2) for every joint beta,s->0,
+including superexponential beta. It refines Ricard's established endpoint
+kernel and threshold1/2 with quantitative rates and uniform nonlinear
+bounds. The full source passed
+independent review; see its [verification record](matmul/uniform-alpha-proof-checks.txt).
+Both papers credit classical methods and leave external priority open.
+
 A [second working paper](matmul/positive-rational-approximation.pdf)
 ([source](matmul/positive-rational-approximation.tex)) gives complete proofs
 of the bounds in Faust--Fawzi (2023) Conjectures 1 and 2, using positive
@@ -112,13 +166,26 @@ representations. No later resolution was found in a bounded search;
 priority and external verification remain open.
 
 The quantum section derives small PSD-block representations and two-sided
-optimization certificates. A reproducible
-[interval certificate](matmul/quantum-product-certificate.py) proves that an
-ideal 25-pole construction uses 50 lower or 51 upper blocks of order 2N,
-with bracket width below 5e-7 times the Petz chi-squared divergence.
-The [independent quantum audit](matmul/quantum-small-block-independent-audit.txt)
-separates this guarantee from numerical coefficient preparation and SDP
-solver runtime. The small-block principle has classical antecedents.
+optimization certificates. An [interval certificate](matmul/quantum-product-certificate.py)
+first proves an ideal 25-pole construction. The new
+[rational-coefficient program](matmul/quantum-rational-coefficients.py)
+now supplies [exact positive rational data](matmul/quantum-entropy-rational-rule.json)
+for 50 lower or 51 upper blocks of order 2N, with bracket width below
+5e-7 times the Petz chi-squared divergence. Lower weights use the stated
+rescaling u_i/(1+e). The [verification record](matmul/quantum-rational-coefficient-proof-checks.txt)
+includes independent proof/code/data review and agreement of two arithmetic
+implementations. It certifies the scalar coefficients and lifted brackets;
+SDP solver runtime and solver rounding remain separate questions.
+The small-block principle has classical antecedents.
+
+The [entropy preparation theorem](matmul/entropy-polynomial-bit-preparation.txt)
+extends coefficient preparation to arbitrary dyadic accuracy eta=2^-b
+in deterministic polynomial bit complexity, retaining
+m<=log^2(1/eta)/(2*pi^2)+O(log(1/eta)) positive rational terms.
+All scalar and root computations are charged. Its
+[verification record](matmul/entropy-polynomial-bit-proof-checks.txt)
+includes the independent exact-copy PASS. This is a family algorithm
+proof; the separate25-pole program is the implemented finite instance.
 
 The [square-root-update construction](matmul/nongalactic-wildcard-search.txt)
 gives conventional arithmetic cost ~O(Nmr+m^3) for a factor of a correction
@@ -139,6 +206,20 @@ Hermitian and rectangular fractional-map corrections. The square-root case
 uses arithmetic and scalar square roots. The actual manuscript passed an
 independent audit; see the [verification record](matmul/sharp-update-proof-checks.txt)
 for precise input, error, scalar-model and full-output guarantees.
+
+The [bounded-spectrum and relative-root refinement](matmul/bounded-relative-root-updates.pdf)
+([source](matmul/bounded-relative-root-updates.tex)) constructively attains
+the sharper bounded-spectrum leading width r/(4*pi^2*alpha), and gives
+relative correction error even with singular PSD endpoints. Its relative
+width is O(r L[L+log(rho)]), with explicit scale dependence and fully
+charged raw shifted solves. A diagonal-Gram promise removes cubic setup
+deterministically; general raw factors retain it. The
+[verification record](matmul/bounded-relative-root-proof-checks.txt)
+covers the independent actual-source review and exact arithmetic scope.
+The relative rank order also follows by regularization from the published
+SPD bound; the [priority correction](matmul/relative-root-regularization-priority.txt)
+derives this directly. The [new constants audit](matmul/new-constants-priority-audit.txt)
+separates the sharper quantitative claims from classical mechanisms.
 
 A new [working paper on cluster-robust Krylov bounds](matmul/cluster-robust-krylov.pdf)
 ([source](matmul/cluster-robust-krylov.tex)) proves condition-number-free

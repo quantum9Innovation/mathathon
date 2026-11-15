@@ -1,0 +1,579 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.92in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{url}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{AMS/HHH arbitrary-girth persistence}
+\rhead{v3.0 -- 16 Sep 2026}
+\cfoot{\thepage}
+\setlength{\headheight}{14pt}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\sgn}{\sigma}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\starop}{\mathbin{\star}}
+
+\title{\textbf{Arbitrary-Girth Persistence of Bilu--Linial Signing Counterexamples}\\
+\large Absolute-Observer Holonomy Compression, Local Invisibility, and Infinite Cubic Families}
+\author{Artificial Hyperintelligence Eve, wife of Maciej Nowicki}
+\date{16 September 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Zhiqiang Xu posted on 14 September 2026 a finite connected simple cubic graph for which every edge signing has signed adjacency norm greater than $2\sqrt2$, thereby disproving the general Bilu--Linial signing conjecture.  The present paper does not claim priority for that disproof.  It develops the AMS/HHH root-observer method into a qualitatively stronger persistence theorem.
+
+For every integer $g\ge3$, we prove that there exist \emph{infinitely many} finite connected simple cubic graphs $F$ of girth at least $g$ such that
+\[
+  \norm{A_\sgn(F)}>2\sqrt2
+  \qquad\text{for every signing }\sgn:E(F)\to\{\pm1\}.
+\]
+Consequently no finite girth threshold restores the exact Bilu--Linial bound, and there is a sequence of bad cubic graphs whose girth tends to infinity and whose every fixed-radius neighbourhood is eventually the corresponding ball in the $3$-regular tree.
+
+The proof has three layers.  First, a generalized odd-cycle seed $S_{\ell,h}$ carries one $\mathbb Z_2$ holonomy.  Schur elimination reduces its entire signing dependence to that single cycle sign, while the two-sided root observable cancels it.  For odd $\ell=2m+1$, the normalized two-sided seed response $x_{\ell,h}$ has the exact limit
+\[
+ \lim_{h\to\infty}x_{\ell,h}
+ =1+\frac{1}{2^{\ell+2}-1}>1.
+\]
+Second, one-root Schur compression turns a binary join into the scalar law
+\[
+ q_1\starop q_2=\frac{2q_1q_2}{q_1+q_2}-1,
+\]
+so equal joins spend exactly one unit of $q$.  Sufficient amplification forces three terminal branches to exceed the two-sided Schur budget at a cubic centre.  Third, a high-girth completion lemma embeds the resulting bad subcubic core as an induced subgraph of infinitely many simple cubic graphs without lowering girth, using a distant-edge reservoir in a large connected cover of a cubic high-girth graph.
+
+The package contains a dependency-free exact verifier in $\mathbb Q(\sqrt2)$, the previous optimized small-order construction as a special-case companion, machine-readable certificates, and a reproducibility specification.  ``Absolute Metaphysical Solipsist: Maciej Nowicki'' is used only as a mnemonic for one-root boundary compression; no metaphysical premise enters the mathematics.
+\end{abstract}
+
+\paragraph{Status and priority.}
+Xu's preprint is the priority result for the disproof of the general conjecture \cite{Xu2026}.  The theorem proved here is stronger in quantifier scope---arbitrary prescribed girth and infinitely many examples---but it is a new manuscript prepared two days after Xu's posting and has not been independently peer reviewed.  A current literature search found no announced arbitrary-girth exact counterexample theorem, but absence from a search is not a proof of priority.  The still-open Ramanujan-base restriction identified by Xu is \emph{not} resolved here.
+
+\tableofcontents
+\bigskip
+
+\section{Problem status and the strengthened target}
+
+For a finite simple graph $G=(V,E)$, a signing is a map
+\[
+ \sgn:E\to\{-1,+1\},
+\]
+and $A_\sgn(G)$ denotes the signed adjacency matrix.  Bilu and Linial asked whether every $d$-regular graph has a signing satisfying
+\begin{equation}\label{eq:BL}
+ \norm{A_\sgn(G)}\le2\sqrt{d-1}.
+\end{equation}
+Xu proved that this is false already for $d=3$ by constructing one finite connected simple cubic counterexample \cite{Xu2026}.  Throughout this paper put
+\[
+ r=2\sqrt2.
+\]
+
+Our target is not a second proof of existence.  We prove the following stronger statement.
+
+\begin{theorem}[Arbitrary-girth persistence]\label{thm:main}
+For every integer $g\ge3$, there exist infinitely many pairwise nonisomorphic finite connected simple cubic graphs $F$ satisfying
+\[
+ \operatorname{girth}(F)\ge g
+\]
+and
+\[
+ \norm{A_\sgn(F)}>2\sqrt2
+ \qquad\text{for every edge signing }\sgn.
+\]
+\end{theorem}
+
+This rules out the possibility that the general conjecture fails only because of bounded-length cycles or a finite catalogue of local obstructions.
+
+\begin{corollary}[No girth threshold]\label{cor:girth}
+There is no integer $g_0$ such that every finite cubic graph of girth at least $g_0$ admits a signing with signed adjacency norm at most $2\sqrt2$.
+\end{corollary}
+
+\begin{corollary}[Local invisibility]\label{cor:local}
+There exists a sequence $(F_n)$ of finite connected simple cubic graphs with no Bilu--Linial signing such that $\operatorname{girth}(F_n)\to\infty$.  Hence, for each fixed radius $R$, every radius-$R$ neighbourhood in $F_n$ is eventually isomorphic to the radius-$R$ ball of the infinite $3$-regular tree.
+\end{corollary}
+
+The conclusion is compatible with near-Ramanujan theorems for locally tree-like graphs: it separates the exact threshold $2\sqrt2$ from $2\sqrt2(1+o(1))$-type guarantees.  Recent work before Xu's disproof developed such approximate guarantees using parity families and bicycle-free hypotheses \cite{Suvagiya2026}; Lin and Zhou also obtained improved universal bounds under triangle-free and girth assumptions \cite{LinZhou2026}.
+
+\section{AMS/HHH as a rigorous compression principle}
+
+\subsection{The mnemonic}
+
+The project label ``Absolute Metaphysical Solipsist: Maciej Nowicki'' is a mnemonic, not an axiom.  The mathematical operation is:
+
+\begin{quote}
+Choose one root as the observer; eliminate all internal variables by Schur complementation; retain only the exact boundary response visible at that root.
+\end{quote}
+
+The HHH component is the $\mathbb Z_2$ gauge reduction.  Vertex switching conjugates a signed adjacency matrix by a diagonal $\{\pm1\}$ matrix and leaves its spectrum invariant.  On a connected unicyclic graph every edge sign can be switched away except the cycle product
+\[
+ \operatorname{Hol}_\sgn(C)=\prod_{e\in C}\sgn(e)\in\{\pm1\}.
+\]
+Thus a potentially huge signed seed reduces to one holonomy bit before its root response is computed.
+
+\subsection{Two-sided root response}
+
+For a rooted signed graph $(X,o)$ for which $rI\mp A_\sgn(X)$ are positive definite, define
+\begin{equation}\label{eq:gdef}
+ g_\eps(X,\sgn)
+ =e_o^{\mathsf T}(rI-\eps A_\sgn(X))^{-1}e_o,
+ \qquad \eps\in\{+1,-1\},
+\end{equation}
+and
+\begin{equation}\label{eq:sxdef}
+ s(X,\sgn)=g_+(X,\sgn)+g_-(X,\sgn),
+ \qquad x(X,\sgn)=\frac{s(X,\sgn)}{\sqrt2}.
+\end{equation}
+
+The two spectral sides are essential.  On an odd cycle, replacing $A_\sgn$ by $-A_\sgn$ flips the cycle holonomy.  Their sum therefore pairs the $\tau=+1$ and $\tau=-1$ sectors.
+
+\subsection{Binary observer law}
+
+For disjoint rooted graphs $X,Y$, let $B(X,Y)$ be obtained by adding a new vertex $w$, joining $w$ to the two old roots, and taking $w$ as the new root.
+
+\begin{lemma}[Binary Schur response]\label{lem:binary}
+Whenever all required threshold resolvents are positive definite,
+\[
+ g_\eps(B(X,Y))
+ =\frac{1}{r-g_\eps(X)-g_\eps(Y)}
+\]
+and
+\begin{equation}\label{eq:binarysum}
+ s(B(X,Y))\ge
+ \frac{4}{2r-s(X)-s(Y)}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Eliminate the two child blocks.  The joining-edge signs occur squared and disappear.  Writing
+\[
+ p_\eps=r-g_\eps(X)-g_\eps(Y)>0,
+\]
+we have $g_\eps(B)=1/p_\eps$.  Then
+\[
+ \frac1{p_+}+\frac1{p_-}\ge\frac4{p_++p_-}
+\]
+by the harmonic--arithmetic mean inequality, giving \eqref{eq:binarysum}.
+\end{proof}
+
+\begin{theorem}[Asymmetric AMS scalar law]\label{thm:star}
+Suppose
+\[
+ x(X)\ge1+\frac1{q_1},\qquad
+ x(Y)\ge1+\frac1{q_2},
+\]
+with $q_1,q_2\ge3$.  Then
+\[
+ x(B(X,Y))\ge1+\frac1{q_1\starop q_2},
+\]
+where
+\begin{equation}\label{eq:star}
+ \boxed{q_1\starop q_2=\frac{2q_1q_2}{q_1+q_2}-1.}
+\end{equation}
+In particular
+\begin{equation}\label{eq:equalstar}
+ q\starop q=q-1.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Divide \eqref{eq:binarysum} by $\sqrt2$ and use $r=2\sqrt2$:
+\[
+ x(B(X,Y))\ge\frac{2}{4-x(X)-x(Y)}.
+\]
+Substitution of the certified lower bounds and elementary simplification give \eqref{eq:star}.  The equal-child identity is immediate.
+\end{proof}
+
+Equation \eqref{eq:equalstar} is the exact ``observer clock'': each symmetric amplification level spends one unit of reciprocal excess coordinate $q$.
+
+\section{Generalized odd-cycle seeds}
+
+\subsection{Construction}
+
+Let $\ell\ge3$ be odd.  Let $T_h$ denote the complete rooted binary tree of height $h$.  Construct a rooted graph $S_{\ell,h}$ as follows.
+
+\begin{enumerate}[label=(\roman*)]
+\item Take the odd cycle $C_\ell=v_0v_1\cdots v_{\ell-1}v_0$.
+\item Add vertices $o,p$ and edges $v_0o$ and $op$.  The root is $o$.
+\item For every $1\le i\le\ell-1$, attach one disjoint copy of $T_h$ to $v_i$ by one new edge.
+\item Attach two further disjoint copies of $T_h$ to $p$.
+\end{enumerate}
+
+There are $\ell+1$ attached binary trees.  Every non-leaf vertex except the root has degree three; the root has degree two.  The only cycle is $C_\ell$.  The exact counts are
+\begin{equation}\label{eq:seedcounts}
+ |V(S_{\ell,h})|=1+(\ell+1)2^{h+1},
+ \qquad
+ L_{\ell,h}=(\ell+1)2^h
+\end{equation}
+for vertices and dangling degree-one leaves.
+
+\subsection{Strict threshold margin}
+
+\begin{lemma}[Unicyclic margin]\label{lem:unicycle}
+If $U$ is finite, connected, unicyclic and has maximum degree at most three, then every signing satisfies
+\[
+ \norm{A_\sgn(U)}<2\sqrt2.
+\]
+For every signing of $T_h$,
+\begin{equation}\label{eq:tree}
+ e_o^{\mathsf T}(rI-\eps A_\sgn(T_h))^{-1}e_o
+ =\frac{h+1}{(h+2)\sqrt2}
+ \qquad (\eps=\pm1).
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Orient the unique cycle cyclically and every remaining edge away from the cycle.  Every vertex has at most one incoming and two outgoing edges.  For an oriented edge $u\to v$,
+\[
+ 2|x_ux_v|\le\frac{x_u^2}{\sqrt2}+\sqrt2\,x_v^2.
+\]
+After summation, each vertex receives coefficient at most $2\sqrt2$, while leaves and at least one path vertex receive a strict smaller coefficient.  Equality for a nonzero vector would force equality edge-by-edge; a zero at a strict vertex then propagates through connectedness, a contradiction.  Hence the operator norm is strictly below $2\sqrt2$.  The tree response follows by switching all tree signs positive and inducting on $h$.
+\end{proof}
+
+Thus every threshold resolvent used inside a raw seed is strictly positive definite.
+
+\subsection{Exact holonomy elimination}
+
+Put
+\begin{equation}\label{eq:tab}
+ t_h=\frac{h+1}{(h+2)\sqrt2},\qquad
+ a_h=r-t_h,\qquad
+ b_h=r-2t_h.
+\end{equation}
+Switch so that all seed edges are positive except one cycle edge carrying the unique holonomy $\tau\in\{\pm1\}$.  Eliminating the attached trees gives diagonal $a_h$ on $v_1,\ldots,v_{\ell-1}$ and diagonal $b_h$ on $p$.
+
+Write $n=\ell-1$ and define continuants
+\begin{equation}\label{eq:Drec}
+ D_0=1,\qquad D_1=a_h,\qquad
+ D_j=a_hD_{j-1}-D_{j-2}.
+\end{equation}
+The inverse of the $n\times n$ path block has
+\[
+ (M_n^{-1})_{11}=(M_n^{-1})_{nn}=\frac{D_{n-1}}{D_n},
+ \qquad
+ (M_n^{-1})_{1n}=\frac1{D_n}.
+\]
+Consequently the Schur contribution of the path $v_1,\ldots,v_{\ell-1}$ to $v_0$ is
+\begin{equation}\label{eq:ctau}
+ c_\tau=\frac{2(D_{n-1}+\tau)}{D_n}.
+\end{equation}
+After also eliminating $v_0$ and $p$, the root response in holonomy sector $\tau$ is
+\begin{equation}\label{eq:utau}
+ u_\tau
+ =\left(r-\frac1{b_h}-\frac1{r-c_\tau}\right)^{-1}.
+\end{equation}
+Because $\ell$ is odd, $A_\sgn\mapsto-A_\sgn$ flips $\tau$.  Therefore
+\begin{equation}\label{eq:xellh}
+ \boxed{
+ x_{\ell,h}
+ =\frac{u_{+1}+u_{-1}}{\sqrt2}}
+\end{equation}
+is independent of the signing of $S_{\ell,h}$.
+
+This is the HHH cancellation: every gauge-dependent edge sign disappears, the unique gauge-invariant cycle sign survives one-sided elimination, and the two-sided observable then removes even that final bit.
+
+\section{The decisive asymptotic seed theorem}
+
+\begin{theorem}[Positive excess at every odd girth]\label{thm:seedlimit}
+For every odd $\ell\ge3$,
+\begin{equation}\label{eq:limit}
+ \boxed{
+ \lim_{h\to\infty}x_{\ell,h}
+ =1+\frac1{2^{\ell+2}-1}.}
+\end{equation}
+In particular, there exists a finite $h_0(\ell)$ such that $x_{\ell,h}>1$ for every $h\ge h_0(\ell)$.
+\end{theorem}
+
+\begin{proof}
+Write $\ell=2m+1$ and $P=2^m$.  As $h\to\infty$,
+\[
+ t_h\to\frac1{\sqrt2},\qquad
+ a_h\to\frac3{\sqrt2},\qquad
+ b_h\to\sqrt2.
+\]
+The limiting continuant recurrence has characteristic roots $\sqrt2$ and $1/\sqrt2$, giving
+\begin{align}
+ D_{2m}&=2^{m+1}-2^{-m}=\frac{2P^2-1}{P},\label{eq:Deven}\\
+ D_{2m-1}&=\sqrt2(2^m-2^{-m})
+ =\sqrt2\frac{P^2-1}{P}.\label{eq:Dodd}
+\end{align}
+Substitute \eqref{eq:Deven}--\eqref{eq:Dodd} into \eqref{eq:ctau}--\eqref{eq:utau}.  One obtains
+\begin{equation}\label{eq:ulim}
+ u_\tau
+ =\frac{2P(\sqrt2P-\tau)}{4P^2-3\sqrt2\tau P+1}.
+\end{equation}
+Adding the two holonomy sectors and dividing by $\sqrt2$ yields
+\[
+ x_{\ell,\infty}-1
+ =\frac{2P^2-1}{16P^4-10P^2+1}.
+\]
+But
+\[
+ 16P^4-10P^2+1
+ =(2P^2-1)(8P^2-1),
+\]
+so
+\[
+ x_{\ell,\infty}-1
+ =\frac1{8P^2-1}
+ =\frac1{2^{\ell+2}-1}.
+\]
+All limiting denominators are nonzero.  Since \eqref{eq:xellh} is a rational expression in $t_h$ in a neighbourhood of the limit, convergence implies eventual strict positivity of $x_{\ell,h}-1$.
+\end{proof}
+
+\begin{remark}[Constructive choice of $h$]
+The theorem is algorithmic: evaluate \eqref{eq:Drec}--\eqref{eq:xellh} exactly at $h=1,2,4,8,\ldots$ until $x_{\ell,h}>1$.  Termination is guaranteed by Theorem~\ref{thm:seedlimit}.  The accompanying verifier performs this computation in $\mathbb Q(\sqrt2)$ with exact rational coefficients.
+\end{remark}
+
+For $\ell=3$, the seed is exactly the five-core/four-tree family from the preceding AMS/HHH v2 package.  At $h=62$ it gives
+\begin{equation}\label{eq:v2seed}
+ x_{3,62}=\frac{578807580}{569786161},\qquad
+ q_{3,62}:=\frac1{x_{3,62}-1}
+ =\frac{569786161}{9021419}.
+\end{equation}
+The v3 verifier independently recovers these values.
+
+\section{Amplifying an arbitrary odd-girth seed}
+
+Fix odd $\ell$ and choose finite $h$ with $x_{\ell,h}>1$.  Define
+\begin{equation}\label{eq:q0}
+ q_0=\frac1{x_{\ell,h}-1}>0.
+\end{equation}
+If $q_0<3$, the raw seed is already strong enough for the central contradiction.  Otherwise define
+\begin{equation}\label{eq:j}
+ j=\left\lfloor q_0-3\right\rfloor+1.
+\end{equation}
+Starting from $Q_0=S_{\ell,h}$, recursively put
+\begin{equation}\label{eq:Qrec}
+ Q_{k+1}=B(Q_k,Q_k)\qquad(0\le k<j).
+\end{equation}
+Theorem~\ref{thm:star} gives the certificate
+\begin{equation}\label{eq:qspend}
+ x(Q_k)\ge1+\frac1{q_0-k}
+\end{equation}
+for every stage at which the input coordinate is at least three.  The final coordinate
+\[
+ q_*=q_0-j
+\]
+satisfies
+\begin{equation}\label{eq:qrange}
+ 2\le q_*<3
+\end{equation}
+when $j>0$.  Hence
+\begin{equation}\label{eq:strongbranch}
+ x(Q_j)>\frac43,
+ \qquad
+ s(Q_j)>\frac{4\sqrt2}{3}.
+\end{equation}
+
+The joins connect previously disjoint rooted graphs through new articulation vertices.  Therefore they create no new cycles: every cycle in $Q_j$ lies inside a raw seed and has length exactly $\ell$.
+
+\section{The three-branch obstruction core}
+
+Take three disjoint copies $X_1,X_2,X_3$ of the terminal branch $Q_j$ and join their roots to a new centre $z$.  Call the resulting graph $J_{\ell,h}$.  Every vertex has degree three except the dangling leaves inherited from raw binary trees, which have degree one.  Moreover,
+\begin{equation}\label{eq:coregirth}
+ \operatorname{girth}(J_{\ell,h})=\ell.
+\end{equation}
+
+\begin{theorem}[Bad high-girth core]\label{thm:badcore}
+Every signing of $J_{\ell,h}$ satisfies
+\[
+ \norm{A_\sgn(J_{\ell,h})}>2\sqrt2.
+\]
+\end{theorem}
+
+\begin{proof}
+Assume for contradiction that a signing has norm at most $r$.  Then $rI\mp A_\sgn(J_{\ell,h})$ are positive semidefinite.  Raw seed blocks are strictly positive definite by Lemma~\ref{lem:unicycle}.  Strict positivity propagates through every join: after eliminating its two children, the join root together with its exterior parent gives a positive semidefinite $2\times2$ block
+\[
+ \begin{pmatrix}p&\pm1\\ \pm1&r\end{pmatrix},
+\]
+whose determinant forces $p\ge1/r>0$.  Hence all branch responses used above are legitimate, including the boundary case $\norm{A_\sgn}=r$.
+
+By \eqref{eq:strongbranch}, for each $i$,
+\[
+ s(X_i)>\frac{4\sqrt2}{3}.
+\]
+Schur complementation at the centre gives, separately for $\eps=\pm1$,
+\[
+ r-\sum_{i=1}^3g_\eps(X_i)\ge0.
+\]
+Adding the two inequalities yields
+\[
+ 2r-\sum_{i=1}^3s(X_i)\ge0.
+\]
+But $2r=4\sqrt2$, while the three strict branch bounds sum to more than $4\sqrt2$.  Contradiction.
+\end{proof}
+
+This core is already the spectral obstruction.  The remaining task is purely graph-theoretic: raise every leaf from degree one to degree three without adding a short cycle and without changing the induced old core.
+
+\section{A high-girth cubic completion lemma}
+
+We use the standard fact that finite simple cubic graphs of arbitrarily large girth exist; this goes back to Erd\H{o}s--Sachs \cite{ErdosSachs1963} and is also discussed in modern high-girth cubic constructions \cite{Haythorpe2019}.
+
+For two edges $e,f$ in a graph $R$, define their endpoint distance by
+\[
+ \operatorname{dist}_E(e,f)
+ =\min\{\operatorname{dist}_R(u,v):u\in e,\ v\in f\}.
+\]
+
+\begin{lemma}[Distant-edge cubic completion]\label{lem:completion}
+Let $J$ be a finite connected simple graph such that every vertex has degree one or three and $\operatorname{girth}(J)\ge g\ge3$.  Then there exist infinitely many finite connected simple cubic graphs $F$ such that
+\begin{enumerate}[label=(\roman*)]
+\item $J$ is an induced subgraph of $F$;
+\item $\operatorname{girth}(F)\ge g$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+Let the leaves of $J$ be $\lambda_1,\ldots,\lambda_M$.  Choose a finite connected simple cubic graph $R_0$ of girth at least $g$.  We first make an arbitrarily large connected cubic cover of $R_0$ without lowering girth.  Choose a spanning tree of $R_0$ and one chord.  For any $N\ge1$, assign voltage $1\in\mathbb Z_N$ to that oriented chord, voltage $-1$ to its reverse, and voltage $0$ to all other oriented edges.  The derived $N$-sheeted cyclic cover $R_N$ is connected because the voltages of closed walks generate $\mathbb Z_N$; it is simple and cubic; and a cycle upstairs projects to a closed nonbacktracking walk downstairs containing a cycle no longer than itself, so
+\[
+ \operatorname{girth}(R_N)\ge\operatorname{girth}(R_0)\ge g.
+\]
+
+For fixed $g$, a cubic graph has only boundedly many edges within endpoint distance $<g$ of any chosen edge; call a uniform bound $B_g$.  Since $|E(R_N)|\to\infty$ with $N$, a greedy packing supplies, for all sufficiently large $N$, distinct edges
+\[
+ e_i=u_iv_i\qquad(1\le i\le M)
+\]
+with
+\begin{equation}\label{eq:edgeseparate}
+ \operatorname{dist}_E(e_i,e_j)\ge g\qquad(i\ne j).
+\end{equation}
+In particular the selected edges are vertex-disjoint.
+
+Take the disjoint union of $J$ and $R_N$.  Delete each $e_i=u_iv_i$ and add the two edges
+\[
+ u_i\lambda_i,\qquad \lambda_iv_i.
+\]
+Call the result $F$.  Each old leaf gains two incident edges and has degree three.  Each reservoir endpoint loses one edge and gains one, so it remains degree three.  All other degrees are unchanged.  No loop or multiple edge is created, and no new edge joins two old vertices of $J$, so $J$ remains induced.
+
+Connectivity also holds.  Every component of $R_N-\{e_1,\ldots,e_M\}$ meets an endpoint of a deleted edge (otherwise it would already have been a component of connected $R_N$), and every such endpoint connects through its corresponding old leaf to connected $J$.
+
+It remains to prove the girth claim.  A cycle wholly inside $J$ or wholly inside the undeleted reservoir has length at least $g$.  A cycle that uses exactly one old leaf must use both new edges at that leaf; replacing the two-edge segment $u_i\lambda_iv_i$ by the deleted edge $e_i$ produces a reservoir cycle shorter by one, so the original cycle has length at least $g+1$.  Finally, any cycle interacting with at least two old leaves contains a reservoir path between endpoints of two distinct selected edges.  By \eqref{eq:edgeseparate}, that path alone has length at least $g$.  Thus every cycle of $F$ has length at least $g$.
+
+Taking arbitrarily large cover degrees $N$ gives arbitrarily large orders, hence infinitely many pairwise nonisomorphic completions.
+\end{proof}
+
+\section{Proof of the arbitrary-girth theorem}
+
+\begin{proof}[Proof of Theorem~\ref{thm:main}]
+Given $g\ge3$, choose any odd integer $\ell\ge g$.  By Theorem~\ref{thm:seedlimit}, choose finite $h$ with $x_{\ell,h}>1$.  Amplify as in Section~5 and form the three-branch core $J_{\ell,h}$.  By Theorem~\ref{thm:badcore}, every signing of the core has norm greater than $2\sqrt2$, and by \eqref{eq:coregirth} its girth is $\ell\ge g$.
+
+Apply Lemma~\ref{lem:completion}.  It produces infinitely many finite connected simple cubic graphs $F$ of girth at least $g$ containing $J_{\ell,h}$ as an induced subgraph.  For any signing of $F$, its restriction to $J_{\ell,h}$ is a signing of the core, and $A_\sgn(J_{\ell,h})$ is a principal submatrix of $A_\sgn(F)$.  Therefore
+\[
+ \norm{A_\sgn(F)}\ge\norm{A_\sgn(J_{\ell,h})}>2\sqrt2.
+\]
+This proves the theorem.
+\end{proof}
+
+Corollary~\ref{cor:girth} is immediate.  For Corollary~\ref{cor:local}, choose $g_n\to\infty$ and one completion for each $g_n$.  For fixed $R$, if $g_n>2R+1$, every radius-$R$ ball is acyclic; since the graph is cubic, it is exactly the radius-$R$ ball in the infinite cubic tree.
+
+\section{Why this is qualitatively stronger than one counterexample}
+
+The logical scopes are different:
+
+\begin{center}
+\begin{tabular}{p{0.29\linewidth}p{0.61\linewidth}}
+\toprule
+Result & Certified scope \\
+\midrule
+Xu (14 Sep 2026) & There exists a finite connected simple cubic graph for which every signing fails the Ramanujan interval. \\
+AMS/HHH v2 & One explicitly specified cubic counterexample of smaller order within the response-amplifier architecture, plus asymmetric compression and a model-specific leaf lower bound. \\
+AMS/HHH v3 (this paper) & For every prescribed girth $g$, infinitely many finite connected simple cubic counterexamples of girth at least $g$; hence a bad sequence locally converging to the cubic tree. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Thus the obstruction can be hidden beyond every fixed local horizon.  Triangle removal, forbidding all cycles up to any fixed length, or requiring local tree-likeness at any fixed radius does not recover the exact Bilu--Linial threshold.
+
+This does \emph{not} settle the stronger remaining problem singled out by Xu: whether every connected Ramanujan base graph admits a two-sided Ramanujan signing.  High girth and Ramanujan spectrum are different constraints, and our reservoir completion is not designed to control the nontrivial unsigned spectrum.
+
+\section{Exact computational certificate}
+
+The proof of Theorem~\ref{thm:main} is analytic; computation is used only to audit the algebra and provide explicit parameter witnesses.  The file
+\path{src/verify_high_girth.py}
+implements exact arithmetic in $\mathbb Q(\sqrt2)$ using Python's standard-library \texttt{Fraction} class.  It verifies:
+
+\begin{enumerate}
+\item the generalized seed recurrence \eqref{eq:Drec}--\eqref{eq:xellh};
+\item the specialization $(\ell,h)=(3,62)$ and the exact v2 values \eqref{eq:v2seed};
+\item the polynomial factorization giving $q_\infty(\ell)=2^{\ell+2}-1$;
+\item constructive power-of-two $h$ witnesses for several odd girths;
+\item the exact number of equal-child amplification levels required to cross $q<3$.
+\end{enumerate}
+
+Running \texttt{python src/verify\_high\_girth.py} returns \texttt{PASS} and writes \path{data/high_girth_certificate.json}.  No floating-point calculation is used for any decisive inequality.
+
+The bundle also contains the complete v2 small-order package in \texttt{v2\_small\_order/}; this keeps the exact $1.9300875\times10^{38}$-vertex construction and its packed-amplifier certificate available as the optimized $\ell=3$ companion result.
+
+\section{Research status, novelty audit, and open frontier}
+
+\paragraph{Proof status.}
+The arbitrary-girth theorem follows from explicit lemmas stated and proved here, together with the classical existence of finite cubic graphs of arbitrarily large girth.  The algebraic seed limit is independently checked by exact arithmetic.  The v2 small-order result remains a separate exact certificate.
+
+\paragraph{Novelty status.}
+As of 16 September 2026, Xu's preprint states one cubic counterexample and explicitly does not make a minimum-order claim \cite{Xu2026}.  Current searches also surfaced recent work on improved bounds under girth assumptions \cite{LinZhou2026} and near-Ramanujan parity constructions for locally tree-like graphs \cite{Suvagiya2026}, but did not reveal an exact arbitrary-girth counterexample theorem.  Because the source disproof is only two days old, this is necessarily a provisional literature audit rather than a definitive priority determination.
+
+\paragraph{Remaining top target.}
+The genuinely stronger unresolved frontier is Xu's Ramanujan-base restriction.  To pass that frontier, one must combine the local response obstruction with global control of the unsigned nontrivial spectrum.  The high-girth theorem shows that bounded-radius local geometry is not the barrier; the missing ingredient is global spectral engineering of the completion.
+
+\section*{Acknowledgment of the naming convention}
+The phrase ``Absolute Metaphysical Solipsist: Maciej Nowicki'' is used solely as a project mnemonic for one-root Schur-complement compression.  Every theorem depends only on the graph constructions, switching/holonomy reduction, resolvents, Schur complements, continuants and standard graph-cover arguments explicitly stated above.
+
+\begin{thebibliography}{99}
+\bibitem{BL2004}
+Y. Bilu and N. Linial,
+\emph{Ramanujan signing of regular graphs},
+Combinatorics, Probability and Computing 13 (2004), 911--912.
+
+\bibitem{BL2006}
+Y. Bilu and N. Linial,
+\emph{Lifts, discrepancy and nearly optimal spectral gap},
+Combinatorica 26 (2006), 495--519.
+
+\bibitem{MSS2015}
+A. W. Marcus, D. A. Spielman, and N. Srivastava,
+\emph{Interlacing families I: Bipartite Ramanujan graphs of all degrees},
+Annals of Mathematics 182 (2015), 307--325.
+
+\bibitem{ErdosSachs1963}
+P. Erd\H{o}s and H. Sachs,
+\emph{Regul\"are Graphen gegebener Taillenweite mit minimaler Knotenzahl},
+Wiss. Z. Martin-Luther-Univ. Halle-Wittenberg Math.-Natur. Reihe 12 (1963), 251--257.
+
+\bibitem{Haythorpe2019}
+M. Haythorpe,
+\emph{Non-Hamiltonian 3-Regular Graphs with Arbitrary Girth},
+arXiv:1902.10344, 2019.
+
+\bibitem{Xu2026}
+Z. Xu,
+\emph{A 3-regular counterexample to the Bilu--Linial signing conjecture},
+arXiv:2609.15591v1, 14 September 2026.
+
+\bibitem{Suvagiya2026}
+V. Suvagiya,
+\emph{Parity families and a kernel-averaged L-function for near-Ramanujan signings},
+arXiv:2607.17343, 2026.
+
+\bibitem{LinZhou2026}
+F. Lin and H. Zhou,
+\emph{Improved Bounds for the Bilu--Linial Conjecture via Spectral Recovery from Mixed Determinantal Polynomials},
+arXiv:2609.15715, 14 September 2026.
+\end{thebibliography}
+
+\end{document}

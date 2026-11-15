@@ -1,0 +1,1723 @@
+                                                               Reductions Between Expansion Problems
+                                                           Prasad Raghavendra∗                David Steurer†             Madhur Tulsiani‡
+
+                                                                                            May 21, 2018
+
+
+
+
+arXiv:1011.2586v1 [cs.CC] 11 Nov 2010
+                                                                                               Abstract
+                                                   The Small-Set Expansion Hypothesis (Raghavendra, Steurer, STOC 2010) is a natural hardness as-
+                                               sumption concerning the problem of approximating the edge expansion of small sets in graphs. This
+                                               hardness assumption is closely connected to the Unique Games Conjecture (Khot, STOC 2002). In
+                                               particular, the Small-Set Expansion Hypothesis implies the Unique Games Conjecture (Raghavendra,
+                                               Steurer, STOC 2010).
+                                                   Our main result is that the Small-Set Expansion Hypothesis is in fact equivalent to a variant of the
+                                               Unique Games Conjecture. More precisely, the hypothesis is equivalent to the Unique Games Conjec-
+                                               ture restricted to instance with a fairly mild condition on the expansion of small sets. Alongside, we
+                                               obtain the first strong hardness of approximation results for the Balanced Separator and Minimum Lin-
+                                               ear Arrangement problems. Before, no such hardness was known for these problems even assuming the
+                                               Unique Games Conjecture.
+                                                   These results not only establish the Small-Set Expansion Hypothesis as a natural unifying hypothesis
+                                               that implies the Unique Games Conjecture, all its consequences and, in addition, hardness results for
+                                               other problems like Balanced Separator and Minimum Linear Arrangement, but our results also show
+                                               that the Small-Set Expansion Hypothesis problem lies at the combinatorial heart of the Unique Games
+                                               Conjecture.
+                                                   The key technical ingredient is a new way of exploiting the structure of the Unique Games instances
+                                               obtained from the Small-Set Expansion Hypothesis via (Raghavendra, Steurer, 2010). This additional
+                                               structure allows us to modify standard reductions in a way that essentially destroys their local-gadget
+                                               nature. Using this modification, we can argue about the expansion in the graphs produced by the reduc-
+                                               tion without relying on expansion properties of the underlying Unique Games instance (which would be
+                                               impossible for a local-gadget reduction).
+
+
+
+
+                                           ∗
+                                             Georgia Institute of Technology, Atlanta, GA. Research done while visiting Princeton University
+                                           †
+                                             Microsoft Research New England, Cambridge, MA. Research done at Princeton University supported by NSF Grants CCF-
+                                        0832797, 0830673, and 0528414.
+                                           ‡
+                                             Princeton University and Institute for Advanced Study, Princeton, NJ. Work supported by NSF grant CCF-0832797 and IAS
+                                        Sub-contract no. 00001583.
+Contents
+1 Introduction                                                                                             1
+  1.1 Results (Informal Description) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .     3
+
+2 Preliminaries                                                                                            4
+
+3 Results                                                                                                  5
+  3.1 Relation to the Unique Games Conjecture . . . . . . . . . . . . . . . . . . . . . . . . . . .        5
+  3.2 Hardness Amplification for Graph Expansion . . . . . . . . . . . . . . . . . . . . . . . . .         6
+
+4 Warm-up: Hardness for Balanced Separator                                                        7
+  4.1 Candidate Reduction from Unique Games . . . . . . . . . . . . . . . . . . . . . . . . . . . 7
+  4.2 Structured Unique Games from Small-Set Expansion . . . . . . . . . . . . . . . . . . . . . 9
+  4.3 Reduction from Small-Set Expansion to Balanced Separator . . . . . . . . . . . . . . . . . 10
+
+5 Additional Preliminaries                                                                                12
+
+6 Reduction between Expansion Problems                                                                    15
+  6.1 Completeness . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    18
+  6.2 Soundness . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .   20
+      6.2.1 Decoding a Unique Games assignment . . . . . . . . . . . . . . . . . . . . . . . . .          21
+      6.2.2 Decoding a very small non-expanding set in G . . . . . . . . . . . . . . . . . . . .          22
+  6.3 Putting things together . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .   23
+
+References                                                                                                24
+
+A Further Proofs                                                                                          26
+  A.1 Reduction from Small-Set Expansion to Unique Games . . . . . . . . . . . . . . . . . . . .          26
+  A.2 Stronger Small-Set Expansion Hypothesis . . . . . . . . . . . . . . . . . . . . . . . . . . .       29
+  A.3 Hardness of Minimum Linear Arrangement and Balanced Separator . . . . . . . . . . . . .             29
+1 Introduction
+Finding small vertex or edge separators in a graph is a fundamental computational task. Even from a
+purely theoretical standpoint, the phenomenon of vertex and edge expansion – the lack of good vertex
+and edge separators, has had numerous implications in all branches of theoretical computer science. Yet,
+the computational complexity of detecting and approximating expansion, or finding good vertex and edge
+separators in graphs is not very well understood.
+    Among the two notions of expansion, this work will concern mostly with edge expansion. For simplicity,
+let us first consider the case of a d-regular graph G = (V, E). The edge expansion of a subset of vertices
+S ⊆ V measures the fraction of edges that leave S . Formally, the edge expansion Φ(S ) of a (non-empty)
+subset S ⊆ V is defined as,
+                                                     |E(S , V \ S )|
+                                           ΦG (S ) =                 ,
+                                                         d|S |
+where E(S , V \ S ) denotes the set of edges with one endpoint in S and the other endpoint in V \ S . The
+conductance or the Cheeger’s constant associated with the graph G is the minimum of Φ(S ) over all sets S
+with at most half the vertices, i.e.,
+                                              ΦG = min ΦG (S ) .
+                                                   |S |⩽n/2
+
+These notions of conductance can be extended naturally to non-regular graphs, and finally to arbitrary
+weighted graphs (see Section 2). Henceforth, in this section, for a subset of vertices S in a graph G we
+will use the notation µ(S ) to denote the normalized set size, i.e., µ(S ) = |S |/n in a n vertex graph.
+    The problem of approximating the quantity ΦG for a graph G, also referred to as the the uniform Sparsest
+Cut (equivalent within a factor of 2), is among the fundamental problems in approximation algorithms.
+Efforts towards approximating ΦG have led to a rich body of work with strong connections to spectral
+techniques and metric embeddings.
+    The first approximation for conductance was obtained by discrete analogues of the Cheeger inequality
+[Che70] shown by Alon-Milman [AM85] and Alon [Alo86]. Specifically, Cheeger’s inequality relates the
+conductance ΦG to the second eigenvalue of the adjacency matrix of the graph – an efficiently computable
+quantity. This yields an approximation algorithm for ΦG , one that is used heavily in practice for graph
+partitioning. However, the approximation for ΦG obtained via Cheeger’s inequality is poor in terms of a
+approximation ratio, especially when the value of ΦG is small. An O(log n) approximation algorithm for
+ΦG was obtained by Leighton and Rao [LR99]. Later work by Linial et al. [LLR95] and Aumann and
+Rabani [AR98] established a strong connection between the Sparsest Cut problem and the theory of metric
+spaces, in turn spurring a large and
+                                   p rich body of literature. More recently, in a breakthrough result Arora
+et al. [ARV04] obtained an O( log n) approximation for the problem using semidefinite programming
+techniques.
+
+Small Set Expansion. It is easy to see that ΦG is a fairly coarse measure of edge expansion, in that it is
+the worst case edge expansion over sets S of all sizes. In a typical graph (say a random d-regular graph),
+smaller sets of vertices expand to a larger extent than sets with half the vertices. For instance, all sets S
+of n/1000 vertices in a random d-regular graph have Φ(S ) ⩾ 0.99 with very high probability, while the
+conductance ΦG of the entire graph is roughly 1/2.
+    A more refined measure of the edge expansion of a graph is its expansion profile. Specifically, for a
+graph G the expansion profile is given by the curve
+
+                                ΦG (δ) = min Φ(S )             ∀δ ∈ [0, 1/2] .
+                                         µ(S )⩽δ
+
+
+                                                       1
+The problem of approximating the expansion profile has received much less attention, and is seemingly far
+less tractable. The second eigenvalue λ2 fails to approximate the expansion of small sets in graphs. On
+one hand, even with the largest possible spectral gap, the Cheeger’s inequality cannot yield a lower bound
+greater than 1/2 for the conductance ΦG (δ). More importantly, there exists graphs such as hypercube where
+ΦG is small (say ε), yet every sufficiently small set has near perfect expansion (Φ(S ) ⩾ 1 − ε). This implies
+that ΦG (and the second eigenvalue λ2 ) does not yield any information about expansion of small sets.
+    In a recent work, Raghavendra, Steurer, and Tetali [RST10] give a polynomial-time algorithm based on
+semidefinite programming for this problem. Roughly speaking, the approximation guarantee of their algo-
+rithm for ΦG (δ) is similar to the one given by Cheeger’s inequality for ΦG , except with the approximation
+degrading by a log 1/δ factor. In particular, the approximation gets worse as the size of the sets considered
+gets smaller.
+    In the regime when ΦG (δ) tends to zero as a function of the instance size n, an O(log n)-approximation
+follows
+      p from the framework of Räcke [Räc08]. Very recently, this approximation has been improved to
+a O( log n · log(1/δ))-approximation [BKN+ 10]. Our work focuses on the regime when ΦG (δ) is not a
+function of the instance size n. In this regime, the algorithm of [RST10] gives the best known approximation
+for the expansion profile Φg (δ).
+    In summary, the current state-of-the-art algorithms for approximating the expansion profile of a graph
+are still very far from satisfactory. Specifically, the following hypothesis is consistent with the known
+algorithms for approximating expansion profile.
+
+Hypothesis (Small-Set Expansion Hypothesis, [RS10]). For every constant η > 0, there exists sufficiently
+small δ > 0 such that given a graph G it is NP-hard to distinguish the cases,
+
+Yes: there exists a vertex set S with volume µ(S ) = δ and expansion Φ(S ) ⩽ η,
+
+No: all vertex sets S with volume µ(S ) = δ have expansion Φ(S ) ⩾ 1 − η.
+
+    For the sake of succinctness, we will refer to the above promise problem as Small-Set Expansion with
+parameters (η, δ). Apart from being a natural optimization problem, the Small-Set Expansion problem is
+closely tied to the Unique Games Conjecture, as discussed in the next paragraph.
+    Recently, Arora, Barak, and Steurer [ABS10] showed that the problem Small-Set Expansion(η, δ) ad-
+mits a subexponential algorithm, namely an algorithm that runs in time exp(nη /δ). However, such an al-
+gorithm does not refute the hypothesis that the problem Small-Set Expansion(η, δ) might be hard for every
+constant η > 0 and sufficiently small δ > 0.
+
+Unique Games Conjecture. The Khot’s Unique Games Conjecture [Kho02] is among the central open
+problems in hardness of approximation. At the outset, the conjecture asserts that a certain constraint satis-
+faction problem called the Unique Games is hard to approximate in a strong sense.
+    An instance of Unique Games consists of a graph with vertex set V, a finite set of labels [R], and a
+permutation πv←w of the label set for each edge (v, w) of the graph. A labeling F : V → [R] of the vertices
+of the graph is said to satisfy an edge (v, w), if πv←w (F(w)) = F(v). The objective is to find a labeling that
+satisfies the maximum number of edges.
+    The Unique Games Conjecture asserts that if the label set is large enough then even though the input
+instance has a labeling satisfying almost all the edges, it is NP-hard to find a labeling satisfying any non-
+negligible fraction of edges.
+    In recent years, Unique Games Conjecture has been shown to imply optimal inapproximability results for
+classic problems like Max Cut [KKMO07], Vertex Cover [KR08] Sparsest Cut [KV05] and all constraint
+
+                                                      2
+satisfaction problems [Rag08]. Unfortunately, it is not known if the converse of any of these implications
+holds. In other words, there are no known polynomial-time reductions from these classic optimization
+problems to Unique Games, leaving the possibility that while the its implications are true the conjecture
+itself could be false.
+     Recent work by two of the authors established a reverse reduction from the Small-Set Expansion prob-
+lem to Unique Games [RS10]. More precisely, their work showed that Small-Set Expansion Hypothesis
+implies the Unique Games Conjecture. This result suggests that the problem of approximating expansion
+of small sets lies at the combinatorial heart of the Unique Games problem. In fact, this connection proved
+useful in the development of subexponential time algorithms for Unique Games by Arora, Barak and Steurer
+[ABS10]. It was also conjectured in [RS10] that Unique Games Conjecture is equivalent to the Small-Set
+Expansion Hypothesis.
+
+1.1 Results (Informal Description)
+In this work, we further investigate the connection between Small-Set Expansion and the Unique Games
+problem. The main result of this work is that the Small-Set Expansion Hypothesis is equivalent to a variant
+of the Unique Games Conjecture. More precisely, we show the following:
+Theorem (Main Theorem, Informal). The Small-Set Expansion Hypothesis is equivalent to assuming that
+the Unique Games Conjecture holds even when the input instances are required to be small set expanders,
+i.e., sets of roughly δn vertices for some small constant δ have expansion close to 1.
+    As a corollary, we show that Small-Set Expansion Hypothesis implies hardness of approximation results
+for Balanced Separator and Minimum Linear Arrangement problems. The significance of these results
+stems from two main reasons.
+    First, the Unique Games Conjecture is not known to imply hardness results for problems closely tied
+to graph expansion such as Balanced Separator and Minimum Linear Arrangement. The reason being that
+the hard instances of these problems are required to have certain global structure namely expansion. Gadget
+reductions from a unique games instance preserve the global properties of the unique games instance such as
+lack of expansion. Therefore, showing hardness for Balanced Separator or Minimum Linear Arrangement
+problems often required a stronger version of the Unique Games Conjecture, where the instance is guaran-
+teed to have good expansion. To this end, several such variants of the conjecture for expanding graphs have
+been defined in literature, some of which turned out to be false [AKK+ 08]. Our main result shows that the
+Small-Set Expansion Hypothesis serves as a natural unified assumption that yields all the implications of
+Unique Games Conjecture and, in addition, also hardness results for other fundamental problems such as
+Balanced Separator.
+    Second, several results in literature point to the close connection between Small-Set Expansion problem
+and the Unique Games problem. One of the central implications of the Unique Games Conjecture is that
+certain semidefinite programs yield optimal approximation for various classes of problems. As it turns out,
+hard instances for semidefinite programs (SDP integrality gaps) for Max Cut [FS02, KV05, KS09, RS09],
+Vertex Cover [GMPT07], Unique Games [KV05, RS09] and Sparsest Cut [KV05, KS09, RS09] all have
+near-perfect edge expansion for small sets. In case of Unique Games, not only do all known integrality gap
+instances have near-perfect edge expansion of small sets, even the analysis relies directly on this property.
+All known integrality gap instances for semidefinite programming relaxations of Unique Games, can be
+translated in to gap instances for Small-Set Expansion problem, and are arguably more natural in the latter
+context. Furthermore, all the algorithmic results for Small-Set Expansion, including the latest work of Arora,
+Barak and Steurer [ABS10] extend to Unique Games as well. This apparent connection was formalized in
+
+                                                      3
+the result of Raghavendra et al. [RS10] which showed that Small-Set Expansion Hypothesis implies the
+Unique Games Conjecture. This work complements that of Raghavendra et al. [RS10] in exhibiting that the
+Small-Set Expansion problem lies at the combinatorial heart of the Unique Games problem.
+    We also show a “hardness amplification” result for Small-Set Expansion proving that if the Small-Set
+Expansion Hypothesis holds then the current best algorithm for Small-Set Expansion due to [RS10] is
+optimal within some fixed constant factor. One can view the reduction as a “scale change” operation for
+expansion problems, which starting from the qualitative hardness of a problem about expansion of sets with a
+sufficiently small measure δ, gives the optimal quantitative hardness results for problems about expansion of
+sets with any desired measure (larger than δ). This is analogous to (and based on) the results of [KKMO07]
+who gave a similar alphabet reduction for Unique Games. An interesting feature of the reductions in the
+paper is that they produce instances whose expansion of small sets closely mimics a certain graph on the
+Gaussian space.
+
+
+2 Preliminaries
+Random walks on graphs. Consider the natural random walk on V defined by G. We write j ∼ G(i) to
+denote a random neighbor of vertex i in G (one step of the random walk started in i). The stationary measure
+for the random walk is given by the volume as defined earlier with µ(i) = G({i}, V). If G is regular, then µ
+is the uniform distribution on V. In general, µ is proportional to the degrees of the vertices in G. We write
+i ∼ µ to denote a vertex sampled according to the stationary measure. If G is clear from the context, we
+often write i ∼ V instead of i ∼ µ.
+
+Spectral gap of graphs. We identify G with the stochastic matrix of the random walk on G. We equip the
+vector space { f : V → } with the inner product
+                                                     def
+                                             h f, gi =           f (x)g(x) .
+                                                           x∼µ
+
+
+We define k f k = h f, f i1/2 . As usual, we refer to this (Hilbert) space as L2 (V). Notice that G is self-adjoint
+with respect to this inner product, i.e., h f, Ggi = hG f, gi for all f, g ∈ L2 (V). Let λ1 ⩾ . . . ⩾ λn be the
+eigenvalues of G. The non-zero constants are eigenfunctions of G with eigenvalue λ1 = 1.
+    For a vertex set S ⊆ V, let 1S be the {0, 1}-indicator function of S . We denote by G(S , T ) = h1S , G1T i
+the total weight of all the edges in G that go between S and T .
+
+Fact 2.1. Suppose the second largest eigenvalue of G is λ. Then, for every function f ∈ L2 (V),
+                                                                         
+                                 h f, G f i ⩽ ( f )2 + λ · k f k2 − ( f )2 .
+
+In particular, ΦG (δ) ⩾ 1 − δ − λ for every δ > 0.
+
+Gaussian Graphs. For a constant ρ ∈ (−1, 1), let G(ρ) denote the infinite graph over  where the weight
+of an edge (x, y) is the probability that two standard Gaussian random variables X, Y with correlation ρ equal
+x and y respectively. The expansion profile of Gaussian graphs is given by ΦG(ρ) (µ) = 1 − Γρ (µ)/µ where
+the quantity Γρ (µ) defined as
+                                           Γρ (µ) :=  {x ⩾ t, y ⩾ t} ,
+                                                   (x,y) Gρ
+
+
+
+
+                                                            4
+where Gρ is the 2-dimensional Gaussian distribution with covariance matrix
+                                                       !
+                                                  1 ρ
+                                                  ρ 1
+
+and t ⩾ 0 is such that (x,y)∼Gρ {x ⩾ t} = µ. A theorem of Borell [Bor85] shows that for any set S of measure
+µ, (G(ρ))(S , S ) ⩽ Γρ (µ). This expansion profile will be frequently used in the paper to state the results
+succinctly.
+
+Noise graphs. For a finite probability space (Ω, ν) and ρ ∈ [0, 1], we define T = T ρ,Ω to be the following
+linear operator on L2 (Ω),
+                                    T f (x) = ρx + (1 − ρ) ′ f (x′ ) .
+                                                                           x ∼Ω
+
+    The eigenvalues of T are 1 (with multiplicity 1) and ρ (with multiplicity |Ω| − 1). The operator T
+corresponds to the following natural (reversible) random walk on Ω: with probability ρ stay at the current
+position, with probability (1 − ρ) move to a random position sampled according to the measure ν.
+
+Product graphs. If G and G′ are two graphs with vertex sets V and V ′ , we let H = G ⊗ G′ be the
+tensor product of G and G′ . The vertex set of G is V × V ′ . For i ∈ V and i′ ∈ V ′ , the distribution H(i, i′ ) is
+the product of the distributions G(i) and G′ (i′ ). For R ∈ , we let G⊗R denote the R-fold tensor product of G.
+Sometimes the power R of the graph is clear from the context. In this case, we might drop the superscript
+for the tensor graph.
+
+
+3 Results
+Towards stating the results succinctly, we introduce the notion of a decision problem being SSE-hard. It is
+the natural notion wherein a decision problem is SSE-hard if the Small-Set Expansion (η, δ) reduces to it
+by a polynomial time reduction for some constant η and all δ > 0 (See Definition 5.6).
+
+3.1 Relation to the Unique Games Conjecture
+We show that the Small-Set Expansion Hypothesis is equivalent to a certain variant of the Unique Games
+Conjecture with expansion. Specifically, consider the following version of the conjecture with near-perfect
+expansion of sufficiently small sets. The hypothesis is as follows: 1
+
+Hypothesis 3.1 (Unique Games with Small-Set Expansion). For every ε, η > 0 and M ∈ , there exists
+δ = δ(ε, M) > 0 and q = q(ε, η, M) ∈  such that it is NP-hard to distinguish for a given Unique Games
+instance U with alphabet size q whether
+
+Yes: The Unique Games instance U is almost satisfiable, opt(U) > 1 − ε.
+
+No: The Unique Games instance U satisfies opt(U) < η and its constraint graph G satisfies Φ(S ) > 1 − ε
+     for every vertex set with δ ⩽ µ(S ) ⩽ Mδ.
+
+    The main result of the paper is the following reduction from Small-Set Expansion to Unique Games on
+instances with small-set expansion.
+   1
+       The hypothesis in [RS10] is not quite the same. However, the reduction and its analysis in [RS10] also work for this hypothesis.
+
+
+                                                                   5
+Theorem 3.2. For every q ∈  and every ε, γ > 0, it is SSE-hard to distinguish between the following cases
+for a given Unique Games instance U with alphabet size q:
+
+Yes: The Unique Games instance U is almost satisfiable, opt(U) > 1 − 2ε − o(ε)
+
+No: The optimum of the Unique Games instance U is negligible, and the expansion profile of the instance
+     resembles the
+                  Gaussian  graph G(1 − ε). More precisely, the Unique Games instance U satisfies
+     opt(U) < O q  −ε/(2−ε)  + γ and in addition, the constraint graph G of U satisfies
+                                                                              
+                                    ∀S ⊆ V(G).         ΦG (S ) ⩾ ΦG(1−ε) µ(S ) − γ/µ(S ) .
+
+   The proof of the above theorem is presented in Section 6.3. Together with Theorem 1.9 from [RS10],
+Theorem 3.2 implies the following equivalence:
+
+Corollary 3.3. The Small-Set Expansion Hypothesis is equivalent to Hypothesis 3.1 (Unique Games with
+Small-Set Expansion).
+                                                                                                     √
+Remark 3.4. If we choose γ ≪ ε, then the constraint graph G in the No case satisfies Φ(S ) ⩾ Ω( ε)
+for every vertex set S with µ(S ) ∈ (b, 1/2) for an arbitrarily small constant b > 0. In other words, the
+                                          √
+best balanced separator in G has cost Ω( ε). A hardness of Unique Games on graphs of this nature was
+previously conjectured in [AKK+ 08], towards obtaining a hardness for Balanced Separator.
+
+    As already mentioned, for several problems such as Max Cut, the the hard instances for the semidefinite
+programs have very good expansion of small sets. For instance, hard instances for semidefinite programs
+(SDP integrality gaps) for Max Cut [FS02, KV05, KS09, RS09], Vertex Cover [GMPT07], Unique Games
+[KV05, RS09] and Sparsest Cut [KV05, KS09, RS09] all have near-perfect edge expansion for small sets.
+In fact, in many of the cases, the edge expansion in the graph closely mimics the expansion of sets in some
+corresponding Gaussian graph. Confirming this observation, our techniques imply an optimal hardness
+result for Max Cut on instances that are small-set expanders. More precisely, the Small-Set Expansion
+Hypothesis implies that the Goemans-Williamson algorithm is optimal even on graphs that are guaranteed
+to have good expansion of small sets, in fact an expansion profile that resembles the Gaussian graph. For
+the sake of succinctness, we omit the formal statement of the result.
+
+3.2 Hardness Amplification for Graph Expansion
+Observe that the Small-Set Expansion Hypothesis is a purely qualitative assumption on the approximability
+of expansion. Specifically, for every constant η the hypothesis asserts that there exists some δ such that
+approximating expansion of sets of size δ is NP-hard. The hypothesis does not assert any quantitative depen-
+dence on the set size and approximability. Surprisingly, we show that this qualitative hardness assumption
+is sufficient to imply precise quantitative bounds on approximability of graph expansion.
+
+Theorem 3.5. For all q ∈  and ε, γ > 0, it is SSE-hard to distinguish between the following two cases for
+a given graph H = (VH , E H )
+
+Yes: There exist q disjoint sets S 1 , . . . , S q ⊆ VH satisfying for all l ∈ [q],
+
+                                        µ(S l ) = q1    and        ΦH (S l ) ⩽ ε + o(ε).
+
+
+
+                                                            6
+No: For all sets S ⊆ VH ,
+                                                                  
+                                         ΦH (S ) ⩾ ΦG(1−ε/2) µ(S ) − γ/µ(S )
+      where ΦG(1−ε/2) (µ(S )) is the expansion of sets of volume µ(S ) in the infinite Gaussian graph G(1−ε/2).
+
+     The above hardness result matches (upto an absolute constant factor), the recent algorithmic result (The-
+orem 1.2) of [RST10] approximating the graph expansion. Furthermore, both the Yes and the No cases of
+the above theorem are even qualitatively stronger than in the Small-Set Expansion Hypothesis. In the Yes
+case, not only does the graph have one non-expanding set, but it can be partitioned into small sets, all of
+which are non-expanding. This partition property is useful in some applications such as hardness reduction
+to Minimum Linear Arrangement. In the No case, the expansion of all sets can be characterized only by their
+size µ(S ). Specifically, the expansion of every set S of vertices with µ(S ) >> γ, is at least the expansion of
+a set of similar size in the Gaussian graph G(1 − ε/2).
+     Here we wish to draw an analogy to the Unique Games Conjecture. The Unique Games Conjecture is
+qualitative in that it does not prescribe a relation between its soundness and alphabet size. However, the
+work of Khot et al. [KKMO07] showed that the Unique Games Conjecture implies a quantitative form of
+itself with a precise relation between the alphabet size and soundness. Theorem 3.5 could be thought of as
+an analogue of this phenomena for the Small-Set Expansion problem.
+     As an immediate consequence of Theorem 3.5, we obtain the following hardness of the Balanced Sepa-
+rator and Minimum Linear Arrangement problems (See Appendix A.3 for details).
+
+Corollary 3.6 (Hardness of Balanced Separator and Min Bisection). There is a constant c such that for
+arbitrarily small ε > 0, it is SSE-hard to distinguish the following two cases for a given graph G = (V, E):
+
+Yes: There exists a cut (S , V \ S ) in G such that µ(S ) = 12 and ΦG (S ) ⩽ ε + o(ε).
+                                              
+                                                1 1
+                                                                          √
+No: Every cut (S , V \ S ) in G, with µ(S ) ∈ 10 , 2 satisfies ΦG (S ) ⩾ c ε.
+
+Corollary 3.7 (Hardness of Minimum Linear Arrangement). It is SSE-hard to approximate Minimum Lin-
+ear Arrangement to any fixed constant factor.
+
+
+4 Warm-up: Hardness for Balanced Separator
+In this section we present a simplified version of our reduction from Small-Set Expansion to Balanced
+Separator. Though it gives sub-optimal parameters, it illustrates the key ideas used in the general reduction.
+
+4.1 Candidate Reduction from Unique Games
+A natural approach for reducing Unique Games to Balanced Separator is to consider variants of the reduction
+from Unique Games to Max Cut in [KKMO07] (similarly, one could consider variants of the reduction from
+Unique Games to the generalized Sparsest Cut problem [KV05]).
+    Let U be a unique game with alphabet size R and vertex set V. (We assume that every vertex of the
+unique game participates in the same number of constraints. This assumption is without loss of generality.)
+The candidate reduction has a parameter ε > 0. The graph H = Hε (U) obtained from this candidate
+reduction has vertex set V × {0, 1}R and its edge distribution is defined as follows:
+
+   1. Sample a random vertex u ∈ V.
+
+
+
+                                                        7
+   2. Sample two random constraints (u, v, π), (u, v′ , π′ ) of U that contain the vertex u. (Henceforth, we will
+      write (u, v, π) ∼ U | u to denote a random constraint of U containing vertex u.)
+
+   3. Sample a random edge (y, y′ ) of the boolean noise graph T 1−ε with noise parameter ε.
+
+   4. Output an edge between (v, π(y)) and (v′ , π′ (y′ )). (Here, π(y) denotes the vector obtained by permuting
+      the coordinates of y according to the permutation π.)
+
+Completeness. Suppose there is a good assignment F : V → [R] for the unique game U. Then, if we
+sample a random vertex u ∈ V and two random constraint (u, v, π), (u, v′ , π′ ) ∼ U | u, with probability very
+close to 1 (much closer than ε), the labels assigned to v and v′ satisfy π−1 (F(v)) = (π′ )−1 (F(v)). Consider
+the vertex set S = {(u, x) | xF(u) = 1} . in the graph H. We have µ(S ) = 1/2. We claim that the expansion
+of this set is essentially ε/2 (up to a lower-order term depending on the fraction of constraint of U violated
+by F). Consider a random edge e with endpoints (v, π(y)) and (v′ , π′ (y′ )), where the vertices v, v′ ∈ V and
+the permutations π, π′ are generated as specified above. Let r = π−1 (F(v)) and r′ = (π′ )−1 (F(v)). The edge e
+crosses the cut S if and only if yr , y′ r′ . As argued before, with probability very close to 1, we have r = r′ .
+Conditioned on this event, the probability that yr , yr′ is equal to ε/2. This shows that S has expansion ε/2.
+
+Soundness. Suppose no assignment for the unique game U satisfies a significant fraction of constraints.
+Let S be a vertex set in the graph H. The goal is to lower bound the expansion of S (which is the same as
+upper bounding the fraction of edges with both endpoints in S ). Let f : V R × {0, 1}R → {0, 1} be the indicator
+function of S . Following the analysis of [KKMO07], we consider functions gu : {0, 1}R → [0, 1],
+
+                                        gu (x) =                 { f (v, π(y))} .
+                                                   (u,v,π)∼U|u,
+                                                   y∼T √1−ε (x)
+
+(The graph H turns out to be the square of a graph H0 in which we would just create edges of the form
+((u, x), (v, π(y))). The function gu (x) evaluates to the probability that the set S contains a random neighbor
+of (u, x) in this graph H0 .) By construction, the fraction H(S , S ) of edges of H with both endpoints in S is
+exactly
+                                            H(S , S ) =    hgu , T 1−ε gu i .
+                                                        u∈V
+
+Since U does not have a good assignment, standard arguments (invariance principle and influence decoding,
+see [KKMO07]) imply the following upper bound on H(S , S ),
+
+                                        H(S , S ) ⩽         Γ1−ε (µu ) + o(1) .
+                                                      u∈V
+
+(The notation o(1) hides a term depending on the maximum fraction of constraints of U that can be satisfied.
+For us, this term is not significant.) Here, µu is the expected value of gu and Γ1−ε (·) is the noise stability
+profile of the Gaussian noise graph with parameter ε. We would like to show that every set S that contains
+a µ fraction of the vertices of H satisfies H(S , S ) ⩽ Γ1−ε (µ) + o(1). However, the function Γ1−ε is, of course,
+not concave. Hence, this upper bound holds only if µu is close to µ for most vertices u ∈ V.
+    In fact, it is very easy to construct examples that show that the candidate reduction is not sound. For
+example, consider a unique game U that consists of two disjoint parts of the same size (i.e., without any
+constraint between the two parts). The reduction preserves this global structure, in the sense that the graph H
+also consists of two disjoint parts of the same size (with no edge between the parts). Hence, this graph
+contains a vertex set with volume 1/2 and expansion 0 irrespective of the optimal value of the unique game U.
+
+                                                            8
+In fact, any cut in the underlying graph of U can be translated to a cut in H and the resulting function f may
+have the values µu as (very close to) 0 or 1.
+    This example shows that the above candidate reduction can only work if one makes assumptions about
+structure of the constraint graph of the underlying unique game U. However, such an assumption raises
+the question if Unique Games could be hard to approximate even if the constraint graph is expanding. This
+issue turns out to be delicate as demonstrated by the algorithm for Unique Games with expanding constraint
+graphs [AKK+ 08]. This algorithm achieves a good approximation for Unique Games if the expansion of the
+constraint graph exceeds a certain threshold.
+
+4.2 Structured Unique Games from Small-Set Expansion
+In this work, we present a very different approach for fixing the above candidate reduction. Instead of assum-
+ing expansion properties of the constraint graph, we assume that the underlying unique game is obtained by
+the reduction from Small-Set Expansion to Unique Games in [RS10] 2 . This specific form of the underlying
+unique game will allows us to modify the reduction such that the global structure of the constraint graph
+is no longer preserved in the graph obtained from the reduction. (In particular, our modified reduction will
+break with the paradigm of composing unique games with local gadgets.)
+    In the following, we describe the reduction from Small-Set Expansion to Unique Games. Let G be a
+regular graph with vertex set V. For technical reasons, we assume that G contains a copy of the complete
+graph of weight η > 0. (Since we will be able to work with very small η, this assumption is without loss of
+generality.) Given a parameter R ∈  and the graph G, the reduction outputs a unique game U = UR (G)
+with vertex set V R and alphabet [R]. The constraints of the unique game U correspond to the following
+probabilistic verifier for an assignment F : V R → [R]:
+   1. Sample a random vertex A ∈ V R .
+
+   2. Sample two random neighbors B, C ∼ G⊗R (A) of the vertex A in the tensor-product graph G⊗R .
+
+   3. Sample two random permutations πB , πC of [R].
+
+   4. Verify that π−1                    −1
+                   B (F(π B (B))) = (πC ) (F(πC (C))).
+
+       Raghavendra and Steurer [RS10] show that this reduction is complete and sound in the following sense:
+Completeness If the graph G contains a vertex set with volume 1/R and expansion close to 0, then the
+    unique game U = UR (G) has a partial assignment that labels an α ⩾ 1/e fraction of the vertices and
+    satisfies almost an α fraction of the constraints.
+
+Soundness If the graph G contains no set with volume 1/R and expansion bounded away from 1, then no
+     assignment for the unique game U = UR (G) satisfies a significant fraction of the constraints.
+    Hence, if one assumes the Small-Set Expansion Hypothesis, then the kind of unique games obtained
+from the reduction are hard to approximate.
+    We remark that the completeness of the reduction seems weaker than usual, because we are only guar-
+anteed a partial assignment for the unique game. However, it is easy to check that the KKMO reduction
+presented in the previous section also works if there is only a partial assignment in the completeness case.
+The only difference is that one now gets a set S with µ(S ) = α/2 and expansion roughly ε/2.
+   2
+     We remark that unique games of this form do not necessarily have expanding constraint graphs. In fact, it is still possible that
+the constraint graph consists of two disconnected components.
+
+
+                                                                 9
+4.3 Reduction from Small-Set Expansion to Balanced Separator
+We now show how the combination of the above two reductions can be modified to give a reduction from
+Small-Set Expansion to Balanced Separator. Let U = UR (G) be the unique game given by the reduction
+of Raghavendra and Steurer. If we consider the graph Hε given by the reduction in Section 4.1, each vertex
+of Hε is now of the form (A, x), where A ∈ V R and x ∈ {0, 1}R .
+     The intuition is that in this case, we can think of x as picking a subset of the vertices in A, and that just
+the knowledge of this subset (instead of the whole of A) is sufficient for the provers to provide a good answer
+to the corresponding unique game. In particular, let A′ = {Ai | xi = 1} is the subset picked by x. Then the
+argument for the completeness case in [RS10] actually shows that one can still find a good labeling for an α
+fraction of the vertices A, where the label of A only depends on A′ 3 .
+     Formally, if we replace A with the tuple A′ (x) defined by taking A′i = Ai if xi = 1 and A′i = ⊥ otherwise.
+This gives a graph H ′ with the vertex set being a subset of (V ∪ {⊥})R × {0, 1}R . The the argument in
+completeness case for showing that H has a balanced cut of expansion roughly ε/2 can in fact be extended
+to show that H ′ also has a balanced cut of expansion roughly ε/2.
+     The soundness analysis in the previous reduction did not always work because H had the same structure
+as G⊗R , since we essentially replaced every vertex of G⊗R by a gadget {0, 1}R to obtain H. However, the
+structure of H ′ is very different from that of G⊗R .
+     For example, consider the vertices A = (u1 , u2 , . . . , uR ) and B = (v1 , u2 , . . . uR ) in V R which only differ
+in the first coordinate (A, B are not necessarily adjacent). Let x ∈ {0, 1}R be such that x1 = 0. Then, while
+(A, x) and (B, x) are different vertices in H, (A′ (x), x) and (B′ (x), x) are in fact the same vertex in H ′ ! On the
+other hand, if x1 = 1, then (A′ (x), x) and (B′ (x), x) would be two different vertices in H ′ . Hence, the gadget
+structure of H is no longer preserved in H ′ - it is very different from a “locally modified” copy of G⊗R .
+     For the purposes of analysis, it will be more convenient to think of A′ being obtained by replacing Ai
+where xi = 0, by a random vertex of G instead of the symbol ⊥. Instead of identifying different vertices in
+H with the same vertex in H ′ , this now has the effect of re-distributing the weight of an incident on (A, x),
+uniformly over all the vertices that (A′ , x) can map to. Let M x denote a Markov operator which maps A to a
+random A′ as above (a more general version and analysis of such operators can be found in Section 5).
+     We now state the combined reduction. The weight of an edge in the final graph H ′ is the probability that
+it is produced by the following process:
+   1. Sample a random vertex A ∈ V R .
+   2. Sample two random neighbors B, C ∼ G⊗R (A) of the vertex A in the tensor-product graph G⊗R .
+   3. Sample xB , xC ∼ {0, 1}R .
+   4. Sample B′ ∼ M xB (B) and C ′ ∼ M xC (C).
+   5. Sample two random permutations πB , πC of [R].
+   6. Output an edge between the vertices πB (B′ , xB ) and πC (C ′ , xC ) (π(A, x) denotes the tuple (π(A), π(x))).
+    As before, let f : V R × {0, 1}R denote the indicator function of a set in H ′ , with (say)                         f = µ = 1/2. We
+define the functions
+                               def                                         def
+                      f¯(A, x) =         f (π.A, π.x)    and         gA (x) =                            f¯(B′ , x) .
+                                     π                                           B∼G ⊗R (A) B′ ∼Mx (B)
+   3
+    Given a non-expanding small set S , if A′ ∩ S contains a single element A′j , then we assign the label j to A. If A′ ∩ S is not a
+singleton, we do not label A.
+
+
+                                                                10
+     By construction, each vertex (A, x) of H ′ has exactly the same neighborhood structure as (π.A′ , π.x) for
+all π ∈ S R and A′ ∈ M x (A). Hence, the fraction of edges crossing the cut can also be written in terms of f¯ as
+h f, H ′ f i = h f¯, H ′ f¯i.
+     We will show that f¯ gives a cut (actually, a distribution over cuts) with the same expansion in the graph
+H, such that the functions gA satisfy A { gA ∈ (1/10, 9/10)} ⩾ 1/10. Recall that showing this was exactly the
+problem in making the reduction in Section 4.1 work.
+     Since A x gA = µ, we have A ( x gA )2 ⩾ µ2 . The following claim also gives an upper bound.
+                                   2   2
+Claim 4.1.          A(       x gA ) ⩽ µ /2 + µ/2
+
+Proof. We have
+                            2                                         !2                                             !2
+                        gA        =                                   ¯f ⩽                                           ¯f
+        A∼V R       x                 A∼V R B∼G ⊗R (A) x B′ ∼Mx (B)            A∼V R B∼G ⊗R       x B′ ∼Mx (B)
+                                                                                                            !2
+                                                                          =                               ¯f
+                                                                               B∼V R       x B′ ∼Mx (B)
+                                                                                       "                       !                         !#
+                                                                          =                                  f¯                        f¯
+                                                                               B∼V R       x1 B′1 ∼Mx1 (B)           x2 B′2 ∼Mx2 (B)
+
+                                                                          =                      f¯(B′1 , x1 )                              f (B′2 , x2 ) .
+                                                                               x1 B′1 ∼Mx1 (B)                     (B′2 ,x2 )∼M(B′1 ,x1 )
+
+For the last equality above, we define M to be a Markov operator which samples (B′2 , x2 ) from the correct
+distribution given (B′1 , x′1 ). Since x1 , x2 are independent, x2 can just be sampled uniformly. The fact that B′1
+and B′2 come from the same (random) B can be captured by sampling each coordinate of B′2 as
+                                         ( ′
+                                  ′          (B1 )i                if (x1 )i = (x2 )i = 0
+                               (B2 )i =                                                   .
+                                             random vertex in V otherwise
+Abusing notation, we also use M to denote the operator on the space of the functions which averages the
+value of the function over random (B′2 , x2 ) generated as above. Then, if λ is the second eigenvalue of M, we
+have                 2                                                
+                   gA    ⩽ h f¯, M f¯i ⩽ 1 · ( f¯)2 + λ · k f¯k2 − ( f¯)2 ⩽ (1 − λ) · µ2 + λ · µ .
+                    A    x
+Finally, it can be checked that the second eigenvalue of M is 1/2 which proves the claim.                                                                     
+
+    This gives that               x gA cannot be always very far from µ. Formally,
+
+                                                                          A(     gA − µ)2   µ(1 − µ)
+                                            {| gA − µ| ⩾ γ} ⩽                            ⩽          .
+                                            A                                    γ2           2γ2
+Hence, for γ = 2/5, the probability is at most 25/32 < 9/10. This can now be combined with the bound from
+Section 4.1 that gives
+                                     H ′ (S , S ) ⩽ Γ1−ε ( gA ) + o(1) .
+                                                                      A
+Since gA ⩾ 1/10 with probability at least 1/10 over A, these “nice” A’s contribute a volume of at least 1/100.
+                                                              √
+Also, for a nice A, we have Γ1−ε ( gA ) ⩽ ( gA )(1 − Ω( ε)). Hence,
+                                                                         √
+                             H ′ (S , S ) ⩽ (µ − 1/100) + 1/100 · (1 − Ω( ε)) + o(1)
+                                          √
+which shows that S has expansion Ω( ε).
+
+                                                                          11
+5 Additional Preliminaries
+Unique Games. An instance of Unique Games represented as U = (V, E, Π, [R]) consists of a graph over
+vertex set V with the edges E between them. Also part of the instance is a set of labels [R] = {1, . . . , R}, and
+a set of permutations Π = {πv←w : [R] → [R]}, one permutation for each edge e = (w, v) ∈ E. An assignment
+F : V → [R] of labels to vertices is said to satisfy an edge e = (w, v), if πv←w (F) = F(v). The objective is to
+find an assignment F of labels that satisfies the maximum number of edges.
+    As is customary in hardness of approximation, one defines a gap-version of the Unique Games problem
+as follows:
+
+Problem 5.1 (Unique Games (R, 1 − ε, η)). Given a Unique Games instance U = (V, E, Π = {πv←w : [R] →
+[R] | e = (w, v) ∈ E}, [R]) with number of labels R, distinguish between the following two cases:
+
+       – (1 − ε)- satisfiable instances: There exists an assignment F of labels that satisfies a 1 − ε fraction of
+         edges.
+       – Instances that are not η-satisfiable: No assignment satisfies more than a η-fraction of the edges E.
+
+    The Unique Games Conjecture asserts that the above decision problem is NP-hard when the number of
+labels is large enough. Formally,
+
+Conjecture 5.2 (Unique Games Conjecture [Kho02]). For all constants ε, η > 0, there exists large enough
+constant R such that Unique Games (R, 1 − ε, η) is NP-hard.
+
+Graph expansion. In this work, all graphs are undirected and possibly weighted. Let G be a graph with
+vertex set V. We write i j ∼ G to denote a random edge sampled from G (with random orientation). For two
+vertex sets S , T ⊆ V, let G(S , T ) be the fraction of edges going from S to T , i.e.,
+                                                           def
+                                               G(S , T ) =  {i ∈ S , j ∈ T } .
+                                                                 i j∼G
+
+The expansion4 ΦG (S ) of a set S ⊆ V is the fraction of edges leaving S normalized by the fraction of edges
+incident to S , i.e.,
+
+                                  def G(S , V \ S )       i j∼G {i ∈ S , j < T }
+                         ΦG (S ) =                    =                           =  {j < T | i ∈ S} .
+                                        G(S , V)              i j∼G {i ∈ S }      i j∼G
+
+                                                                                                 def
+The volume of a set S is the fraction of edges incident on it and is denoted by µ(S ) = G(S , V). The fraction
+                                             def
+of edges leaving the set is denoted by ∂(S ) = G(S , V \ S ).
+
+Small-Set Expansion Hypothesis.
+
+Problem 5.3 (Small-Set Expansion (η, δ)). Given a regular graph G = (V, E), distinguish between the
+following two cases:
+
+Yes: There exists a non-expanding set S ⊆ V with µ(S ) = δ and ΦG (S ) ⩽ η.
+
+No: All sets S ⊆ V with µ(S ) = δ are highly expanding having ΦG (S ) ⩾ 1 − η.
+   4
+       The technically more precise term is conductance
+
+
+                                                                    12
+Hypothesis 5.4 (Hardness of approximating Small-Set Expansion). For all η > 0, there exists δ > 0 such
+that the promise problem Small-Set Expansion (η, δ) is NP-hard.
+
+Remark 5.5. It is easy to see that for the problem Small-Set Expansion (η, δ) to be hard, one must have
+δ ⩽ η. This follows from the fact that if we randomly sample a set S containing a δ fraction of the vertices
+(and hence, having volume δ for a regular graph), the expected fraction of edges crossing the set is δ(1 − δ)
+and hence ΦG (S ) = 1 − δ. However, for it to be possible that for all sets with µ(S ) = δ have ΦG (S ) ⩾ 1 − η,
+we must have δ ⩽ η.
+
+Definition 5.6. Let P be a decision problem of distinguishing between two disjoint families (cases) of
+instances denoted by {Yes, No}. For a given instance I of P, let Case(I) denote the family to which I
+belongs. We say that P is SSE-hard if for some η > 0 and all δ ∈ (0, η), there is a polynomial time
+reduction, which starting from an instance G = (V, E) of Small-Set Expansion(η, δ), produces an instance I
+of P such that
+
+    – ∃S ⊆ V with µ(S ) = δ and ΦG (S ) ⩽ η         =⇒         Case(I) = Yes.
+
+    – ∀S ⊆ V with µ(S ) = δ, ΦG (S ) ⩾ 1 − η        =⇒         Case(I) = No.
+
+    For the proofs, it shall be more convenient to use the following version of the Small-Set Expansion
+problem, in which we high expansion is guaranteed not only for sets of measure δ, but also within an
+arbitrary multiplicative factor of δ.
+
+Problem 5.7 (Small-Set Expansion (η, δ, M)). Given a regular graph G = (V, E), distinguish between the
+following two cases:
+
+Yes: There exists a non-expanding set S ⊆ V with µ(S ) = δ and ΦG (S ) ⩽ η.
+                                      
+No: All sets S ⊆ V with µ(S ) ∈ Mδ , Mδ have ΦG (S ) ⩾ 1 − η.
+
+    The following proposition shows that for the purposes of showing that P is SSE-hard, it is sufficient to
+give a reduction from Small-Set Expansion (η, δ, M) for any chosen values of η, M and for all δ. We defer
+the proof to Section A.2.
+
+Proposition 5.8. For all η > 0, M ⩾ 1 and all δ < 1/M, there is polynomial time reduction from Small-Set
+Expansion ( Mη , δ) to Small-Set Expansion(η, δ, M).
+
+Invariance principle. The following theorem on the noise stability of functions over a product prob-
+ability space is an easy corollary of Theorem 4.4 in Mossel et al. [MOO05]. Recall that Γρ (µ) :=!
+                                                                                                             1   ρ
+(x,y) Gρ {x ⩾ t, y ⩾ t}, where Gρ is the 2-dimensional Gaussian distribution with covariance matrix ρ 1
+and t ⩾ 0 is such that (x,y)∼Gρ {x ⩾ t} = µ.
+
+Theorem 5.9. Let ν > 0, ρ ∈ (0, 1) and let Ω be a finite probability space. Then, there exists τ, δ > 0 such
+that the following holds: Every function f : ΩR → [0, 1] satisfies either
+
+                                            h f, T ρ f i ⩽ Γρ (   f) + ν.
+
+or maxi∈[R] Inf i (T 1−δ f ) > τ. (Here, T ρ and T 1−δ are the natural noise operators on L2 (ΩR ) with correlation
+parameters ρ and 1 − δ as defined above.)
+
+                                                          13
+     Below we define generalizations of the operators M x and M used in Section 4. We show that these
+operators can be viewed as somewhat extended versions of the noise operators which randomize each coor-
+dinate of a product space with some probability. The operators we define can be viewed as noise operators
+with additional “leakage” property, in the sense that part of the output encodes the information about which
+coordinates were randomized. The second eigenvalue of these operators can be easily estimated by relating
+it to the eigenvalue of the corresponding noise operator.
+
+Random walks with leaked randomness. Suppose we have a collection of graphs {Gz }z∈Z with the same
+vertex set V (and with the same stationary distribution). We consider two (reversible) random walks defined
+by this collection and compare their spectral properties. The first random walk is defined on V. If the current
+state is x1 , we choose the next state x2 by sampling a random index z ∼ Z and then taking two random steps
+from x1 in Gz , i.e., we sample x ∼ Gz (x1 ) and x2 ∼ Gz (x). The second random walk is defined on V × Z. If
+the current state is (x1 , z1 ), we choose the next state (x2 , z2 ) by sampling a random neighbor x of x1 in Gz1 ,
+then we choose a random index z2 ∼ Z and a random neighbor x2 ∼ Gz2 (x) according to Gz2 . The following
+lemma shows that these two random walks have the same non-zero eigenvalues. (Recall that we identify
+graphs with their stochastic operators.)
+Lemma 5.10. Let (Z, ν) be a finite probability space and let {Gz }z∈Z be a family of graphs with the same
+vertex set V and stationary measure µ. Then the following two graphs have the same non-zero eigenvalues:
+                         2
+    – the graph    z∼Z G z on V,
+
+    – the graph H on V × Z defined by
+
+                                      H f (x1 , z1 ) =                                     f (x2 , z2 ) .
+                                                         x∼G z1 (x1 ) z2 ∼Z x2 ∼G z2 (x)
+
+
+Proof. Let M be the following linear operator on L2 (V × Z),
+
+                                         M f (x, z) = ′                       f (x′ , z′ ) .
+                                                          z ∼Z x′ ∼G z′ (x)
+
+Notice that its adjoint operator M ∗ (with respect to the inner product in L2 (V × Z)) is given by
+
+                                         M ∗ f (x, z) = ′                     f (x′ , z′ ) .
+                                                           x ∼G z (x) z′ ∼Z
+
+(The operator above is the adjoint of M, because each of the random walks Gz are reversible and have the
+same stationary measure.). The graph H corresponds to the operator M ∗ M, which has the same non-zero
+eigenvalues as M M ∗. The operator M M ∗ is given by
+
+                               M M ∗ f (x1 , z1 ) =                                        f (x2 , z2 ) .
+                                                      z∼Z x∼G z (x1 ) x2 ∼G z (x) z2 ∼Z
+
+The subspace { f | ∀x ∈ V. z f (x, z) = 0} ⊆ L2 (V × Z) is part of the kernel of M M ∗. Hence, all eigen-
+functions with non-zero eigenvalue are in the orthogonal complement of this space. The orthogonal com-
+plement consists of all functions f such that f (x, z) does not depend on z. Let f be such a function and set
+f (x) = f (x, z). Then,
+                            M M ∗ f (x1 ) =                  f (x2 ) =  G2z f (x1 ) .
+                                              z∼Z x∼G(x1 ) x2 ∼G(x)                   z∼Z
+
+Thus, M M ∗ acts on this subspace in the same way as                     2
+                                                                     z G z , which means that the two operators have the
+same eigenfunctions (and eigenvalues) in this space.                                                                  
+
+                                                               14
+Noise graph with leaked randomness. Let {⊥, ⊤}Rβ be the β-biased R-dimensional boolean hypercube.
+If we sample a random point z from this space, then zi = ⊤ with probability β, independently for each
+coordinate i ∈ [R].
+    Let (Ω, ν) be a finite probability space. For z ∈ {⊥, ⊤}Rβ and x ∈ ΩR , let Mz (x) be the distribution over
+ΩR obtained by “rerandomizing” every coordinate of x where z has value ⊥. In order to sample x′ ∼ Mz (x),
+we sample x′i ∼ Ω, independently for every coordinate i ∈ [R] with zi = ⊥. If zi = ⊤, then we copy the value
+                                                                        ⊗R
+of x in this coordinate so that x′i = xi . Observe that z∼{⊥,⊤}R Mz = T β,Ω is the usual noise graph on ΩR with
+                                                               β
+correlation parameter β, as defined previously in this section.
+    Consider the following stochastic linear operator M on L2 (ΩR , {⊥, ⊤}Rβ ),
+
+                                    M f (x, z) =                            f (x′ , z′ ) .               (5.1)
+                                                   z′ ∼{⊥,⊤}Rβ x′ ∼Mz (x)
+
+    The following lemma shows that the second largest singular value of M is the same as the second largest
+eigenvalue of the corresponding noise graph.
+Lemma 5.11. Let f ∈ L2 (ΩR , {⊥, ⊤}Rβ ) and let M be as in (5.1). Then,
+                                                                                      
+                                   kM f k2 ⩽ (     f )2 + β · k f k2 − (           f )2 .
+
+Proof. We have kM f k2 = h f, M ∗ M f i where M ∗ is the adjoint of M. This operator M ∗ M is the same as the
+(second) operator in Lemma 5.10 for Gz = Mz . Hence, M ∗ M has the same non-zero eigenvalues as z Mz2 .
+From the definition of Mz , it is clear that Mz2 = Mz . Further, T = z Mz is the noise operator on ΩR with
+correlation parameter β. We conclude that M ∗ M has second largest eigenvalue β. The lemma follows from
+Fact 2.1.                                                                                                   
+
+
+6 Reduction between Expansion Problems
+Let G be a graph with vertex set V and stationary measure µ. Our reduction maps G to a graph H with vertex
+set V R × ΩR for Ω = [q] × {⊥, ⊤}β . Here, R, q ∈  and β > 0 are parameters of the reduction. We impose
+the natural product measure on Ω,
+                                              β
+                                              
+                                              q
+                                                     if z = ⊤
+                                  ((α, z)) =  (1−β)              ∀α ∈ [q]
+                                              
+                                              
+                                                  q   if z = ⊥
+
+    As before, we describe H in terms of a probabilistic process defined by G, which generates the edge
+distribution of H. (See Figure 1 for a more condensed description.) The process uses the following three
+auxiliary graphs (already introduced in §2 and §5):
+                                     ⊗R
+   – First, the noise graph T V := T 1−ε V ,V
+                                              , which resamples independently every coordinate of a given R-
+     tuple A ∈ V R with probability εV . (Here, εV > 0 is again a parameter of the reduction. We think of
+     εV as rather small compared to other parameters.) This noise effectively adds a copy of the complete
+     graph with weight εV to G, which we assumed in §4.2.
+                                    ⊗R
+   – Next, the noise graph T Ω := T ρ,Ω , which resamples independently every coordinate of a given R-tuple
+     (x, z) ∈ Ω with probability 1 − ρ. (For x ∈ [q]R and z ∈ {⊥, ⊤}Rβ , we write (x, z) ∈ ΩR to denote the
+               R
+
+     tuple obtained by merging corresponding coordinates of x and z to an element of Ω. In other words,
+
+                                                          15
+         we identify [q]R ×{⊥, ⊤}Rβ and ΩR .) The correlation parameter ρ of T Ω is the most important parameter
+         of the reduction, because the graph T Ω plays the role of a dictatorship test gadget in our reduction. We
+         think of ρ as being close to 1.
+
+       – Finally, we consider the graph Mz on Ω̃R for Ω̃ = V × [q] and z ∈ {⊥, ⊤}Rβ . For (A, x) ∈ Ω̃R , the graph
+         Mz resamples every coordinate in which z has value ⊥.
+
+Our reduction proceeds in three phases:
+     In the first phase, we sample a random vertex A ∈ V R and take two independent random steps from
+A according to the graph T V G⊗R , i.e., we sample B̃ and C̃ from the distribution T V G⊗R (A). We end the
+first phase by sampling two random permutations πB and πC . The permutations are required to satisfy
+the property that if we divide the domain [R] into contiguous blocks of size R/k, then each such block is
+permuted in place. We define the set Πk of such permutations as
+
+             Πk := {π ∈ S R | ∀ j ∈ {0, . . . , k − 1}. π ({ jR/k + 1, . . . , ( j+1)R/k}) = { jR/k + 1, . . . , ( j+1)R/k}} .
+
+This phase exactly corresponds to the reduction from Small-Set Expansion to Unique Games in [RS10].
+     In the second phase, we sample a random R-tuple (xA , zA ) in ΩR and take two independent random steps
+from (xA , zA ) according to the graph T Ω , i.e., we sample (xB , zB ) and (xC , zC ) from T Ω (xA , zA ). This phase
+corresponds to typical dictatorship test reduction (as in [KKMO07]).
+     In the third phase, we apply the graphs MzB and MzC to the R-tuples ( B̃, xB ) and (C̃, xC ) respectively,
+to obtain (B′ , x′B ) and (C ′ , xC′ ). The final step of this phase is to output an edge between πB (B′ , x′B , zB ) and
+πC (C ′ , xC′ , zC ). (For a permutation π of [R] and an R-tuple X, we denote by π(X) the permutation of X
+according to π, so that (π(X))π(i) = Xi .)
+     We remark that the random permutations πB and πC in the first phase and the resampling according to
+Mz in the third phase introduce symmetries in the graph H that effectively identify vertices. In particular,
+any two vertices in V R × ΩR of the form (A, x, z) and π(A, x, z) have the same neighbors in H (i.e., the
+distributions H(A, x, z) and H(π(a, x, z)) are identical). This kind of symmetry has been used in integrality
+gap constructions (see [KV05]) and hardness reductions (see [RS10]).
+     The kind of symmetry introduced by the Mz graph in the third phase seems to be new. In the third phase,
+we effectively identify vertices (A, x, z) and (A′ , x′ , z) if they differ only in the coordinates in which z has
+value ⊥. Formally, the vertex (A, x, z) has the same distribution of neighbors as the vertex (A′ , x′ , z) if (A′ , x′ )
+is sampled from Mz (A, x).
+
+Remark 6.1 (Reduction to Unique Games with expansion). We note that the above reduction can also be
+viewed as creating a Unique Games instance with alphabet size q. For a vertex (A, x, z) ∈ VH and l ∈ [q], let
+(A, x, z) + l denote the vertex (A, x′ , z), where x′i ≡ xi + l mod q for all i ∈ [R]. We define an equivalence
+relation on VH by taking (A, x, z) ≡ (A, x, z) + l for all A, x, z and l ∈ [q]. Let H/[q] be a graph with one
+vertex for each equivalence class of the above relation. Also, for each edge in E H , we add an edge in H/[q]
+between the equivalence classes containing the corresponding vertices of VH . We claim that H/[q] can then
+be viewed as a Unique Games instance 5 as described in Theorem 3.2.
+    We now describe the constraints for the edges in H/[q]. We identify each equivalence class with an
+arbitrarily chosen representative element in it. For (A, x, z) ∈ VH , let [(A,
+                                                                            x, z)] denote
+                                                                                          the representative
+                                                                                                              of
+the equivalence class containing it. Consider an edge in E H between πB B′ , x′B , zB and πC (C ′ , xC′ , zC ) .
+   5
+    In the terminology used in the literature, one can say that the graph H is a label-extended graph of a Unique Games instance
+with alphabet size [q].
+
+
+
+                                                                   16
+ The Reduction
+Input: A weighted graph G with vertex set V.
+Parameters: R, q, k ∈ , and εV , β, ρ > 0.
+Output: A graph H = (VH , E H ) with vertex set VH = V R × [q]R × {⊤, ⊥}Rβ .
+Let Πk denote the set of permutations of [R] which permute each block of size R/k in-place i.e.
+
+           Πk := {π ∈ S R | ∀ j ∈ {0, . . . , k − 1}. π ({ jR/k + 1, . . . , ( j+1)R/k}) = { jR/k + 1, . . . , ( j+1)R/k}} .
+
+The weight of an edge in E H is proportional to the probability that the following probabilistic process
+outputs this edge:
+
+     – Reducing from Small-Set Expansion to Unique Games.
+
+          1. Sample an R-tuple of vertices A ∼ V R .
+          2. Sample two random neighbors B, C ∼ G⊗R (A) of A.
+          3. Sample B̃ ∼ T V (B) and C̃ ∼ T V (C).
+          4. Sample two permutations πB , πC ∈ Πk
+
+     – Combination with long code gadgets.
+
+          6. Sample (xA , zA ) ∈ ΩR , where Ω = [q] × {⊥, ⊤}β .
+          7. Sample (xB , zB ), (xC , zC ) ∼ T Ω (xA , zA ).
+
+     – Redistributing the edge weights
+
+          7. Sample (B′ , x′B ) ∼ MzB ( B̃, xB ) and (C ′ , xC′ ) ∼ MzC (C̃, xC )
+                                                                               
+          8. Output an edge between πB (B′ , x′B , zB ) and πC (C ′ , xC′ , zC ) .
+
+
+                                   Figure 1: Reduction between expansion problems
+
+                          h                  i                                h                   i
+Let πB (B′ , x′B , zB ) = πB (B′ , x′B , zB ) + lB and πC (C ′ , xC′ , zC ) = πC (C ′ , xC′ , zC ) + lC . Then the constraint
+corresponding to this edge requires that an assignment mapping vertices in H/[q] to [q] must satisfy
+                             h                  i         h                  i
+                            F πB (B′ , x′B , zB ) + lB ≡ F πC (C ′ , xC′ , zC ) + lC mod q .
+
+    We note that the expansion properties of H are inherited by H/[q], since any set of measure µ in H/[q]
+is also a set of measure µ in H. In the Yes case, each of the sets S 1 , . . . , S q mentioned in Theorem 3.5
+will provide an assignment for the above Unique Games instance, satisfying 1 − ε − o(ε) fraction of the
+constraints. In the No case, we will argue that each assignment corresponds to a set of measure 1/q in H,
+and the unsatisfiability of the instance will follow from the expansion of the corresponding sets in H.
+
+
+
+
+                                                                 17
+6.1 Completeness
+Lemma 6.2. Let H = (VH , E H ) beh constructed
+                                            i   from G = (V, E) as in the reduction in Figure 1. If there
+                                    k     k
+is a set S ⊆ V satisfying µ(S ) ∈ 10βR , βR and ΦG (S ) ⩽ η, then there exists a partition S 1 , . . . , S q of VH
+satisfying:
+   1. For all (A, x, z) ∈ VH and l, l′ ∈ [q], (A, x, z) ∈ S l =⇒ (A, x, z) + l′ ∈ S l+l′ .
+                                                                                                   2
+   2. For each all l ∈ [q], ΦH (S l ) ⩽ 2(1 − ρ2 + η + 2εV ) + (1 − ρ2 + η + 2εV )2 + (1−ρ
+                                                                                         ρ2
+                                                                                            )β
+                                                                                               + 2−Ω(k) .
+     Note that the first property, together with the fact that S 1 , . . . , S q form a partition also implies that for
+all l ∈ [q], µ(S l ) = 1q .
+
+Proof. We first describe a procedure for assigning vertices in VH to S 1 , . . . , S q . This procedure assigns all
+but 2−Ω(k) fraction of the vertices, which we shall distribute arbitrarily later. Let (A, x, z) be a vertex in VH ,
+where A ∈ V R , x ∈ [q]R and z ∈ {⊤, ⊥}R.
+    For all j ∈ [k],           o the sets W j := {i ∈ {
+                                                        ( j−1)R/k + 1, . . . , jR/k} | zi , ⊥}. Let A(W j ) denote the
+                   n we define
+multiset A(W j ) = Ai | i ∈ W j . We take,
+                                                 n                         o
+                                         j∗ = inf j |A(W j ) ∩ S | = 1
+
+If |A(W j ) ∩ S | , 1 for any j ∈ [k], then we do not assign the vertex (A, x, z) to any of the set S 1 , . . . , S q . Else,
+let Ai∗ be the unique element in A(W j∗ ) ∩ S . We assign
+
+                                                     (A, x, z) ∈ S xi∗ .
+
+Note that the assignment to sets is determined only by the coordinates i ∈ [R] for which   n ozi , ⊥. The first
+property is easily seen to be satisfied for all the vertices that are assigned, as the sets W j        are identical
+                                                                                                 j∈[k]
+for (A, x, z) and (A, x, z)+l, for any l ∈ [q]. The following claim proves that most vertices are indeed assigned
+to one of the sets S 1 , . . . , S q .
+                           n                         o
+Claim 6.3. (A,x,z)∼VH |A(W j ) ∩ S | , 1 ∀ j ∈ [k] ⩽ 2−Ω(k) .
+
+Proof. Note that over the choice of a random (A, x, z) ∈ VH , the intersection sizes |W1 ∩ S |, . . . , |Wk ∩ S |
+are independent random variables distributed as Binomial(µβ, R/k). The probability that all of them are not
+equal to 1, can then be bounded as
+                       n                           o    R                      k
+                       |A(W j ) ∩ S | , 1 ∀ j ∈ [k] = 1 − · µβ · (1 − µβ) /k−1
+                                                                          R
+                
+            (A,x,z)∼VH                                   k
+                                                                                !k                         !k
+                                                         R k                R/k                        1
+                                                     ⩽ 1− ·       · (1 − /R)
+                                                                        k          ⩽               1−           .
+                                                         k 10R                                        30
+
+The last inequality assumes that R/k ⩾ 4 so that (1 − k/R)R/k > 1/3.                                                      
+
+ We now bound         the expansion of these sets. A random edge is between two tuples of the form
+ πB (B′ , x′B , zB ) and πC (C ′ , xC′ , zC ) , where πB and πC are two random permutations in Πk and B′ , C ′ are
+generated from G⊗R as in Figure 1. For a fixed l ∈ [q], the expansion of S l is equal to the following proba-
+bility taken over the choice of a random edge
+                n                                             o   n                                    o
+             πC (C ′ , xC′ , zC ) < S l πB (B′ , x′B , zB ) ∈ S l =  C ′ , xC′ , zC < S l B′ , x′B , zB ∈ S l .
+
+                                                            18
+Here we used the fact that the membership in a set S l is invariant under permutations in Πk . The following
+claim analyzes the above probability.
+                                                                                                         2
+Claim 6.4.  C ′ , xC′ , zC < S l B′ , x′B , zB ∈ S l ⩽ 2(1 − ρ2 + 2εV + η) + (1 − ρ2 + 2εV + η)2 + (1−ρ   )β
+             n                                   o
+                                                                                                       ρ2
+                                                                                                              .
+          n      o                                                                                             n       o
+Proof. Let W (B)
+             j           denote the multisets W (B)
+                                                j   = {i ∈ { ( j−1)k/R+1, . . . , jk/R} | (zB )i , ⊥} and let W (C)
+                                                                                                                   j           be
+                   j∈[k]                                                                                                 j∈[k]
+                                     n                          o
+defined similarly. Define j∗B = inf j |B′ (W (B)
+                                               j ) ∩ S | = 1 when the set on the right is non-empty and k + 1
+                                                                                                                      
+otherwise. Let jC∗ be the analogous quantity for C ′ . In the cases when j∗B , jC∗ ⩽ k, let W (B)       ∗
+                                                                                                       jB
+                                                                                                            ∩ S  =    B′i∗ and
+                                                                                                                       B
+  (C)
+W j∗ ∩ S = Ci∗ . We can bound the required probability by the probability that either jB , jC or iB , iC∗
+                ′                                                                                         ∗      ∗       ∗
+   C                C
+or (xC′ )iC∗ , l.
+     n                                    o     n                            o
+     C ′ , xC′ , zC < S l B′ , x′B , zB ∈ S l ⩽  jC∗ , j∗B B′ , x′B , zB ∈ S l
+                                                    n                                           o
+                                                 +  jC∗ = j∗B ∧ iC∗ , i∗B        B′ , x′B , zB ∈ S l
+                                                    n                                                            o
+                                                 +  jC∗ = j∗B ∧ iC∗ = i∗B ∧ (xC′ )iC∗ , l           B′ , x′B , zB ∈ S l
+                                                    n                   o        n                                    o
+                                                ⩽  jC∗ , j∗B j∗B ⩽ k +  iC∗ , i∗B j∗B = jC∗ ∧ j∗B ⩽ k
+                                                    n                                       o
+                                                 +  (xC′ )iC∗ , l (x′B )i∗B = l ∧ i∗B = iC∗
+
+In the second inequality above, we drop conditionings that are irrelevant and use  {A ∧ B} ⩽  {A | B}. We
+now analyze each of the above terms separately.
+    The first term can be further split as
+                      n                  o   n                  o     n                o
+                     jC∗ , j∗B j∗B ⩽ k =  jC∗ > j∗B j∗B ⩽ k +  jC∗ < j∗B j∗B ⩽ k .
+
+To have jC∗ > j∗B , it must be the case that |W (C)
+                                                j∗
+                                                    ∩ S | , 1, while we also have |W (B)
+                                                                                     j∗
+                                                                                         ∩ S | = 1 by definition of
+                                                     B                                          B
+j∗B . If i∗B < W (C)
+                 j∗B
+                     , this must be because (zC )i∗B = ⊥ or Ci′∗ < S . The former happens with probability 1 − ρ2
+                                                               B
+as we already have that (zB )i∗B = ⊤. The latter even happens with probability at most η + 2εV as it could be
+due to the edge (B′i∗ , Ci′∗ ) going out of S or one of the vertices being perturbed by T V . Combining, we get
+                        B   B
+a bound of (1 − ρ2 + η + 2εV ) for the case when i′ such that Ci′′ ∈ S and the
+                                                                             n the events above
+                                                                                             o must happen
+      (B)     ′                                 2                              ∗    ∗   ∗
+for W j∗ and i , giving again a bound of (1 − ρ + η + 2εV ). The term  jC < jB jB ⩽ k can be bound
+       B
+identically. We then get         n                o
+                                jC∗ , j∗B j∗B ⩽ k = 2(1 − ρ2 + η + 2εV ) .
+                                     n                           o
+   We now consider the term  iC∗ , i∗B j∗B = jC∗ ∧ j∗B ⩽ k . For this to happen, the above events must
+                                                   
+occur for both the pairs i∗B , W (C)   and  i∗ , W (B) . This gives
+                                 j∗  C
+                                             C     j∗    B
+
+                                 n                          o
+                                 iC∗ , i∗B j∗B = jC∗ ∧ j∗B ⩽ k ⩽ (1 − ρ2 + η + 2εV )2
+
+                                                                                                                  2
+    Finally, given j∗B = jC∗ and i∗B = iC∗ , the probability that (x′B )i∗B , (xC′ )iC∗ is at most 1−ρ ρ2
+                                                                                                          β. This is
+                           ′                      ′                                          2
+true because for any i, ((xB )i , (zB )i ) and ((xC )i , (zC )i ) are same with probability ρ and uniform in Ω with
+
+                                                              19
+probability 1 − ρ2 . Also, for any i, i = i∗B = iC∗ in particular means that (zB )i = (zC )i = ⊤. Conditioned on
+this, we can bound the probability (x′B )i∗B , (xC′ )iC∗ as
+
+                   n                                     o  (1 − ρ2 ) · (1 − 1/q) · β2   (1 − ρ2 )β
+                   (x′B )i , (xC′ )i (zB )i = (zC )i = ⊤ =                            ⩽
+                                                             (1 − ρ2 ) · β2 + ρ2 · β         ρ2
+Combining the bounds for the three terms proves the claim.                                                                                   
+
+    It remains to partition the vertices not assigned to any of the sets S 1 , . . . , S q . We simply assign any such
+vertex (A, x, z) to the set S x1 . It is easy to see that S 1 , . . . , S q still satisfy the first property. Since the measure
+                                                  −Ω(k)
+of the extra vertices added to each set is 2 q , the expansion of each set increases by at most 2−Ω(k) .                     
+
+6.2 Soundness
+Let G be a graph with vertex set V and stationary measure µ. Let H be the graph obtained from the reduction
+in Figure 1. The vertex set of H is V R × ΩR . Recall that Ω = [q] × {⊥, ⊤}β . Let f : V R × ΩR → [0, 1]. We
+think of f as a cut in H (or convex combination thereof).
+    We define two symmetrizations of f as follows
+
+                  f¯(A, x, z) =          f (π(A, x, z))       and    f¯′ (A, x, z) =                        f¯(π(A′ , x′ , z)) .
+                                  π∼Πk                                                 (A′ ,x′ )∼Mz (A,x)
+
+By the symmetries of the graph,
+                                                h f, H f i = h f¯, H f¯i = h f¯′ , H f¯′ i .
+We write f¯A′ (x, z) = f¯′ (A, x, z) and consider the average (with noise) of f¯B′ over the neighbors B of a vertex
+A in GR ,
+                                               gA =                 f¯B̃′ .
+                                                              B∼G R (A) B̃∼T V (B)
+
+We will apply the techniques of [KKMO07] to analyze the functions gA . We first express the fraction of
+edges that stay within the cut defined by f in terms of the functions gA .
+
+Lemma 6.5.
+                                                    h f, H f i =            kT Ω gA k2 .
+                                                                    A∼V R
+
+Proof. Using the construction of H and the symmetry of f¯′ , we get
+                                                                                                                   2
+                        h f, H f i =                                                                 f¯B′ (xB , zB )
+                                                      B∼G R (A) B̃∼T V (B) (xB ,z B )∼T Ω (x,z)
+                                         A∼V R (x,z)∼ΩR
+                                                                                           2
+                                   =                                       T Ω f¯B′ (x, z)
+                                     A∼V R (x,z)∼ΩR B∼G R (A) B̃∼T V (B)
+                                                                 2
+                                   =                 T Ω gA (x, z)
+                                     A∼V R (x,z)∼ΩR
+
+                                   =       kT Ω gA k2 .                                                                                      
+                                     A∼V R
+
+   We now show that for most tuples A, the functions gA have the same expectation as                                        f . To this end, we
+show that A ( gA )2 ≈ ( f )2 .
+
+
+
+                                                                     20
+Lemma 6.6.                                                              2
+                                                                    gA        ⩽(           f )2 + βk f k2 .
+                                                       A∼V R ΩR
+
+Proof. Let Ω̃ = V × [q]. We have
+                        2                                                                                2
+                       gA =                                                                    f¯′ (B, x, z)
+                A∼V R    ΩR               A∼V R      B∼G R (A) B̃∼T V (B) (x,z)∼ΩR
+                                                                                                       2
+                                    ⩽                                                      f¯′ (B, x, z)         (Cauchy–Schwarz)
+                                          A∼V R B∼G R (A) B̃∼T V (B)          x       z
+                                                                           2
+                                    =                          f¯′ (A, x, z) .                                                                      (6.1)
+                                          (A,x)∼Ω̃R        z
+
+
+Let M be the following stochastic operator on L2 (Ω̃R × {⊥, ⊤}Rβ ),
+
+                                         Mh(A, x, z0 ) =                                              h(A′ , x′ , z) .
+                                                                   z∼{⊥,⊤}Rβ (A′ ,x′ )∼Mz (A,x)
+
+
+Recall that f¯′ (A, x, z) =                          ¯ ′ ′
+                                 (A′ ,x′ )∼Mz (A,x) f (A , x , z). With this notation, the right-hand side of (6.1) simplifies
+to kM f¯k2 . Therefore,
+                                                 2
+                                            gA         ⩽ kM f¯k2 ⩽ (              f¯)2 + βk f¯k2 ⩽ (          f )2 + βk f k2 .
+                              A∼V R ΩR
+
+The second inequality uses that M ∗ M has second largest eigenvalue β (see Lemma 5.11). The last inequality
+uses that f¯ is obtained by applying a stochastic operator on f .                                        
+
+    The following lemma is an immediate consequence of the previous lemma (Lemma 6.6) and Cheby-
+shev’s inequality.
+Lemma 6.7. For every γ > 0,
+                                                                                                           2
+                                                                                          f ⩽ β/γ2 · k f kf ⩽ β/γ2 .
+                                                 n                            p            o
+                                                      gA ⩾         f +γ
+                                         A∼V R
+                                                                                         n                                   p    o
+Proof. Lemma 6.6 shows that                 A (gA −            f )2 ⩽ βk f k2 . Hence, A |gA −                     f| > γ       f ⩽ βk f k2 /(γ2     f ).
+                                                                                                                                                        
+
+6.2.1   Decoding a Unique Games assignment
+The goal is decode from f an assignment F : V R → [R] that maximizes the probability
+                                                    n                                o
+                                                     π−1             −1
+                                                       A (F(π(A))) = π B (F(π B (B))) .                                                             (6.2)
+                        A∼V R ,B∼G R (A) Ã∼T V (A) B̃∼T V (B) πA ,π B ∼Πk
+
+(The expression above is roughly the success probability of the assignment F for the Unique Games instance
+obtained by applying the reduction from [RS10] on G.)
+     As usual, we decode according to influential coordinates of f (after symmetrization). More precisely,
+we generate a assignment F by the following probabilistic process: For every A ∈ V R , with probability
+1/2, choose a random coordinate in {i ∈ [R] | Inf i (T 1−δ gA ) > τ} and with probability 1/2, choose a random
+coordinate in {i ∈ [R] | Inf i (T 1−δ f¯A′ ) > τ}. If the sets of influential coordinates are empty, we choose a
+uniformly random coordinate in [R].
+
+                                                                              21
+     The following lemma follows immediately from the techniques in [KKMO07]. The reason is that (6.2)
+is the success probability of the assignment F for a Unique Games instance defined on V R . For A ∈ V R , the
+function gA is the average over bounded functions fB′ : ΩR → [0, 1], where B is a random neighbor of A
+in the Unique Games instance and where input coordinates of fB′ are permuted according to the constraint
+between A and B. More precisely,
+
+            gA (x, z) =                              f ′ (πB (x, z))          where fB′ (x, z) =                          f (B′ , x′ , z) .
+                            B∼G R (A) B̃∼T V (B) π B π B (B̃)                                        (B′ ,x′ )∼Mz (B,x)
+
+Lemma 6.8. For every τ, δ > 0, there exists a constant c > 0 such that
+                                      n                                     o
+                                      π−1                 −1
+                                        A (F(π A (Ã))) = π B (F(π B ( B̃))) > c  {∃i. Inf i (T 1−δ gA ) > τ} .
+  F A∼V R ,B∼G R (A) Ã∼T V (A) B̃∼T V (B) πA ,π B ∼Pik                                                   A∼V R
+
+Lemma 6.9. For every ν, β, γ > 0, q ∈ , and ρ ∈ (0, 1), there exist τ, δ > 0 such that
+                                                       
+                             h f, H f i < Γρ2         f + 2γ + ν + β/γ2 +  {∃i. Inf i (T 1−δ gA ) > τ} .
+                                                                               A∼V R
+
+Proof. Recall that Lemma 6.5 shows h f, H f i = A kT Ω gA k2 . The operator T Ω is an R-fold tensor operator
+with second largest eigenvalue ρ. The invariance principle (Theorem 5.9) asserts that there exist τ, δ > 0
+such that kT Ω gA k2 ⩽ Γρ2 ( gA ) + ν if Inf i (T 1−δ gA ) ⩽ τ for all coordinates i ∈ [R]. Together with Lemma 6.7,
+we get
+                                                       p 
+            h f, H f i = kT Ω gA k2 ⩽ Γρ2        f +γ        f + ν + β/γ2 +  {∃i. Inf i (T 1−δ gA ) > τ} .
+                               A                                                             A∼V R
+                                               ⩽ Γ ρ2 (      f ) + 2γ + ν + β/γ2 +      {∃i. Inf i (T 1−δ gA ) > τ}
+                                                                                     A∼V R
+
+The second inequality above used that Γρ2 (·) is 2-Lipschitz.                                                                                 
+
+    Putting together Lemma 6.8 and Lemma 6.9, we get the following lemma as immediate corollary.
+
+Lemma 6.10. For every β > 0, q ∈ , and ρ ∈ (0, 1), there exists ζ > 0 such that either
+
+                                                                              f + 5β1/3 ,
+                                                                               
+                                                          h f, H f i < Γρ2
+
+or there exists an assignment F : V R → [R] such that the probability (6.2) is at least ζ.
+
+Proof. Choosing γ = ν = β1/3 in Lemma 6.9, we get that for some τ, δ > 0,
+
+                        h f, H f i = kT Ω gA k2 ⩽ Γρ2 (              f ) + 4β1/3 +  {∃i. Inf i (T 1−δ gA ) > τ} .
+                                        A                                          A∼V R
+
+Taking ζ = cβ1/3 for the constant c in Lemma Lemma 6.8 then proves the claim.                                                                 
+
+6.2.2    Decoding a very small non-expanding set in G
+The following lemma is a slight adaptation of a result in [RS10] (a reduction from Small-Set Expansion to
+Unique Games). We present a sketch of the proof in Section A.1.
+
+
+
+
+                                                                         22
+Lemma 6.11. Let G be graph with vertex set V. Let a distribution on pairs of tuples (Ã, B̃) be defined by
+choosing A ∼ V R , B ∼ G⊗R (A) and then Ã ∼ T V (A), B̃ ∼ T V (B). Let F : V R → [R] be a function such that
+over the choice of random tuples and two random permutations πA , πB ∈ Πk ,
+                                      n                                        o
+                                     π−1
+                                        A  (F(π A ( Ã))) = π −1
+                                                              B  (F(π B ( B̃)))  ⩾ ζ.
+                              (Ã, B̃) πA ,π B ∼Πk
+                                                       h ζ           i                             ζ
+                                                               3k
+Then there exists a set S ⊆ V with µ(S ) ∈              16R , εV R       satisfying ΦG (S ) ⩽ 1 − 16k .
+   Putting together Lemma 6.11 and Lemma 6.10, we get the following lemma — the main lemma for the
+soundness of the reduction.
+Lemma 6.12. Let G be a graph with vertex set V. Let H be the reduction in Figure 1 applied to G with
+parameters R, q ∈ , εV , β > 0 and ρ ∈ (0, 1). The vertex set of H is V R × ΩR , where Ω = [q] × {⊥, ⊤}β .
+Then there exists ζ = ζ(β, q, ρ) > 0 such that either
+
+                       ∀ f : V R × ΩR → [0, 1]. ∀γ > 0. h f, H f i < Γρ2  f + 5β1/3 ,
+                                                                           
+
+
+or there exists a vertex set S ⊆ V with µ(S ) ∈ [ Rζ , ε3k
+                                                        VR
+                                                           ] and ΦG (S ) ⩽ 1 − ζ/k.
+
+6.3 Putting things together
+Theorem (Restatement of Theorem 3.5). For all q ∈  and ε, γ > 0, it is SSE-hard to distinguish between
+the following two cases for a given graph H = (VH , E H )
+Yes: There exist q disjoint sets S 1 , . . . , S q ⊆ VH satisfying for all l ∈ [q],
+
+                                            µ(S l ) = 1q         and            ΦH (S l ) ⩽ ε + o(ε).
+
+No: For all sets S ⊆ VH ,
+                                                                              
+                                                     ΦH (S ) ⩾ ΦG(1−ε/2) µ(S ) − γ/µ(S )
+       where ΦG(1−ε/2) (µ(S )) is the expansion of sets of volume µ(S ) in the infinite Gaussian graph G(1−ε/2).
+Proof. The follows by proper choice of parameters for the reduction in Figure 1. Given q, ε, γ, we choose
+the various parameters in the reduction as below:
+           q
+    – ρ = 1 − 2ε .
+                 3                                                                    2
+                   γ                            1/3 < γ in Lemma 6.12 and the error 1−ρ β = O(ε2 ) in Lemma 6.2.
+    – β = min     200 , ε , so that the error 5β                                     ρ2
+
+    – k = Ω(log(1/ε)), so that the 2−Ω(k) error term in Lemma 6.2 is O(ε2 ).
+
+    – εV = ε2 and η = min ε2 , ζk . Here, ζ = ζ(β, q, ρ) is the constant given by Lemma 6.12. The above
+                              n     o
+
+      choices ensure that the error term εV + η in Lemma 6.2 are O(ε2 ) and η ⩽ ζk for applying Lemma 6.12.
+
+    – M = max βζk , ε3βV .
+                n       o
+
+             k
+    – R = βδ   , where δ ∈ (0, η) is the one for which we intend to show a reduction from Small-Set Expansion
+      (η, δ, M).
+
+                                                                         23
+    Given and instance G = (V, E) of Small-Set Expansion (η, δ, M), let H be the graph obtained from the
+reduction in Figure 1 with these parameters.
+    From Lemma 6.2, we get that the Yes case of Small-Set Expansion (η, δ, M) implies the Yes case of
+the above problem. On the other hand Lemma 6.12 gives that a contradiction to the No case of the above
+problem produces a set S in G with measure between Rζ and ε3kVR
+                                                                 with ΦG (S ) ⩽ 1 − ζk . By our choice of
+parameters, this is a set of measure between Mδ and Mδ with expansion 1 − ζk ⩽ 1 − η. This contradicts the
+No case of Small-Set Expansion (η, δ, M).                                                                
+
+Theorem (Restatement of Theorem 3.2). For every q ∈  and every ε, γ > 0, it is SSE-hard to distinguish
+between the following cases for a given Unique Games instance U with alphabet size q:
+
+Yes: The Unique Games instance U is almost satisfiable, opt(U) > 1 − 2ε − o(ε)
+
+No: The optimum of the Unique Games instance U is negligible, and the expansion profile of the instance
+     resembles the        graph G(1 − ε). More precisely, the Unique Games instance U satisfies
+                  Gaussian
+     opt(U) < O q−ε/(2−ε) + γ and in addition, the constraint graph G of U satisfies
+                                                                                 
+                                     ∀S ⊆ V(G).           ΦG (S ) ⩾ ΦG(1−ε) µ(S ) − γ/µ(S ) .
+
+Proof. Let all the parameters for the reduction in Figure 1 be chosen as in the proof for Theorem 3.5, re-
+placing ε by 2ε. Let H be the graph generated by the reduction starting from an instance G of Small-Set
+Expansion (η, δ, M). Let U be the Unique Games instance defined on the graph H/[q], as described in
+Remark 6.1.
+      We claim that any partition S 1 , . . . , S q of the vertices in H, satisfying the first property in Lemma 6.2,
+corresponds to an assignment to the vertices in H/[q] and vice-versa. A partition is simply a function
+F : VH → [q]. Restricting the function to the representatives of each equivalence class gives an assignment
+for the vertices in H/[q]. Note that here F also satisfies that (A, x, z) = [(A, x, z)] + l =⇒ F((A, x, z)) =
+F ([(A, x, z)]) + l. Similarly, given an assignment F, we can extend it to all the vertices in H by defining
+F((A, x, z)) = F ([(A, x, z)]) + l if (A, x, z) = [(A, x, z)] + l.
+      In the Yes case, we construct an assignment to the Unique                    Games instance U using the partition
+S 1 , . . . , S q . The fraction of edges πB (B′ , x′B , zB ), πC (C ′ , xC′ , zC ) that are not satisfied is exactly the prob-
+                                                        
+ability that F πB (B′ , x′B , zB ) , F πC (C ′ , xC′ , zC ) for a random edge. However, this is exactly l∈[q] ΦH (S l )
+which is at most 2ε + o(ε) by Theorem 3.5.
+      In the No case, we note that we can construct a partition S 1 , . . . , S q from any assignment F. The fraction
+of unsatisfied edges is again l∈[q] ΦH (S l ) ⩾ 1 − q (Γ1−ε (1/q) + γ) by Theorem 3.5. Also, any set S in H/[q]
+corresponds to a set S̃ in H with µ(S̃ ) = µ(S ), where S̃ contains all the vertices for each class in S . The
+edges leaving S and S̃ are the same and hence their expansion is identical.                                                  
+
+Acknowledgments
+We are grateful to Subhash Khot for suggesting that our techniques should also show that Unique Games is
+SSE-hard on graph with high (small-set) expansion (Theorem 3.2). We also thank Oded Regev for insightful
+discussions and Boaz Barak for helpful comments on this manuscript.
+
+
+
+
+                                                             24
+References
+[ABS10]     Sanjeev Arora, Boaz Barak, and David Steurer, Subexponential algorithms for unique games
+            and related problems, FOCS, 2010, pp. 563–572.
+
+[AKK+ 08] Sanjeev Arora, Subhash Khot, Alexandra Kolla, David Steurer, Madhur Tulsiani, and
+          Nisheeth K. Vishnoi, Unique games on expanding constraint graphs are easy, STOC, 2008,
+          pp. 21–28.
+
+[Alo86]     Noga Alon, Eigenvalues and expanders, Combinatorica 6 (1986), no. 2, 83–96.
+
+[AM85]      Noga Alon and V. D. Milman, λ1 , isoperimetric inequalities for graphs, and superconcentra-
+            tors, J. Comb. Theory, Ser. B 38 (1985), no. 1, 73–88.
+
+[AR98]      Yonatan Aumann and Yuval Rabani, An O(log k) approximate min-cut max-flow theorem and
+            approximation algorithm, SIAM J. Comput. 27 (1998), no. 1, 291–301.
+
+[ARV04]     Sanjeev Arora, Satish Rao, and Umesh V. Vazirani, Expander flows, geometric embeddings
+            and graph partitioning, STOC, 2004, pp. 222–231.
+
+[BKN+ 10] Nikhil Bansal, Robert Krauthgamer, Viswanath Nagarajan, Konstantin Makarychev,
+          Joseph (Seffi) Naor, and Roy Schwartz, Min-max graph partitioning and small set expansion,
+          Manuscript, 2010.
+
+[Bor85]     Christer Borell, Geometric bounds on the Ornstein-Uhlenbeck velocity process, Z. Wahrsch.
+            Verw. Gebiete 70 (1985), no. 1, 1–13. MR 795785 (87k:60103)
+
+[Che70]     Jeff Cheeger, A lower bound for the smallest eigenvalue of the Laplacian, Problems in analysis
+            (Papers dedicated to Salomon Bochner, 1969), Princeton Univ. Press, Princeton, N. J., 1970,
+            pp. 195–199. MR MR0402831 (53 #6645)
+
+[DKSV06] Nikhil R. Devanur, Subhash Khot, Rishi Saket, and Nisheeth K. Vishnoi, Integrality gaps for
+         sparsest cut and minimum linear arrangement problems, STOC, 2006, pp. 537–546.
+
+[FS02]      Uriel Feige and Christian Scheideler, Improved bounds for acyclic job shop scheduling, Com-
+            binatorica 22 (2002), no. 3, 361–399.
+
+[GMPT07] Konstantinos Georgiou, Avner Magen, Toniann Pitassi, and Iannis Tourlakis, Integrality gaps
+         of 2 − o(1) for vertex cover sdps in the Lovász–Schrijver hierarchy, FOCS, 2007, pp. 702–712.
+
+[Kho02]     Subhash Khot, On the power of unique 2-prover 1-round games, STOC, 2002, pp. 767–775.
+
+[KKMO07] Subhash Khot, Guy Kindler, Elchanan Mossel, and Ryan O’Donnell, Optimal inapproxima-
+         bility results for MAX-CUT and other 2-variable CSPs?, SIAM J. Comput. 37 (2007), no. 1,
+         319–357.
+
+[KR08]      Subhash Khot and Oded Regev, Vertex cover might be hard to approximate to within 2 − ε, J.
+            Comput. Syst. Sci. 74 (2008), no. 3, 335–349.
+
+[KS09]      Subhash Khot and Rishi Saket, SDP integrality gaps with local ℓ1 -embeddability, FOCS, 2009.
+
+
+
+                                                   25
+[KV05]       Subhash Khot and Nisheeth K. Vishnoi, The unique games conjecture, integrality gap for cut
+             problems and embeddability of negative type metrics into ℓ1 , FOCS, 2005, pp. 53–62.
+
+[LLR95]      Nathan Linial, Eran London, and Yuri Rabinovich, The geometry of graphs and some of its
+             algorithmic applications, Combinatorica 15 (1995), no. 2, 215–245.
+
+[LR99]       Frank Thomson Leighton and Satish Rao, Multicommodity max-flow min-cut theorems and
+             their use in designing approximation algorithms, J. ACM 46 (1999), no. 6, 787–832.
+
+[MOO05]      Elchanan Mossel, Ryan O’Donnell, and Krzysztof Oleszkiewicz, Noise stability of functions
+             with low influences invariance and optimality, FOCS, 2005, pp. 21–30.
+
+[Räc08]     Harald Räcke, Optimal hierarchical decompositions for congestion minimization in networks,
+             STOC, 2008, pp. 255–264.
+
+[Rag08]      Prasad Raghavendra, Optimal algorithms and inapproximability results for every CSP?, STOC,
+             2008, pp. 245–254.
+
+[RS09]       Prasad Raghavendra and David Steurer, Integrality gaps for strong SDP relaxations of unique
+             games, FOCS, 2009, pp. 575–585.
+
+[RS10]                , Graph expansion and the unique games conjecture, STOC, 2010, pp. 755–764.
+
+[RST10]      Prasad Raghavendra, David Steurer, and Prasad Tetali, Approximations for the isoperimetric
+             and spectral profile of graphs and related parameters, STOC, 2010, pp. 631–640.
+
+
+A     Further Proofs
+A.1 Reduction from Small-Set Expansion to Unique Games
+In this section, we sketch a proof of the following slight adaption of a result in [RS10].
+
+Lemma (Restatement of Lemma 6.11). Let G be graph with vertex set V. Let a distribution on pairs of tuples
+(Ã, B̃) be defined by choosing A ∼ V R , B ∼ G⊗R (A) and then Ã ∼ T V (A), B̃ ∼ T V (B). Let F : V R → [R] be a
+function such that over the choice of random tuples and two random permutations πA , πB ∈ Πk ,
+                                          n                                     o
+                                         π−1                 −1
+                                            A (F(π A (Ã))) = π B (F(π B ( B̃)))  ⩾ ζ.
+                                (Ã, B̃) πA ,π B ∼Πk
+                                                       h ζ      i                          ζ
+                                                             3k
+Then there exists a set S ⊆ V with µ(S ) ∈              16R εV R satisfying ΦG (S ) ⩽ 1 − 16k .
+                                                           ,
+
+      Let R′ = R/k and let ÃR′ , B̃R′ denote tuples of length R′ generated by a a process similar to the used for
+generating Ã, B̃ (which have length R). Using the reduction from partial to total unique games in [RS10], we
+can show the following for completely random permutations (instead of block-wise random) permutations
+π′A , π′B : [R′ ] → [R′ ].
+                                                                                                  ′
+Claim A.1. Given a function F : V R → [R] as above, there exists a function F ′ : V R → [R′ ] such that
+                                    n                                                      o
+                                        ′−1 ′ ′                     ′−1 ′ ′
+                            
+                           ′ ′
+                                      π A  (F (π A ( Ã R ′ ))) = π
+                                                                    B  (F (π B ( B̃ R ′ )))  ⩾ ζ/k.
+                     (ÃR′ , B̃R′ ) πA ,π B ∼S R′
+
+
+
+                                                                 26
+Proof. We construct a randomized function F ′ which given an R′ -tuple, embeds it as one of the blocks (of
+size R′ ) in a random R-tuple, and then outputs a value according to the value of F on the R-tuple.
+    Formally, let ÃR−R′ , B̃R−R′ denote tuples of size R − R′ generated by independently picking each pair of
+coordinates to be an edge in G with noise εV . For j ∈ [k], let ÃR−R′ + j ÃR′ denote an R-tuple generated by
+                                                            ( j)
+inserting ÃR′ after the ( j − 1)th block in ÃR−R′ . Let πA be a random permutation in Πk which is equal to
+identity on the jth block. To define F ′ , we then generate a random j, ÃR−R′ , B̃R−R′ and fix it globally. For
+                                                                                          ( j)
+each input ÃR′ , we then independently choose T A ∈ {ÃR−R′ , B̃R−R′ }, a permutation πA , and define F ′ (ÃR′ ) as:
+                  ( j)   ( j)                                 ( j)
+                                                                          ( j)               
+                 
+                 
+                  (πA )−1 F πA (T A ) + j ÃR′ − ( j−1)R/k      (πA )−1 F πA (T A ) + j ÃR′ ∈ (( j−1)R/k, jR/k]
+   F ′ (ÃR′ ) = 
+                 
+                 
+                 
+                 
+                                      1                          otherwise
+                 
+                 
+
+                                                                                        ( j)
+Let πA be the permutation which is π′A on the jth block and πA elsewhere. Define πB similarly. Note that both
+πA , πB are distributed as random elements of Πk . Conditioned on T A = ÃR−R′ , T B = B̃R−R′ (or vice-versa),
+the required probability is at least
+                                           n                                                                 o
+                                        π−1                               −1
+                                             A (F(π A (ÃR−R′ + j ÃR′ ))) = π B (F(π B ( B̃R−R′ + j B̃R′ )))
+                j (ÃR−R′ , B̃R−R′ ) (ÃR′ , B̃R′ ) πA ,π B ∼Πk
+               1                   n                                   o ζ
+           =     ·                π−1
+                                     A  (F(πA (Ã))) = π−1
+                                                        B  (F(πB (B̃))) = .
+               k (Ã,B̃) πA ,πB∼Πk                                       k
+
+Since we have T A = ÃR−R′ , T B = B̃R−R′ or vice-versa with probability 1/2, the required probability is at least
+ζ/2k.                                                                                                           
+
+    Let ζ ′ denote ζ/2k.
+    To construct the set S ⊆ V, we proceed as in [RS10] by defining the influence of a single vertex on the
+                                  ′
+output of F. For U ∈ V R −1 and v ∈ V, let Ũ ∼ T V (U) and ṽ ∼ T V (v). For i ∈ R′ , we use Ũ +i ṽ to denote the
+                                                          ′
+tuple (Ũ1 , . . . , Ũi−1 , v, Ũi , . . . , ŨR′ ) ∈ V R in which v is inserted at the ith position. We define the function
+FU (v), which measures how often is the index of v chosen by F, when applied to a random permutation π of
+Ũ +i ṽ.
+                                                                                            n                        o
+                                   FU (v) :=                                 ′                F(π(Ũ +i ṽ)) = π(i)
+                                                      Ũ∼T V (U) ṽ∼T V (v) i∈[R ] π∈S R′
+
+    We shall need the following (slight variants of) statements proved in [RS10]. We include the proofs in
+the appendix for completeness.
+Lemma A.2 (Glorified Markov Inequality). Let Ω be a probability space and let X, Y : Ω → + be two
+jointly distributed non-negative random variables over Ω . Suppose X ⩽ γ Y. Then, there exists ω ∈ Ω
+such that X(ω) ⩽ 2γY(ω) and Y(ω) ⩾ Y/2.
+                              ′
+                                                             n                                     o
+Proposition A.3. Let F : V R → [R′ ] satisfy (Ã,B̃) πA ,πB π−1                 −1                   ′
+                                                               A (F(π A (Ã))) = π B (F(π B ( B̃))) ⩾ ζ , and the
+functions FU : V → [0, 1] be defined as above. Then,
+   1.
+                                                                                   FU (v) = R1′ ,                        (A.1)
+                                                                   U∼V R′ −1 v∼V
+                           ′
+   2. for all U ∈ E R −1 ,
+                                                                             FU (v) ⩽ εV2R′ ,                            (A.2)
+                                                                       v∼V
+
+
+                                                                             27
+   3.                                                                                                              ′
+                                                                                [FU (v1 )FW (v2 )] ⩾ Rζ ′ .                                        (A.3)
+                                                (U,W)∈E R′ −1    (v1 ,v2 )∈E
+
+    Assuming Lemma A.2 and Proposition A.3, we can now complete the proof of Lemma 6.11.
+
+Proof. By (A.3) and (A.1), we have that
+                                                                     ζ′            ζ′
+                                        [FU (v1 )FW (v2 )] ⩾         R′     =      2 ·                                  [FU (v1 ) + FW (v2 )]
+            (U,W)∈E R′ −1 (v1 ,v2 )∈E                                                       (U,W)∈E R′ −1 (v1 ,v2 )∈E
+
+                                                                                        ′
+Using Lemma A.2, this gives that there exist (U ∗ , W ∗ ) ∈ E R −1 such that
+                                                ζ′                                                                        ′
+                      [FU ∗ (v1 )FW ∗ (v2 )] ⩾ 2R ′        and                          [FU ∗ (v1 )FW ∗ (v2 )] ⩾ ζ4 · ( FU ∗ +            FW ∗ )
+        (v1 ,v2 )∈E                                                       (v1 ,v2 )∈E
+
+We now construct the set S randomly, by choosing each v ∈ V to be in S with probability (FU ∗ (v)+FW ∗ (v))/2.
+We first check that the expected volume of the set is large.
+                 "                     #               "                         #
+                   FU ∗ (v) + FW ∗ (v)                   FU ∗ (v1 ) + FW ∗ (v2 )
+  µ(S ) =                                =
+             v∼V            2              (v1 ,v2 )∈E              2
+                                                       "                      #
+                                                         FU ∗ (v1 )FW ∗ (v2 )
+                                         ⩾                                         (Using a + b ⩾ ab for a, b ∈ [0, 1])
+                                           (v1 ,v2 )∈E            2
+                                                          ζ′
+                                                     ⩾   4R′
+                                                           h ζ′         i
+                                                                      2
+Combining this with (A.2), we get that µ(S ) ∈ 4R               ′ , ε R′ . Also, by a Chernoff bound, we have that with
+                                                                     V
+                                         h ζ′          i
+                                                    3
+probability 1 − exp(−Ω(|V|)), µ(S ) ∈ 8R      ′ , ε R′ .
+                                                   V
+   To show that the expansion of the set is bounded away from 1, we show a lower bound on the expected
+number of edges that stay within the set, denoted by G(S , S ).
+                                           "                             !                         !#
+                                               FU ∗ (v1 ) + FW ∗ (v1 ) FU ∗ (v2 ) + FW ∗ (v2 )
+                  G(S , S ) =
+                               (v1 ,v2 )∈E                 2                        2
+                                                                                      h                          i
+                                                                                                       2
+                               1
+                            = 2·                 FU ∗ (v1 )FW ∗ (v2 ) + 4 ·1
+                                                                                        FU2 ∗ (v1 ) + FW ∗ (v2 )
+                                               (v1 ,v2 )∈E                                      (v1 ,v2 )∈E
+                                           1
+                                      ⩾    2 · (v ,v )∈E F U (v1 )F W (v2 )
+                                                            ∗        ∗
+                                                1 2
+                                           ζ′                                           ζ′
+                                      ⩾    4 v∼V [(F U + F W )/2]                =      4 ·       µ(S )
+                                                      ∗     ∗
+
+
+
+Thus, we have
+                                                              ′          ′                                    ′2
+                                                G(S , S ) − ζ8 µ(S ) ⩾ ζ8                             ζ
+                                               h                    i
+                                                                                              µ(S ) ⩾ 8R ′.
+
+
+                                                          ζ                ′2                     ζ                                   ′
+In particular, we get that with probability at least 16R    ′ over the choice of S , G(S , S ) ⩾ 8 · µ(S ). Hence,
+                    ′2                                  ′                          ′
+                  ζ         −Ω(|V|) , we have µ(S ) ∈ ζ , 3                      ζ
+                                                     h          i
+with probability 16R   ′ − e                           8R′ εV R′ and G(S , S ) ⩾ 8 · µ(S ). For such a set we have
+                                                 ′
+ΦG (S ) = 1 − (G(S , S )/µ(S )) ⩽ 1 − ζ8 , which proves the claim.                                                                                    
+
+
+
+
+                                                                          28
+A.2 Stronger Small-Set Expansion Hypothesis
+Proposition (Restatement of Proposition 5.8). For all η > 0, M ⩾ 1 and all δ < 1/M, there is polynomial
+time reduction from Small-Set Expansion ( Mη , δ) to Small-Set Expansion(η, δ, M).
+
+Proof. Let η′ = Mη . The reduction is in fact, the trivial one which, given an instance G = (V, E) of Small-
+Set Expansion (η′ , δ) treats as an instance of Small-Set Expansion (η, δ, M). If we are in the Yes case of
+Small-Set Expansion (η′ , δ), then there is a set S with µ(S ) = δ and ΦG (S ) ⩽ η′ ⩽ η. Hence, we are also in
+the Yes case of Small-Set Expansion (η, δ, M).
+     For the other direction, assume
+                                      that we are not in the No case of Small-Set Expansion (η, δ, M) and there
+exists a set S with µ(S ) ∈ Mδ , Mδ and ΦG (S ) ⩽ 1 − η. Then the fraction of edges G(S , S ) stay inside S
+is at least η · µ(S ). If µ(S ) ⩾ δ, then we randomly sample a subset S ′ of S with volume δ. For each edge
+(u, v) ⊆ S , the chance that (u, v) ∈ S ′ is δ2 /µ(S )2 . Then
+
+                                           G(S ′ , S ′ )     (δ2 /µ(S )2 ) · η · µ(S )
+                        ΦG (S ′ ) = 1 −                  ⩽1−                           ⩽ 1 − Mη .
+                                             δ                          δ
+Then, we cannot be in the No case of Small-Set Expansion (η′ , δ). When µ(S ) ⩽ δ, we simply create a set
+S ′ by adding extra vertices to S to increase its measure to δ. Then,
+
+                                        G(S ′ , S ′ )     G(S , S )     η · µ(S )
+                      ΦG (S ′ ) = 1 −                 ⩽1−           ⩽1−           ⩽ 1 − Mη .
+                                           δ                δ               δ
+                                                                                                              
+
+A.3 Hardness of Minimum Linear Arrangement and Balanced Separator
+Corollary A.4 (Hardness of Balanced Separator and Min Bisection). There is a constant c such that for
+arbitrarily small ε > 0, it is SSE-hard to distinguish the following two cases for a given graph G = (V, E):
+
+Yes: There exists a cut (S , V \ S ) in G such that µ(S ) = 12 and ΦG (S ) ⩽ ε + o(ε).
+                                               
+                                                 1 1
+                                                                          √
+No: Every cut (S , V \ S ) in G, with µ(S ) ∈ 10  , 2 satisfies µG (S ) ⩾ c ε.
+
+Proof. The result follows immediately by applying Theorem 3.5
+  √                                                           with  the given ε and taking q = 2,  √
+                                                                                                       γ =
+                                                               1 1
+o( ε). In the No case we get that for all sets S with µ(S ) ∈ 10 , 2 , G(S , S ) ⩽ Γ1−ε/2 (1/10) + o( ε) ⩽
+           √       √                                    √
+µ(S )(1 − c ε) + o( ε) for some c > 0. Thus ΦG (S ) ⩾ c′ ε for some c′ > 0.                              
+
+    The following corollary uses the fact that in the Yes case of Theorem 3.5, we actually partition the graph
+into many non-expanding sets instead of finding just one such set.
+
+Corollary A.5 (Hardness of Minimum Linear Arrangement). It is SSE-hard to approximate Minimum Lin-
+ear Arrangement to any fixed constant factor. Formally, there exists c > 0 such that for every ε > 0, it is
+SSE-hard to distinguish between the following two cases for a given graph G = (V, E), with |V| = n:
+
+Yes: There exists an ordering π : V → [n] of the vertices such that         (u,v)∼E [|π(u) − π(v)|] ⩽ εn
+                                                              √
+No: For all orderings π : V → [n], (u,v)∼E [|π(u) − π(v)|] ⩾ c εn
+
+
+
+
+                                                         29
+Proof. Apply Theorem 3.5 taking q = ⌈2/ε⌉, ε′ = ε/3 and γ = ε. In the Yes case, we pick an arbitrary
+ordering π which orders elements in each of the sets S 1 , . . . , S q contiguously. For these sets, all edges in the
+set have length at most n/q and at most ε′ + o(ε) fraction of the edges leave the sets. Thus,
+
+                                            [|π(u) − π(v)|] ⩽ nq + ε′ n + o(εn) ⩽ εn
+                                  (u,v)∼E
+
+    The proof for the No case follows from an observation of [DKSV06], that for a graph G if every set S
+with µ(S ) ∈ ( 13 , 12 ) has G(S , V \ S ) ⩾ θ, then for any ordering π : V → [n], (u,v)∼E [|π(u) − π(v)|] ⩾ 3θ · n (else
+one can obtain a contradiction by optimally ordering the points and cutting randomly between the positions
+                                                                   √
+n/3 and 2n/3). Here, G(S , V \S ) ⩾ 1/3−Γ1−ε/6 (1/3) ⩾ c′ ε for some c′ > 0. Thus, (u,v)∼E [|π(u) − π(v)|] ⩾
+c′
+3 · n for all π : V → [n].                                                                                              
+
+
+
+
+                                                           30
+

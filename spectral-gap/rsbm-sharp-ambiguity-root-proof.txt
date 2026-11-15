@@ -1,0 +1,434 @@
+SHARP POLYNOMIAL AMBIGUITY AND EXACT-RECOVERY ERROR IN THE TWO-CLASS RSBM
+Independent proof, November 15, 2026. graph_breakthrough.
+Only this file is written for this task. Frozen sources are not edited.
+
+Result
+------
+Fix integers a>b>0. Put
+
+  D=a+b,       delta=a-b,       t=delta+1,
+  s=(D-2)t=(a+b-2)(a-b+1).
+
+Use two planted blocks of size N, independent uniform simple a-regular
+internal graphs, and an independent uniform simple b-regular bipartite
+cross graph. All limits are through admissible N (aN even); no further
+parity restriction is imposed. Let B_N be the event that the graph has
+a second equitable (a,b) bisection, modulo global exchange. Then
+
+  P(B_N)=Theta_{a,b}(N^{-s}).                              (1)
+
+The proposed typed motif and proper-intersection argument are valid.
+The lower bound needs the conditional-simplicity point explained in
+Section 4; it is especially clean here because all motif edges touch
+vertices whose stubs are completely saturated by the motif.
+
+For a uniformly hidden planted partition, posterior probabilities are
+uniform over the admissible unordered partitions of the observed graph.
+Consequently the optimal exact-recovery error is Theta_{a,b}(N^{-s}).
+The existing polynomial-moment enumeration algorithm, with a larger
+polynomial cutoff, attains an O_{a,b}(N^{-s}) failure probability in
+worst-case polynomial bit time. No historical novelty is asserted.
+
+
+1. Upper bound: start the small-support estimate at its sharp minimum
+--------------------------------------------------------------------
+Write sigma for the planted sign vector. Every equitable sign vector
+tau satisfies A tau=delta tau. It is automatically balanced since
+A1=D1 and D-delta=2b>0. Let S be the coordinates where tau differs
+from sigma, with k flipped vertices on each planted side. Replace
+tau by -tau if necessary so 1<=k<=N/2. Set K=|S|=2k and
+w=(sigma-tau)/2. Then
+
+  A w=delta w,
+  w=+1 on S_plus, -1 on S_minus, 0 outside S.
+
+At a vertex in S_plus its eigenvector equation says
+
+  delta=#neighbors in S_plus - #neighbors in S_minus.
+
+It has at least delta distinct neighbors in S_plus. Simplicity therefore
+forces k-1>=delta. The same conclusion holds on the minus side. Thus
+
+  k>=t=delta+1,                 K>=2t.                    (2)
+
+At any vertex outside S, the equation sum_{u~v}w_u=0 implies that it
+cannot have exactly one edge into S. This gives a support certificate
+depending only on graph structure; no enumeration of real values is
+needed.
+
+Here is a self-contained uniform exposure bound. Work in the colored
+configuration model: independent internal pairings of aN stubs in
+each block and a cross bijection of bN stubs on either side. Fix a
+set S of size K<=epsilon N. Expose all edges incident to S, skipping
+already paired stubs. Call a partner choice a collision if its vertex
+lies in S or is an exterior vertex touched earlier in this exposure.
+There are at most DK exposures. At every step the number of collision
+candidate stubs is at most D K+D^2 K. All relevant unexposed pools
+have size at least c_{a,b}N if epsilon is sufficiently small. Hence
+each conditional collision probability is at most C_{a,b}K/N.
+
+Let e be the number of edges with both ends in S, B the number with
+one end in S, and T the exterior neighbor set. There are e+B actual
+exposures, and precisely |T| first exterior touches. If no exterior
+vertex has exactly one neighbor-edge in S, then |T|<=B/2. Therefore
+the collision count is at least
+
+  e+B-|T|>=e+B/2=DK/2.
+
+This remains true in the configuration model with loops and multiple
+edges, using stub multiplicities. Pad the sequence with noncollisions
+to length DK. A union bound over collision indices gives
+
+  P_config[S has this certificate]
+    <=2^(DK)(C_{a,b}K/N)^(DK/2).
+
+There are at most (2eN/K)^K choices of S. Thus, for a constant A=A(a,b)
+and eta=(D-2)/2>0,
+
+  P_config[there is such a support of size K]
+    <=[A(K/N)^eta]^K.                                    (3)
+
+The consecutive ratio on the right is at most
+A exp(eta)((K+1)/N)^eta. Shrink fixed epsilon so this is <=1/2 for
+2t<=K<=epsilon N and all large N. Summing (3) from the minimum (2)
+gives O(N^{-2t eta})=O(N^{-s}). The configurations conditioned simple
+have the exact uniform-simple factor law. Their joint simplicity
+probability stays bounded below, so the same upper bound holds there.
+One does NOT assert that (2) holds in the nonsimple configuration
+model; it is used only to restrict the event being bounded after
+conditioning on simplicity.
+
+For the remaining K>=epsilon N, the common flip fraction r=k/N lies
+in [epsilon/2,1/2]. The exact Boolean star-type enumeration has entropy
+exponent
+
+  Phi=H(star_plus)+H(star_minus)
+        -(a/2)[H(edge_internal_plus)+H(edge_internal_minus)]
+        -b H(edge_cross).
+
+Symmetrize internal and cross stub slots. Deleting one internal slot
+using the INTEGER eigenvector constraint gives the exact identity
+
+  L:=-Phi=((a-2)/2)(I_int_plus+I_int_minus)
+             +b I_cross+J_plus+J_minus,
+
+where J is conditional total correlation of the retained neighbors.
+Retain the actual internal one-slot conditional laws given the root,
+but replace each cross slot by an independent sample from the opposite
+root marginal. If P is the actual truncated-star law and R this law,
+
+  KL(P||R)=J_plus+b I_cross<=L.
+
+For the deleted internal sign W and its original conditional mean m(X),
+exchangeability gives E_P(W-m(X))^2=E Var(internal_slot|X).
+Under R conditional independence implies that this expectation increases
+by at least b Var(opposite_root), since a>=2. The squared function
+lies in [0,4a^2] under both laws. Pinsker consequently yields
+
+  Phi<=-(b^2/(8a^4)) Var(opposite_root)^2
+       =-(2b^2/a^4)r^2(1-r)^2.                            (4)
+
+This argument includes a=2,b=1; the coefficient a-2 may vanish without
+invalidating the positive cross-variance term. There are polynomially
+many fixed-degree Boolean types, and uniform factorial errors cost
+only a polynomial prefactor. Thus the macroscopic probability is
+O(N^C exp(-cN))=o(N^{-s}). Conditioning simplicity costs a constant.
+Together with (3), this proves P(B_N)=O(N^{-s}) at all admissible N.
+
+Actual sources checked for these inputs:
+  partitioning-rsbm-kernel-session/deterministic-reductions.md
+    SHA256 4c07502dd980c86bf85b548570d311fe910d4a003dd89e27ab66c70e1e017f74
+  partitioning-rsbm-obstruction-session/general-boolean-nearplant.txt
+    SHA256 e86a22666bf886483488b0304b22f480462f1d493d19a243a4f4f1414028335a
+  partitioning-rsbm-obstruction-session/boolean-variance-audit.txt
+    SHA256 aab2f341f51010d461939e61c01b703febffaef04d25a9c0fa41ed746d55fc07
+All paths above are relative to spectral-gap/. Equations (2)--(4) are
+also independently derived here, rather than relying on their verdicts.
+
+
+2. A typed fixed motif producing a second bisection
+---------------------------------------------------
+Define a simple colored graph H with a fixed planted-plus/minus type
+on each vertex. It contains
+
+  S_plus={s_plus_i:1<=i<=t},
+  S_minus={s_minus_i:1<=i<=t},
+  W_plus={w_plus_ij:1<=i<=t,1<=j<=b},
+  W_minus={w_minus_ij:1<=i<=t,1<=j<=b}.
+
+All listed vertices are distinct. Put a clique K_t on S_plus and a
+clique K_t on S_minus. For each i,j add the four edges
+
+  s_plus_i--w_plus_ij       (internal plus),
+  s_minus_i--w_minus_ij     (internal minus),
+  s_minus_i--w_plus_ij      (cross),
+  s_plus_i--w_minus_ij      (cross).
+
+Each S vertex has delta clique neighbors, b internal W neighbors,
+and b cross W neighbors. Thus its prescribed internal degree is
+delta+b=a and its cross degree is b: ALL its stubs are saturated.
+Every W vertex has one prescribed internal edge and one prescribed
+cross edge, and no further prescribed edges. Its prescribed total
+degree is two. The graph is simple. It is connected: the two nonempty
+cliques are linked through every W pair of paths. Since delta>=1,
+t>=2, and the minimum degree of H is two.
+
+It has
+
+  v=2t(1+b),
+  e=t delta+4bt,
+  e-v=t(delta+2b-2)=t(D-2)=s.                              (5)
+
+When H occurs in a graph of the model, flip precisely S_plus and
+S_minus. At an S vertex the b internal W edges become cross and the
+b cross W edges become internal, preserving both required degrees.
+At each W vertex one prescribed internal and one prescribed cross
+edge exchange roles. Any other neighbor remains unflipped. Vertices
+outside H have no S neighbors, because every S stub is already used
+inside H. They are unaffected. The new assignment is balanced since
+exactly t vertices flip on each side. For N>t it differs from both
+orientations of the planted partition. Thus
+
+  {H occurs as a typed subgraph} subset B_N.               (6)
+
+For a=2,b=1 this is the earlier eight-vertex path motif, possibly with
+extra edges among its zero-valued endpoints. The general construction
+needs no exact induced-subgraph condition.
+
+
+3. Proper intersections have strictly smaller excess
+-----------------------------------------------------
+LEMMA. If a finite connected graph H has minimum degree at least two,
+then every proper subgraph F with a nonempty vertex set satisfies
+
+  e(F)-v(F)<=e(H)-v(H)-1.                                 (7)
+
+Here F may contain isolated vertices. If it spans H but omits an edge,
+(7) is immediate. Otherwise let R=V(H)\V(F), r=|R|>0. Since V(F)
+is nonempty and H connected, the number B of edges from R to its
+complement is positive. Let E_R count edges induced by R. Minimum
+degree gives 2E_R+B>=2r. Removing R deletes E_R+B edges, so
+
+  E_R+B>=r+B/2>r.
+
+The integer number of deleted edges is at least r+1. Omitting any
+further edges can only lower excess. This proves (7). It is important
+that H is connected as well as minimum-degree-two; either hypothesis
+alone would not give the required strict inequality.
+
+The lemma applies to the intersection of two embedded copies of H:
+use every common vertex, including those not incident to a common
+edge. If the intersection is not the whole copy and has vertices,
+its excess is at most s-1. If the full vertex-and-edge images agree,
+there are only finitely many ways to identify the abstract labeled
+motifs (at most a fixed number of typed automorphisms). These are
+the diagonal terms, not proper intersections.
+
+
+4. Typed configuration counts and conditional simplicity
+----------------------------------------------------------
+Let Y count injective typed labeled embeddings of H. The fixed typed
+parts each have t(1+b) vertices. There are Theta(N^v) embeddings.
+For a fixed embedding, assign distinct internal and cross stubs to
+its prescribed incident edges. The number of assignments is
+
+  c_H=product_{u in V(H)}(a)_{h_int(u)}(b)_{h_cross(u)}>0,
+
+a fixed constant depending on a,b. Its internal edge count per block
+is e_int=t delta/2+bt, an integer because t delta=delta(delta+1)
+is even. Its cross edge count is e_cross=2bt. For any prescribed
+stub assignment the probability is exactly
+
+  product_{j=0}^{e_int-1}(aN-2j-1)^(-2)
+       *1/(bN)_{e_cross}=Theta(N^{-e}).                   (8)
+
+These assignments are disjoint events for this particular H: every
+prescribed edge touches an S vertex, and all S stubs of each color
+are saturated. A configuration containing the simple H cannot have
+an extra parallel copy of one of its required edges without losing
+another required S edge. Its physical stubs on every required edge
+are uniquely determined. Even without disjointness, an upper bound
+by the finite assignment sum and a lower bound from one assignment
+would already give the needed Theta estimate.
+
+Conditional on a prescribed stub assignment, the remaining pairings
+and cross bijection are uniform. Every S residual degree is zero.
+At each W vertex the residual degrees are a-1 internally and b-1
+across; all other vertices retain degrees a and b. No prescribed
+edge has two residual-positive endpoints, since all H edges touch S.
+Therefore a residual pairing cannot duplicate a prescribed edge.
+Simplicity of the whole graph is exactly simplicity of these residual
+bounded-degree configurations.
+
+Their degree sequences differ from the regular sequences at only
+O_{a,b}(1) vertices and their total stub counts are Theta(N). Their
+simplicity probabilities stay bounded below, uniformly in embeddings
+and stub assignments. One direct proof uses factorial moments of
+loops and double-edge pairs: disjoint small defect patterns give
+the usual finite Poisson means, O(1) modified degrees affect those
+means by o(1), and overlapping patterns lose a power of N. The
+limits equal those of the original regular factors. The internal
+limits are exp(-(a^2-1)/4) for each block, and the cross limit is
+exp(-(b-1)^2/2), with b=1 giving automatic residual cross simplicity.
+Only positivity is needed.
+
+For an alternative primary reference, Janson, The probability that
+a random multigraph is simple, II, Theorems 1.1--1.2 and the bipartite
+discussion in Section 5, establishes the required bounded-degree
+simplicity principle:
+  https://arxiv.org/pdf/1307.6344
+The theorem statement and configuration-model definitions were checked.
+The finite-modification argument above explains its conditional use
+here rather than incorrectly assuming that unconditional simplicity
+alone guarantees conditional simplicity after an arbitrary motif.
+
+The full unconditioned simplicity probability also stays bounded
+below. Dividing the probability of motif AND simplicity by that of
+simplicity therefore proves, in the requested uniform-simple model,
+
+  P[fixed H embedding occurs]=Theta(N^{-e}),
+  E Y=Theta(N^{v-e})=Theta(N^{-s}).                        (9)
+
+All prescribed remaining stub counts are admissible: internal totals
+are aN-tD, and tD=(delta+1)(delta+2b) is even. Cross residual totals
+on the two sides agree. No new parity restriction on N is introduced.
+
+
+5. Second moment and the lower bound
+------------------------------------
+For any fixed simple typed graph J whose vertex degrees do not
+exceed the available degrees, the same finite stub-assignment upper
+count gives
+
+  P_simple[J occurs at specified vertices]<=C_J N^{-e(J)}.
+
+If degree compatibility fails the probability is zero. Conditioning
+by the positive full simplicity probability suffices for this upper
+bound; no conditional lower estimate is needed for unions of motifs.
+
+For a pair of embedded H copies let F be their intersection, counting
+common vertices and common edges. There are finitely many overlap
+identification types, depending only on H. For any such type their
+union has
+
+  v_union=2v-v(F),          e_union=2e-e(F),
+  e_union-v_union=2s-[e(F)-v(F)].
+
+The contribution of this type to E Y^2 is therefore at most
+C N^{-2s+e(F)-v(F)}. There are three cases.
+
+  * Disjoint vertex sets: O(N^{-2s}).
+  * Proper nonempty intersections: O(N^{-s-1}) by (7).
+  * Identical vertex-and-edge images: O(N^{-s}), with a finite
+    multiplicity of abstract embeddings.
+
+Consequently
+
+  E Y^2=O(N^{-s}).                                        (10)
+
+Since E Y=Theta(N^{-s}), Cauchy--Schwarz yields
+
+  P(Y>0)>=(E Y)^2/E Y^2=Omega(N^{-s}).                     (11)
+
+Together with (6) and the upper bound in Section 1, this proves (1).
+The proof does not require disjoint occurrences to be independent.
+Potentially incompatible overlap types simply have zero probability.
+
+
+6. Uniform posterior and the information-theoretic sharp rate
+--------------------------------------------------------------
+For the recovery statement, hide the balanced planted partition
+uniformly, and observe only the labeled adjacency matrix and a,b.
+This qualification matters: with the planted sets deterministically
+declared to be the first and last N vertex labels, an estimator could
+output those sets without inspecting the graph.
+
+Let G_a(N) be the number of simple a-regular graphs on N labeled
+vertices and B_b(N) the number of simple b-regular bipartite graphs
+on the fixed labeled parts. For any fixed balanced ordered sign
+assignment sigma and any observed graph G,
+
+  P(G|sigma)=1/[G_a(N)^2 B_b(N)]
+
+if sigma is equitable (a,b), and zero otherwise. The decomposition
+of G into its two internal graphs and cross graph is unique once
+sigma is specified. Thus the posterior is uniform over valid ordered
+sign vectors, or equivalently over valid unordered partitions after
+identifying sigma and -sigma.
+
+Let K(G) be the number of valid unordered partitions. The minimum
+conditional error of any estimator, including randomized ones, is
+
+  1-1/K(G).
+
+Hence the optimal Bayes error R_N satisfies
+
+  (1/2)P[K(G)>=2] <= R_N <= P[K(G)>=2].                    (12)
+
+The ambiguity event is invariant under relabeling. Its probability
+in the hidden model equals P(B_N) computed with fixed planted sets.
+Combining (1),(12) gives R_N=Theta(N^{-s}). In particular this is an
+information-theoretic obstruction, not just a limitation of a chosen
+spectral algorithm. The motif also supplies an extra real eigenvector,
+so P[nullity_R(A-delta I)>=2]>=c N^{-s}; no matching real-nullity
+upper bound is inferred from Boolean rigidity.
+
+
+7. A worst-case polynomial algorithm attaining the rate
+-------------------------------------------------------
+Use the established fixed-prime polynomial kernel moment in the SAME
+random-cross uniform-simple model. At p=3 it gives
+
+  E |ker_F3(A-delta I)| <= C_{a,b}(N+1)^kappa,
+  kappa=4*3^(D+1)+64,                                    (13)
+
+a deliberately conservative fixed exponent. The actual consolidated
+statement was checked in regular-community-recovery/sections/01-results.tex,
+SHA256 5a3ce3cef6d239b936484c0615538c331bf3f942c77ee20855e363cb91732eb6.
+This moment has an independent full proof audit and is a separate
+input; no sharp saddle or real-corank failure rate is assumed here.
+
+Compute a basis of this field kernel. If its size exceeds
+
+  T_N=N^(kappa+s+1),
+
+report failure. Otherwise enumerate it, discard vectors with a zero
+coordinate, map field values 1,2 to signs +1,-1, and check every
+candidate using the integer neighbor counts. Every valid sign
+assignment appears, since p=3 distinguishes the two signs. Identify
+global exchanges; output the verified partition if unique, and report
+ambiguity otherwise. On the no-cutoff, unique-partition event this
+returns the planted partition.
+
+Markov and (13) give cutoff probability O(N^{-s-1}). The ambiguity
+probability is O(N^{-s}). Thus the algorithm's total failure is
+O(N^{-s}), attaining the exponent in the optimal Bayes lower bound.
+The cutoff gives polynomial worst-case runtime at fixed a,b; a direct
+implementation uses O(N^(kappa+s+2)+N^3) field/verification operations,
+with polynomial bit overhead. Without truncation it lists all valid
+partitions in expected polynomial time.
+
+Reporting ambiguity counts as failure. Alternatively choosing any
+verified partition on ambiguity has the same O(N^{-s}) upper bound
+and is a valid exact-recovery estimator in the usual error convention.
+No practical runtime, near-linear complexity, noisy-data robustness,
+or positive analytic eigengap is claimed.
+
+
+8. Scope and assessment
+-----------------------
+The candidate survives the requested adversarial checks. The important
+qualifications are fixed degrees, random independent cross graph,
+uniform simple internal factors, a>b>0, and every admissible N.
+The lower motif event does not apply with the same probability to
+an arbitrary prescribed/adversarial cross matrix. The statistical
+lower bound uses the uniformly hidden planted partition. The claimed
+sharp exponent concerns nonunique Boolean/equitable bisections and
+optimal exact recovery, not all possible real eigenspace collisions.
+
+The motif, the connected minimum-degree-two intersection lemma,
+the conditional-simplicity justification, and the posterior calculation
+are all supplied here. The general Boolean entropy and polynomial
+moment inputs come from the existing research-session sources and
+their derivations described above. Historical priority has not been
+established by this proof note.

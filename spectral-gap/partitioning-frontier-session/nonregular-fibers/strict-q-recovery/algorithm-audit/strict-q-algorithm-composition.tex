@@ -1,0 +1,257 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Prob}{\mathbb P}
+\newcommand{\one}{\mathbf1}
+\newcommand{\F}{\mathbb F}
+\title{Unknown-frame recovery under strict omission weights:\\
+an independent algorithmic composition}
+\author{Strict-weight recovery: algorithm audit}
+\date{November 15, 2026}
+\begin{document}
+\maketitle
+
+\paragraph{Audited inputs and scope.}
+This note proves the algorithmic composition. Its entropy inputs are
+the modular-moment and strict one-hot rigidity propositions in
+\path{weighted-entropy/omission-weights-and-nonregular-entropy.tex},
+SHA256
+\begin{quote}\small\ttfamily
+9d5945efd705159729f60ef718073d853\\
+f7c6e6218ae4e6389c90ecc6e5cb786.
+\end{quote}
+The exact factorial count was also reconstructed from this source in
+the regular packet:
+\begin{quote}\small\ttfamily
+entropy-count/\\all-slot-intertwiner-moment.tex.
+\end{quote}
+The algorithm does not receive the true frame, its number of classes,
+its proportions, or its omission weights. Only fixed bounds $K,D$ are
+supplied. No historical firstness or practical speed is claimed.
+
+\section{Model and theorem}
+Fix $K\ge1,D\ge3$. Let $Q=(d_{ij})_{i,j\in[k]}$ be a connected
+nonnegative integer frame, $k\le K$, with
+\[
+ 3\le d_i:=\sum_jd_{ij}\le D.
+\]
+The off-diagonal support is connected; a one-type frame is allowed.
+Positive block sizes $n_i$ obey
+$n_id_{ij}=n_jd_{ji}$ and $n_id_{ii}$ even, with $n=\sum_i n_i$.
+Every active internal regular factor and cross biregular factor is
+independent and uniform simple. Absent factors are omitted; internal
+degrees zero and one are allowed. Let $J$ be the planted indicator.
+
+Assume there are symmetric real weights $q_{ij}$ on every active factor
+with
+\[
+ 0<q_{ij}<1/2,\qquad \sum_jd_{ij}q_{ij}=1.
+\]
+An internal weight obeys the same strict bound. Put
+\[
+ q_*=2^K,\quad F_*=K+\frac{K(K+3)}2q_*^2,
+ \quad B_*=Kq_*^D+F_*.
+\]
+
+\begin{theorem}\label{thm:main}
+Uniformly over this finite connected-frame family and its admissible
+size sequences, with probability $1-o(1)$ every equitable partition
+into at most $K$ nonempty classes is an equitable coarsening of $J$.
+Thus $J$ is the unique finest equitable partition within that bounded
+class family.
+
+There is an algorithm using only $(A,K,D)$ which returns $J$, up to
+class names, and its frame $Q$, with probability $1-o(1)$.
+The untruncated algorithm has unconditional expected bit work at most
+$C_{K,D}n^{B_*+3}$, including rare inputs of large binary nullity.
+It uses $O_K(n^2)$ bits of storage. A deterministic work cap gives
+worst-case $O_{K,D}(n^{B_*+5})$ bit work and adds only
+$O_{K,D}(n^{-2})$ abstention probability. On cap exhaustion it returns
+\textnormal{\textsc{Abstain}}, not a partially enumerated maximum.
+\end{theorem}
+
+\section{Uniformity and the unconditional binary moment}
+Along a path of the frame, every positive size ratio is a ratio of
+positive integers at most $D$. Therefore
+\[
+ \alpha_i:=n_i/n\ge\rho:=\frac1{KD^{K-1}}.
+\]
+A connected consistent frame fixes these proportions. There are
+finitely many frames with $k\le K$ and row sums at most $D$.
+The strictly feasible ones form a subset of this finite family; each
+may have its own fixed strict weights. Thus minimum positive constants
+arising from compactness may be taken over a finite set. No lower bound
+on a weight is required as an input to the algorithm.
+
+For arbitrary $r\le K$ and arbitrary $R\in\F_2^{r\times r}$, let
+\[
+ h_R(A)=\dim_{\F_2}\{Y\in\F_2^{n\times r}:AY=YR\}.
+\]
+The weighted moment proposition gives in the configuration model
+\[
+ \E 2^{h_R(A)}\le(3D)^{F_*}(n+1)^{B_*}.
+\]
+This bound is uniform in \emph{every candidate} $R$: feasibility is
+required of the true frame $Q$, not of $R$.
+Each old type has at most $(2^r)^{d_i}\le q_*^D$ legal ordered stars.
+The exact root-star multinomial counts root assignments already; there
+is no additional root-label factor. Uniform factorial estimates give
+the exponent $n\Phi$ and remainder $F_*[\log(Dn+1)+1]$. Weighted
+nonpositivity $\Phi\le0$ then gives the displayed moment after summing
+at most $(n+1)^{Kq_*^D}$ types.
+
+The independent-factor simplicity probability tends to $e^{-\Lambda}$,
+where absent factors contribute zero, an internal degree $a\ge1$
+contributes $(a^2-1)/4$, and a cross $(b,c)$ factor contributes
+$(b-1)(c-1)/2$. In particular $\Lambda\le K^2D^2$.
+Eventually this probability is at least $e^{-K^2D^2}/2$, uniformly over
+the finite connected-frame family. Conditioning thus gives
+\begin{equation}\label{eq:moment}
+ \E_{\rm simple}2^{h_R(A)}
+ \le 2e^{K^2D^2}(3D)^{F_*}(n+1)^{B_*}.
+\end{equation}
+This is an unconditional expectation under the intended simple model,
+not an expectation restricted to the recovery event. Matching factors
+and absent factors have simplicity probability one.
+
+\section{Structural composition for variable degrees}
+For a one-hot candidate $Y$ satisfying the original integer equation
+$AY=YR$, define
+\[
+ \delta(Y)=\min_{T\text{ one-hot}}\frac1n
+                 |\{v:Y_v\ne(JT)_v\}|.
+\]
+Maps $T:[k]\to[r]$ need not be onto. Strict weighted one-hot rigidity
+implies $\Phi=0$ only at old-type point maps. For fixed $Q,R$, the
+finite-dimensional space of compatible legal star laws is compact,
+and $\delta=\sum_i\alpha_i(1-\max_a\rho_i(a))$ is continuous.
+Hence for every fixed $\eta>0$ there is $c>0$ such that
+$\delta\ge\eta$ implies $\Phi\le-c$. Taking the minimum over the
+finite true/candidate frame families makes $c=c(K,D,\eta)>0$.
+The exact factorial estimate for one-hot stars and a finite union give
+\begin{equation}\label{eq:macro}
+ \E\#\{\text{integer candidates with }\delta\ge\eta\}
+ \le C(n+1)^{B_*}e^{-cn}.
+\end{equation}
+Allowing unused candidate labels in this compact set is harmless.
+
+We give the needed small-support adjustment explicitly. Call $S$ bad
+if no outside vertex has exactly one incident edge into $S$, counting
+multiplicity in the configuration model. Put $s=|S|$, let $W$ be its
+outside neighborhood, $w=|W|$, and let $a,b$ count its internal edges
+(loops once) and its edges to $W$. Then
+\[
+ 2a+b=\sum_{v\in S}\deg(v)\ge3s,\qquad b\ge2w,
+ \qquad e:=a+b\le Ds.
+\]
+Consequently
+\[
+ e-s-w\ge (2a+b)/2-s\ge s/2.
+\]
+Every active factor has at least $\rho n$ stubs on either side. For
+$s\le\rho n/(4D)$, the probability of any valid prescription of all
+$e$ touching pairs is at most $(2/(\rho n))^e$. The same witness
+enumeration as in the regular packet gives
+\[
+ \E\#\{\text{bad }S:|S|=s\}
+ \le C_0^s(s/n)^{\lceil s/2\rceil},
+\]
+where $C_0=C_0(K,D)$. It does not assume equal degrees in $S$.
+Choose fixed $\eta>0$ small enough that
+\[
+ \eta\le\rho/(4D),\qquad
+ C_0e^{1/2}\eta^{1/2}\le1/2,\qquad
+ (D+1)\eta\le\rho/2.
+\]
+Summing the bound for $s\ge2$ by consecutive ratios gives $O(n^{-1})$.
+In a simple positive-degree graph a singleton is not bad. Bounded-cost
+simplicity conditioning therefore gives a common event of probability
+$1-O_{K,D}(n^{-1})$ on which no nonempty bad support of size at most
+$\eta n$ exists.
+
+If $AV=VR$ over any field and $V$ has nonzero row support $S$, an
+outside vertex with exactly one edge into $S$ contradicts the equation.
+Thus the common graph event excludes every such small support,
+simultaneously for all $R$ and vector dimensions.
+
+For an integer one-hot candidate within $\eta n$ rows of $JT$, every
+old block contains a vertex whose row and all its neighbors' rows
+agree with $JT$: the changed vertices and their neighbors occupy at
+most $(D+1)\eta n<n_i$ vertices globally. At this clean vertex the
+integer equation gives $(QT)_i=(TR)_i$. Hence $QT=TR$ and
+$V=Y-JT$ satisfies $AV=VR$ over the reals. The common support event
+forces $V=0$. Combined with \eqref{eq:macro} and Markov, every
+candidate is an exact equitable coarsening, simultaneously over the
+finite family.
+
+\section{Algorithm, correctness and bit accounting}
+Enumerate $r=1,\ldots,K$ and every nonnegative integer $r$-by-$r$
+matrix $R$ of row sum at most $D$. Their total number is at most
+\[
+ M_*:=\sum_{r=1}^K(D+1)^{r^2}.
+\]
+Do not require $R$ to be connected or to admit omission weights.
+The true $(k,Q)$ is included regardless of the unknown class count.
+For each candidate compute, over $\F_2$, the kernel of
+\[
+ I_r\otimes A-R^T\otimes I_n,
+\]
+using column vectorization. Enumerate its vectors from a basis. Accept
+only those with a standard unit row at every vertex, every candidate
+class nonempty, and the \emph{integer} equality $AY=YR$. Keep an
+accepted partition having maximal $r$, breaking remaining ties
+arbitrarily. If none is accepted, abstain. No observation of a current
+candidate is used as a premature global maximum certificate.
+
+On the structural event, each accepted $Y=JT$ with $T$ onto, so
+$r\le k$. The true planted $k$-class candidate always occurs in its
+kernel enumeration. Thus the maximum is exactly $k$, and an onto map
+between two $k$-element sets is a permutation. The output is $J$ up to
+names; exact neighbor counts recover $Q$. This argument neither knows
+$k$ in advance nor assumes simple quotient eigenvalues.
+
+Dense binary elimination costs $O_K(n^3)$ bit operations. A loose
+$O_{K,D}(n^2)$ bound per enumerated vector covers forming it, unit-row
+and nonemptiness checks, and exact bounded-degree neighbor counts.
+There is no field operation of uncharged precision: the field is binary,
+and the integer neighbor counters are bounded by $D$. A basis, its
+elimination workspace, and current/best partitions occupy $O_K(n^2)$
+bits; no full list of kernel vectors is stored.
+By \eqref{eq:moment}, before adding a clock the total expected bit work
+is at most
+\[
+ C_{K,D}\left[n^3+n^2\sum_R\E2^{h_R}\right]
+ \le C'_{K,D}n^{B_*+2}.
+\]
+The untruncated algorithm needs no clock; its displayed base-work
+expectation in particular is at most $O(n^{B_*+3})$. If an uncapped
+binary clock is included, its width is only guaranteed to be $O(n)$,
+not $O(\log n)$: deterministically $h_R\le Kn$, so the full base
+work is at most $C_{K,D}n^3 2^{Kn}$. Charging $O(n)$ overhead per
+operation still gives unconditional expected clocked work
+$O(n^{B_*+3})$ and preserves the quadratic space bound.
+
+To make the polynomial work cap explicit, stop after $n^{B_*+4}$
+base operations of the unclocked implementation. This \emph{capped}
+counter needs only $O_{K,D}(\log n)$ bits and at most that overhead
+per counted operation. The capped worst-case total bit work is
+$O(n^{B_*+4}\log n)\le O(n^{B_*+5})$.
+Markov's inequality on the unclocked operation count gives interruption
+probability $O(n^{-2})$. On interruption return only \textsc{Abstain}.
+The cap never turns an unfinished enumeration into an accepted answer.
+Intersecting noninterruption with the structural event proves
+Theorem~\ref{thm:main}.
+
+\paragraph{Disconnected fixed frames.}
+Connectedness above is used to make $\alpha_{\min}\ge\rho(K,D)$ and
+the resulting structural constants uniform. The same proof works for
+a disconnected fixed frame with a fixed positive proportion vector
+$\alpha$, replacing $\rho$ by $\alpha_{\min}$. Its structural constants
+and eventual size threshold may depend on $\alpha$. The algorithm and
+its polynomial exponent are unchanged. A uniform statement over
+arbitrarily vanishing block proportions is not supplied.
+\end{document}

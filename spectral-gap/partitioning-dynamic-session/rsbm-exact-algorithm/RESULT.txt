@@ -1,0 +1,172 @@
+CERTIFIED EXACT RSBM RECOVERY: ALGORITHM PACKET
+15 November 2026
+
+Main deliverable
+================
+
+certified-rsbm-recovery.tex / certified-rsbm-recovery.pdf
+
+This supplement gives a concrete exact algorithm with expected
+~O_d(N^2 log(1/eta)) BIT work on n=2N vertices, fixed total degree d,
+returning a verified balanced sign eigenvector and an exact uniqueness
+certificate, or UNRESOLVED. Conditional on the companion's simple
+planted-kernel event, its failure probability is <=eta. Thus in the
+proved RSBM range it recovers with probability 1-o(1)-eta. No numerical
+eigengap, arithmetic oracle, or unit-cost large rational number is used.
+
+The model range is inherited, not extended: d1>d2>0 fixed, d1>=3,
+EVEN block size N, independently sampled uniform simple internal
+d1-regular graphs and any independent simple d2-regular bipartite cross
+graph. The unresolved pair (2,1) and odd N for even d1 remain outside
+this proof. The graph-level o(1) has no effective rate.
+
+Core deterministic reduction
+============================
+
+Let M=A-lambda I. If its rational kernel is exactly span(sigma) with
+every sigma_i in {+1,-1}, symmetry implies
+  adj(M)=a sigma sigma^T, a!=0.
+Every principal (n-1)-minor is therefore nonzero. Pin coordinate n to
+one; put H=M[1:n-1,1:n-1], c=-M[1:n-1,n]. One good modular solve
+Hx=c yields the normalized sign vector. No rational reconstruction
+is needed because the target alphabet is known to be {+1,-1}.
+
+Each exact trial
+================
+
+1. Draw a verified prime p uniformly from (P,2P], where
+   P=ceil(128(d+1)^2 n^2). Uniform integer rejection plus deterministic
+   trial division has expected ~O_d(n) BIT work and logarithmic space.
+2. Choose nonzero random diagonal D and random u,v over F_p. Set T=DH.
+3. Compute 2m scalars s_j=u^T T^(j+1)v, j=0,...,2m-1, m=n-1,
+   using only sparse matrix-vector products. Run exact Berlekamp-Massey
+   and accept rank only if the TRUE shortest-register length is m.
+4. This rank test is a deterministic certificate: the shifted sequence
+   lives in im(T), so its complexity is <=rank(T) on EVERY input.
+   Thus length m forces H nonsingular modulo p, hence over Q.
+5. The recovered degree-m recurrence is exactly chi_T. Its nonzero
+   constant term gives T^-1(Dc) through one Horner pass with <m further
+   sparse products. Check Hx=c modulo p, decode residues +/-1, append1.
+6. Check balance and (A-lambda I)sigma=0 over the INTEGERS. A successful
+   rank test plus this nonzero kernel proves rational/real nullity one.
+
+A noninteractive certificate contains p,D,u,v,sigma (and optionally the
+recurrence). A deterministic verifier recomputes the sequence and BM;
+it costs ~O_d(n^2) bits and the certificate has O_d(n log n) bits.
+The verifier checks the prime range/encodings before primality testing.
+There is no probabilistic verification error and no cubic rank check.
+
+Why trials succeed
+==================
+
+* Hadamard: 0<|det H|<=R_d^(n-1), R_d=max(2,sqrt(d+d^2)). Hence only
+  O_d(n/log n) primes in (P,2P] can divide the chosen minor. A primary
+  Rosser-Schoenfeld prime-count bound makes the bad-prime probability
+  <=5(n-1)log(R_d)/(3P)=O_d(1/n).
+* Chen-Eberly-Kaltofen-Saunders-Turner-Villard 2002, Theorem 4.2, proves
+  D H cyclic for every nonsingular H except with probability
+  <=m(m-1)/(2(p-1)). No leading-minor, symmetry, or characteristic
+  assumption is needed for this nonsingular application.
+* Conditional on cyclicity, random probes retain full scalar degree
+  except with probability <=2m/p. The shift does not affect this when
+  T is invertible.
+
+Consequently each trial has success probability >=1/2 on the promised
+simple balanced sign kernel. Repeating a bounded ceil(log2(1/eta))
+number of independent trials proves the stated bound. Each trial uses
+<3m sparse products and O(n^2) field operations, with O(log n)-bit
+residues. Workspace is O(n) field elements plus the trial counter.
+
+The growing computational prime is justified on each fixed integer
+input by its determinant bound. It is NOT substituted into the
+fixed-prime mixing theorem, and no constant-probability estimate is
+transferred quantitatively through qualitative graph contiguity.
+
+Unknown planted eigenvalue: proved optional extension
+=====================================================
+
+Proposition 6 in the supplement proves that, uniformly over the cross
+graph, each fixed integer t other than d=d1+d2 and lambda*=d1-d2 is
+absent from the adjacency spectrum with probability 1-o(1).
+
+The SAME mixing input suffices. Put a=d1-t and choose an arbitrarily
+large FIXED odd prime not dividing d2*(a^2-d2^2). The two reference
+sum constraints are
+  a s(x)+d2 s(y)=0,  d2 s(x)+a s(y)=0.
+Their coefficient matrix is invertible. Both-nonconstant vectors
+contribute <=1 to the reference kernel first moment; both-constant
+vectors contribute exactly 1; mixed vectors contribute
+<=2 p^(2-rank_Fp B). Affine reference sums are always <=2p, including
+a=0, so total mixing replacement error is <=4p e_N+e_N^2. Thus
+  E|ker_Fp(A-tI)| <= 2+2p^(2-rank B)+4p e_N+e_N^2.
+The deterministic disjoint-support rank bound grows linearly in N.
+Real singularity forces >=p modular kernel vectors, so its probability
+has limsup<=2/p. Let these FIXED primes tend to infinity before the
+qualitative contiguity transfer. This gives a genuinely vanishing
+event, which transfers correctly. A finite union handles [-d,d].
+
+Enumerating all integer t in [-d,d), with capped certified trials for
+each, therefore recovers even when d1,d2 and lambda* are unknown. The
+trivial eigenvalue d is excluded. Since d is fixed, the total expected
+bit work remains ~O_d(N^2 log(1/eta)); overall recovery is 1-o(1)-eta.
+
+Each output certificate proves uniqueness at its reported eigenvalue.
+It does not certify simultaneous absence of all other integer flat
+eigenvectors; that exclusion is the probabilistic graph theorem above.
+
+Termination and fallback: exact distinctions
+===========================================
+
+* Promise Las Vegas: retry-until-success has expected ~O_d(N^2) bit
+  work CONDITIONAL on the simple balanced sign-kernel promise.
+* All-input bounded algorithm: always terminates with a certified
+  result or UNRESOLVED. Its expected bit work is near quadratic on
+  EVERY input; only recovery probability depends on the graph theorem.
+* A rational fraction-free-elimination fallback makes the algorithm
+  always return a fully resolved exact answer with polynomial worst-
+  case bit work. The qualitative o(1) chance of a bad graph does not
+  justify unconditional near-quadratic expected work for that fallback.
+
+Classical methods, novelty boundary
+===================================
+
+The sparse finite-field primitives, Berlekamp-Massey, preconditioning,
+and determinant bounds are classical. The supplement is an explicit
+certified algorithmic consequence of the companion simplicity theorem,
+plus a proved integer-shift first-moment extension. Any research novelty
+must be assessed in those RSBM statements, not claimed for Wiedemann
+linear algebra. Primary sources and scope checks are in
+blackbox-primary-audit.txt and algorithm-independent.txt.
+
+Main primary sources:
+  Wiedemann 1986, Sections II,V:
+  https://doi.org/10.1109/TIT.1986.1057137
+  Chen et al. 2002, Theorem 4.2:
+  https://kaltofen.math.ncsu.edu/bibliography/02/CEKSTV02.pdf
+  Rosser-Schoenfeld 1962, Corollary 3(3.8), threshold x>=20.5:
+  https://denisevellachemla.eu/Rosser-Schoenfeld-1962.pdf
+
+Implementation and validation
+=============================
+
+certified_recovery.py implements the exact modular algorithm and its
+deterministic verifier. Production trials default to SystemRandom;
+fixed seeds are used only for reproducible checks. The recovery path
+uses integer arithmetic only, no floating eigenvalues or rank oracle.
+
+Run the independent checks with
+  uv run --with sympy python certified_recovery.py
+SymPy's exact domain rank is used ONLY in the checker, not the algorithm.
+
+recovery-checks.json records:
+  *1000 modular matrices,503 singular, ZERO false rank certificates;
+  *correct planted signs for all five sampled simple-kernel RSBMs;
+  *honest abstention on a sampled RSBM with rational nullity TWO;
+  *honest abstention on the singular C4 zero-eigenvalue example;
+  *the nilpotent shifted-sequence safeguard;
+  *rejection of altered signs, a zero diagonal, and zero probes.
+example-certificate.json is a concrete independently recheckable output.
+The proof received a full independent audit (final-independent-audit.txt).
+The compiled PDF has no remaining LaTeX warnings or overfull boxes.
+
+All writes are confined to this subdirectory; frozen papers are unchanged.

@@ -1,0 +1,629 @@
+INDEPENDENT ACTUAL-SOURCE AUDIT: ALL-ADMISSIBLE-SIZE RSBM RECOVERY
+================================================================
+2026-11-15. Mathematical proof audit, independently reconstructed.
+No historical-priority, novelty, practical-runtime, or external-review claim.
+Only this new audit file was written; the reviewed proof files were not edited.
+
+VERDICT
+-------
+PASS at the stated model and fixed-degree scope. The exact type formula,
+entropy cancellation, polynomial modular moment, Boolean rigidity inputs,
+and bounded-time exact recovery algorithm are valid. They cover every fixed
+integer a>b>0 and every admissible block-size sequence, including odd N
+when a is even. No additional even-N assumption, spectral separation,
+matching-sum contiguity, local central limit theorem, or real-corank-one
+assertion is needed.
+
+There is also a valid stronger simplification in the current root note:
+its conditional-variance/Pinsker argument gives strict Boolean entropy
+negativity for ALL a>=2, including (2,1). Section 8 below independently
+proves this quantitative argument. Thus the general two-star enumeration
+can itself supply a unified proof; the separately audited cubic counting
+proof remains a valid alternative.
+
+This is an algorithm family for each fixed, known a,b. Its polynomial
+exponent depends on a+b and is very large. It does not prove simplicity of
+the planted real eigenvalue, a useful numerical eigengap, or robustness to
+model perturbations. I found no critical mathematical defect in the
+reviewed claims.
+
+1. ACTUAL SOURCES AND HASHES
+---------------------------
+The following complete files were read, not merely their summaries.
+
+spectral-gap/rsbm-cubic-operator-session/GENERAL-POLYNOMIAL-RECOVERY.md
+SHA256 1e6458e2ab1fa57ca694739e0ccbb488271805f38914c176d2fc21608ebf8a04
+
+spectral-gap/rsbm-cubic-operator-session/POLYNOMIAL-RECOVERY.md
+Initial SHA256 aeab4d56ff35ec85a2b2f1ee668093e7c843217b443cb2f877f77e2ccacd9b55
+Current, fully reread SHA256
+a9158715c3df3745b388ddecf80a73798ae6f6520c9a41650852bfbf71eeb926
+The actual delta only updates its final scope paragraph to refer to a
+separate cubic real-kernel proof. Recovery mathematics is unchanged.
+This audit does not certify that separately referenced full-proof.md.
+
+spectral-gap/partitioning-rsbm-kernel-session/deterministic-reductions.md
+SHA256 4c07502dd980c86bf85b548570d311fe910d4a003dd89e27ab66c70e1e017f74
+
+spectral-gap/partitioning-rsbm-kernel-session/low-degree-identifiability.md
+SHA256 9413253bace9d8e2f7ac49933319d0b31744cb7d9674430096a612d5afa583d9
+
+spectral-gap/partitioning-rsbm-obstruction-session/combinatorics-21.txt
+SHA256 ce91e382eaeec60d21142751713f4e895dfac2cd60ea288a98c03ab2591d0729
+
+spectral-gap/rsbm-general-coarse-recovery-root.txt
+Initial SHA256 f24b53a5bc391978aab75101c7b4b9ddd206cf6e9d2f1d296a69ae7b4e49dbd5
+Current, fully reread SHA256
+981953331167927fb6b825fb473223b1d52b19edf0e67e8716296147960141e5
+The intervening substantive change is the new conditional-variance/Pinsker
+argument, separately checked in Section 8. It is not silently covered by
+an audit of the earlier sketch.
+
+2. EXACT GENERAL TWO-STAR COUNT
+------------------------------
+Put d=a+b, lambda=a-b. In each block take aN distinguished internal
+stubs and a uniform perfect pairing; independently biject the bN plus
+cross stubs with the bN minus cross stubs. This model exists whenever aN
+is even, exactly the relevant parity requirement. A loop contributes two
+to the diagonal adjacency entry and to the local neighbor sum.
+
+For a fixed finite label alphabet F_p, a plus profile consists of its
+root x and the labels at its ordered a internal and b cross partners,
+subject to their sum being lambda*x in F_p. One internal label is uniquely
+determined by the root and the other d-1 labels, so there are p^d profiles.
+The analogous statement holds in the minus block. Let the two profile
+count arrays be n^+,n^-, with total N each.
+
+For a fixed assignment of profiles to labeled vertices, classify each
+internal stub by (its root label u, its requested partner label v).
+Let the counts be m_uv. Pairing is possible precisely when m is symmetric
+and its diagonal entries are even. Its number of compatible pairings is
+
+  W(m) = product_{u<v} m_uv! * product_u (m_uu-1)!!.
+
+Off-diagonal classes are paired by a bijection to their reverse classes;
+each diagonal class is paired internally. This includes loops and parallel
+edges without an orientation or multiplicity correction. Cross-stub
+classes h^+_uv and h^-_vu must agree, and then the compatible cross
+bijections number product_{u,v} h_uv!.
+
+Every configuration and kernel vector gives exactly one ordered profile
+at each vertex, and conversely every compatible configuration counted
+under a profile assignment satisfies all its equations. Multiplying by
+the two multinomial vertex-assignment counts proves EXACTLY
+
+ E |ker_Fp(A-lambda I)|
+ = sum_valid [N!/product n_s^+!] [N!/product n_t^-!]
+     * W(m^+)W(m^-)/((aN-1)!!)^2
+     * product h_uv!/(bN)!.
+
+This is the general source's equation (1). In particular, no hidden
+factor of N!, a!, b!, graph-factorization count, or edge orientation is
+missing. Internal and cross pairing consistency impose all needed
+marginal identities; the local equations do not impose any further
+global restriction beyond the compatible pairings being counted.
+
+3. ENTROPY AND UNIFORM POLYNOMIAL REMAINDERS
+------------------------------------------
+Write S_+,S_- for the two profile laws, F_+,F_- for the internal tables
+normalized by aN, and G for the cross table normalized by bN. The entropy
+exponent per N is exactly
+
+ Phi = H(S_+)+H(S_-) - (a/2)(H(F_+)+H(F_-)) - b H(G).
+
+To check it without a Stirling approximation, use zero-safe factorial
+bounds r log r-r <= log(r!) <= r log r-r+1+log(r+1). With
+q=p(p+1)/2, symmetric tables of total T=aN satisfy
+
+ W(m)/(T-1)!! <= e^(q+1)(T+1)^(q+1) exp[-(T/2)H(m/T)].
+
+Indeed the off-diagonal/diagonal leading terms combine to
+(1/2) sum_uv m_uv log m_uv -T/2. The q individual upper errors
+and one denominator lower error give the displayed bound, also when
+some classes are empty. The cross ratio is bounded by
+
+ product h_uv!/(bN)! <= e^(p^2)(bN+1)^(p^2) exp[-bN H(G)].
+
+The multinomial upper bound exp[NH(S)] has no polynomial loss. There
+are at most (N+1)^(2p^d) pairs of profile count arrays. Thus all errors
+are fixed powers of N, uniformly even at the boundary of type space.
+There is no saddle-point or nondegenerate-Hessian assumption here.
+
+Independently average the two star laws over permutations of their a
+internal slots and b cross slots. All pairing tables and root laws are
+unchanged, constraints are preserved, and star entropies increase. It
+suffices to prove the upper bound for these symmetrized laws. Put
+
+ P = law(X) = law(A_i) = law(D_j),
+ Q = law(Y) = law(C_i) = law(B_j).
+
+Internal table symmetry gives the first equalities within a block;
+the two cross tables give the equalities across blocks. An internal
+neighbor is determined by the root and the retained neighbors, so
+
+ H(S_+) <= H(X)+(a-1)H(A|X)+bH(B|X),
+ H(S_-) <= H(Y)+(a-1)H(C|Y)+bH(D|Y).
+
+Writing I_+,I_- for the two internal mutual informations and I_c for
+the cross mutual information, the retained terms sum to
+
+ d(H(P)+H(Q))-(a-1)(I_++I_-)-2bI_c.
+
+The table entropies being subtracted are
+a(H(P)+H(Q))-(a/2)(I_++I_-) and
+b(H(P)+H(Q))-bI_c. Consequently
+
+ Phi <= -(a/2-1)(I_++I_-)-bI_c <= 0,  for all a>=2.
+
+This proves the explicit source bound
+
+ E |ker_Fp(A-lambda I)|
+ <= e^[2(q+1)+p^2] (aN+1)^[2(q+1)] (bN+1)^(p^2)
+       * (N+1)^(2p^d).
+
+At p=2 its power is C_d=2^(d+1)+12. No field characteristic or block
+parity is used in this entropy inequality. It bounds the whole kernel,
+including all nonplanted modular vectors; no real-to-modular converse
+is being assumed.
+
+4. CONDITIONING ON EXACTLY THE REQUESTED SIMPLE LAW
+-------------------------------------------------
+A simple labeled internal a-regular graph has (a!)^N distinguished-stub
+realizations. A simple labeled b-biregular cross graph has (b!)^(2N)
+cross-bijection realizations. Therefore independent conditioning of the
+three independent factors gives precisely the three independent uniform
+simple graph laws in the question.
+
+For fixed degrees their joint simplicity probability is bounded away
+from zero along every admissible size sequence. I checked the primary
+source Janson, "The probability that a random multigraph is simple, II,"
+https://arxiv.org/pdf/1307.6344 : actual Theorem 1.1 for ordinary
+configurations, and the bounded-degree specialization of Theorem 5.1
+(equivalently Theorem 5.3) for bipartite configurations. Their hypotheses
+hold here. Thus nonnegative moments increase by at most a fixed factor
+on conditioning, and high-probability configuration statements transfer.
+No contiguity result between different regular-graph constructions is
+being used.
+
+In particular E_simple 2^k_2=O_{a,b}(N^C_d), where k_2 is the binary
+nullity. Integer-minor reduction gives rational nullity <= k_2. This
+does not imply rational nullity one, and no such implication is needed.
+
+5. GENERAL SOURCE'S ZERO-PHASE ARGUMENT, a>=3
+--------------------------------------------
+Choose any fixed odd prime p not dividing b. If a valid type has Phi=0,
+equality must hold both in symmetrization and in every entropy step.
+The positive coefficient a/2-1 forces I_+=I_-=I_c=0, while equality
+in conditional subadditivity forces the retained neighbors to be
+conditionally independent given their root. As each single-neighbor
+law is root-independent, the retained joint law is the corresponding
+product law and independent of the root.
+
+Hence with independent X,U_1,...,U_(a-1) having law P and V_1,...,V_b
+having law Q, the variable lambda X-sum U_i-sum V_j has law P. Fourier
+transformation on F_p gives
+
+ P_hat(t)=P_hat(lambda t) P_hat(-t)^(a-1) Q_hat(-t)^b.
+
+For r=|P_hat(t)| this implies r<=r^(a-1), so r is 0 or 1. A nontrivial
+character of the additive group F_p is injective; if P is not a point
+mass then every such modulus is strictly below 1, and hence all are 0.
+Thus P is either a point mass or uniform. The same applies to Q.
+
+If P is a point mass, the omitted-internal-label constraint makes a
+sum of b independent Q variables deterministic. Holding the others
+fixed proves Q is a point mass as well, not merely that bQ is constant.
+Writing their values c,e, the constraints give b(c+e)=0, so e=-c.
+If P is uniform and Q were a point mass the reversed argument would
+contradict P uniform. Thus both are uniform. Independence identifies
+the whole zero-phase star laws, exactly as stated in the source.
+
+For Boolean alternatives the roots are supported on the two distinct
+field values +1,-1. They cannot be uniform on F_p. A fixed macroscopic
+flip fraction is also bounded away from the constant planted phases.
+The feasible star-law space is compact and Phi is continuous, including
+at zero entries. It therefore has a strictly negative maximum on this
+closed Boolean root-law set. Polynomially many types and the uniform
+factorial bounds yield exponentially few macroscopic alternatives.
+Real Boolean equations imply the modular equations, so this modular
+first moment is a valid upper bound. No growing-prime limit is involved.
+
+6. UNIFORM SMALL-SUPPORT EXPOSURE: FULL RECONSTRUCTION
+----------------------------------------------------
+For a real eigenvector v with eigenvalue lambda>0, v is orthogonal to
+1 because A*1=d*1 and lambda!=d. It has a positive maximum and a negative
+minimum. The positive maximum requires at least lambda positive
+neighbors (each is at most that maximum); the analogous fact holds
+for the negative minimum. In a simple graph these show
+
+ |supp(v)| >= 2(lambda+1).
+
+Let S be its support, |S|=s, and T its exterior neighbor set. Every
+vertex of T must have at least two incident edges to S, because its
+eigenvector equation is a vanishing sum of nonzero support coordinates.
+If e edges lie inside S and b_S leave S, then ds=2e+b_S and
+|T|<=b_S/2. This is a necessary condition even when cancellations among
+more than two neighbors are present; no sign assumption on those
+cancellations is being made.
+
+For a fixed S, expose partners of the ds stubs rooted in S, skipping
+already paired stubs. Each relevant internal-pairing or cross-bijection
+pool retains Theta(N) stubs for s<=epsilon N and sufficiently small
+degree-dependent epsilon. Call an exposure a collision if its partner
+is rooted in S or in an exterior vertex already seen. At each selected
+step, conditional collision probability is <=C s/N; its candidate
+targets occupy only O_d(s) stubs even with the three typed pools.
+
+There are e+b_S actual exposures, exactly |T| of which first touch an
+exterior vertex. Thus collisions number
+
+ e+b_S-|T| >= e+b_S/2 = ds/2.
+
+This accounts correctly for an internal edge, which consumes two
+S-stubs but is exposed only once. Pad to ds steps by deterministic
+noncollisions. The conditional probability bound and a union bound
+over selected collision indices give
+
+ Pr[necessary exterior condition for this S]
+ <= 2^(ds)(Cs/N)^(ds/2).
+
+Union bound over S gives [K(s/N)^h]^s with h=(d-2)/2>0. For
+f_s=[K(s/N)^h]^s one has
+f_(s+1)/f_s <= K e^h ((s+1)/N)^h. Choose epsilon so this is <1/2
+through the desired range. Summing from s=2(lambda+1) gives
+
+ O_{a,b}(N^[-(d-2)(lambda+1)]).
+
+Conditioning on simplicity costs only a constant. The minimum-support
+claim is invoked only for the simple graph event; the configuration
+union bound need not have that minimum-support property itself.
+The argument is valid for all admissible N and all three graph factors,
+including b=1, and gives the exact rate quoted in the general source.
+
+For two balanced sign eigenvectors sigma,tau, their flip counts in the
+two planted blocks agree, because both have coordinate sum zero.
+After replacing tau by -tau their common flip count k is <=N/2. A
+small k gives an eigenvector tau-sigma of support 2k; the exposure
+bound excludes it. A macroscopic k is excluded by Section 5. This
+proves the general source's Boolean uniqueness claim for a>=3.
+
+7. SEPARATE CUBIC SOURCES: MOMENT AND BOOLEAN RIGIDITY
+----------------------------------------------------
+Both complete cubic source files and both actual Boolean-rigidity
+derivations were read. The following details reconstruct their proofs.
+
+Gauge the random cross matching to the identity. Relabeling invariance
+and independence leave two independent internal configuration matrices.
+After the sign conjugation the kernel equations are C_+x=x+z and
+C_-z=x+z. At coordinate i the ordered profile is determined by
+(a,d,b,e), with other internal neighbors c=a+d-b and f=a+d-e.
+Thus the exact p^4-profile count in the cubic source has two W(m)
+factors and denominator ((2N-1)!!)^2; its joint-profile multinomial
+is appropriate because the matching has identified the coordinates.
+
+The commuting b<->c and e<->f involutions leave both pairing tables
+unchanged. Averaging under them increases entropy. Under the averaged
+law the tables are the laws of (a,b) and (d,e), so
+H(a,d,b,e)-H(a,b)-H(d,e)<=0. This is valid also in characteristic two.
+The explicit factorial factors give E 2^k=O(N^24), as stated. The
+general two-star proof would also work at (2,1), with a looser N^28
+moment; the improved N^24 exponent is consistent with gauging away
+the cross-matching count and is not required for the theorem.
+
+For Boolean rigidity, the flip condition at each vertex is exactly
+"number of internal mark-boundary edges equals the matching mark-
+boundary indicator." Let k flips occur on each side and t be the
+even internal boundary size. Independently counting the selected
+boundary stubs and the compatible matching gives
+
+ E_(k,t)=binom(N,k) binom(k,t) binom(N-k,t)
+   * [4^t t! (2k-t-1)!! (2(N-k)-t-1)!!/(2N-1)!!]^2.
+
+This agrees algebraically with the alternative Pt^2 Qt formula in
+low-degree-identifiability.md. For k<=epsilon N the displayed
+double-factorial and factorial estimates give
+E_(k,t)<=(Ck/N)^k uniformly in t, and summing t and k>=2 gives
+O(N^-2). k=1 is impossible in the simple model, so it is correctly
+omitted before conditioning; its loop-based configuration realizations
+must not be included in this bound.
+
+For alpha=k/N,beta=t/N the leading entropy is
+
+ F=-s(alpha-beta)-s(1-alpha-beta)+s(2alpha-beta)
+     +s(2-2alpha-beta)+(4beta-2)log2,
+ s(x)=x log x, s(0)=0.
+
+Differentiation gives the claimed strictly decreasing beta derivative
+and unique optimizer
+beta_*=(7-sqrt(49-180alpha(1-alpha)))/15. With
+u=alpha-beta_*,v=1-alpha-beta_*,x=2u+beta_*,y=2v+beta_*, its stationarity
+is xy=16uv. The envelope derivative has the sign of
+
+ x^2 v-y^2 u=(u-v)(4uv-beta_*^2),
+ 4uv-beta_*^2=2beta_*(1/3-beta_*).
+
+It is strictly negative for 0<alpha<1/2. The optimal value tends to
+zero as alpha decreases to zero; hence it is strictly negative on
+every compact macroscopic range. Uniform zero-safe Stirling errors
+give the exponential bound claimed. Simplicity has limiting probability
+exp(-3/2) for the two internal blocks: its displayed coefficient-ratio
+derivation is correct. Therefore Boolean uniqueness is 1-O(N^-2),
+along odd as well as even N. I do not infer cubic real corank one.
+
+The finite localized counterexample and finite extra-eigenspace example
+in the rigidity note are not needed for recovery. No inference from
+their uniqueness of signs to real corank one has been used here.
+
+8. CURRENT ROOT DELTA: QUANTITATIVE BOOLEAN ENTROPY FOR ALL a>=2
+---------------------------------------------------------------
+This is a separate actual-source audit of the root note's new argument,
+not a retrospective attribution to the earlier general source.
+
+Use the SAME exact general profile enumeration with the two abstract
+labels -1,+1, now restricting profiles to the INTEGER identity
+sum neighbors=lambda*root. Pairing enumeration never required a field.
+Permuting internal/cross slots preserves this integer constraint.
+Thus the table-entropy formula and symmetrization apply unchanged.
+
+For symmetrized star laws let J_+,J_- denote the conditional total
+correlations among their a-1 retained internal and b cross slots,
+conditional on their root. With c=(a-2)/2 and L=-Phi, the cancellation
+of Section 3 is the EXACT identity
+
+ L=c(I_++I_-)+bI_c+J_++J_-.
+
+For the plus truncated star P_+, define R_+ to have the same root law,
+independent retained internal slots conditional on that root, each
+with its original conditional single-slot law, and b independent cross
+slots with the root-independent minus root law Q. Direct expansion of
+relative entropy gives
+
+ KL(P_+ || R_+) = J_+ + b I_c <= L.
+
+This is finite even when marginals vanish: every positive P_+ atom
+has all the single-coordinate marginals needed for a positive R_+
+atom. Conditional laws on null root values can be chosen arbitrarily.
+
+Put m(X)=E[A_1|X], v(X)=Var(A_1|X), and
+W=lambda X-sum_(i<a) A_i-sum_j B_j. Under P_+, W is the omitted
+internal sign, so exchangeability implies
+E_P (W-m(X))^2=E v(X). Under R_+, its conditional variance is
+(a-1)v(X)+b Var(Y), and its squared conditional-mean contribution to
+E_R (W-m(X))^2 is nonnegative. Therefore
+
+ E_R (W-m(X))^2-E_P (W-m(X))^2
+ >=(a-2)E v(X)+b Var(Y) >=b Var(Y).
+
+Since a>b, |W|<=lambda+(d-1)=2a-1 and |m(X)|<=1. The function
+f=(W-m(X))^2 takes values in [0,4a^2] on BOTH distributions. Pinsker's
+inequality and the bounded-range expectation inequality now give
+
+ b Var(Y) <= 4a^2 TV(P_+,R_+)
+             <=4a^2 sqrt(KL(P_+||R_+)/2)
+             <=4a^2 sqrt(L/2).
+
+For common flip fraction r, Var(Y)=4r(1-r), hence
+
+ Phi <= -(2b^2/a^4) r^2(1-r)^2.
+
+Every constant and inequality direction checks. This proof retains the
+internal conditional root-neighbor law, so does not assume I_+=0;
+it consequently WORKS when a=2. Original unsymmetrized Phi is at most
+the symmetrized Phi, so the same negative upper bound applies to the
+original type. It gives a uniform quantitative deficit for every
+macroscopic flip interval, without a modular equality classification.
+
+Together with Section 6 and the general binary moment, this yields a
+self-contained all-a>=2 proof, including the cubic case, with a coarse
+degree-dependent exponent. The original separate cubic source remains
+correct and improves its particular moment exponent.
+
+9. EXACT RECOVERY AND BIT COMPLEXITY
+-----------------------------------
+Given a sign assignment tau_i=(-1)^z_i, the parity of its number of
+opposite-sign neighbors is ((A+dI)z)_i over F_2. Thus every equitable
+(a,b) assignment satisfies
+
+ (A+dI)z=(b mod 2)1.
+
+Since d-lambda=2b, the homogeneous matrix is A-lambda I over F_2.
+The planted assignment ensures the affine system is consistent; its
+solution set has precisely 2^k_2 points. The moment bound therefore
+controls the number actually enumerated, even though the homogeneous
+binary equation itself cannot distinguish the two real signs.
+
+Solve by exact binary elimination. If 2^k_2>n^(C_d+3), abstain;
+otherwise enumerate the affine space and verify exactly b opposite
+neighbors per vertex over the integers. Markov bounds abstention by
+O(N^-3). Each verification and Gray-code update costs polynomial time
+(indeed O(n) at fixed d), and the explicit cap gives deterministic
+polynomial worst-case bit complexity on every input.
+
+The parity system is only a necessary condition. The exact integer
+verification is essential and is present in both reviewed algorithms.
+Every passing sign vector obeys A tau=lambda tau and is automatically
+balanced: d<1,tau>=<1,A tau>=lambda<1,tau>, with d-lambda=2b>0.
+On the Boolean-rigidity event, the only passing vectors are +/-sigma;
+so returning the first passing vector recovers the planted unordered
+partition. No approximate eigenvector rounding or analytic gap is used.
+
+Without the cap, elimination plus enumeration lists all equitable
+partitions with expected polynomial time under the model, by the same
+moment. The cutoff supplies worst-case polynomial time with a vanishing
+abstention probability. This is sufficient for the theorem; it does
+not promise success on every graph in the model's support.
+
+The rational spectral alternative is also valid. Rational nullity is
+at most modular nullity by integer minors. A basis and invertible set
+of pivot rows allow enumeration of every possible sign choice on those
+rows, hence every Boolean eigenvector. Hadamard bounds all integer
+minors of the fixed-degree, fixed-diagonal matrix by exp(O_{a,b}(n));
+fraction-free elimination and reconstruction have polynomial bit
+complexity. This alternative likewise needs only logarithmic real
+nullity, not real nullity one.
+
+10. SCOPE OF THE PASS
+---------------------
+Verified: fixed positive integers a>b; independent uniform simple
+regular factors in the two equal planted blocks and the cross graph;
+all admissible block sizes; polynomial exact recovery with probability
+tending to one, up to global exchange. For (2,1) the reviewed special
+source gives failure O(N^-2) and a coarse O(n^28) worst-case algorithm.
+For general fixed degrees the exponent is explicitly bounded by a
+function of d, with cutoff O(n^(C_d+4)) plus elimination. Large exponents
+are proof bounds, not useful implementation estimates.
+
+Not established by this audit: novelty; optimal running time; a usable
+numerical spectral gap; real eigenvalue simplicity for all admissible
+N; changing/growing degree sequences; unequal block sizes; correlated
+or adaptive graph factors; adversarial/noisy data. The stronger real
+kernel question remains logically separate from successful exact
+partition recovery.
+
+No critical gap found. The earlier even-block restriction disappears
+because a polynomial modular first moment suffices for efficient
+Boolean enumeration, and it follows from a global nonpositive type
+entropy without a sharp saddle analysis.
+
+11. NEW ACTUAL-SOURCE DELTA: UNIVERSAL EXPONENT 24 BY AGGREGATE FIBERS
+------------------------------------------------------------------
+Audited after the preceding proof, by a fresh reconstruction of the
+actual aggregate argument rather than relying on its reported audits.
+
+spectral-gap/rsbm-cubic-operator-session/AGGREGATE-FIBER-MOMENT.md
+SHA256 1c3b6cfa250d53f8783015be821c2c6650bf1ad1700d82986abd50b1a336ef00
+
+Also fully read its actual quantitative-Boolean companion:
+spectral-gap/rsbm-cubic-operator-session/BOOLEAN-VARIANCE-GAP-AUDIT.md
+SHA256 091315e2035c47ea57fc6aea2a35592be4e846f65864866c95036db7ed05f844
+Its calculation agrees with the independent derivation in Section 8.
+
+VERDICT ON THIS DELTA: PASS for the intended fixed assortative model.
+The polynomial power improves from C_d to 24 for EVERY fixed a>b>=1,
+with no parity restriction beyond admissibility. The explicit first
+moment inequality itself is valid for a>=2,b>=1 without assortativity.
+The displayed Boolean Pinsker constant and small-support application
+use a>b, as does the claimed recovery theorem.
+
+11a. Exact grouping and the uniform-fiber entropy bound
+
+For fixed directed tables (m^+,m^-,h), Omega is a finite set of ALL
+ordered arrays of N plus stars and N minus stars obeying their local
+equations and these tables. It includes their ROOT LABELS, not merely
+the partner-slot arrays. Each configuration and kernel vector gives
+one such array. For every array its number of compatible pairings is
+exactly W(m^+)W(m^-) product h_uv!, independent of its detailed local
+types. Thus the source's grouped exact identity is simply the identity
+of Section 2, grouped before summing local-type multinomials.
+
+Choose the full array uniformly from a nonempty Omega. Independently
+permuting the N vertex positions in either block is a bijection of
+Omega: it permutes entire stars including their roots and requested
+neighbor labels, preserving all table sums and local equations. At
+each individual vertex, arbitrary permutations of its a internal or b
+cross slots are also bijections. They preserve local equations because
+only neighbor sums enter, and table entries because the neighbor
+multisets are unchanged. These facts do not presume a specific graph
+pairing is fixed inside the fiber.
+
+Uniform measure is invariant under all those bijections. Thus every
+plus vertex has one common slot-symmetric law T_+, and every minus
+vertex one common law T_-. Each array's deterministic total internal
+table is m^+. Averaging its aN contributions and using the common
+vertex/slot laws proves EXACTLY law(X,A_1)=m^+/(aN), not an asymptotic
+or an arbitrary mixture. The other internal law is m^-/(aN), and
+law(X,B_1)=law(D_1,Y)=h/(bN). Internal table symmetry and cross-table
+consistency give all marginal identities used in Section 3.
+
+The entropy of the full uniform array is log|Omega|. Subadditivity over
+its 2N vertex profiles therefore gives
+
+ log|Omega| <= N[H(T_+)+H(T_-)]
+ <= N[(a/2)(H(F_+)+H(F_-))+bH(G)].
+
+No independence between vertices, blocks, roots, or slots was asserted.
+The second inequality is exactly the already proved star entropy
+bound. This proves the desired exponential cardinality bound with
+NO extra prefactor. In particular every multinomial choice of root
+labelings and local types is already inside log|Omega|. Multiplying
+by an additional binomial or local-type count would only weaken this
+valid estimate and is not needed to account for an omitted choice.
+
+11b. All polynomial factors and the universal exponent
+
+Use the SAME explicit factorial bounds as in Section 3. Each grouped
+summand is at most
+
+ e^[2(q+1)+p^2] (aN+1)^[2(q+1)] (bN+1)^(p^2),
+ q=p(p+1)/2,
+
+because the entropy factor from |Omega| cancels the full exponential
+pairing cost. Bounding each internal table entry independently gives
+at most (aN+1)^(2p^2) choices for the two tables, and the cross table
+at most (bN+1)^(p^2). Ignoring their symmetry, parities, fixed totals,
+or root-count consistency enlarges this count, so is valid. Hence
+
+ E |ker_Fp(A-lambda I)|
+ <= e^[p(p+1)+2+p^2]
+      (aN+1)^[p(p+1)+2+2p^2] (bN+1)^(2p^2).
+
+Its power of N at fixed degrees is
+[p(p+1)+2+2p^2]+2p^2 = 5p^2+p+2. At p=2 the constants and exponents
+are therefore EXACTLY
+
+ E 2^k_2 <= e^12 (aN+1)^16 (bN+1)^8 = O_{a,b}(N^24).
+
+The degree-dependent leading coefficient is retained; only the power
+24 is uniform across fixed degree pairs. Conditioning on all three
+simple factors costs a constant depending on the fixed degrees and
+gives exactly the desired law, as checked in Section 4. Thus the same
+N^24 moment holds along ALL admissible block sizes. No growing-field
+estimate or growing-degree success probability is claimed.
+
+11c. Restricted fibers count all Boolean alternatives
+
+Repeat the grouped exact identity with the two abstract symbols
+-1,+1, now using their INTEGER star equation. This counts Boolean
+eigenvectors; it is not their collapsed binary reduction. Restrict
+Omega further to exactly k flips per planted block. All the vertex
+and per-vertex slot permutations used above preserve this restriction,
+so the same entropy proof applies, with the two root laws fixed by
+alpha=k/N. The Section 8 deficit gives
+
+ log|Omega_k|
+ <= N[(a/2)(H(F_+)+H(F_-))+bH(G)
+       -(2b^2/a^4)alpha^2(1-alpha)^2].
+
+The root signs and their binomial multiplicities are INCLUDED in
+Omega_k. The same pairing cancellation and table count therefore yield
+
+ E_configuration Z_k <= e^12(aN+1)^16(bN+1)^8
+   * exp[-(2b^2/a^4)N alpha^2(1-alpha)^2].
+
+This verifies the source's equation (7), including its prefactor and
+the absence of any missing root-labeling count. For fixed eta>0 its
+sum over eta N<=k<=N/2 is exponentially small up to a fixed polynomial.
+For sufficiently small eta the small-support exposure argument of
+Section 6 handles k<eta N. It works at (2,1), so this is a unified
+Boolean-rigidity proof for all fixed assortative pairs, independent
+of the special cubic type calculation.
+
+11d. Universal cutoff and runtime
+
+The necessary binary affine system remains
+(A+dI)z=(b mod2)1, with homogeneous kernel dimension k_2. Use the SINGLE
+cutoff 2^k_2<=n^27 for every fixed degree pair. The conditional N^24
+moment gives O_{a,b}(N^-3) abstention probability. Gray-code updates
+and exact integer degree checks cost O_d(n) per candidate, so the
+worst-case runtime is O_d(n^28), including polynomial elimination.
+Boolean rigidity supplies high-probability correctness. Without the
+cap the expected enumeration cost is O_d(n^25).
+
+The additional universal polynomial statement on arbitrary-degree
+inputs is consistent: at most n^27 candidates are checked, each by
+scanning at most n^2 graph incidences, and elimination is polynomial.
+This is a runtime bound, not a growing-degree recovery guarantee.
+
+No critical gap found in this strengthening. The source's broad
+opening a>=2,b>=1 applies to the moment; its recovery/Boolean bounds
+are evaluated here only under its explicitly intended a>b assumption.

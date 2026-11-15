@@ -1,0 +1,362 @@
+FRESH SECOND AUDIT: SHARP AMBIGUITY FOR COMPLETE-BASE RANDOM LIFTS
+November 15, 2026. graph_breakthrough.
+Only this audit file is written for this task. No proof source is edited.
+
+Verdict
+-------
+PASS. I read the entire actual source and independently reconstructed
+the leading motif count, all-overlap factorial second moment, specialized
+macro/support upper bound, size-two support classification, exact
+posterior, unique-twin partition count, and connected conditioning.
+No substantive mathematical gap was found.
+
+For fixed d>=3, k=d+1, and any fixed candidate bound K>=k, the
+probability of a noncoarsening equitable partition with at most K
+classes in a random N-lift of K_k is
+
+  binom(k,2) N^(-(d-2))+O_(d,K)(N^(-3(d-2)/2)).
+
+For the KNOWN complete base, uniformly hidden equal-size planted
+partition, optimal Bayes exact-recovery error has half that leading
+constant. Both leading asymptotics survive conditioning the total
+lift connected. The source does not invent a posterior for an
+unspecified unknown-base prior. Historical novelty is unverified.
+
+Actual source audited
+--------------------
+spectral-gap/random-lift-sharp-ambiguity-root.txt
+  SHA256 ea3c6904812f537079bb2140a4d4fc3e8eb6fa9b8f5fe7f8cb038ede61840b5d
+
+The source is 368 lines. I read it in full, including its specialized
+entropy and support derivations, rather than importing only the general
+frame verdict. Its four cited all-slot modules were also freshly read
+in full for my preceding source-bound regular-frame audit:
+  spectral-gap/rsbm-regular-frame-root-audit.txt
+  SHA256 152fad5caf879163457b564d95d9157dd7111d8f1471c3079d94b9146a3ac55a
+Those module hashes are explicitly recorded in both files and unchanged
+in the present source. This audit's conclusions do not rely on the
+source author's prior audit claims.
+
+
+1. The exact twin event and its constant
+---------------------------------------
+Put beta=d-2 and a_d=binom(k,2). A vertex in old fiber V_a has one
+neighbor in EVERY V_b, b!=a, and no neighbor in V_a. For u in V_a,
+v in V_b, a!=b, let I_uv require their adjacency and equality of
+their neighbors in each of the other d-1 old fibers.
+
+The adjacency probability is 1/N. For each remaining color c, the
+two matching images of u,v in V_c are independent uniform vertices,
+so coincide with probability 1/N. All these coincidences use distinct
+independent base-edge matchings. Therefore EXACTLY
+
+  P(I_uv)=N^(-d),
+  E X=binom(k,2)N^2N^(-d)=a_d N^(-beta),                  (A1)
+
+where X counts unordered physical cross-fiber center pairs.
+
+On I_uv the closed neighborhoods N[u],N[v] coincide. Their transposition
+fixes all other vertices and is a graph automorphism. Swapping u,v
+between their old fibers gives a second balanced K_k-cover partition.
+For N>=2 it is a different UNORDERED partition, not a global renaming.
+Every fixed K>=k includes this alternative. The asymptotic claims
+properly use large N; at N=1 swapping singleton fibers would not
+create a new unordered partition.
+
+
+2. Motif expansion and complete factorial-second-moment control
+----------------------------------------------------------------
+The graph F consists of the two centers, their joining edge, and one
+leaf in every other old fiber, each joined to both centers. Its values are
+
+  v(F)=k=d+1,       e(F)=2d-1,       e(F)-v(F)=beta.
+
+Every actual twin pair determines its leaves uniquely through the
+matching images. Thus it corresponds to exactly ONE colored copy
+of F, without a (d-1)! factor. Conversely a copy saturates all d
+edges at each center and gives I_uv. Each base-edge type occurs at
+most once in a single copy.
+
+For a fixed overlap identification of two copies, write m=v(J),h=e(J)
+for their intersection, INCLUDING all common vertices even if isolated
+in the intersection. There are O_d(N^(2k-m)) choices of their physical
+vertices. If matching compatibility fails the probability is zero.
+Otherwise each base-edge matching has at most two distinct prescribed
+edges, with exact probability 1/(N)_r for r=0,1,2. Independence gives
+an O_d(N^(-(2(2d-1)-h))) bound. Hence the overlap contribution is
+
+  O_d(N^(-2beta+h-m)).                                  (A2)
+
+The crucial bound h<=m for DISTINCT feasible motifs is correct:
+
+  * If the physical center sets coincide, matching injectivity forces
+    every leaf to coincide. These are the identical physical motif,
+    omitted from X(X-1). Different leaf choices with those same
+    centers are incompatible, so have joint probability zero.
+
+  * Otherwise choose a center u of the first copy that is not a center
+    of the second. If absent in the second, the intersection is a
+    subgraph of F-u, a star. If present, its intersection degree is
+    at most two, since it is a leaf in the second prescribed motif.
+    Deleting u leaves a forest. Restoring a vertex with at most two
+    incident edges creates at most one cycle, so h<=m. If the remaining
+    graph is empty, the restored vertex is isolated and the same
+    inequality holds. Extra isolated common vertices only help.
+
+This reasoning concerns prescribed motif edges, so possible extra
+edges between leaves in the full graph do not invalidate it. There
+are finitely many colored overlap types. Thus
+
+  E X(X-1)=O_d(N^(-2beta)).                               (A3)
+
+Bonferroni and Markov give
+
+  P(X>=1)=a_d N^(-beta)+O_d(N^(-2beta)),
+  P(X>=2)=O_d(N^(-2beta)).                               (A4)
+
+Twin events are not presumed independent. For example several pairs
+can coexist in one larger twin class; those cases are included in
+(A2)--(A3). At d=3 a lifted K_4 component has six twin pairs, but
+its probability is of the lower order N^-2 and causes no leading
+constant inflation.
+
+
+3. Specialized macroscopic exclusion
+-------------------------------------
+For any one-hot integer equitable candidate Y with r<=K and quotient
+R, its old-fiber star laws P_i obey sum_(j!=i)e_(Y_ij)=R_(X_i).
+Their exact expected type count is
+
+  product_i [N!/product_s T_i(s)!]
+      *product_(i<j)[product_(x,y)m_ij(x,y)!/N!].
+
+The first product already assigns root labels. Each second factor
+is the exact probability of matching the required root/neighbor label
+categories on one independent uniform base-edge matching. There is
+one slot per old neighbor type, so no across-type symmetrization is
+needed. The entropy per graph vertex is
+
+  Phi=(1/k)sum_i H(P_i)-(1/k)sum_(i<j)H(mu_ij).
+
+Lossless omission of EACH neighbor slot and averaging over all d
+slots gives the correct exact identity
+
+  -Phi=(d-2)/(dk)sum_(i<j)I_ij
+                    +1/(dk)sum_i sum_t J_it.
+
+The source's quantitative comparison uses retained independent
+unconditional-neighbor laws, divergence J_it+sum_(s!=t)I_is,
+and a squared vector function with range [0,2d^2]. Summing its
+variance differences over every omission gives
+(d-2)sum_s V_s+dB_i>=0. Pinsker and Cauchy--Schwarz yield, for
+delta=(1/k)sum_i(1-max root_probability_i),
+
+  Phi<=-c_d delta^2,
+  c_d=(d-2)^3/[4k d^6(d-1)]>0.                           (A5)
+
+All constants match the general all-slot derivation. Delta is exactly
+minimum row disagreement from ANY old-type point map, allowing merges
+and unused labels. Candidate rows of R have mass d, since every cell
+is nonempty in a d-regular graph. The variance identity is over ordinary
+integer one-hot vectors, not modular values.
+
+There are polynomially many fixed-degree/finite-alphabet type tables
+and finitely many integer quotients for fixed d,K. Uniform zero-safe
+Stirling bounds thus give exponentially small probability for any
+candidate at distance at least fixed eta*n from all point maps,
+where n=kN. No spectral hypothesis or minimum candidate cell size
+enters this estimate.
+
+
+4. Small supports and the improved remainder
+--------------------------------------------
+For a bad support S, no outside vertex has exactly one edge into S.
+If s=|S| and w exterior vertices are touched, counting all incident
+edges gives
+
+  e-s-w>=ceil(beta s/2),       e<=ds,       w<=ds/2.
+
+For s<=N/(4d), a prescribed typed partial matching has probability
+at most (2/N)^e. The witness count
+
+  binom(n,s)binom(n,w)2^(dw)(2ds)^e
+
+includes every bad support's incident edges. After summing the
+O_d(s^2) choices of e,w and absorbing fixed factors in C_d, it gives
+
+  P(exists bad S of size s)<=C_d^s(s/n)^ceil(beta s/2).
+
+For eta sufficiently small, the larger real-power sequence
+u_s=C_d^s(s/n)^(beta s/2) decreases geometrically. Starting at THREE
+therefore gives
+
+  P(B_>=3)=O_d(N^(-3beta/2)).                             (A6)
+
+Using the real exponent may be loose when ceil(3beta/2) is larger;
+it is still a valid bound and suffices for the claimed remainder.
+Singletons are not bad because the lift is simple and d>0.
+
+Every bad size-two set is EXACTLY a twin pair:
+
+  * Same-fiber vertices have distinct matching images in each other
+    fiber, giving unique outside neighbors.
+  * Different-fiber nonadjacent u,v: u's neighbor in v's old fiber
+    is outside {u,v}, and cannot be adjacent to v because there are
+    no within-fiber edges. It is a unique outside neighbor.
+  * For adjacent u,v, all remaining neighbors must be common or
+    else give a unique outside neighbor. Matching degrees force
+    exactly the coincidences in I_uv. Conversely these coincidences
+    plainly make the pair bad.
+
+This classification is genuinely specific to the complete simple
+base. It is the extra step needed to identify the leading constant;
+an order-only O(N^-beta) support estimate would not suffice.
+
+
+5. Every noncoarsening candidate is detected by those events
+------------------------------------------------------------
+Take eta small enough for (A6) and (d+1)eta*n<N. Outside the macro
+event, every candidate Y is close to a point map JT. Its changed
+rows and all their neighbors occupy at most (d+1)|S| vertices, so
+each old fiber has a clean unchanged closed neighborhood. Evaluating
+the integer equation there gives QT=TR BEFORE taking a difference.
+Thus V=Y-JT satisfies AV=VR. Its nonzero row support must be bad,
+independently of R and candidate dimensions.
+
+If Y is not a planted coarsening, V is nonzero. Outside B_>=3 its
+support is a size-two twin pair. Conversely every twin pair produces
+a noncoarsening balanced k-class partition by its transposition.
+Therefore the source's inclusions are valid:
+
+  {X>=1} subset A_K
+      subset {X>=1} union M_eta union B_>=3.
+
+Together with (A4)--(A6), this proves
+
+  P(A_K)=a_d N^(-beta)+O_(d,K)(N^(-3beta/2)).              (A7)
+
+The macro event and small-support graph event cover all candidate
+quotients simultaneously after a finite union. Candidate partitions
+are not assumed balanced in (A7), nor are candidate point maps
+assumed onto before the local argument.
+
+
+6. Exact known-base posterior and the half constant
+---------------------------------------------------
+The statistical target is the unordered equal-size k-fiber partition
+for KNOWN base K_k, hidden by a uniform global vertex shuffle.
+Equivalently the ordered balanced partition has uniform prior.
+Given any such partition, the independent edge-matching likelihood
+of a compatible graph is exactly
+
+  (N!)^(-binom(k,2)).
+
+All k! labelings of a compatible unordered partition are compatible
+because every permutation is an automorphism of K_k. Their equal
+prior and likelihood imply a UNIFORM posterior on the Z(G) compatible
+unordered balanced K_k-cover partitions. Hence Bayes error is
+
+  E[1-1/Z(G)].                                           (A8)
+
+This likelihood calculation does not apply unchanged to an unspecified
+prior on unknown bases; the source correctly restricts (A8).
+
+To identify Z on the dominant event, work outside M_eta and B_>=3
+and with X<=1. Every compatible balanced k-cover is close to JT
+with support <eta*n<N. If T omitted one candidate label, all N
+vertices in its actual class would be disagreements, a contradiction.
+Thus T maps k old types onto k labels and is a permutation. Relabel
+candidate names to make it identity.
+
+Every different candidate then differs on a size-two twin pair. Since
+both old class sizes must stay N, the two changed distinct labels
+must be swapped. For a fixed physical pair this gives exactly ONE
+unordered alternative. Therefore:
+
+  X=0 implies Z=1,            X=1 implies Z=2
+
+on this event. There is no independent orientation or cell-name
+choice left after the global permutation quotient. An alternative
+obtained with different original candidate names is the same partition
+of the observed vertex set.
+
+The exceptional probability is bounded by
+
+  P(X>=2)+P(M_eta)+P(B_>=3)=O_(d,K)(N^(-3beta/2)).
+
+On Z=2 posterior error is exactly 1/2; on Z>=3 it is at most one.
+Using (A4) proves
+
+  R_N^*=(a_d/2)N^(-beta)+O_(d,K)(N^(-3beta/2)).           (A9)
+
+This is a Bayesian information-theoretic obstruction under the stated
+prior, not a failure rate asserted at one hardcoded fixed partition.
+
+
+7. Larger candidate quotients and the computational remark
+-----------------------------------------------------------
+The source's claim that no r>k survives on the good event is also
+sound. For support exactly {u,v}, an outside common neighbor gives
+V_u+V_v=0. If the point labels are A,B and changed labels x,y,
+one-hot equality means e_x+e_y=e_A+e_B. If A=B there is no change.
+If A!=B and both rows change, x=B,y=A: it is a swap and creates
+no new label. Hence every occupied label was already used by T,
+so nonempty candidate classes force r<=k. Coarse compatible maps
+and their swapped versions may occur; the two maximal k-partitions
+are the ones counted above when X=1.
+
+The computation remark distinguishes structural ambiguity from cap
+interruption. From expected work O(n^(B+3)), a cap n^(B+d+2) gives
+interruption O(n^(-(d-1)))=o(N^-beta). Complete known-base enumeration
+and uniform sampling of its compatible partitions then attains the
+leading Bayes constant. Uniform sampling over labeled indicators is
+also valid here because every unordered K_k-cover has the same k!
+multiplicity; a uniform reservoir can avoid storing the whole list.
+Returning a partial enumeration as if complete would be invalid, and
+is not proposed. The claim is theoretical polynomial work, not a
+practical-runtime guarantee.
+
+
+8. Connected conditioning, including its posterior
+---------------------------------------------------
+Every connected component of a cover of connected K_k meets every
+fiber in the same number m: each edge matching bijects its component's
+intersection with one fiber to its intersection with the other.
+If disconnected, some component has 1<=m<=N/2.
+
+For fixed m-subsets of all k fibers, each independent base matching
+preserves those subsets with probability binom(N,m)^(-1). Counting
+the binom(N,m)^k subset choices and all binom(k,2) matchings gives
+
+  P(disconnected)<=sum_(m=1)^floor(N/2)binom(N,m)^(-r0),
+  r0=binom(k,2)-k=k beta/2.
+
+At k>=4, r0>=2 and r0>beta. The m=1 term is N^-r0; for m>=2,
+binom(N,m)>=binom(N,2), giving O(N^(1-2r0)). Therefore
+
+  P(disconnected)=O_d(N^-r0)=o(N^-beta).                  (A10)
+
+Conditioning on connectedness changes any bounded error or ambiguity
+probability by O(P(disconnected)), preserving both leading constants.
+In fact r0>=2beta, so this is smaller than the displayed remainder
+in (A7),(A9). Connectedness is determined by the observed G; conditioning
+on that observation event does not change its posterior on compatible
+partitions. The conditional Bayes conclusion is therefore justified,
+not just a comparison of unconditioned motif expectations.
+
+
+9. Final scope assessment
+-------------------------
+The result is a sharp universal obstruction witnessed by one fixed
+base family, K_(d+1). It does not claim every base has this same
+leading rate or motif. Fixed d and fixed K>=d+1, independent uniform
+base-edge matchings, and an unlabeled planted partition are essential
+to the statements audited here. Unknown-base lower bounds may use
+the known-base problem as extra-information comparison, but an
+unknown-base posterior needs its own specified prior.
+
+No correction to the actual source was required. The leading motif
+constant, its half-factor Bayes risk, and their survival under connected
+conditioning pass this independent adversarial audit. Historical
+priority and claims about noisy or growing-base models remain outside
+this correctness certificate.

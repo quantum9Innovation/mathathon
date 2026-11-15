@@ -1,0 +1,285 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\R}{\mathbb R}
+\title{Constructive small-Gram compression from two raw-factor moments}
+\author{Independent dynamic-session audit}
+\date{November 15, 2026}
+\begin{document}
+\maketitle
+
+\paragraph{Scope and result.}
+This is a complete compression theorem conditional on a supplied raw
+factor $Z$.  Its Gram computation uses only shifted Laplacian solves,
+not fractional-power vector actions or fractional Gaussian samples.
+It charges all matrix products required to construct the final factor.
+The two dimensionless moment bounds stated below are the essential
+input from the raw construction; a small factor width alone does not
+give them.  The final accuracy is two-sided unless the raw factor
+already satisfies a one-sided inequality.
+
+All matrix functions of a connected Laplacian $L$ act on
+$\mathcal H=\mathbf1^\perp$; inverse powers are zero on the kernel.
+Assume the columns of $Z\in\R^{n\times q}$ belong to $\mathcal H$.
+Set
+\[
+ a_0=\|Z\|_F^2,\qquad
+ a_1=\tr(Z^TL^\dagger Z),\qquad
+ H=Z^T(L^\dagger)^\alpha Z,\qquad
+ c_\alpha=\frac{\sin(\pi\alpha)}\pi,
+ \quad\beta=1-\alpha.
+\]
+For $Z=0$ the conclusions are immediate, so assume $a_0,a_1>0$.
+
+\begin{theorem}[Gap-independent construction of the small Gram matrix]
+Fix $0<\alpha<1$ and $0<\gamma<1$.  Suppose a scale $d>0$ and an
+explicit upper bound $P\ge1$ are available such that
+\[
+ a_0d^{-\alpha}\le P,\qquad a_1d^{1-\alpha}\le P.
+\]
+There is a logarithmic quadrature with
+\[
+ N=O_\alpha\bigl(\log^2(2P/\gamma)\bigr)
+\]
+positive nodes and weights that constructs a symmetric
+$\widehat H$ satisfying
+$\|\widehat H-H\|\le\gamma$.
+It uses $qN$ solves in $L+sI$, each to relative energy error
+\[
+ \eta=\min\left\{1,\frac{\gamma\alpha\beta}{8c_\alpha P}\right\}.
+\]
+The non-solver cost for the Gram matrix is $O(Nnq^2)$ arithmetic,
+with $O(nq+q^2)$ storage when nodes are processed sequentially.
+If the solves all succeed with probability at least $1-\delta$,
+the Gram guarantee has the same probability.
+No node count or solve tolerance depends on a graph spectral endpoint.
+\end{theorem}
+
+\begin{proof}
+The scalar Stieltjes formula and spectral calculus give
+\[
+ H=c_\alpha\int_0^\infty
+       s^{-\alpha}Z^T(L+sI)^{-1}Z\,ds.
+\]
+The kernel causes no term because $Z^T\mathbf1=0$.
+The trace inequalities
+\[
+ 0\preceq Z^T(L+sI)^{-1}Z,
+ \qquad
+ \tr Z^T(L+sI)^{-1}Z\le\min(a_1,a_0/s)
+\]
+imply the tail bounds
+\[
+ \left\|c_\alpha\int_0^{T_-}\cdots ds\right\|
+       \le\frac{c_\alpha a_1}{\beta}T_-^\beta,
+ \qquad
+ \left\|c_\alpha\int_{T_+}^{\infty}\cdots ds\right\|
+       \le\frac{c_\alpha a_0}{\alpha}T_+^{-\alpha}.
+\]
+In particular, the following choices control each tail by $\gamma/4$:
+\[
+ T_-=d\min\left\{1,
+       \left(\frac{\gamma\beta}{4c_\alpha P}\right)^{1/\beta}\right\},
+ \qquad
+ T_+=d\max\left\{1,
+       \left(\frac{4c_\alpha P}{\alpha\gamma}\right)^{1/\alpha}\right\}.
+\]
+
+For completeness we control quadrature as an operator, rather than
+bounding its entries separately.  With $s=de^y$, define
+\[
+ K(y)=c_\alpha (de^y)^\beta
+                Z^T(L+de^yI)^{-1}Z.
+\]
+This is analytic for $|\operatorname{Im}y|<\pi$.
+For $|\theta|\le w<\pi$ and $t>0$,
+\[
+ |\lambda+te^{i\theta}|\ge\cos(w/2)(\lambda+t),
+ \qquad \lambda\ge0.
+\]
+Expanding the resolvent in a real orthonormal eigenbasis therefore gives
+\[
+ \|K(x+i\theta)\|
+ \le c_\alpha\sec(w/2)
+       \min\{a_1(de^x)^\beta,a_0(de^x)^{-\alpha}\}.
+\]
+Put $A_*=a_0^\beta a_1^\alpha$.  Integrating the envelope, split at
+$de^x=a_0/a_1$, yields
+\[
+ \int_{\R}\|K(x\pm iw)\|\,dx
+ \le M:=\frac{c_\alpha\sec(w/2)}{\alpha\beta}A_*
+ \le \overline M:=\frac{c_\alpha\sec(w/2)}{\alpha\beta}P.
+\]
+The last inequality follows from
+$A_*=(a_0d^{-\alpha})^\beta(a_1d^\beta)^\alpha\le P$.
+
+Shifting the Fourier integral to a strip boundary gives
+$\|\widehat K(\xi)\|\le M e^{-w|\xi|}$.
+Poisson summation, justified by these exponential envelopes, then gives
+\[
+ \left\|\int_\R K(x)\,dx-h\sum_{j\in\mathbb Z}K(jh)\right\|
+ \le\frac{2M}{e^{2\pi w/h}-1}.
+\]
+Take $w=\pi/2$ and
+\[
+ h=\min\left\{1,
+       \frac{2\pi w}{\log(1+8\overline M/\gamma)}\right\}.
+\]
+The infinite trapezoid error is at most $\gamma/4$.
+Retain indices
+\[
+ j_- =\left\lfloor\frac{\log(T_-/d)}h\right\rfloor,
+ \qquad
+ j_+ =\left\lceil\frac{\log(T_+/d)}h\right\rceil,
+\]
+with nodes $s_j=de^{jh}$ and weights
+$\omega_j=c_\alpha h s_j^\beta$.
+The omitted discrete tails have the same bounds as above because
+\[
+ h\sum_{j<j_-}s_j^\beta
+   =\frac{h s_{j_-}^\beta}{e^{\beta h}-1}
+   \le\frac{T_-^\beta}{\beta},
+ \qquad
+ h\sum_{j>j_+}s_j^{-\alpha}
+   =\frac{h s_{j_+}^{-\alpha}}{e^{\alpha h}-1}
+   \le\frac{T_+^{-\alpha}}\alpha.
+\]
+These contribute at most $\gamma/2$ together.  The number of retained
+indices is $N=O_\alpha(\log^2(2P/\gamma))$; the absolute scale $d$
+cancels from both cutoff ratios.
+
+Now solve $A_jX_j=Z$ with $A_j=L+s_jI$.
+If every column of $\widehat X_j$ has relative $A_j$-energy error
+at most $\eta$, put $E_j=\widehat X_j-X_j$ and
+$t_j=\tr Z^TA_j^{-1}Z$.  Summing the squared column guarantees gives
+\[
+ \|A_j^{1/2}E_j\|_F\le\eta\sqrt{t_j},
+ \qquad
+ \|Z^TE_j\|\le
+      \|A_j^{-1/2}Z\|_F\|A_j^{1/2}E_j\|_F
+      \le\eta t_j.
+\]
+Thus symmetrizing each computed $Z^T\widehat X_j$ does not increase
+its error to the exact symmetric block.
+
+The total weighted trace is bounded without a factor $N$.
+Splitting the infinite logarithmic sum at $s_*=a_0/a_1$, and using
+$h\le1$, gives
+\[
+ \sum_j\omega_j t_j
+ \le c_\alpha A_*\left(
+       \frac{h}{1-e^{-\beta h}}+
+       \frac{h}{1-e^{-\alpha h}}\right)
+ \le\frac{2c_\alpha A_*}{\alpha\beta}
+ \le\frac{2c_\alpha P}{\alpha\beta}.
+\]
+Here $x/(1-e^{-x})\le1+x\le2$ for $0<x\le1$.
+The accumulated solve error is consequently at most $\gamma/4$ for
+the stated $\eta$.  Together with the three quadrature errors this
+gives $\|\widehat H-H\|\le\gamma$.
+
+There are $q$ right-hand sides per node.  Forming each small Gram
+$Z^T\widehat X_j$ costs $O(nq^2)$, which proves the charged cost.
+For randomized solvers, give each column solve failure probability
+$\delta/(qN)$ and use a union bound, with the standard logarithmic
+confidence overhead.  No assumption about linearity of the approximate
+solve map was used.
+\end{proof}
+
+\begin{theorem}[Rank compression with an explicit output factor]
+Let $L'=L+uu^T$ with $u\in\mathcal H$, and write
+\[
+ \Delta=L'^\alpha-L^\alpha,\quad
+ C=(L^\dagger)^{\alpha/2}\Delta(L^\dagger)^{\alpha/2},\quad
+ B=\alpha\log(1+u^TL^\dagger u).
+\]
+Suppose the raw factor satisfies
+\[
+ \left\|(L^\dagger)^{\alpha/2}ZZ^T(L^\dagger)^{\alpha/2}-C\right\|
+       \le\varepsilon/8,
+ \qquad 0<\varepsilon<1.
+\]
+Construct $\widehat H$ as above with $\gamma=\varepsilon/8$.
+Let $V$ have orthonormal columns spanning the eigenspaces of
+$\widehat H$ with eigenvalues strictly greater than $\varepsilon/2$.
+The explicit returned factor is $X=ZV$, and $F=XX^T$.  Then
+\[
+ -\frac\varepsilon8 L^\alpha
+       \preceq\Delta-F\preceq\frac{3\varepsilon}4L^\alpha
+       \quad\hbox{on }\mathcal H,
+\]
+and its column count $r$ satisfies the strict log-determinant bound
+\[
+ r<\frac{B}{\log(1+\varepsilon/4)}
+ \quad\text{if }r>0,
+ \qquad
+ r\le\max\left\{0,
+       \left\lceil\frac{B}{\log(1+\varepsilon/4)}\right\rceil-1\right\}.
+\]
+The additional dense arithmetic is $O(q^3+nqr)$ in the usual small
+symmetric-eigendecomposition model; thus the complete compression
+cost, including the Gram and returned factors, is
+\[
+ qN\,T_{\rm SDD}(m+n,\eta,\delta/(qN))
+       +O(Nnq^2+q^3+nqr).
+\]
+If the raw inequality additionally satisfies $ZZ^T\preceq\Delta$,
+the lower residual bound improves to $0\preceq\Delta-F$.
+\end{theorem}
+
+\begin{proof}
+Put $G=(L^\dagger)^{\alpha/2}Z$, so $H=G^TG$, and let $P_V=VV^T$.
+The discarded subspace of $\widehat H$ has quadratic form at most
+$\varepsilon/2$.  Hence
+\[
+ \|(I-P_V)H(I-P_V)\|
+       \le\varepsilon/2+\varepsilon/8=5\varepsilon/8.
+\]
+The nonzero spectra of $G(I-P_V)G^T$ and
+$(I-P_V)H(I-P_V)$ agree, so
+\[
+ 0\preceq GG^T-GP_VG^T\preceq(5\varepsilon/8)I.
+\]
+Combining this with $-(\varepsilon/8)I\preceq C-GG^T
+\preceq(\varepsilon/8)I$ proves the stated two-sided residual after
+congruence by $L^{\alpha/2}$.
+
+On the $r$-dimensional selected subspace,
+$V^THV\succ(3\varepsilon/8)I$.
+By the min--max principle, $H$ and therefore $GG^T$ have at least
+$r$ eigenvalues strictly above $3\varepsilon/8$.
+Weyl's perturbation bound transfers these to $r$ eigenvalues of $C$
+strictly above $\varepsilon/4$.  Finally
+\[
+ B=\log\det(I+C)>r\log(1+\varepsilon/4)
+\]
+when $r>0$.  This proves the strict integer count, including the
+case where the displayed ratio is an integer.
+The factor multiplication costs $O(nqr)$ and is included explicitly.
+\end{proof}
+
+\paragraph{Precision and interpretation.}
+The guarantees do not require a gap near the cutoff.  A backward-stable
+small-matrix eigensolve may be used by budgeting its symmetric backward
+error inside $\gamma$ (for example, use Gram quadrature error
+$\varepsilon/16$ and small-eigensolve backward error
+$\varepsilon/16$).  Its tolerance depends on $q$, $P$, and
+$\varepsilon$, rather than a graph spectral gap.  If numerical dense
+spectral arithmetic is charged beyond the standard $O(q^3)$ model,
+its usual accuracy logarithms must also be included.
+
+For $P=\operatorname{poly}(n,1+\tau,1/\varepsilon)$ and a raw width
+$q=\operatorname{polylog}(n,1+\tau,1/\varepsilon)$, all displayed
+non-solver work is $(m+n)$ times accuracy and dimension logarithms,
+and the SDD tolerances have only such logarithms.  The assertion about
+$q$ is an input from the graph raw-factor construction, not a consequence
+of the general matrix log-determinant budget.  Nearly-linear total
+construction still requires adding the raw-factor construction cost.
+This theorem closes the Gram/compression step under those charged
+assumptions; it makes no independent claim that they hold for a proposed
+raw construction.
+\end{document}

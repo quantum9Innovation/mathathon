@@ -1,0 +1,816 @@
+Harnessing the Bethe Free Energy∗.
+Victor Bapst and Amin Coja-Oghlan
+
+Mathematics Institute, Goethe University
+10 Robert Mayer St, Frankfurt 60325, Germany
+{bapst, acoghlan}@math.uni-frankfurt.de
+
+
+         Abstract
+Gibbs measures induced by random factor graphs play a prominent role in computer science,
+combinatorics and physics. A key problem is to calculate the typical value of the partition
+function. According to the “replica symmetric cavity method”, a heuristic that rests on non-
+rigorous considerations from statistical mechanics, in many cases this problem can be tackled by
+way of maximising a functional called the “Bethe free energy”. In this paper we prove that the
+Bethe free energy upper-bounds the partition function in a broad class of models. Additionally,
+we provide a sufficient condition for this upper bound to be tight.
+
+1998 ACM Subject Classification G.2.1 Combinatorics, G.3 Probability and Statistics,
+F.2.2 Nonnumerical Algorithms and Problems
+
+Keywords and phrases Belief Propagation, free energy, Gibbs measure, partition function
+
+Digital Object Identifier 10.4230/LIPIcs.APPROX-RANDOM.2015.467
+
+
+    1     Introduction
+
+Many problems in combinatorics, computer science and physics can be cast along the following
+lines [2, 23]. There are a (large) number of variables, each of them ranging over a finite
+domain Ω. The variables interact through constraints that each bind a few variables. Every
+constraint comes with a “weight function” that either encourages or discourages certain value
+combinations of the incident variables. The interactions can be described naturally by a
+factor graph, whose vertices are the variables and the constraints. A constraint is adjacent
+to the variables that it binds. The weight of an assignment σ that maps each variable to a
+value from Ω is the product of all the weights of the constraints. The obvious questions is:
+how many assignments of a specific total weight exist?
+    In this paper we are concerned with models where the factor graph is random. An
+excellent example is the random k-SAT model: there are n Boolean variables x1 , . . . , xn and
+m clauses a1 , . . . , am . Each clause binds k variables, which are chosen independently and
+uniformly from x1 , . . . , xn , and discourages them from taking one of the 2k possible value
+combinations. This value combination is chosen uniformly and independently for each clause.
+The key quantity associated with the random k-SAT instance Φ is its partition function,
+defined as
+                   X     m
+                         Y
+        Zβ,Φ =                  exp(−β1 {σ violates ai })                 (β > 0).                  (1)
+                 σ∈{0,1}n i=1
+
+
+
+∗
+    The research leading to these results has received funding from the European Research Council under
+    the European Union’s Seventh Framework Programme (FP/2007-2013) / ERC Grant Agreement n.
+    278857–PTCC
+            © Victor Bapst and Amin Coja-Oghlan;
+            licensed under Creative Commons License CC-BY
+18th Int’l Workshop on Approximation Algorithms for Combinatorial Optimization Problems (APPROX’15) /
+19th Int’l Workshop on Randomization and Computation (RANDOM’15).
+Editors: Naveen Garg, Klaus Jansen, Anup Rao, and José D. P. Rolim; pp. 467–480
+                   Leibniz International Proceedings in Informatics
+                   Schloss Dagstuhl – Leibniz-Zentrum für Informatik, Dagstuhl Publishing, Germany
+468   Harnessing the Bethe Free Energy
+
+
+      In words, we sum the weights of all 2n possible truth assignments σ. Each σ incurs a “penalty
+      factor” of exp(−β) for every violated clause. It is not difficult to see that the random variable
+      Zβ,Φ incorporates key characteristics of the model. For instance, the maximum number of
+      clauses that can be satisfied simultaneously equals
+
+                                                         ∂
+                                               m + lim     ln Zβ,Φ .
+                                                    β→∞ ∂β
+
+      Apart from random k-SAT, there are a host of other models of a similar nature. Prominent
+      examples include the random graph colouring problem, LDPC codes or the so-called “mean-
+      field” models of statistical mechanics [23].
+          Over the past decade the second moment method has emerged as the principal tool for
+      the analysis of such models [1, 2, 15]. Its “vanilla” version works as follows. If the partition
+      function Z of the model satisfies the bound E[Z 2 ] ≤ O(E[Z]2 ) in the limit as the number n
+      of variables tends to infinity, then n−1 ln(Z/E[Z]) converges to 0 in probability. Since E[Z] is
+      normally easy to compute, we thus obtain the exponential order of Z. In fact, by calculating
+      E[Z 2 ]/E[Z]2 accurately enough it is sometimes possible to infer the limiting distribution of
+      Z [20].
+          However, in many examples the use of the second moment method is precluded by large
+      deviations phenomena. The random k-SAT model with m = dαne clauses is a case in point
+      as n−1 ln(Zβ,Φ /E[Zβ,Φ ]) does not converge to 0 as n → ∞ for any α, β > 0. The reason is
+      that the first moment E[Zβ,Φ ] is driven up by a “lottery effect”: there are a tiny minority
+      of formulas with an abundance of “good” assignments [1, 3, 4]. Of course, this implies that
+           2
+      E[Zβ,Φ  ] ≥ exp(Ω(n))E[Zβ,Φ ]2 . Thus, the second moment method fails rather spectacularly.
+          The obvious remedy is to condition such lottery effects away. That is, we ought to
+      condition on an event U that pins down those parameters of the model whose large deviations
+      drive E[Z] up. But even if we manage to identify the relevant parameters, the necessary
+      conditioning on U may be so complicated as to render a second moment computation at
+      best unpleasant and at worst infeasible. Indeed, the recent history of the random k-SAT
+      problem illustrates how conditioning turns a second moment computation into a formidable
+      task [7, 12].
+          A completely different but non-rigorous method for calculating Z, the replica symmetric
+      cavity method, has been suggested on the basis of ideas from statistical physics [23]. According
+      to the cavity method, under certain assumptions the asymptotic value of n−1 ln Z can be
+      calculated by maximising a functional called the Bethe free energy. Furthermore, the physics
+      recipe for solving this maximisation problem is to iterate a message passing algorithm called
+      Belief Propagation on the factor graph until convergence. This recipe is somewhat plausible
+      due to the (rigorous) fact that the stationary points of the Bethe free energy are in one-to-one
+      correspondence with the Belief Propagation fixed points [32]. However, in general there are
+      several fixed points and non-trivial insights are necessary to steer Belief Propagation toward
+      the “correct” one. Even worse, in general the maximum value of the Bethe free energy may
+      or may not approximate n−1 ln Z well.1
+          The purpose of this paper is to provide a rigorous foundation for the idea of using Belief
+      Propagation to calculate the free energy. We establish two main results. First, that under
+      mild assumptions the maximum of the Bethe free energy provides an upper bound on the
+      typical value of n−1 ln Z on a random factor graph (Theorem 3). The proof of this is based
+
+
+      1
+          The quantity n−1 ln Z is called the free energy of the factor graph. We do not use this term to avoid
+          confusion with the Bethe free energy.
+V. Bapst and A. Coja-Oghlan                                                                            469
+
+
+on a physics-enhanced version of the classical “first moment method”. Along the way we
+derive several general results on Gibbs distributions that should be of independent interest
+(e.g., Theorem 6). Second, we propose a corresponding refined “second moment method”
+(Theorem 14). More specifically, we prove that if the maximum of the Bethe free energy on
+a certain auxiliary model is upper-bounded by a term that corresponds to the square of the
+first moment and if certain additional (reasonable) assumptions hold, then the free energy
+converges in probability to the value predicted by the cavity method.
+
+
+ 2     Related work
+
+Belief Propagation has been re-discovered several times in varying degrees of generality [5,
+17, 29]. On finite acyclic factor graphs Belief Propagation has a unique fixed point and the
+corresponding Bethe free energy equals n−1 ln Z. (e.g., [23, Chapter 14]). To what extent
+this is true in the presence of cycles is a long-standing problem.
+    The results of the present paper are most relevant in cases where the local structure of the
+factor graph is not perfectly “uniform”. For instance, we are going to be interested in the case
+that different variable nodes may have different degrees. More subtly, different variable nodes
+may have different marginals under the Gibbs distribution that the factor graph induces, see
+(3) below. The case of uniform models is conceptually simpler and has been treated before [9].
+In fact, in the uniform case the computation of n−1 ln Z can essentially be transformed into
+the problem of maximising the Bethe free energy of a “tensorised” model on the d-regular
+tree [9, 13, 11]. This fact has played a key role in recent work on the hardness of counting
+problems [16, 26, 30]. Although we use a similar tensor construction in our second moment
+argument as well (cf. Proposition 13), non-uniformity makes matters far more intricate, as
+witnessed by recent work on random k-SAT [7, 12]. Thus, the main point of the present
+work is to establish a connection between the Bethe free energy and |V |−1 ln Z even in the
+non-uniform case.
+    That said, if the model enjoys certain spatial mixing properties (such as “Gibbs unique-
+ness”), then the Bethe free energy is known to yield the correct value of n−1 ln Z even in
+the non-uniform case [10, 25]. However, the necessary spatial mixing properties are quite
+strong and they cease to be satisfied, e.g., in the random k-SAT model from (1) for large β
+for clause/variable ratios as low as about ln k/k [25]. By comparison, the k-SAT threshold is
+about 2k ln 2 [12].
+    The “interpolation method” provides a different approach to calculating or at least upper-
+bounding n−1 ln Z [14, 19]. In particular, the upper bound comes in a variational form [28].
+For example, this can be used to obtain a tight upper bound on the k-SAT threshold [12].
+Generally speaking, the interpolation method is great if it works, but it comes with certain
+(convexity-type) assumptions that are not always satisfied. Furthermore, it seems difficult to
+use the interpolation method directly to carry out a second moment argument in order to
+lower-bound the partition function. By contrast, Theorems 3 and 14 do not require such
+assumptions.
+    The physicists’ cavity method comes in several instalments; for a detailed discussion we
+refer to [23]. In this paper we are chiefly concerned with the simplest, “replica symmetric”
+variant. This version does not always provide the correct value of n−1 ln Z [8]. It seems that
+one reason for this is that models such as random k-SAT undergo a so-called “condensation
+phase transition” [21]. The more complex “1-step replica symmetry breaking (1RSB)” version
+of the cavity method [24] is expected to yield the correct value of n−1 ln Z some way beyond
+condensation. However, another phase transition called full replica symmetry breaking seems
+
+
+
+                                                                                                   APPROX/RANDOM’15
+470   Harnessing the Bethe Free Energy
+
+
+      to spell doom on even the 1RSB cavity method (see [23] for details). In summary, we do not
+      hope for an unconditional result that vindicates either the replica symmetric or the 1RSB
+      version of the cavity method.
+
+       3      Random factor graphs
+      In this section we explain the class of models that we deal with. Throughout, ∆ > 0 is an
+      integer, Ω, Θ are finite sets and Ψ = {ψ1 , . . . , ψl } is a finite set of maps ψi : Ωhi → (0, ∞),
+      where 1 ≤ hi ≤ ∆. The following abstract definition encompasses a multitude of concrete
+      examples.
+
+      I Definition 1. A (∆, Ω, Ψ, Θ)-model M = (V, F, d, t, ψ) consists of
+      M1 a countable set V of variable nodes,
+      M2 a countable set F of constraint nodes,
+                                           P             P
+      M3 a map d : V ∪ F → [∆] such that x∈V d(x) = a∈F d(a),
+      M4 a map t : CV ∪ CF → Θ, where we let
+                   [                                         [
+            CV =      {x} × [d(x)],                 CF =         {a} × [d(a)],
+                    x∈V                                           a∈F
+
+
+          such that t−1 (θ) ∩ CV = t−1 (θ) ∩ CF for each θ ∈ Θ,
+      M5 a map F → Ψ, a 7→ ψa such that ψa : Ωd(a) → (0, ∞) for all a ∈ F .
+      The size of the model is defined as #M = |V |. Furthermore, a M-factor graph is a
+      bijection
+
+           G : CV → CF , (x, i) 7→ Gx,i      such that      t(Gx,i ) = t(x, i) for all (x, i) ∈ CV .
+
+          Of course, the equalities in M3 and M4 require that either both quantities are infinite
+      or both are finite, in which case they have to coincide.
+          The semantics is that the map d prescribes the degree of each variable and constraint
+      node (i.e., their number of neighbours in any M-factor graph). Just like in the “configuration
+      model” of graphs with a given degree sequence we create d(v) “clones” of each node v. The
+      sets CV , CF contain the clones of the variable and constraint nodes, respectively. Additionally,
+      the map t assigns each clone a “type” from the set Θ. Moreover, each constraint node a
+      comes with a “weight function” ψa from the set Ψ.
+          Like in the “configuration model” a M-factor graph is a type-preserving matching G
+      of the variable and constraint clones. Let G(M) be the set of all M-factor graphs and let
+      G(M) denote a uniformly random sample from G(M). We usually think of G ∈ G(M) as
+      the (multi-)graph obtained by contracting the clones of each node. Clearly, this yields a
+      bipartite graph with |V | variable nodes and |F | constraint nodes. For a node x ∈ V we
+      denote by ∂G x the set of neighbours of x in this multi-graph, i.e., the set of all a ∈ F such
+      that there exist i ∈ [d(x)], j ∈ [d(a)] such that Gx,i = (a, j). Analogously, for a ∈ F and
+      j ∈ [d(a)] we write ∂G (a, j) = x if there is i ∈ [d(x)] such that Gx,i = (a, j). Moreover,
+      ∂G a = {∂G (a, j) : j ∈ [d(a)]}. Finally, we denote the inverse image of a clone (a, j) ∈ CF
+      under the bijection G simply by Ga,j .
+          A M-assignment is a map σ : V → Ω. Let CM be the set of all M-assignments. Further,
+      define the partition function of G ∈ G(M) as
+                  X Y                                              
+          ZG =             ψa σ(∂G (a, 1)), . . . , σ(∂G (a, d(a))) .                              (2)
+                 σ∈CM a∈F
+V. Bapst and A. Coja-Oghlan                                                                                471
+
+
+It is closely intertwined with the Gibbs distribution of G, which is the distribution on CM
+defined by
+                    Y
+                 −1
+                                                               
+    µG (σ) = ZG        ψa σ(∂G (a, 1)), . . . , σ(∂G (a, d(a))) .                        (3)
+                  a∈F
+
+
+Our key object of study is the random variable |V |−1 ln ZG(M) .
+
+I Example 2 (The random k-SAT model). Let Ω = {0, 1}. Given some β ≥ 0 let Ψ contain
+the 2k weight functions
+
+               ψ (τ ) : Ωk → (0, ∞),      σ 7→ exp(−β1{σ = τ })         for τ ∈ Ωk .
+
+Let ∆ > 0 be a positive integer and let Θ = {?}. We obtain a (∆, Ω, Ψ, Θ)-model MSAT by
+letting V = {x1 , . . . , xn } and F = {a1 , . . . , am }. Pick any degree sequence d : V → [∆] such
+      P
+that x∈V d(x) = km and let d(a) = k for all a ∈ F . Further, pick some ψa ∈ Ψ for each
+a ∈ F , thereby prescribing a “sign pattern” for each “clause” a. Finally, let t : CV ∪ CF → Θ
+be the trivial (constant) map. Then G(MSAT ) corresponds to choosing a random k-SAT
+formula with the given degree sequence and sign patterns. Moreover, n−1 ln ZG(MSAT )
+accounts for weighted truth assignments (cf. (1)) [18].
+
+    In Example 2 we did not actually use the types in a non-trivial way. They could be used
+to prescribe not merely the degree of each variable but also how many times each Boolean
+variable appears positively or negatively.
+    While Definition 1 encompasses a many problems of interest, there are two restrictions.
+They arise because we are going to be interested in sequences (Mn )n of (∆, Ω, Ψ, Θ)-models of
+sizes #Mn = n. That is, the size of the model tends to infinity while ∆, Ω, Ψ, Θ remain fixed.
+In effect, the maximum degree remains bounded as n → ∞. This is not quite the case in, e.g.,
+the “standard” random k-SAT model where clauses are chosen uniformly and independently
+and where consequently the variable degrees are asymptotically Poisson. However, in such
+examples the free energy can by means of standards arguments be approximated arbitrarily
+well by truncating the degrees at a large enough ∆.
+    The second restriction is that the weight functions ψ ∈ Ψ are assumed to be strictly
+positive. This condition precludes hard constraints such as “no single clause must be violated”.
+Although most of our proofs extend to the case of hard constraints, we chose to exclude them
+from the general statement of the results for the sake of clarity. For instance, the positivity
+assumption ensures that ZG > 0 for all G ∈ G(Mn ) and hence that the random variable
+n−1 ln ZG(Mn ) has a finite mean. Furthermore, the case of hard constraints can be handled
+by introducing an “inverse temperature” parameter β > 0 like in Example 2 and ultimately
+taking the limit β → ∞ (cf. [25]), although some additional work is needed.
+    In Section 4 we will prove that the “Bethe free energy” provides an upper bound on
+    −1
+|V | ln ZG(M) . Further, in Section 5 we are going to provide a sufficient condition under
+which this upper bound is asymptotically tight.
+
+
+Preliminaries
+Throughout the paper we always let ∆ ≥ 1 be an integer, Ω, Θ finite sets, and Ψ a finite set
+of functions as in Definition 1. We let #ψ be the arity of ψ ∈ Ψ, i.e., ψ : Ω#ψ → (0, ∞).
+    For a finite set X 6= ∅ we denote by P(X ) the set of probability measures on X , which
+                                                                            P
+we identify with the |X |-simplex. For µ ∈ P(X ) we denote by H(µ) = − x∈X µ(x) ln µ(x)
+
+
+
+                                                                                                       APPROX/RANDOM’15
+472   Harnessing the Bethe Free Energy
+
+
+      the entropy of µ (with the convention 0 ln 0 = 0). Further, if µ, ν : X → [0, ∞) are such that
+      ν(x) > 0 only if µ(x) > 0, then
+                                               X
+                                   D(νkµ) =        ν(x) ln(ν(x)/µ(x))
+                                                           x∈X
+
+
+      signifies the Kullback-Leibler divergence. Moreover, for integers k > 0, j ∈ [k] and µ ∈ P(X k )
+      we let µ↓j ∈ P(X ) be the marginal of the jth component.
+          For µ ∈ P(X ) we write σ µ for an random element of X chosen according to µ. Where µ
+      is apparent from the context we drop the index. Further, if X : X → R is a random variable
+                         P
+      we write hXiµ = σ∈X X(σ)µ(σ) for the expectation of X with respect to µ. For the sake
+      of brevity we normally write h · iG instead of h · iµG for G ∈ G(M).
+          Further, if S is a subset of the set V of variable nodes of M, σ : V → Ω and ω ∈ Ω we
+      write
+                                                 1 X
+                                      σ[ω|S] =          1 {σ(x) = ω} .
+                                                |S|
+                                                                 x∈S
+
+      Thus, σ[ · |S] ∈ P(Ω) is the empirical distribution of σ on S. Analogously, if G ∈ G(M) is a
+      factor graph and A 6= ∅ is a set of factor nodes such that all a ∈ A have degree d(a) = l for
+      some l > 0, then we let
+                                                                       l
+                                                           1 XY
+                                σ[ω1 , . . . , ωl |A] =           1 {σ(∂G (a, j)) = ωj } .
+                                                          |A| j=1
+                                                                a∈A
+
+
+      Thus, σ[ · |A] ∈ P(Ωl ) is the joint empirical distribution of the value combinations induced
+      by σ on a ∈ A.
+
+          4    The upper bound
+      Let M = (V, F, d, t, (ψa )a∈F ) be a (∆, Ω, Ψ, Θ)-model of finite size n = |V |. Let G = G(M)
+      for brevity.
+
+      4.1      The Bethe free energy
+      The aim in this section is to show that the “Bethe free energy”, a concept that hails from the
+      cavity method, provides an upper bound on the partition function. To formulate the result
+      we need the following definition [23, Chapter 14]. Let G ∈ G(M). A marginal sequence
+      of G is a family ν = (νx , νa )x∈V,a∈F such that νx ∈ P(Ω) for each x ∈ V , νa ∈ P(Ωd(a) ) for
+      each a ∈ F and if Gx,i = (a, j) entails that νx = νa↓j . Thus, if a variable x occurs in the jth
+      position of a constraint a, then the jth marginal of νa coincides with νx . The Bethe free
+      energy2 of (G, ν) is
+                           "                                       #
+                         1 X                    X
+         BM (G, ν) = −            D (νa kψa ) +   (d(x) − 1)H(νx ) .
+                         n
+                                 a∈F                      x∈V
+
+      Additionally, the Bethe free energy of G is
+
+                          BM (G) = max {BM (G, ν) : ν is a marginal sequence of G} .
+
+      2
+          For a detailed derivation of the Bethe free energy in the context of the cavity method see [23, Chapter 14].
+V. Bapst and A. Coja-Oghlan                                                                           473
+
+
+I Theorem 3. For any ∆, Ω, Ψ, Θ and any ε > 0 there exists n0 > 0 such that the following
+is true. Suppose that M is a finite (∆, Ω, Ψ, Θ)-model of size n > n0 . Moreover, let
+∅ 6= U ⊂ G(M) be an event. Then
+
+                    n−1 ln E[ZG 1{G ∈ U}] ≤ max {BM (G) : G ∈ U} + ε.
+
+   Thus, there exists a number n0 that depends only on the basic parameters ∆, Ω, Ψ, Θ
+and the desired accuracy ε such that for any model of size n ≥ n0 the Bethe free upper
+bounds on the expectation of ZG on U. The following corollary provides a handy way to
+apply Theorem 3.
+
+I Corollary 4. Let (Mn )n be a sequence of (∆, Ω, Ψ, Θ)-models such that #Mn = n. Assume
+that b > 0 is such that the event Un = {BMn (G(Mn )) ≤ b} satisfies limn→∞ P [Un ] = 1.
+Then
+                            lim sup n−1 ln E ZG(Mn ) |Un ≤ b.
+                                                        
+                                n→∞
+
+By Markov’s and Jensen’s inequalities, the bound lim supn→∞ n−1 ln E ZG(Mn ) |Un ≤ b
+                                                                               
+
+entails that
+                      lim lim P n−1 ln ZG(Mn ) ≤ b + ε = 1.
+                                                       
+                          ε&0 n→∞
+
+In other words, if the Bethe free energy is bounded by b with high probability, then
+n−1 ln ZG(Mn ) ≤ b + o(1) with high probability.
+    The proof of Theorem 3 contains several concepts that we deem to be of independent
+interest. The most important one is that of a “state”. More specifically, we prove Theorem 3 by
+showing that the lion’s share of E[ZG 1{G ∈ U}] comes from a set Γ of factor graph/assignment
+pairs (G, σ) such that certain key parameters of all pairs (G, σ) ∈ Γ approximately coincide.
+For instance, for (almost) any ψ and value combination ω = (ω1 , . . . , ω#ψ ), about the same
+number of constraint nodes a with ψa = ψ display the value combination ω. Theorem 3
+will follow because the contribution of any single state s to E[ZG 1{G ∈ U}] can be cast as
+the Bethe free energy of a marginal sequence induced by s. We proceed with the precise
+definition of states.
+
+4.2    States
+For an integer N ≥ 1 we write
+
+                      Ψ[N ] = {(ψ, h1 , . . . , h#ψ ) : h1 , . . . , h#ψ ∈ [N ]} .
+
+I Definition 5. A M-state of size N ≥ 1 consists of
+ST1 a map s : V → [N ] such that s(x) = s(y) only if d(x) = d(y) and t(x, i) = t(y, i) for all
+  i ∈ d(x),
+ST2 a probability distribution s̄ = (s̄ψ,h )ψ,h on Ψ [N ],
+ST3 a set ŝ ⊂ Ψ[N ],
+ST4 a sequence (s̃h )h∈[N ] of probability distributions on Ω,
+ST5 for any (ψ, h) ∈ Ψ [N ] a distribution s̃ψ,h ∈ P(Ω#ψ ) such that s̃ψ,h↓j = s̃hj for all
+  j ∈ [#ψ].
+
+Normally we denote an M-state simply by s and we write #s for its size. Moreover, let
+                                               Y
+   Vhs = s−1 (h) for h ∈ [#s],          s
+                                      Vψ,h =       Vhsj for (ψ, h) ∈ Ψ [N ] .
+                                                        j∈[#ψ]
+
+
+
+
+                                                                                                  APPROX/RANDOM’15
+474   Harnessing the Bethe Free Energy
+
+
+      In addition, if G ∈ G(M) and (ψ, h) ∈ Ψ [N ] we let
+                                                  s
+                       
+          ∂G,s (ψ, h) = a ∈ F : ψa = ψ, ∂G (a) ∈ Vψ,h .
+
+         Thus, a state induces a partition V1s , . . . , VNs of the set of variable nodes. Condition
+      ST1 ensures that this partition respects the degrees and the types. Let us call G ∈ G(M)
+      ε-compatible with s for some ε > 0 (“G |=ε s”) if
+             X          |∂G,s (ψ, h)|                           X
+                                      − s̄ψ,h < ε,                        1 {(ψ, h) ∈ ŝ} s̄ψ,h < ε.
+                            |F |
+         (ψ,h)∈Ψ[N ]                                        (ψ,h)∈Ψ[N ]
+
+      Thus, for any (ψ, h) there are about s̄ψ,h |F | constraint nodes a with ψa = ψ that join variable
+      nodes from the classes Vhs1 , . . . , Vhs#ψ . And no more than an ε fraction of all constraint nodes
+      belong to the “rogue classes” (ψ, h) ∈ ŝ.
+          Further, suppose that G |=ε s and σ ∈ CM . We say that (G, σ) is ε-judicious with
+      respect to s (in symbols: (G, σ) |=ε s) if
+      J1 for all h ∈ [N ] we have ks̃h − σ[ · |Vhs ]kTV < ε,
+      J2 for all (ψ, h) ∈ Ψ [N ] \ ŝ such that ∂G,s (ψ, h) 6= ∅ we have ks̃ψ,h − σ[ · |∂G,s (ψ, h)]kTV < ε.
+      Hence, the empirical distributions σ[ · |Vhs ] do not deviate by more than ε from s̃h . Similarly,
+      for a “non-rogue” (ψ, h) the empirical distribution σ[ · |∂G,s (ψ, h)] of the ψ-factors that
+                              s
+      connect variables in Vψ,h     is within ε of s̃ψ,h . The following theorem provides the key fact
+      about states. It should be of interest in its own right.
+
+      I Theorem 6. For any ∆, Ω, Ψ, Θ and any ε > 0 there exists η > 0 such that the following
+      is true. Let M be a finite (∆, Ω, Ψ, Θ)-model of size #M ≥ 1/η and let G ∈ G(M). Then
+      there exists a M-state s of size #s ≤ 1/η such that G |=ε s and h1 {(G, σ) |=ε s}iG ≥ η.
+
+      Crucially, the number η promised by Theorem 6 depends on ε and the basic parameters
+      ∆, Ω, Ψ, Θ only. It is independent of the model and its size. Hence, for any large enough M
+      and any G ∈ G(M) there is a single “dominant state” s that captures a constant fraction of
+      the mass of the Gibbs distribution µG .
+          Theorem 6 sits well with the replica symmetry breaking picture drafted by the cavity
+      method. According to this prediction, there are three possible shapes that the Gibbs
+      distribution can take. Roughly speaking, in the case of replica symmetry the joint distribution
+      of any two variable nodes that are far apart (say, at distance at least ln ln n) in the factor
+      graph is close to a product distribution. The state corresponding to this scenario simply
+      partitions the variable nodes according to their Gibbs marginals. In the second scenario,
+      called 1-step replica symmetry breaking, the Gibbs distribution is mixture of a bounded
+      number of distributions, i.e.,
+                K
+                X
+         µG −         wi µG,i        <ε   where (w1 , . . . , wK ) ∈ P([K]),    µG,1 , . . . , µG,K ∈ P(CM ).
+                i=1             TV
+
+      Each µG,i corresponds to a “cluster” of assignments and is such that the joint distribution of
+      far apart variables factorises. In this case, we obtain a state by partitioning the variables
+      according to their µG,i -marginals for some i with wi ≥ η. In the third case, called full replica
+      symmetry breaking, the µG,i themselves are mixtures of distributions µG,i,j . Further, each
+      of the µG,i,j decomposes into clusters etc., yielding an infinite cascade. A dominant state
+      would truncate the cascade after a finite number of steps (depending on ε) and home in on
+      one of the sub-clusters.
+          The key concept behind the proof of Theorem 6 is the following.
+V. Bapst and A. Coja-Oghlan                                                                                     475
+
+
+I Definition 7. Let Ω be a finite set, let ε > 0, let n be an integer and let µ be a probability
+measure on Ωn . A partition V = (V1 , . . . , VN ) of [n] is called ε-homogeneous with respect
+                                             P
+to µ if there is a set J ⊂ [N ] such that i∈[N ]\J |Vi | < εn and such that for all j ∈ J the
+following is true.
+
+     For any subset S ⊂ Vj of size |S| ≥ ε|Vj | we have kσ[ · |S] − σ[ · |Vj ]kTV µ < ε.
+
+   If V = (V1 , . . . , Vk ), then we call #V = k the size of V . Furthermore, a partition
+W = (W1 , . . . , Wl ) refines another partition V = (V1 , . . . , Vk ) if for each i ∈ [l] there is
+j ∈ [k] such that Wi ⊂ Vj . The proof of Theorem 6 builds upon
+I Theorem 8. Let Ω be a finite set. For any ε > 0 there exists N = N (ε, Ω) such that for
+n > N and any probability measure µ on Ωn the following is true. Let V 0 be a partition of [n]
+such that #V 0 ≤ 1/ε. Then V 0 has a refinement V of size #V ≤ N that is ε-homogeneous
+with respect to µ.
+Theorem 8 and its proof are inspired by the proof of Szemerédi’s regularity lemma [31].
+    Theorem 6 produces a “dominant state” for each individual factor graph. In combina-
+tion with a compactness argument this entails that a single state suffices to approximate
+1
+n ln E[ZG 1{G ∈ U}] for a given event U.
+
+I Corollary 9. For any ε > 0 and any ∆, Ω, Ψ, Θ there exist γ > 0, n0 > 0 such that the
+following is true. Suppose that M is a finite (∆, Ω, Ψ, Θ)-model of size #M ≥ n0 and that
+∅ 6= U ⊂ G(M). Then there exist a M-state s and G0 ∈ U such that G0 |=γ s and
+
+            n−1 ln E[ZG 1{G ∈ U}] ≤ ε + n−1 ln E ZG h(G, σ) |=γ siG G |=γ s .
+                                                                           
+
+     Finally, it is not difficult to derive Theorem 3. Indeed,
+
+                               n−1 ln E ZG h(G, σ) |=γ siG G |=γ s
+                                                                 
+
+can be cast as the Bethe free energy of the marginal sequence induced by s: let νx = s̃s(x)
+for x ∈ V and νa = s̃ψ,h for all a ∈ ∂G0 ,s (ψ, h). But how we can get a handle on the Bethe
+free energy BM (G)?
+
+4.3      Belief Propagation
+The Bethe free energy of a given factor graph G can be calculated by analysing the Belief
+Propagation message passing algorithm. Belief Propagation can be viewed as an operator
+acting on the message space MesM (G) of G, which we define as the set of all maps
+ν̂ : CV ∪ CF → P(Ω), (v, j) 7→ ν̂v,j . The Belief Propagation operator BP : MesM (G) →
+MesM (G) maps ν̂ ∈ MesM (G) to ν̃ = BP(ν̂) defined by3
+                   Y
+     ν̃x,i (ωi ) ∝     ν̂Gx,h (ωi )                                                  (4)
+                 h∈[d(x)]\{i}
+
+for (x, i) ∈ CV , ωi ∈ Ω and
+                      X                                     Y
+    ν̃a,j (ωj ) ∝            ψa (ω1 , . . . , ωd(a) )                  ν̂Ga,h (ωh )                  (5)
+                 (ωh )h∈[d(a)]\{j}                      h∈[d(a)]\{j}
+
+
+
+3
+    As per common practice, we use the ∝ symbol to define probability
+                                                                   P distributions onP a finite set X as
+    follows. If f : X → [0, ∞), then p ∝ f means that p(ω) = f (ω)/ x∈X f (x) unless  x∈X
+                                                                                            f (x) = 0, in
+    which case p is the uniform distribution.
+
+
+
+
+                                                                                                            APPROX/RANDOM’15
+476   Harnessing the Bethe Free Energy
+
+
+      for (a, j) ∈ CF , ω1 , . . . , ωd(a) ∈ Ω. Let FixM (G) be the set of all Belief Propagation fixed
+      points, i.e., all ν̂ ∈ MesM (G) such that BP(ν̂) = ν̂. Any point ν̂ ∈ FixM (G) gives rise to a
+      marginal sequence, namely
+                      Y
+          ν̂ˆx (ω) ∝         ν̂Gx,h (ω)                                                              (6)
+                       h∈[d(x)]
+
+      for x ∈ V, ω ∈ Ω and
+                                                                     Y
+           ν̂ˆa (ω1 , . . . , ωd(a) ) ∝ ψa (ω1 , . . . , ωd(a) )              ν̂Ga,h (ωh )                   (7)
+                                                                   h∈[d(a)]
+
+      for a ∈ F, ω1 , . . . , ωd(a) ∈ Ω.
+                                            n                          o
+      I Proposition 10. We have BM (G) = max BM (G, ˆ
+                                                    ν̂) : ν̂ ∈ FixM (G) .
+
+      Proof. The set M of marginal sequences is compact. Because the functions ψ ∈ Ψ are
+      strictly positive and as the derivative of the entropy diverges as ν approaches the boundary
+      ∂M , BM (G, · ) does not attain its global maximum on ∂M . Furthermore, for any stationary
+      point ν ∈ M of the Bethe free energy BM (G, · ) there exists ν̂ ∈ FixM (G) such that
+      BM (G, ν) = BM (G, ν̂)ˆ [23, Proposition 14.6].                                           J
+
+         Theorem 3 shows that the Bethe free energy provides an upper bound on n−1 ln ZG(M) .
+      Furthermore, Proposition 10 reduces the problem of calculating the Bethe free energy to
+      the task of determining the “dominant fixed point” of Belief Propagation, i.e., the task of
+      analysing an algorithm on a random graph.
+
+       5       The lower bound
+      In this section we consider a sequence (M(n) = (Vn , Fn , dn , tn , (ψn,a ))n of (∆, Ω, Ψ, Θ)-
+      models such that #M(n) = n. Let G(n) = G(M(n)) and G(n) = G(M(n)).
+
+      5.1       A Bethe-enhanced second moment method
+      The cavity method provides a “recipe” for calculating a number φ such that (n−1 ln ZG(n) )n
+      is deemed to converge to φ in probability. This number is determined by applying Belief
+      Propagation and the Bethe free energy to the “limit” of the typical local structure of G(n) as
+      n → ∞. The aim in this section is to develop a version of the second moment method that
+      allows us to prove such a claim rigorously. But first we need to formalise the “limiting local
+      structure”. To this end we adapt the concept of local weak convergence of graph sequences [22,
+      Part 4] to our current setup, which can be viewed as a generalisation of the one from [10].
+      I Definition 11. A (∆, Ω, Θ, Ψ)-template consists of a (∆, Ω, Ψ, Θ)-model M, a connected
+      factor graph H ∈ G(M) and a root (rH , iH ), which is a variable or factor clone. We denote
+      the template by H. Its size is #H = #M.
+         Two templates H, H 0 with models M = (V, F, d, t, (ψa ), σ∗ ), M0 = (V 0 , F 0 , d0 , t0 , (ψa0 ), σ∗0 )
+      are isomorphic if there exists a bijection π : V ∪ F → V 0 ∪ F 0 such that the following
+      conditions are satisfied.
+      ISM1 π(x) ∈ V 0 for all x ∈ V and π(a) ∈ F 0 for all a ∈ F ,
+      ISM2 if rH = (xH , iH ) and rH 0 = (xH 0 , iH 0 ), then π(xH ) = xH 0 and iH = iH 0 ,
+      ISM3 d(v) = d0 (π(v)), σ∗ (v) = σ∗0 (π(v)) for all v ∈ V ∪ F and t(v, i) = t0 (π(v, i)) for all
+         (v, i) ∈ CV ∪ CF ,
+V. Bapst and A. Coja-Oghlan                                                                                 477
+
+
+ISM4 ψa = ψπ(a) for all a ∈ F ,
+                                                     0
+ISM5 for all (v, i) ∈ CV we have Hv,i = (a, j) iff Hπ(v),i = (π(a), j).
+We denote the isomorphism class of a template H by [H]. Let G = G(∆, Ω, Θ, Ψ) be the
+set of all isomorphism classes. Further, let T ⊂ G be the set of all isomorphism classes
+of acyclic templates. For each [H] ∈ G and ` ≥ 1 let ∂ ` [H] be the isomorphism class of
+the template obtained by removing all vertices at a distance greater than ` from the root
+if the root is a variable clone and ` + 1 if the root is a factor node. We endow G with
+the coarsest topology that makes all the functions Γ ∈ G 7→ 1{∂ ` [Γ] = ∂ ` [Γ0 ]} ∈ {0, 1} for
+` ≥ 1, Γ0 ∈ G continuous. Moreover, the space P(G) of probability measures on G carries
+the weak topology. So does the space P 2 (G) of probability measures on P(G). For Γ ∈ G
+and λ ∈ P(G) we write δΓ ∈ P(G) and δλ ∈ P 2 (G) for the Dirac measure that puts mass
+one on Γ resp. λ.
+    For a factor graph G ∈ G(n) and a clone (v, i) we write [G, v, i] for the isomorphism class
+of the connected component of (v, i) in G rooted at (v, i). Each G ∈ G(n) gives rise to the
+empirical distribution
+
+                                    1                     X
+                      λG =                                             δ[G,v,i] ∈ P(G).
+                             |CVn | + |CFn |
+                                                    (v,i)∈CVn ∪CFn
+
+
+Let Λn = E[δλG(n) ] ∈ P 2 (G). We say that (M(n))n converges locally to ϑ ∈ P(T) if
+limn→∞ Λn = δϑ .
+    Additionally, to exclude some pathological cases we need the following assumption. Let
+us call a factor graph G `-acyclic if it does not contain a cycle of length at most `. We say
+that the sequence (M(n))n of models has high girth if for any ` > 0 we have
+
+                                 lim inf P [G(n) is `-acyclic] > 0.
+                                  n→∞
+
+
+    The key prediction of the “replica symmetric cavity method” can be cast as follows:
+(n−1 ln ZG(n) )n converges in probability to the Bethe free energy of a “Belief Propagation
+fixed point” on the (possibly infinite) trees in the support of ϑ [23]. To formalise this, let
+T ϑ ∈ T be a sample from ϑ ∈ P(T). Further, let V be the event that the root of T ϑ is a
+variable clone and let F be the event that the root is a constraint clone. For T ∈ T let dT
+denote the degree of the root of T . Moreover, for j ∈ [dT ] let T ↑ j ∈ T denote the tree
+pending on the jth child of the root of T . Finally, if the root is the clone of a constraint
+node we let ψT be its associated function.
+
+I Definition 12. A measurable map p : T → P(Ω), T 7→ pT is called a ϑ-Belief Propaga-
+tion fixed point if the following conditions are satisfied ϑ-almost surely.
+
+1. if the root of T is a variable clone (x, i), then
+                                                          Y
+                                       pT (ω) ∝                     pT ↑j (ω).
+                                                      j∈[dT ]\{i}
+
+
+2. if the root of T is a factor clone (a, i) with associated factor ψ ∈ Ψ, then
+                                      X                                       Y
+                    pT (ωi ) ∝                      ψ(ω1 , . . . , ωdT )                 pT ↑j (ωj ).
+                                 (ωj )j∈[dT ]\{i}                          j∈[dT ]\{i}
+
+
+
+
+                                                                                                        APPROX/RANDOM’15
+478   Harnessing the Bethe Free Energy
+
+
+         Further, we need to define the Bethe free energy of a ϑ-Belief Propagation fixed point p.
+      To this end, we turn p into a map that assigns each tree a “marginal”. More precisely, we let
+                                Y
+                     p̂T (ω) ∝      pT ↑j (ω)                                 if T ∈ V, ω ∈ Ω,
+                                   j∈[dT ]
+                                                                Y
+         p̂T (ω1 , . . . , ω#ψT ) ∝ ψT (ω1 , . . . , ω#ψT )              pT ↑j (ωj )   if T ∈ F, ω1 , . . . , ω#ψT ∈ Ω.
+                                                              j∈[#ψT ]
+
+      The Bethe free energy of p with respect to ϑ is
+
+         Bϑ (p) = E d−1
+                                                  −1                         
+                     T ϑ (1 − dT ϑ )H(p̂T ϑ )|V − E dT ϑ D (p̂T ϑ kψT ϑ (σ)) |F    E[dT ϑ |V]
+
+         Finally, to obtain a sufficient condition for the convergence n−1 ln ZG(n) → Bϑ (p) we
+      are going to apply Theorem 3 to upper-bound the second moment of ZG(n) . The necessary
+      construction, reminscent of those used in [9, 13, 11, 16, 26, 30], is as follows.
+      I Proposition 13. For any ε > 0 there exists η > 0 such that the following is true. Suppose
+      that M is a (∆, Ω, Ψ, Θ)-model of size n = #M ≥ 1/η. There exists a finite set of functions
+      Ψ⊗ and a (∆, Ω × Ω, Ψ⊗ , Θ)-model M⊗ with the following properties.
+        (i) There is a bijection G(M) → G(M⊗ ), G 7→ G⊗ .
+       (ii) Let U ⊂ G(M) be an event such that P [G ∈ U] > ε. Then
+
+                                n−1 ln E[ZG
+                                          2
+                                            |U] ≤ max BM⊗ (G⊗ ) : G ∈ U + ε.
+                                                     
+
+      Proof. Let Ω⊗ = Ω × Ω and denote (ω, ω 0 ) ∈ Ω⊗ by ω ⊗ ω 0 . For ψ ∈ Ψ let
+
+      ψ ⊗ : (Ω⊗ )#ψ → (0, ∞),            (ω1 ⊗ ω10 , . . . , ω#ψ ⊗ ω#ψ
+                                                                    0
+                                                                       ) 7→ ψ(ω1 , . . . , ω#ψ ) · ψ(ω10 , . . . , ω#ψ
+                                                                                                                    0
+                                                                                                                       ).
+
+      Then M⊗ = (V, F, d, t, (ψa⊗ )a∈F ) satisfies the requirements.                                                      J
+
+      I Theorem 14. Suppose that (M(n))n≥1 has high girth and converges locally to ϑ ∈ P(T).
+      Furthermore, assume that there is a ϑ-Belief Propagation fixed point p such that for any
+      ε > 0 we have
+
+                                  lim P BM⊗ (n) (G⊗ (n)) ≤ 2Bϑ (p) + ε = 1 and
+                                                                       
+                                                                                            (8)
+                                 n→∞
+                      "                                                 #
+                   1     E[ZG(n) 1{BM⊗ (n) (G⊗ (n)) ≤ 2Bϑ (p) + ε}|T` ]
+          lim lim E ln                                                    = 0.              (9)
+         `→∞ n→∞ n                        E[ZG(n) |T` ]
+
+      Then n1 ln ZG(n) converges to Bϑ (p) in probability.
+          For a given ϑ the construction or, at least, identification of the ϑ-Belief Propagation
+      fixed point p in Theorem 14 is similar to the computations done in the physics literature.
+      However, to apply Theorem 14 it will generally be necessary to perform these calculations
+      more thoroughly, e.g., by means of the contraction method [27]. Further, to verify condition
+      (8) we need to study the Bethe free energy of the models M⊗    n , which will typically be done
+      by way of analysing Belief Propagation on the random factor graph G⊗ (n). This task may
+      be far from trivial, but at least it is a well-defined combinatorial problem.
+          Finally, (9) provides that given that the local structure up to depth ` is “typical”,
+      conditioning on the event that the second moment Bethe free energy is bounded by 2Bϑ (p) + ε
+      does not cause a substantial drop in the first moment. This is a technical condition that
+      can be verified by studying an auxiliary probability space, namely a variant of the “planted
+      model” with a given local structure. Technically, this task can be tackled via a generalised
+      “configuration model” as put forward in [6].
+V. Bapst and A. Coja-Oghlan                                                                             479
+
+
+     References
+ 1   Dimitris Achlioptas and Cristopher Moore. Random k-sat: Two moments suffice to cross
+     a sharp threshold. SIAM J. Comput., 36(3):740–762, September 2006.
+ 2   Dimitris Achlioptas, Assaf Naor, and Yuval Peres. Rigorous location of phase transitions
+     in hard optimization problems. Nature, 435(7043):759–764, 06 2005.
+ 3   Dimitris Achlioptas, Assaf Naor, and Yuval Peres. On the maximum satisfiability of random
+     formulas. J. ACM, 54(2), April 2007.
+ 4   Dimitris Achlioptas and Yuval Peres. The threshold for random k-sat is 2k(ln 2 − o(k)). In
+     Proceedings of the Thirty-fifth Annual ACM Symposium on Theory of Computing, STOC’03,
+     pages 223–231, New York, NY, USA, 2003. ACM.
+ 5   H. A. Bethe. Statistical theory of superlattices. Proceedings of the Royal Society of London
+     A: Mathematical, Physical and Engineering Sciences, 150(871):552–575, 1935.
+ 6   Charles Bordenave and Pietro Caputo. Large deviations of empirical neighborhood distri-
+     bution in sparse random graphs. Probability Theory and Related Fields, pages 1–73, 2014.
+ 7   Amin Coja-Oghlan and Konstantinos Panagiotou. The asymptotic k-SAT threshold.
+     arXiv:1310.2728, 2014.
+ 8   Amin Coja-Oghlan and Lenka Zdeborová. The condensation transition in random hyper-
+     graph 2-coloring. In Proceedings of the Twenty-Third Annual ACM-SIAM Symposium on
+     Discrete Algorithms, SODA 2012, Kyoto, Japan, January 17-19, 2012, pages 241–250, 2012.
+ 9   Amir Dembo, Andrea Montanari, Allan Sly, and Nike Sun. The replica symmetric solu-
+     tion for potts models on d-regular graphs. Communications in Mathematical Physics,
+     327(2):551–575, 2014.
+10   Amir Dembo, Andrea Montanari, and Nike Sun. Factor models on locally tree-like graphs.
+     Ann. Probab., 41(6):4162–4213, 11 2013.
+11   Jian Ding, Allan Sly, and Nike Sun. Maximum independent sets on random regular graphs.
+     arXiv:1310.4787, 2013.
+12   Jian Ding, Allan Sly, and Nike Sun. Proof of the satisfiability conjecture for large k.
+     arXiv:1411.0650, 2014.
+13   Jian Ding, Allan Sly, and Nike Sun. Satisfiability threshold for random regular NAE-SAT.
+     In Proceedings of the 46th Annual ACM Symposium on Theory of Computing, STOC’14,
+     pages 814–822, New York, NY, USA, 2014. ACM.
+14   Silvio Franz and Michele Leone. Replica bounds for optimization problems and diluted
+     spin systems. J. Stat. Phys., 111(3-4):535–564, 2003.
+15   Alan Frieze and Nicholas C. Wormald. Random k-sat: A tight threshold for moderately
+     growing k. In Proceedings of the Fifth International Symposium on Theory and Applications
+     of Satisfiability Testing, pages 1–6, 2002.
+16   Andreas Galanis, Daniel Štefankovič, and Eric Vigoda. Inapproximability for antiferromag-
+     netic spin systems in the tree non-uniqueness region. In Proceedings of the 46th Annual
+     ACM Symposium on Theory of Computing, STOC’14, pages 823–831, New York, NY, USA,
+     2014. ACM.
+17   R.G. Gallager. Low-density Parity-check Codes. M.I.T. Press research monographs. M.I.T.
+     Press, 1963.
+18   H.O. Georgii. Gibbs Measures and Phase Transitions. De Gruyter studies in mathematics.
+     De Gruyter, 2011.
+19   Francesco Guerra. Broken replica symmetry bounds in the mean field spin glass model.
+     Communications in Mathematical Physics, 233(1):1–12, 2003.
+20   Svante Janson. Random regular graphs: Asymptotic distributions and contiguity. Combin-
+     atorics, Probability and Computing, 4:369–405, 12 1995.
+
+
+
+
+                                                                                                    APPROX/RANDOM’15
+480   Harnessing the Bethe Free Energy
+
+
+      21   Florent Krzakala, Andrea Montanari, Federico Ricci-Tersenghi, Guilhem Semerjian, and
+           Lenka Zdeborová. Gibbs states and the set of solutions of random constraint satisfaction
+           problems. P. Natl. Acad. Sci. USA, 104(25):10318–10323, 2007.
+      22   L. Lovász. Large Networks and Graph Limits. American Mathematical Society colloquium
+           publications. American Mathematical Society, 2012.
+      23   M. Mézard and A. Montanari. Information, Physics and Computation. Oxford University
+           Press, 2009.
+      24   M. Mézard, G. Parisi, and R. Zecchina. Analytic and algorithmic solution of random
+           satisfiability problems. Science, 297:812–815, 2002.
+      25   Andrea Montanari and Devavrat Shah. Counting good truth assignments of random k-sat
+           formulae. In Proceedings of the Eighteenth Annual ACM-SIAM Symposium on Discrete
+           Algorithms, SODA’07, pages 1255–1264, Philadelphia, PA, USA, 2007.
+      26   Elchanan Mossel, Dror Weitz, and Nicholas Wormald. On the hardness of sampling in-
+           dependent sets beyond the tree threshold. Probability Theory and Related Fields, 143(3-
+           4):401–439, 2009.
+      27   Ralph Neininger and Ludger Rüschendorf. A general limit theorem for recursive algorithms
+           and combinatorial structures. Ann. Appl. Probab., 14(1):378–418, 02 2004.
+      28   Dmitry Panchenko and Michel Talagrand. Bounds for diluted mean-fields spin glass models.
+           Probab. Theory Relat. Fields, 130(3):319–336, 2004.
+      29   Judea Pearl. Probabilistic Reasoning in Intelligent Systems: Networks of Plausible Inference.
+           Morgan Kaufmann Publishers Inc., San Francisco, CA, USA, 1988.
+      30   Allan Sly and Nike Sun. The computational hardness of counting in two-spin models on d-
+           regular graphs. 2013 IEEE 54th Annual Symposium on Foundations of Computer Science,
+           0:361–369, 2012.
+      31   Endre Szemerédi. Regular partitions of graphs. In Colloq. Internat. CNRS, volume 260,
+           pages 399–401, 1978.
+      32   Jonathan S. Yedidia, W.T. Freeman, and Y. Weiss. Constructing free-energy approxima-
+           tions and generalized belief propagation algorithms. Information Theory, IEEE Transac-
+           tions on, 51(7):2282–2312, July 2005.
+

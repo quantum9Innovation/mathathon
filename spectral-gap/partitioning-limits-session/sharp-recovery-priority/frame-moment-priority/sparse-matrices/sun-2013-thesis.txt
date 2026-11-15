@@ -1,0 +1,2090 @@
+             UNIVERSITY OF CALIFORNIA
+
+                          Los Angeles
+
+
+
+
+Non-Binary Protograph-Based LDPC Codes: Analysis,
+             Enumerators and Designs
+
+
+
+
+             A thesis submitted in partial satisfaction
+
+                of the requirements for the degree
+
+            Master of Science in Electrical Engineering
+
+
+
+                                by
+
+
+
+                          Yizeng Sun
+
+
+
+
+                               2013
+                                UMI Number: 1535028
+
+
+
+                                  All rights reserved
+
+                            INFORMATION TO ALL USERS
+ The quality of this reproduction is dependent upon the quality of the copy submitted.
+
+       In the unlikely event that the author did not send a complete manuscript
+and there are missing pages, these will be noted. Also, if material had to be removed,
+                            a note will indicate the deletion.
+
+
+
+
+                                    UMI 1535028
+   Published by ProQuest LLC (2013). Copyright in the Dissertation held by the Author.
+                           Microform Edition © ProQuest LLC.
+                   All rights reserved. This work is protected against
+                unauthorized copying under Title 17, United States Code
+
+
+
+
+                                   ProQuest LLC.
+                            789 East Eisenhower Parkway
+                                   P.O. Box 1346
+                             Ann Arbor, MI 48106 - 1346
+© copyright by
+
+ Yizeng Sun
+
+    2013
+                        ABSTRACT OF THE THESIS
+
+
+
+ Non-Binary Protograph-Based LDPC Codes: Analysis,
+              Enumerators and Designs
+
+
+                                       by
+
+                                  Yizeng Sun
+
+                  Master of Science in Electrical Engineering
+
+                 University of California, Los Angeles, 2013
+
+                        Professor Lara Dolecek, Chair
+
+
+
+Non-binary LDPC codes can outperform binary LDPC codes using sum-
+product algorithm with higher computation complexity. Non-binary LDPC
+codes based on protographs have the advantage of simple hardware
+architecture. In the first part of this thesis, we will use EXIT chart analysis
+to compute the thresholds of different protographs over GF(q). Based on
+threshold computation, some non-binary protograph-based LDPC codes are
+designed and their frame error rates are compared with binary LDPC codes.
+For maximum-likelihood decoder, weight enumerator can predict frame
+error rate of an LDPC code. In the second part of this thesis, we calculate
+weight enumerators of protograph-based non-binary LDPC code ensembles
+both for finite length case and asymptotic case. In addition, the trapping set
+and stopping set enumerators are presented.
+
+
+
+
+                                        ii
+The thesis of Yizeng Sun is approved.
+
+
+
+                                Danijela Cabric
+
+                                 Richard Wesel
+
+                        Lara Dolecek, Committee Chair
+
+
+
+
+                      University of California, Los Angeles
+
+                                        2013
+
+
+
+
+                                         iii
+DEDICATION
+
+
+
+
+To my parents.
+
+
+
+
+      iv
+Contents
+
+
+1   Introduction                                                                          1
+    1.1    Background . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .      1
+    1.2    LDPC codes . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .      2
+           1.2.1   Matrix representation . . . . . . . . . . . . . . . . . . . . . . .     2
+           1.2.2   Graphical representation . . . . . . . . . . . . . . . . . . . . .      4
+    1.3    Protograph-based LDPC codes . . . . . . . . . . . . . . . . . . . . . .         5
+    1.4    Thesis overview . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .     6
+
+2   EXIT chart analysis and design of protograph-based non-binary LDPC
+    codes                                                                                 7
+    2.1    Introduction . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    7
+    2.2    Log-likelihood sum-product decoder . . . . . . . . . . . . . . . . . . .        8
+    2.3    EXIT chart for regular and irregular binary LDPC codes . . . . . . . .          9
+           2.3.1   Mutual information and EXIT chart . . . . . . . . . . . . . . .         9
+    2.4    Exit chart analysis for protograph-based LDPC codes . . . . . . . . . .        11
+           2.4.1   Protograph-based binary LDPC codes . . . . . . . . . . . . . .         11
+           2.4.2   Probability distribution of messages for non-binary LDPC codes 11
+           2.4.3   EXIT chart for protograph-based non-binary LDPC codes . . .            12
+           2.4.4   Design examples . . . . . . . . . . . . . . . . . . . . . . . . .      16
+
+3   Weight enumerators of protograph-based non-binary LDPC code ensem-
+    bles                                                                                  20
+    3.1    Introduction . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .   20
+
+
+                                             v
+    3.2   Symbol weight enumerator for ensemble of protograph-based non-binary
+          LDPC code . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .     21
+          3.2.1   Definitions . . . . . . . . . . . . . . . . . . . . . . . . . . . .   21
+          3.2.2   Symbol weight enumerator for finite length ensemble . . . . . .       21
+          3.2.3   Asymptotic weight enumerator . . . . . . . . . . . . . . . . . .      26
+    3.3   Enumerator of graph cover non-binary protograph codes . . . . . . . .         28
+          3.3.1   Graph cover non-binary protograph codes . . . . . . . . . . . .       28
+          3.3.2   GC-NBP ensemble finite length enumerators . . . . . . . . . .         30
+          3.3.3   GC-NBP ensemble asymptotic weight enumerators . . . . . . .           31
+          3.3.4   Complexity of computing weight enumerators of PB NB and
+                  GC-NBP codes . . . . . . . . . . . . . . . . . . . . . . . . . .      33
+    3.4   Enumerator for stopping sets . . . . . . . . . . . . . . . . . . . . . . .    33
+    3.5   Enumerator for trapping sets . . . . . . . . . . . . . . . . . . . . . . .    34
+
+4   Conclusion                                                                          37
+
+
+
+
+                                           vi
+Chapter 1
+
+Introduction
+
+
+1.1     Background
+
+In 1948, Claude Shannon published his celebrated paper A mathematical theory of com-
+munication on reliable communication over noisy channels [1]. This work founded
+the fields of channel coding, source coding and information theory. Shannon’s central
+theme was that we can communicate reliably with error probability tending to 0 over a
+noisy channel provided that the information rate for a given code did not exceed the ca-
+pacity of the channel. However, in the proof of the theorem, Shannon assumed random
+generated codes and that the block lengths of codes must tend to infinity to achieve near
+zero error probability. The encoding and decoding algorithms for such codes have high
+complexity and are not practical in real world applications.
+   After Shannon’s publication, researchers devised a large number of effective cod-
+ing schemes over the following decades. Examples include Hamming codes [2], BCH
+codes [3], Reed-Solomon codes [4] and convolutional codes [5]. However, none of
+these codes can approach Shannon’s theoretical limit in a practical channel. The break-
+through came in 1993 with the discovery of turbo codes [7]. Turbo codes applied the it-
+erative decoding scheme and were the first class of codes shown to approach Shannon’s
+capacity limit. The second breakthrough was the rediscovery of low-density parity-
+check(LDPC) codes [9, 10] which can also approach capacity in practical use.
+
+
+
+                                           1
+1.2     LDPC codes
+
+LDPC codes are a class of linear block codes invented by Gallager in his 1960 PhD the-
+sis [8]. Gallager noticed the benefit of expressing a linear block code with low-density
+parity-check matrix. Gallager also invented the decoding algorithm which worked lo-
+cally on graphical models. This algorithm is known as sum product algorithm. This
+algorithm was reinvented and generalized by Judea Pearl [11] in 1982 as a belief prop-
+agation algorithm and is widely used in Bayesian networks and Markov random fields.
+However, initially LDPC codes didn’t attract much attention and were largely forgot-
+ten in the following thirty years. The reason is the hardware capabilities in the 1960s
+couldn’t match the implementation needs of the sum-product algorithm. After their
+rediscovery in mid 1990s, LDPC codes attracted intense attention.
+
+
+1.2.1    Matrix representation
+
+Definition 1. Assume Fq is the finite space with q elements and Fqn is the vector space
+with of all the n-tuples over Fq . A block code C of length n with 2k codewords is a linear
+block code if and only if all the codewords form a subspace Bc of Fqn with dimension
+k. It is called a q-ary (n, k) linear block code. When q = 2, the code becomes a binary
+code. All vectors in C are called codewords.
+
+   In particular, for an (n, k) linear block code C over finite field Fq , all the codewords
+can be represented be the combination of vectors in the subspace Bc . We can express a
+basis of the subspace Bc in a matrix G, called the generator matrix, such that
+
+
+                             ∀c ∈ C, ∃u ∈ Fqk , s.t. c = uG.                          (1.1)
+
+
+Note for the subspace Bc , there are many possible bases, so the generator matrix is not
+
+
+
+
+                                            2
+unique. Equation (1.2) is the generator matrix of (7, 4) Hamming code.
+
+                                                        
+                               1      0 0 0 1 1        0
+                                                        
+                               0      1 0 0 1 0        1
+                             G=                         .                         (1.2)
+                                                        
+                               0      0 1 0 0 1        1
+                                                        
+                                                        
+                                0      0 0 1 1 1        1
+
+
+From linear algebra, the null space of Bc is a n − k dimension subspace of Fqn . We can
+express a basis of the null space of Bc as a matrix H, called the parity-check matrix,
+such that
+                                   ∀c ∈ C, cH T = 0.                                (1.3)
+
+Note for the null space of Bc , there are many possible bases, so the parity-check matrix
+is not unique. Equation (1.4) is the parity-check matrix of (7, 4) Hamming code.
+
+                                            
+                               1 1 0 1 1 0 0
+                                            
+                             H=
+                               1 0 1 1 0 1 0 .
+                                                                                   (1.4)
+                                            
+                                0 1 1 1 0 0 1
+
+
+   As a linear block code, LDPC code can be represented as the null space of a parity-
+check matrix. The density of non-zeros elements in the parity-check matrix H is sparse,
+i.e., most elements in H are zero. A regular LDPC code is a linear block code whose
+parity-check matrix H contains dv non-zero elements in each column and dc non-zero
+elements in each row. Assuming that the dimension of H is m × n, we can get
+
+                                                m
+                                      dv = dc     .                                 (1.5)
+                                                n
+
+If the number of non-zero elements in each row or column is not constant, then the code
+is an irregular LDPC code.
+
+
+
+
+                                           3
+                  Figure 1.1: Tanner graph of Hamming (7,4) code.
+
+1.2.2    Graphical representation
+
+Tanner [10] invented the graphical representation of LDPC codes, now called Tanner
+graph. This bipartite graph representation is equivalent to the parity-check matrix rep-
+resentation. A bipartite graph is a graph whose vertices can be divided into two dis-
+joint sets check nodes and variable nodes such that every edge connects a check node
+and a variable node. With the parity-check matrix, the associated Tanner graph can
+be obtained easily. Each row of the parity-check matrix H corresponds to a check
+node and each column of the parity-check matrix H corresponds to a variable node.
+Check node i is connected to variable node j whenever element Hij in H is non-zero.
+For binary LDPC codes, the weight of each edge is always one and not indicated ex-
+plicitly. For non-binary LDPC codes over GF(q), the weight of each edge is equal to
+Hij ∈ GF (q)\0.
+   Figure 1.1 shows the associated Tanner graph of a Hamming (7, 4) code with the
+parity-check matrix shown in (1.4).
+   The degree of a check node is equal to the number of non-zero elements in the
+corresponding row of H and the degree of a variable node is equal to the number of
+
+
+
+                                           4
+non-zero elements in the corresponding column of H. Thus, for regular LDPC codes,
+we still use dc to denote check node degree and use dv to denote variable node degree.
+For irregular LDPC codes, the degrees are not constant and are usually specified by
+variable node and check node degree distribution polynomials, denoted by λ(x) and
+ρ(x) respectively. In the polynomial
+
+                                               rX
+                                                max
+
+                                     λ(x) =           λi xi−1 ,                             (1.6)
+                                               i=1
+
+
+λi denotes the fraction of all edges connected to degree-i variable nodes and rmax de-
+notes the maximum variable node degree. Similarly, in the polynomial
+
+                                               cX
+                                                max
+
+                                      ρ(x) =          ρi xi−1 ,                             (1.7)
+                                               i=1
+
+
+ρi denotes the fraction of all edges connected to a degree-i check nodes and cmax de-
+notes the maximum check node degree.
+
+
+
+1.3      Protograph-based LDPC codes
+
+A protograph G = (V,C,E) [12] is a relatively small bipartite graph that consists of the
+set V = {v1 ,v2 ,. . . ,vnv } of variable nodes, the set C = {c1 ,c2 ,. . . ,cnc } of check nodes
+                   
+and the set E = e1 ,e2 ,. . . ,e|E| of edges connecting variable nodes and check nodes.
+In Figure 1.2, a regular-(2, 4) protograph is presented. In this protograph, there are 4
+variable nodes each of degree 2 and 2 check nodes each of degree 4.
+    A protograph-based LDPC code is obtained from the protograph by a copy-permute-
+and-scale procedure. First, the protograph G is copied N times to get a large graph
+GN = (V N , C N , E N ). In this procedure, each variable node vi ∈ V (check node
+ci ∈ C) in protograph G is copied N times to yield the set Vi = {vi,1 , vi,2 , . . . , vi,N } of
+variable nodes (the set Ci = {ci,1 , ci,2 , . . . , ci,N } of check nodes) in the large graph GN .
+Likewise, each edge ei ∈ E in protograph G produces the set Ei of edges in the graph
+GN where Ei = {ei,1 , . . . , ei,N }, and the edge ei,j for 1 ≤ j ≤ N connects the variable
+
+
+                                                5
+                         Figure 1.2: Regular-(2,4) protograph
+
+node vk,j and the check node cl,j if the edge ei connects the variable node vk and the
+check node cl in G. Thus, GN contains N copies of G.
+   Second, in each set Ei = {ei,1 , . . . , ei,N }, the N edges are permuted by a N × N
+permutation matrix {πi }. In this procedure, individual protographs in GN are intercon-
+nected while local structure is preserved.
+   Third, each edge is given a non-zero element in the field GF (q), called the edge
+weight. If the protograph code is over GF (2), the edge weight can only be 1 and this
+step is omitted.
+
+
+
+1.4     Thesis overview
+
+In Chapter 2, we introduce the extrinsic information transfer (EXIT) chart for protograph-
+based non-binary LDPC codes. With this method, we calculate the thresholds of dif-
+ferent protographs over GF (q). Using protographs with low threshold, we then design
+some non-binary protograph-based LDPC codes and compare their performance with
+their binary counterparts.
+   Chapter 3 gives the weight enumerator of protograph-based non-binary LDPC codes
+both for random edge weights and edge weights with some constraints. In addition to
+the weight enumerator, we also give the enumerator of stopping sets and trapping sets.
+   Finally, Chapter 4 gives the conclusion of this work.
+
+
+
+
+                                             6
+Chapter 2
+
+EXIT chart analysis and design of
+protograph-based non-binary LDPC
+codes
+
+
+2.1     Introduction
+
+LDPC codes are shown to approach Shannon capacity over noisy channels with sum-
+product algorithm. The effectiveness of sum-product algorithm depends on the structure
+of the Tanner graph and degree distribution of check nodes and variable nodes, i.e. dv
+and dc for regular codes and λ(x) and ρ(x) for irregular codes.
+   In order to choose good degree distributions, Richardson and Urbanke developed
+density evolution [14] to predict thresholds of LDPC codes. Another method is extrinsic
+information transfer (EXIT) chart [13] invented by S. Brink. Both method assume the
+length of codewords tends to infinity and no cycles in the Tanner graph, thus the input
+messages of each node are independent. The difference is that density evolution keeps
+track of the probability distribution of messages over edges and EXIT chart instead uses
+the mutual information (MI) between an edge message and the associated transmitted
+bit to dramatically simplify the threshold computation. In EXIT chart, the iterative
+decoding procedure becomes the evolution of MI. If the MI goes to 1, then the decoding
+
+
+
+                                           7
+is successful.
+   In this chapter, the sum-product algorithm and Brink’s original EXIT chart are
+first introduced. We then apply protograph EXIT(PEXIT) chart [16] to non-binary
+protograph-based LDPC codes.
+
+
+
+2.2     Log-likelihood sum-product decoder
+
+Consider the AWGN channel with power spectral density N0 and noise variance σn2 =
+N0
+   using BPSK modulation. The normalized signal-to-noise ratio (SNR) is defined as
+ 2
+
+                                       Eb     1
+                                          =       ,                                     (2.1)
+                                       N0   2Rσn2
+
+where Eb is the energy used per information bit and R is the rate of the code. Consider
+the log-domain sum-product algorithm as the decoding algorithm. Assume X is the
+transmitted bit and Y is the output of the channel. Then Y = X +N and N ∼ N (0, σn2 ).
+The log-likelihood ratio (LLR) of the channel output becomes
+
+                                           P (X = +1|y)   2
+                           Lch (y) = log                = 2 y.                          (2.2)
+                                           P (X = −1|y)  σn
+
+From this equation, we know that Lch (y) is a Gaussian random variable subject to
+     2 4
+N (± 2 , 2 ).
+    σn σn
+   At the variable node side, for a degree dv variable node connected to check nodes
+(1, 2, . . . , dv ), assume Lvj,in is the input of this variable node from check node j. Then
+the output message from this variable node to the check node i is
+
+                                                     X
+                            Lvi,out = Lch +                          Lvj,in .           (2.3)
+                                              j∈(1,2,...,dv ),j6=i
+
+
+
+   At the check node side, the calculation is more complex. For a degree dc check node
+connected to variable nodes (1, 2, . . . , dc ), assume Lcj,in is the input of this check node
+from variable node j. Then the output message from this check node to the variable
+
+
+                                               8
+node i is
+                                                   X
+                                       Lci,out =          Lcj,in .                    (2.4)
+                                                   j6=i
+
+   The boxplus  is defined as
+
+                                                       1 + eL1 +L2
+                                   L1  L2 = log(                  ).                  (2.5)
+                                                        eL1 + eL2
+
+
+
+2.3     EXIT chart for regular and irregular binary LDPC
+
+        codes
+
+The original EXIT chart [13] is used to calculate the thresholds of regular and irregular
+binary LDPC codes.
+
+
+2.3.1       Mutual information and EXIT chart
+
+With equation (2.2), we can compute the MI between the LLR of channel output and
+                                                                              2    4
+the transmitted bit, i.e. I(X, Lch (Y )). We use J(σch ) to denote it, where σch = 2.
+                                                                                  σn
+
+
+                                                   Z ∞                2   2   2
+                                         e−(t−σch /2) /2σch
+ J(σch ) = H(X) − H(X|Lch (Y )) = 1 −        p
+                                                     2
+                                                            log2 (1 + e−t ) dt. (2.6)
+                                      −∞       2πσch
+
+The function J(σ) can be treated as the MI between a binary random variable P ∈
+ σ2 σ2
+{ , − } and Q = P + N , where N is a zero mean Gaussian random variable with
+  2     2
+variance σ 2 .
+   With equations (2.3) and (2.4), we can iteratively track the evolution of MI. In order
+to simplify the calculations, the probability distributions of Lvj,in and Lcj,in are approxi-
+mated as the LLRs of the output of an AWGN channel with BPSK modulation. Then,
+for regular LDPC codes with variable node degree dv and rate R, the extrinsic MI be-
+comes
+                                  Eb
+                                              q
+                                                                         2
+                IEv (IAv , dv ,      , R) = J( (dv − 1)[J −1 (IAv )]2 + σch ),         (2.7)
+                                  N0
+
+
+                                                   9
+where IAv denotes the a priori MI between the input message to the variable node
+and the transmitted bit. IEv denotes the extrinsic MI between the output message of a
+variable node and the transmitted bit.
+      On the check node side, for regular LDPC codes with check node degree dc , we use
+an approximation from [13],
+
+                                              p
+                      IEc (IAc , dc ) ≈ 1 − J( dc − 1J −1 (1 − IAc )),               (2.8)
+
+
+where IAc denotes the a priori MI between the input message of a check node and the
+transmitted bit. IEc denotes the extrinsic MI between the output message of a check
+node and the transmitted bit.
+      For irregular LDPC codes with edge degree distributions λ(x) and ρ(x), the EXIT
+functions are given by [13],
+
+                                     rX
+                                      max
+                                                               Eb
+                             IEv =          λi IEv (IAv , i,      , R),              (2.9)
+                                     i=1
+                                                               N0
+
+and
+                                            cX
+                                             max
+
+                                 IEc =             ρi IEc (IAc , i),               (2.10)
+                                            i=1
+
+where λi denotes the fraction of all edges connected to degree-i variable nodes and rmax
+denotes the maximum variable node degree. Here, ρi denotes the fraction of all edges
+connected to a degree-i check nodes and cmax denotes the maximum check node degree.
+These definitions are the same as equations (1.6) and (1.7).
+                                              (0)                      (0)
+      At the beginning of the decoding, IEv = Ich and IEc = 0, where the numbers in
+brackets denotes the iteration index. Since the output message of a variable node is the
+input message of a check node and vice versa, the MI can be computed iteratively using
+equations (2.3) and (2.4). It will either converge to 1 or stop at some value less than 1.
+The evolution of MI of a successful decoding is shown in Figure 2.1.
+
+
+
+
+                                                   10
+                            1
+
+                           0.9
+
+                           0.8
+
+                           0.7
+
+                           0.6
+
+                 IEv,IAc   0.5
+
+                           0.4
+
+                           0.3
+
+                           0.2                                                      IEv function
+
+                                                                                    I−1 function
+                           0.1                                                       Ec
+
+
+                            0
+                                 0   0.1   0.2   0.3   0.4     0.5     0.6   0.7   0.8    0.9      1
+                                                             IAv,IEc
+
+
+
+           Figure 2.1: The evolution of mutual information in EXIT chart.
+
+2.4     Exit chart analysis for protograph-based LDPC codes
+
+2.4.1    Protograph-based binary LDPC codes
+
+Unlike general regular or irregular LDPC codes, protograph codes have fixed structures
+which makes the original EXIT chart calculation less accurate. For example, different
+protograph codes with the same degree distribution may have different thresholds [16],
+but the original EXIT chart can not distinguish among them. For this reason, Liva
+[16] developed protograph EXIT (PEXIT) chart for binary protograph codes. In PEXIT
+chart, we compute the MI between messages over each edge in the protograph and
+the associate transmitted bit iteratively. If the a posteriori MI of each variable node
+converges to 1, the decoding is successful.
+
+
+2.4.2    Probability distribution of messages for non-binary LDPC
+
+         codes
+
+For a non-binary LDPC code over GF(q), messages passed in each edge are LLR vec-
+tors of dimension q − 1. Bennatan et al. [15] proved that check-to-variable messages
+transmitting across an edge can be well approximated by a Gaussian distribution with
+the message symmetry and permutation invariance properties. These properties can be
+achieved by two assumptions. First, all the edge weights are uniformly distributed over
+
+                                                             11
+(1, q − 1). Second, before transmitting through the channel, a random coset vector is
+added to the codeword. After receiving, the coset vector is subtracted. Then, the mean
+and variance of a check-to-variable message is can be represented by equations (2.11)
+and (2.12). We can see that this Gaussian distribution is determined only by one variable
+σ,                                         
+                                        2
+                                     σ   /2
+                                           
+                                        2
+                                     σ /2
+                                   µ= .                    ,                    (2.11)
+                                           
+                                      .. 
+                                           
+                                           
+                                      σ 2 /2
+                                                   (q−1)×1
+
+and                                                   
+                                   2                2
+                           σ                     σ /2
+                                                      
+                                 σ2                   
+                        Σ=                                            .          (2.12)
+                                                      
+                                              ...
+                                                       
+                                                      
+                                                      
+                                                      
+                           σ 2 /2                  σ 2
+                                                         (q−1)×(q−1)
+
+      For the variable-to-check message, we can get the probability distribution from
+equation (2.3), in which Lvj,in is the LLR of a Gaussian random vector with mean µ
+and covariance matrix Σ specified by equations (2.11) and (2.12) and Lch depends on
+the channel and modulation.
+
+
+2.4.3      EXIT chart for protograph-based non-binary LDPC codes
+
+With the probability distribution of messages for non-binary LDPC codes, Chang et al.
+[21] extended the binary PEXIT chart to the non-binary case. Assume that B is the
+base matrix of a protograph and that bij is the (i, j)-entry of the matrix B. This entry
+denotes the number of edges connecting the check node i and the variable node j in
+the protograph. The mutual information between the message from variable node j to
+check node i and the transmitted symbol vj is formulated as [21]:
+
+                              
+                               J(σv−to−c )
+                              
+                                                    if node j is punctured,
+                 IEv (ij) =                                                       (2.13)
+                               JR (σv−to−c )
+                                                   otherwise.
+
+
+                                              12
+Here
+                                J(σv−to−c ) = I(S; W = X),                            (2.14)
+
+                            JR (σv−to−c ) = I(S; W = X + Y ),                         (2.15)
+
+and
+                                         X
+                          2
+                         σv−to−c =                  bsj [J −1 (IAv (s, j))]2 +
+                                     s∈N (j),s6=i
+
+
+                                 +(bij − 1)[J −1 (IAv (i, j))]2 ,                     (2.16)
+
+where X is a Gaussian random vector with parameter σv−to−c , Y is the random vector
+of the initial messages, S is the transmitted symbol and IEv (i, j) = 0 if bij = 0.
+      The MI between the message from the check node i to the variable node j and the
+transmitted symbol vj is formulated as a Gaussian random vector with the parameter
+σc−to−v :
+                                  IEc (ij) = 1 − J(σc−to−v ),                         (2.17)
+
+with
+                                      X
+                        2
+                       σc−to−v =                  bis [J −1 (1 − IAc (i, s))]2 +
+                                   s∈N (i),s6=j
+
+
+                                (bij − 1)[J −1 (1 − IAc (i, j))]2 .                   (2.18)
+
+      The a posteriori MI of variable node j and the transmitted bit can be calculated by,
+                                
+                                 J(σAP )
+                                
+                                                        if node j is punctured,
+                    IAP (j) =                                                         (2.19)
+                                 JR (σAP )
+                                                       otherwise,
+
+
+with
+                                       X
+                              2
+                             σAP =              bsj [J −1 (IAv (s, j))]2 .            (2.20)
+                                      s∈N (j)
+
+ The evaluation process ends when either IAP (j) = 1 for all variable nodes which
+means that the decoding is successful or when the maximum number of iterations is
+reached which means that the decoding fails.
+      With the non-binary PEXIT chart, we can calculate the thresholds of protographs
+
+
+                                                   13
+                      Regular-(2,4) code            Punctured-(2,4) code
+
+
+
+
+                       Rate-½ RA code            Punctured-(2,4) code variant
+
+
+
+
+                      Rate-½ AR3A code           Rate-½ AR3A code variant
+
+
+
+     Figure 2.2: The structures of the protographs, the filled nodes are punctured.
+
+in Figure 2.2 for different q. The thresholds of the binary image of the protographs
+with BPSK modulation over AWGN channel is shown in Figure 2.3. Note for q ≤ 32,
+the results were already derived in [21]. In Figure 2.3, we can observe that protographs
+with small average variable node degree(≤ 2.5) tends to have higher threshold for small
+q and lower thresholds for large q. This observation can help us to choose protograph
+when we want to design a protograph code over GF (q).
+   Similar to the analysis for the binary image of non-binary protograph codes over
+AWGN channel, we apply the Monte Carlo method to approximate J(σ) and JR (σ)
+for PAM and PSK modulations over AWGN channel. For PAM we apply a technique
+in [27], which suggests a non-uniform constellation for PAM. Figure 2.4 illustrates
+the average bit SNR thresholds over PAM for some protographs in figure 2.2. Figure
+2.5 illustrates the results with QPSK modulation over AWGN for some protographs in
+Figure 2.2. Similar to the BPSK modulation over AWGN channel, regular-(2,4) code
+has higher threshold when q is small and lower threshold when q is large.
+
+
+
+
+                                           14
+                                          3.5
+                                                                   Regularï(2,4) code
+                                                                   Rateï1/2 RA code
+                                           3                       Rateï1/2 AR3A code
+                                                                   Puncturedï(2,4) code
+                                                                   Puncturedï(2,4) code variant
+                                          2.5                      Rateï1/2 AR3A code variant
+
+
+
+
+                      Bit SNR threshold
+                                           2
+
+
+                                          1.5
+
+
+                                           1
+
+
+                                          0.5
+
+
+                                           0
+                                                2       4      8      16         32         64         128        256
+                                                                           q
+
+
+
+
+Figure 2.3: Bit SNR thresholds of binary image of PB NB LDPC codes with BPSK
+over AWGN channel
+
+
+
+
+                                          14
+                                                    Regularï(2,4) code
+                                                    Puncturedï(2,4) code
+                                          12        Puncturedï(2,4) code variant
+
+
+                                          10
+
+
+
+
+                Bit SNR threshold
+                                           8
+
+
+                                           6
+
+
+                                           4
+
+
+                                           2
+
+
+                                           0
+                                                    2        4         8           16             32         64
+                                                                           q
+
+
+Figure 2.4: Bit SNR thresholds of PB NB LDPC codes with PAM over AWGN channel.
+
+
+
+
+                                                                        15
+                                       9
+                                           Regularï(2,4) code
+                                       8   Puncturedï(2,4) code
+                                           Puncturedï(2,4) code variant
+                                       7
+
+
+
+
+                   Bit SNR threshold
+                                       6
+
+                                       5
+
+                                       4
+
+                                       3
+
+                                       2
+
+                                       1
+
+                                       0
+                                           2        4         8           16   32   64
+                                                                  q
+
+
+Figure 2.5: Bit SNR thresholds of PB NB LDPC codes with QPSK over AWGN chan-
+nel.
+
+2.4.4    Design examples
+
+In this part, we try to design non-binary prootgraph code with large q. In Figure 2.3,
+the regular-(2, 4) code is shown to have the lowest threshold for q = 256 and we use
+this protograph to design LDPC codes over GF (256). It is known that short cycles in
+the Tanner graph will deteriorate the performance of LDPC codes. We use progres-
+sive edge-growth (PEG) [17] algorithm to generate Tanner graphs with large girth and
+fewer short cycles. Table 2.1 shows the number of different length cycles of the three
+designed codes. The edges weights are assigned by two rules. First, similar to [24]
+[25], the edge weights are chosen to maximize the minimum distance of a check node.
+Second, for dv = 2, each cycle can be represented by a square matrix. If the square
+matrix is not full rank, there will be codewords associated with this cycle, which is not
+desirable. We try to choose edge weights to minimize the number of cycles associated
+with codewords. In Table 2.1, the numbers in brackets are the number of not full rank
+cycles. For comparison, we also generate a regular-(2, 4) protograph code with random
+permutations and edge weights. The number of cycles is shown in Table 2.2.
+   When N = 4, 8, 16, the transmitted bits of corresponding codes are 128, 256 and
+512. The simulation results of (128,64), (256,128) and (512,256) non-binary LDPC
+codes are shown in Figure 2.6. For comparison, performance of binary LDPC codes
+
+
+                                                              16
+                     n(bits)                              N / cycle size   8                    12     16
+                     128                                         4       36(0)                 96(0) 72(0)
+                     256                                         8       20(0)                160(0) 634(4)
+                     512                                        16         0                  208(2) 788(0)
+              Table 2.1: Number of cycles for different designed codes.
+
+               n(bits)                                 N / cycle size     4                  8         12              16
+               128                                            4          3(0)              21(0)      71(0)           66(0)
+               256                                            8          4(0)              25(0)      76(0)          316(1)
+               512                                           16         11(0)              30(0)      49(0)          340(2)
+         Table 2.2: Number of cycles for different random protograph codes.
+
+and random regular non-binary LDPC codes over GF (256) are presented. As we can
+see, our designed codes perform better than random codes and binary LDPC codes.
+
+                                             0
+                                            10
+                                                                                             (128,64)nonïbinary
+                                                                                             (256,128)nonïbinary
+                                                                                             (512,256)nonïbinary
+                                                                                             (128,64) binary
+                                             ï1                                              (256,128) binary
+                                            10
+                                                                                             (512,256) binary
+                                                                                             (128,64)random nonïbinary
+                                                                                             (256,128)random nonïbinary
+                                                                                             (512,256)random nonïbinary
+
+
+
+
+                  Frame error probability
+                                             ï2
+                                            10
+
+
+
+
+                                             ï3
+                                            10
+
+
+
+
+                                             ï4
+                                            10
+
+
+
+
+                                             ï5
+                                            10
+                                                 1.5       2     2.5    3            3.5         4         4.5            5
+                                                                            Eb/No, dB
+
+
+
+
+                Figure 2.6: Frame error rates of rate 1/2 LDPC codes.
+
+
+   By puncturing the regular−(2, 4) protograph, we can get a rate 2/3 protograph
+shown in Figure 2.7. In Figure 2.8, the NB-PEXIT analysis shows that the rate 2/3
+protograph has the lowest threshold when q = 256 (1.15dB), only 0.1dB higher than the
+channel capacity of 1.059dB. Using the same Tanner graphs and labels with the three
+regular-(2, 4) codes, we construct non-binary LDPC codes with rate 2/3 and block-
+lengths 96, 192 and 384 in bits by taking the binary image of constructed non-binary
+protograph codes over GF(256). Performance simulations of these codes are shown in
+Fig. 2.9. For comparison, we plot simulation results of binary LDPC codes with rate
+
+
+                                                                            17
+                 Figure 2.7: Punctured regular-(2,4) code protograph.
+
+2/3 and length 192 bits in [28]. Our non-binary code over GF(256) outperforms the
+binary code by 1.0dB. We also compare our 384 bits code with binary rate compatible
+code in [29] with lower rate R = 0.6 and more than doubled in length. Our code shows
+similar performance in terms of bit error rate at only half the code length.
+
+                                       3.5
+
+
+
+
+                                        3
+
+
+
+
+                   Bit SNR threshold
+                                       2.5
+
+
+
+
+                                        2
+
+
+
+
+                                       1.5
+
+
+
+
+                                        1
+                                             2   4   8   16       32   64   128   256
+                                                              q
+
+
+
+                  Figure 2.8: Punctured regular-(2,4) code thresholds.
+
+
+
+
+                                                          18
+                           0
+                          10
+                                                            (96,64) nonïbinary
+                           ï1                               (192,128) nonïbinary
+                          10                                (384,256) nonïbinary
+                                                            (192,128) binary
+                           ï2
+                          10
+
+
+
+
+ Word Error Probability
+                           ï3
+                          10
+
+                           ï4
+                          10
+
+                           ï5
+                          10
+
+                           ï6                                      1.0 dB
+                          10
+
+                           ï7
+                          10
+                               2.5   3   3.5   4      4.5      5       5.5         6
+                                               Eb/No, dB
+
+
+
+Figure 2.9: Frame error rates of rate 2/3 LDPC codes.
+
+
+
+
+                                                19
+Chapter 3
+
+Weight enumerators of
+protograph-based non-binary LDPC
+code ensembles
+
+
+3.1     Introduction
+
+Protograph-based LDPC codes have the advantages of a simple design procedure and
+highly structured encoders and decoders. In order to choose good protographs to design
+codes, we can use the method in Chapter 2 to calculate the threshold. In this chapter,
+we calculate weight enumerators (WEs) of protograph codes.
+   For a given linear code, the codeword WE is a polynomial that specifies the number
+of codewords of each possible weight. Codeword WEs can be used to estimate the code
+error rate with maximum likelihood (ML) decoding. For belief propagation decoding,
+because the existence of structures like trapping sets and stopping sets, the code error
+rate cannot be determined by the WEs, but it is still important to avoid low weight
+codewords. However, it is generally very difficult to calculate the WE of a specific
+code. Given this, the average WEs for code ensembles is often calculated.
+   WEs for ensemble of protograph-based binary LDPC codes and generalized LDPC
+codes are derived in [19] for finite and asymptotic case. In the paper, the authors also
+
+
+
+                                          20
+gave the method to enumerate non-codeword objects that can cause decoding failure in-
+cluding trapping sets, stopping sets. In [22] [23], Divsalar et al. extended the derivation
+to non-binary case. In this chapter, we follow the methods used in [22] [23] to get WE
+for non-binary protograph codes.
+
+
+
+3.2      Symbol weight enumerator for ensemble of protograph-
+
+         based non-binary LDPC code
+
+3.2.1    Definitions
+
+Following the protograph-based non-binary (NB PB) LDPC codes definition in Chapter
+1, we define the protograph-based code ensemble and its WE.
+
+Definition 2 (Protograph-based code ensemble). Given a protograph G = (V, C, E),
+we repeat it N times to get a large graph GN = (V N , C N , E N ). The (G, N, q)
+protograph-based code ensemble is the collection of codes with all possible permu-
+tations of Ei = {ei,1 , . . . , ei,N } for every ei ∈ E and all possible edge weights assign-
+ments.
+
+Definition 3 (Protograph-based code ensemble WE). For a (G, N, q) protograph-based
+code ensemble, the WE is the average number of codewords with each Hamming weight
+for all codes in the ensemble.
+
+
+3.2.2    Symbol weight enumerator for finite length ensemble
+
+The symbol weight enumerator for finite length protograph code ensemble is derived
+in [22]. First, for the simplest case, consider a protograph with a single check node c
+and m variable nodes connected to it by single edge. This protograph can be treated as
+a (m, m − 1) linear block code C over GF (q). For this code, there exists K = q m−1
+codewords. Then we place all the K codewords in a K × m matrix M , such that each
+row of M is a different codeword of C.
+
+
+                                             21
+    From M , we can get a binary K × m matrix Mb which is obtained by converting
+all non-zero elements of M to 1. Note some rows of Mb will be the same. Define a
+Kr × m binary matrix Mb,r as the submatrix of Mb that consists of all distinct rows of
+Mb . For a (m, m − 1) linear block code over GF (q), the weight of non-zero codeword
+are between 2 and m. Then, the number of rows of Mb,r is equal to Kr = 1 + m      m
+                                                                           P        
+                                                                              i=2 i .
+
+    When the check node is repeated N times, we get a Tanner graph with N check
+nodes and mN variable nodes. It can be treated as an (mN, (m − 1)N ) linear block
+code C N over GF (q). These long codewords can be treated as the concatenation of
+N codewords ∈ C. We can use nk to denote the number of occurrences of the k th
+codeword among these N short codewords. Then collect them in a 1 × K vector n,
+where n = [n1 , n2 , . . . , nK ]. It is convenient to use a vector w = [w1 , w2 , . . . , wm ]
+to denote the weight vector of a codeword in C N , where wi denotes the number of
+non-zero elements of variable nodes {vi,1 , vi,2 , . . . , vi,N }.
+                    N
+    Let us use AC (w) to denote the average number of codewords with weight-vector
+                                                                 N
+w of the (C, N, q) ensemble. The calculation of AC (w) is given in [22].
+
+                                                         N
+Theorem 1. The weight-vector enumerator AC (w) of (C, N, q) ensemble is given by,
+
+                           N                                                     T
+                                      X
+                        AC (w) =            C (N ; n1 , n2 , . . . , nKr ) en·fq ,          (3.1)
+                                      {n}
+
+
+    where C (N ; n1 , n2 , . . . , nKr ) is the multinomial coefficient
+
+                                                                    N!
+                         C (N ; n1 , n2 , . . . , nKr ) =                         ,         (3.2)
+                                                             n1 !n2 ! . . . nKr !
+
+and {n} is the set of integer-vector solutions to w = n · MCb,r , with n1 , n2 , . . . , nKr ≥ 0,
+and K
+    P r
+      k=1 nk = N . The vector fq = [fq,1 , fq,2 . . . , fq,Kr ] has entries fq,k = ln g(q, |xk |),
+
+where xk is the k-th row of MCb,r , |xk | is the weight of xk , and g(q, i) = q−1
+                                                                               q
+                                                                                  [(q −1)i−1 +
+(−1)i ].
+
+    We follow the combinatorial calculation of [19] to calculate the symbol WE of an
+ensemble. For binary LDPC codes, a length-L uniform interleaver is a probabilistic
+device that map each Hamming weight-w interleaver input into the wL distinct permu-
+                                                                   
+
+
+                                                   22
+tations of it with equal probability. A non-binary uniform interleaver over GF (q) is
+similar to the binary case, except for each edge there are (q − 1) possible edge weights.
+For symbol weight-w input, the interleaver gives (q − 1)w wL possible outputs with
+                                                                 
+
+equal probability. With the uniform interleaver of non-binary code, we have [22]
+
+Lemma 1. Consider two serially concatenated linear block codes C1 and C2 , connected
+by a length N non-binary uniform interleaver. Then, the average number of codewords
+over all possible interleavers with symbol weight-d inputs and symbol weight-f outputs
+is given by
+
+
+                                           X         ACf,w
+                                                        1
+                                                           ACw,d
+                                                              2
+
+                                 ASCC
+                                  f,d =                            ,                       (3.3)
+                                            w
+                                                 (q − 1)w Kw2
+
+where ACf,w
+         1
+            is the number of codewords in C1 of Hamming weight w corresponding to
+C1 -encoder inputs of Hamming weight f , and ACw,d
+                                                2
+                                                   is the number of codewords in C2 of
+Hamming weight d corresponding to C2 -encoder inputs of Hamming weight w.
+
+    Similar to the binary protograph ensemble in [19], the weight enumerator of non-
+binary protograph ensemble can be computed use the serial concatenated code scheme.
+In this case, each variable node vi (check node ci ) in the protograph G is repeated
+to get a group of N variable nodes Vi = {vi,1 , vi,2 , . . . , vi,N } (check nodes Ci =
+{ci,1 , ci,2 , . . . , ci,N }). The group of N variable nodes Vi is considered to be a constituent
+repetition code with a weight-di input of length N . Further, the group of N check nodes
+Ci is considered to be a constituent code with a fictitious output of weight zero. In this
+way, a protograph code is treated as a serial concatenated code. Now, we can apply
+lemma 1 to get the average number of codewords with weight-vector w of an ensemble
+[22].
+
+Theorem 2. The weight-vector enumerator of a ensemble of protograph-based non-
+binary LDPC code is
+
+                                                Qnc      CjN
+                                                 j=1 A         (dj )
+                          A(d) = Qn                                     ti −1 ,            (3.4)
+                                                     di (ti −1) N
+                                          i=1 (q − 1)
+                                   v
+                                                                di
+
+
+
+                                                23
+            N
+where ACj (dj ) is the weight-vector enumerator of the code CjN induced by the N copies
+of the constraint node cj . The elements of dj comprise a subset of the elements of
+d = [d1 , d2 , ..., dnv ].
+
+Theorem 3. For a PB NB LDPC code ensemble, let us represent the average number
+of codewords with symbol weight d by Ad . This quantity is equal to the sum of A(d)
+                     nv
+                     P                   P
+over all d such that    di = d. Then Ad = A(d).
+                             i=1
+
+Example 1. In this example we calculate the average symbol weight enumerator for
+regular-(2, 4) code, punctured-(2, 4) code and punctured-(2, 4) code variant in Figure
+2.2. Note that the last two protographs are obtained by adding a different accumulator
+on regular-(2, 4) code.
+    The three protographs are first repeated 16 times, 8 times and 8 times respectively to
+get ensembles. In this way, each ensemble contains 32 transmitted variable nodes, i.e.
+32 transmitted symbols (96 bits). The symbol WEs for the three ensembles are shown in
+Figure 3.1 for codeword symbol weights less than 10.
+    To further illustrate the enumeration technique, we plot the symbol WEs for the three
+protographs with code length 80 symbols (240 bits), i.e. N = 40 for first code and N =
+20 for the second and third codes. The results are shown in Figure 3.2, for the symbol
+weights less than 10. We note that, relative to the regular-(2, 4) code, the punctured
+code and its variant both have on average fewer low symbol weight codewords, and
+that the variant has the best distribution of the three codes for small codeword weights.
+This relative ordering of codes is consistent with the threshold calculations in Figures
+2.3, 2.4, and 2.5 for AWGN channel with different modulations.
+
+
+Example 2. Continuing on with the baseline regular-(2, 4) protograph repeated N =
+20 times (40 symbols), in Figure 3.3 we plot the average number of codewords Ad as a
+function of the field order q. As expected, the average number of codewords increases
+with q.
+
+
+
+
+                                           24
+                                               6
+                                              10
+                                                        Regularï(2,4) code
+                                                        Puncturedï(2,4) code
+                                                        Puncturedï(2,4) code variant
+                                               4
+                                              10
+
+
+
+
+             Average number of codewords Ad
+                                               2
+                                              10
+
+
+
+                                               0
+                                              10
+
+
+
+                                               ï2
+                                              10
+
+
+
+                                               ï4
+                                              10
+                                                    1   2      3      4      5      6   7   8   9
+                                                                             weight d
+
+
+
+Figure 3.1: WEs of 32-symbol ensembles over GF(8) with random edge weights.
+
+
+
+
+                                               6
+                                              10
+                                                        Regularï(2,4) code
+                                                        Puncturedï(2,4) code
+                                                        Puncturedï(2,4) code variant
+                                               4
+                                              10
+
+
+
+
+             Average number of codewords Ad
+                                               2
+                                              10
+
+
+
+                                               0
+                                              10
+
+
+
+                                               ï2
+                                              10
+
+
+
+                                               ï4
+                                              10
+                                                    1   2      3      4      5      6   7   8   9
+                                                                             weight d
+
+
+
+Figure 3.2: WEs of 80-symbol ensembles over GF(8) with random edge weights.
+
+
+
+
+                                                                             25
+                                                     7
+                                                    10
+                                                                  q=2
+                                                                  q=8
+                                                     6
+                                                    10            q=32
+                                                                  q=128
+
+
+
+
+                   Average number of codewords Ad
+                                                     5
+                                                    10
+
+
+                                                     4
+                                                    10
+
+
+                                                     3
+                                                    10
+
+
+                                                     2
+                                                    10
+
+
+                                                     1
+                                                    10
+
+
+                                                     0
+                                                    10
+                                                            2        3           4     5         6        7   8
+                                                                                     weight d
+
+
+
+             Figure 3.3: WEs for regular-(2, 4) ensembles with different q.
+
+3.2.3     Asymptotic weight enumerator
+
+Given that the formulas in the previous subsection involve the number of copies N , the
+normalized logarithmic asymptotic weight is defined in [22]
+
+
+                                                                                                ln Ad
+                                                                          r(δ) = lim sup              ,                 (3.5)
+                                                                                     N →∞         N
+
+where δ = d/N . Note that n = nv · N , so the asymptotic weight enumerator in terms
+of n can be expressed as
+                                                                                                ln Ad
+                                                                          r̃(δ̃) = lim sup            ,                 (3.6)
+                                                                                     n→∞          n
+
+where r̃(δ̃) = n1v r(δ̃nv ). Assume ti is the variable node degree of variable node i. In
+[22], the authors give an approximation to calculate r(δ),
+
+                                                                         (n                  nv
+                                                                                                                  )
+                                                                          Xc                 X
+                 r(δ) = max                                                      acj (ωj ) −    (ti − 1)[Hq (δi )] ,    (3.7)
+                                                          {δl :vl ∈V }
+                                                                           j=1                  i=1
+
+
+                                                P
+where δi = di /N ,                                       {δi :vi ∈V } δi   = δ and Hq (δi ) , δi ln(q − 1) + H(δi ). H(δi ) =
+−(1 − δi )ln(1 − δi ) − δi lnδi .
+    In (3.7), acj (ωj ) is the asymptotic weight-vector enumerator of the constraint node
+cj , it can be calculated as
+
+
+
+                                                                                     26
+                             0.8
+                                        Regular−(2,4) code
+                                        Punctured−(2,4) code
+                             0.7
+                                        Punctured−(2,4) code variant
+                                        Gilbert−Varshamov bound
+                             0.6
+
+
+                             0.5
+
+
+                     r(δ̃)   0.4
+
+
+                             0.3                                             0.02
+
+
+                             0.2
+                                                                             0.01
+
+                             0.1
+                                                                               0
+                                                                                    0     0.01    0.02
+                              0
+                                   0      0.1          0.2             0.3          0.4     0.5      0.6
+                                                                       δ̃
+
+
+    Figure 3.4: Asymptotic symbol weight enumerator with random edge weights.
+
+
+
+                                       ac (ω) = max H(Pω ) + Pω · fqT ,
+                                                   
+                                                                                                           (3.8)
+                                                     {Pω }
+
+
+under the constraint that {Pω } is the set of solutions to ω = Pω ·MCb,r , with p1 , p2 , . . . , pKr ≥
+0 and K
+      P r
+         k=1 pk = 1.
+
+    For the calculation of asymptotic ensemble weight enumerators, notice in equation
+(3.8), that H(Pω ) is a concave function and Pω · fqT is a linear function. The constraints,
+p1 , p2 , . . . , pKr ≥ 0 and K                                                        c
+                             P r
+                              k=1 pk = 1 are also linear. Then, the search for a (ω)
+
+becomes a convex optimization problem and can be solved very quickly. In the calcu-
+lation of equation (3.7), first, we use Monte Carlo method to generate random vectors
+(δ1 , δ2 , · · · , δnv ). We then calculate each acj (ωj ) using a convex optimization method
+to get the value of nj=1        a (ωj ) − ni=1
+                          P c cj          P v
+                                                (ti − 1)[Hq (δi )]. The largest value of all these
+samples is r(δ).
+    Note that the ensemble of all rate-R, q-ary (“random”) linear codes (whose parity-
+check matrix entries are i.i.d. uniform) has the weight enumerator AC (w) = (q −
+1)w wn e−n(1−R) ln(q) and the asymptotic weight enumerator [8],
+      
+
+
+
+                                        r̃(δ̃) = Hq (δ̃) − (1 − R) ln(q),                                  (3.9)
+
+
+which corresponds to the asymptotic Gilbert-Varshamov bound for the non-binary case.
+
+Example 3. Continuing with the protographs discussed in Example 1, we compute the
+
+                                                                  27
+asymptotic symbol weight enumerators for the three protographs for q = 8, as shown
+in Figure 3.7. As we can see, in the asymptotic case, the punctured-(2,4) code and the
+punctured-(2,4) code variant both have fewer low symbol weight codewords than the
+regular code. This result is in agreement with the finite length calculation and threshold
+calculation. Similar to the binary case studied in [19], the asymptotic symbol weight
+enumerators converge to the Gilbert-Varshamov bound as δ̃ gets larger. Here, again,
+of the three candidate protographs, the punctured-(2, 4) variant offers the enumerator
+closest to the Gilbert-Varshamov bound.
+
+Example 4. In this example, we provide the asymptotic WE for the (3, 6) regular LDPC
+code ensemble over GF (q), as shown in Figure 3.5. We also note that our result for
+GF (2) is in agreement with [19]. From the figure, we can see that as q gets larger, r(δ̃)
+tends to be smaller for small δ̃ and increases faster as δ̃ grows. Similar to [19], we use
+δ̃min to denote the second zero crossing of r(δ̃)(the first zero crossing is r(0) = 0). We
+recall that the second zero crossing, if it exists, is called the typical relative minimum
+distance.
+   Figure 3.6 shows how the typical relative minimum distance δ̃min changes with vary-
+ing q. Consistent with [26], while δ̃min for the Gilbert-Varshamov bound grows mono-
+tonically with q, δ̃min is in fact non-monotonic. In particular, δ̃min attains maximum
+value for q = 64 and 128.
+
+
+
+
+3.3     Enumerator of graph cover non-binary protograph
+
+        codes
+
+3.3.1       Graph cover non-binary protograph codes
+
+Graph cover non-binary protograph (GC-NBP) code [23] is a special class of non-binary
+protograph codes. General protograph codes are built from a small Tanner graph called
+protograph. In the graph cover case, each edge in the protograph has a weight associated
+with it. The protograph can be represented by G = (V,C,E,S), where V , C, E are the
+
+                                           28
+                           0.3
+                                         GF(2)
+                                         GF(16)
+                          0.25           GF(256)
+                                         GF(1024)
+
+                           0.2
+
+
+                          0.15
+
+                r(δ̃)
+                           0.1
+
+
+                          0.05
+
+
+                            0
+
+
+                        ï0.05
+                                 0            0.05               0.1              0.15           0.2
+                                                                 δ̃
+
+
+Figure 3.5: Asymptotic symbol weight enumerator of (3, 6) regular code ensemble for
+different q.
+
+
+
+
+                           0.4           regularï(3,6) code
+                                         GilbertïVarshamov bound
+                          0.35
+
+
+                           0.3
+
+
+                          0.25
+
+                  δ̃min    0.2
+
+
+                          0.15
+
+
+                           0.1
+
+
+                          0.05
+
+
+                            0
+                                     2   4     8     16     32         64   128    256   512   1024
+                                                                 q
+
+
+
+Figure 3.6: Typical minimum distance of (3, 6) regular code ensemble for different q.
+
+
+
+
+                                                            29
+sets of variable nodes, check nodes and edges as before and S is the set of weights
+associated with all the edges. The construction of GC-NBP code is just a copy-permute
+procedure instead of the general copy-permute-and-scale procedure because the weight
+of edges are determined by S. Then, we can define the GC-NBP code ensemble as
+follows.
+
+Definition 4 (GC-NBP code ensemble). Given a protograph G = (V, C, E, S), we
+repeat it N times to get a large graph GN = (V N , C N , E N , S N ). The (G, N, q)
+GC-NBP ensemble is the collection of codes with all possible permutations of Ei =
+{ei,1 , . . . , ei,N } for every ei ∈ E.
+
+
+3.3.2      GC-NBP ensemble finite length enumerators
+
+The weight enumerator of GC-NBP ensemble is derived in [23]. Consider a degree-m
+constraint node c in scaled protograph G defined over GF (q). We can view the node c
+with specified edge weights as a (mj , mj − 1) single parity check, linear code C over
+GF (q). By copying C N times and permuting, we get an N −cover code ensemble C N .
+A codeword x̂N of C N can be represented as (x1,1 · · · x1,N , x2,1 · · · x2,N , · · · , xnv ,1 · · · xnv ,N ).
+For each codeword, the weight can be represented by a (q − 1) × nv matrix d = d(x̂N ).
+Entry d(`, i) of matrix d is equal to the number of occurrences of symbol ` in positions
+xi,k , 1 ≤ k ≤ N . The weight enumerator of GC-NBP ensemble C N is given in [23].
+
+                                                                         N
+Theorem 4. The frequency weight matrix enumerator AC (d) of C N is given by,
+
+                                 N
+                                           X
+                             AC (d) =            C (N ; n1 , n2 , . . . , nK ) ,                (3.10)
+                                           {n}
+
+
+
+where C (N ; n1 , n2 , . . . , nK ) is the multinomial coefficient and {n} is the set of integer-
+vector solutions to d = n · MCb , with n1 , n2 , . . . , nK ≥ 0, and K
+                                                                       P
+                                                                         k=1 nk = N , and nk
+
+the number of occurrences of the k th codeword among these N copies of c.
+                        N
+Theorem 5. Let ACj (dj ) be the frequency weight matrix enumerator of the code CjN
+induced by the N copies of the constraint node cj with the associated scaling sj . Then,
+the frequency weight matrix enumerator of the GC-NBP ensemble is
+
+                                                    30
+                                              Qnc        CjN
+                                                 j=1 A   (dj )
+                  A(d) = Qnv                                                ti −1
+                                                                                  .   (3.11)
+                                 i=1 C(N ; di,0 , di,1 , . . . , di,(q−1) )
+
+
+
+   In binary channels, the weight of a codeword is the weight of its binary image. With
+(3.11), we can get the weight enumerator of binary image of GC-NBP ensembles as,
+
+                                              X
+                                      Ad =          A(d),                             (3.12)
+                                              {n}
+
+
+
+where n is the set that db (n) = d.
+
+Example 5. Let us consider the binary image of a LDPC code over GF (q). We want
+to choose good edge weighs to maximize the minimum distance of the binary image. In
+[24, 25], the authors proposed a method to choose good rows of H. Each row is treated
+as a linear code with single check node. The minimum distance of the binary image
+of this code is denoted by dmin . The number of codewords with minimum distance is
+denoted by W (dmin ). The author chose good rows with large dmin and small W (dmin ).
+We also design codes based on this rule in Section. In this example, we use GC-NBP
+ensemble finite length enumerators to check the effectiveness of this approach.
+   Let’s consider the regular-(2, 4) code in Figure 2.2 over GF (16) and set N = 4.
+In [25], the author specified (α0 , α3 , α7 , α11 ) as good weights of a degree 4 check node
+over GF (16) with dmin = 2, W (dmin ) = 1. We compare GC-NBP ensemble enumera-
+tors with this good edge weights and random generated edge weights (α6 , α7 , α9 , α10 )
+and (α1 , α2 , α7 , α14 ). As we can see, the GC-NBP with good edge weights has fewer
+low weight codewords.
+
+
+
+3.3.3    GC-NBP ensemble asymptotic weight enumerators
+
+Equipped with the new weight enumerator, the authors in [23] also derived the asymp-
+totic weight enumerator when N tends to infinity,
+
+
+
+                                               31
+                                                      60
+                                                                (_0 _3 _7 _11)
+                                                                (_1 _2 _7 _14)
+                                                      50        (_6 _7 _9 _10)
+
+
+
+
+                     Average number of codewords Ad
+                                                                Random edge weights
+
+                                                      40
+
+
+
+                                                      30
+
+
+
+                                                      20
+
+
+
+                                                      10
+
+
+
+                                                       0
+                                                           1           2         3            4           5   6
+                                                                       Hamming weight d of the binary image
+
+
+
+Figure 3.7: Weight enumerator for the binary image of GC-NBP LDPC code ensemble.
+
+
+
+                                                                                                   ln AdH
+                                                                   rH (δ) = lim sup                       ,                   (3.13)
+                                                                                    N →∞              N
+
+or in terms of the codeword length n (where n = nv · N )
+
+                                                                                                   ln AdH
+                                                                   r˜H (δ̃) = lim sup                     ,                   (3.14)
+                                                                                    n→∞               n
+
+where r˜H (δ̃) = n1v rH (δ̃nv ). rH (δ) can be calculated in a similar way,
+
+                                                                       nP
+                                                                          nc             Cj
+                 rH (δ) = max{δ}                                                 j=1 a        (δ j )
+                                                                                                                              (3.15)
+                                                               Pnv                                                    
+                                                           −       i=1 (ti − 1)H [δi,0 , δi,1 , . . . , δi,(q−1) ]        .
+
+
+    The term aCj (δ j ) stands for the asymptotic frequency weight matrix enumerator of
+                                                  ∞
+the constraint node cj , and it is computed as aCj (δ j ) = max{Pδ } H(Pδj ) . The col-
+                                                                    
+                                                                                                                  j
+                                                              C
+lection {Pδj } represents the set of solutions to δ j = Pδj ·Mb j , with Pδj = [p1 , p2 , . . . , pK ],
+                                                           PK
+p1 , p2 , . . . , pK ≥ 0 and                                   k=1 pk = 1.
+
+    The asymptotic weight enumerators with parameters same as in Example 5 are also
+calculated. The result shows that Ad of good edge weights assignments is only about
+2% smaller than random edge weights protographs.
+
+
+
+                                                                                      32
+3.3.4     Complexity of computing weight enumerators of PB NB and
+
+          GC-NBP codes
+
+Both the finite and asymptotic enumerators of PB NB and GC-NBP are based on enu-
+merator of a linear code with single check node. Let’s compare the computation com-
+plexity of this basic code for PB NB and GC-NBP case. Assume the single check node
+is degree 4 over GF (16). For the finite case, assume the check node is repeated N
+times.
+                                                                               C
+    (a) For the PB NB case, w = n · MCb,r , the dimension of matrix Mb,rj is Kj,r × mj ,
+                  mj
+                      mj                                                     +Kj,r −1
+                           = 12 and mj = 4. For the finite case, there are NK
+                  P                                                                 
+where Kj,r = 1 +       i                                                      j,r −1
+                                                                                       =
+                  i=2
+ N +11
+      
+  11
+        possible choices of n. We need to enumerate all possible n’s to get the symbol
+weight enumerator. For the asymptotic case, with fixed δ, we need to find the length mj
+                                                     mj
+                                                        δi = δ to maximize ac (ω). This is a
+                                                     P
+vector ω = [δ1 , δ2 , δ3 , δ4 ] under the constraint
+                                                    i=1
+search in dimension 4 space.
+                                                                 C
+    (b) For the GC-NBP case, the dimension of matrix Mb j is Kj × mj (q − 1), while
+Kj = q (mj −1) = 163 = 4096 and mj (q − 1) = 60. For the finite case, there are
+ N +Kj −1      N +4095
+                     
+  Kj −1
+           =    4095
+                        possible choices of n. The possible choices of n are much
+larger than the PB NB case, which makes the enumeration much more difficult. For the
+asymptotic case, with fixed δ, we need to find the length mj (q − 1) = 60 vector δ=
+[δ1 , δ2 , . . . , δ59 , δ60 ] under constraints to maximize ac (δ). This is a search in dimension
+60 space. The dimension is much higher than the PB NB case, so the computation
+complexity is also higher.
+
+
+
+3.4      Enumerator for stopping sets
+
+In the iterative decoding of LDPC codes over binary erasure channel, an (a, b) stopping
+set S(a, b) is a set of a variable nodes and b check nodes such that all the a check nodes
+are connected to at least two of the b variable nodes. If all of the b variable nodes
+of S(a, b) are erased, the iterative decoder will be stuck. The decoding procedure of
+binary and non-binary LDPC codes over binary erasure channel are very similar and
+
+
+                                               33
+the definition of stopping set does not depend on q. In this part, we enumerate the
+structure of stopping set S(a, b) and do not consider the order of the Galois Field.
+   The way to enumerate stopping sets is derived in [19], [22]. The ensemble stopping
+set enumerator of a protograph G is the same as weight enumerator of a protograph G0
+which formulated by adding a new degree − 1 variable node to each check node in G.
+The modification of the stopping set check nodes - when these are viewed as individual
+binary codes is expressed by appending the column [0, 1, 1, · · · , 1]T to the stopping set
+constraint matrix of the check nodes in G. This matrix determines the parameter a, and
+together with the support of added degree- 1 nodes (corresponding to the appended
+column) determines the parameter b in S(a, b). All non-binary scale values on each
+edge are converted to 1.
+
+Example 6. Let us consider the (3,6) protograph code again. With the method de-
+scribed in this section, the enumerator for stopping sets is similar to the weight enu-
+merator for binary protograph LDPC codes. In Figure 3.8, S(a, ∆ · a) is evaluated
+for several values of ∆. For (3,6) protograph code, each variable node is connected to
+three check nodes and each check node is connected to six variable nodes. Thus, for
+a erasure variable nodes, there are 3a edges connected to erasure variable nodes and
+3a         3a
+    ≤ b ≤ , i.e., 0.5 ≤ ∆ ≤ 1.5. From Figure 3.8, we can see that with fixed a, there
+ 6          2
+tends to be more stopping sets for larger ∆.
+
+
+
+
+3.5     Enumerator for trapping sets
+
+An (a, b) trapping set T (a, b) is a set of a variable nodes and b check nodes. Among all
+the variable nodes in a Tanner graph, a variable nodes are non-zero and b check nodes
+are not satisfied. The way to enumerate trapping sets is similar to the weight enumerator
+and is derived in [19], [22].
+   The ensemble trapping set enumerator of a protograph G is the same as weight
+enumerator of a protograph G0 which is formulated by adding a new degree−1 variable
+node to each check node in G. After the same repeat-permute-and-scale procedure, we
+
+                                            34
+                                 0.8       6=0.8
+                                           6=0.9
+                                 0.7
+                                           6=1.0
+                                 0.6       6=1.1
+                                           6=1.2
+                                 0.5
+
+                                 0.4
+
+                   S(a, ∆ · a)   0.3
+
+                                 0.2
+
+                                 0.1
+
+                                  0
+
+                           ï0.1
+
+                           ï0.2
+
+
+                                       0   0.1     0.2     0.3        0.4       0.5   0.6
+                                                            a
+
+
+Figure 3.8: Asymptotic stopping set enumerators of regular-(3, 6) protograph ensemble.
+
+get a Tanner graph GL from G and GL 0 from G0 . Let us use Vn to represent the set of all
+new degree-1 variable nodes in GL0 and use Vo to represent the set of all other variable
+nodes. Then an (a, b) trapping set in GL is the same as a weight (a + b) codeword in
+GL 0 , where a non-zero variable nodes are in the set Vo and b non-zero variable nodes
+are in the set Vn . Let us define the (a, b) trapping set enumerator as Aa,b . Similar to
+the WE case, we define the normalized logarithmic asymptotic trapping set enumerator
+r̃(α̃, β̃), as
+                                                                    ln Aa,b
+                                             r̃(α̃, β̃) = lim sup           ,               (3.16)
+                                                          n→∞          n
+
+where α̃ = a/n and β̃ = b/n.
+
+Example 7. Let us consider regular-(3,6) protograph code ensemble. The asymptotic
+trapping set enumerators are plotted for different β̃ with q = 16 in Figure 3.9. Note
+when β̃ = 0, by our definition, the curve corresponds to the asymptotic symbol weight
+enumerator. In the figure, when α̃ is fixed, r̃(α̃, β̃) increases with increasing β̃. This is
+the same as trapping set enumerator for binary protograph-based LDPC codes in [19].
+
+
+Example 8. In this example, we consider regular-(3,6) protograph ensemble for differ-
+ent q’s with fixed β̃ = 0.0002. The simulation result is shown in Figure 3.10. In the
+figure, we can see that when β̃ = 0.0002, there exist second zero-crossings, i.e. there
+exist typical relative r̃(α̃, 0.0002) trapping sets for different q’s. Also, when α̃ is fixed,
+
+                                                          35
+                                      0.05
+                                                            `=0
+                                      0.04                  ` = 0.0002
+                                                            ` = 0.0005
+                                                            ` = 0.001
+                                      0.03                  ` = 0.005
+
+                                      0.02
+
+
+                   r(α̃, β̃)          0.01
+
+
+                                            0
+
+
+                                ï0.01
+
+
+                                ï0.02
+
+
+                                ï0.03
+                                                0             0.02       0.04          0.06   0.08   0.1
+                                                                                 α̃
+
+
+Figure 3.9: Asymptotic trapping set enumerators of regular-(3, 6) code ensemble for
+q = 16.
+
+                                            0.07
+                                                              q=2
+                                            0.06              q=4
+                                                              q=8
+                                            0.05              q=16
+
+                                            0.04
+
+
+
+
+                           r(α̃, 0.0002)
+                                            0.03
+
+                                            0.02
+
+                                            0.01
+
+                                                    0
+
+                                           ï0.01
+
+                                           ï0.02
+
+                                           ï0.03
+                                                        0       0.02      0.04         0.06   0.08   0.1
+                                                                                  α̃
+
+
+Figure 3.10: Asymptotic trapping set enumerators of the regular-(3, 6) code ensemble
+for different q with β̃ = 0.0002.
+
+r̃(α̃, 0.0002) is smaller for larger q’s. This indicates that for β̃ = 0.0002, codes over
+larger q will have less trapping sets.
+
+
+
+
+                                                                                36
+Chapter 4
+
+Conclusion
+
+In this thesis, the non-binary PEXIT is presented and thresholds of different protographs
+over GF(q) are calculated. In the calculation, regular-(2, 4) protograph is shown to have
+lowest threshold for large q. Using this protograph, we designed several codes over
+GF(256) with rate 1/2 and length 128, 256 and 512 in bits with much smaller frame error
+rate than their binary counterparts. With puncturing of the regular-(2, 4) protograph, we
+also designed several codes over GF(256) with rate 2/3 and length 96, 192 and 384 in
+bits which also show much lower frame error rate than their binary counterparts.
+   We also give examples of weight enumerator for protograph-based NBLDPC code
+ensemble both for finite and asymptotic case and compare the asymptotic weight enu-
+merator with Gilbert-Varshamov bound. Weight enumerator is very useful to predict
+the frame error rate of linear codes with maximum likelihood decoder. Moreover, using
+similar method, the trapping set and stopping set enumerator are presented which help
+describe the error performance of LDPC codes using a belief propagation decoder.
+
+
+
+
+                                           37
+Bibliography
+
+[1] C. E. Shannon, “A mathematical theory of communication,”The Bell Systems
+    Technical Journal, vol. 27, pp. 379 - 423, 623 - 656, Oct. 1948.
+
+[2] R.W. Hamming, “Error detecting and error correcting codes,” The Bell Systems
+    Technical Journal, vol. 29, no. 2, pp. 147 - 150, Apr. 1950.
+
+[3] R. C. Bose and D. K. Ray-Chaudhuri, “On a class of error correcting binary group
+    codes,” Information and Control, vol. 3, pp. 68 - 79, Mar. 1960.
+
+[4] I. S. Reed and G. Solomon, “Polynomial codes over certain finite fields,” Journal
+    of the Society for Industrial and Applied Mathematics, vol. 8, pp. 300 - 304, Jun.
+    1960.
+
+[5] P. Elias, “Coding for noisy channels,” Proc. IRE Conv. Rec., part 4 3746, 1955.
+
+[6] A. Viterbi, “Error bounds for convolutional codes and an asymptotically optimum
+    decoding algorithm,” IEEE Trans. on Inform. Theory, Apr. 1967.
+
+[7] C. Berrou, A. Glavieux, and P. Thitimajshima, “Near Shannon limit error correct-
+    ing coding and decoding,” in Proceedings of the IEEE International Conference
+    on Communications, pp. 1064 - 1070, May 1993.
+
+[8] R. G. Gallager. Low-Density Parity-Check Codes. Cambridge, MA: MIT Press,
+    1963.
+
+[9] D. J. C. MacKay and R. M. Neal, “Near Shannon limit performance of low density
+    parity check codes,” Electronic Letters, vol. 32, p. 1645, Aug. 1996.
+
+
+                                         38
+[10] R. M. Tanner, “A recursive approach to low complexity codes,” IEEE Transactions
+     on Information Theory, vol. 27, pp. 533 - 547, Sep. 1981.
+
+[11] J. Pearl, ‘Reverend Bayes on inference engines: A distributed hierarchical ap-
+     proach,” Proceedings of the Second National Conference on Artificial Intelli-
+     gence, 1982.
+
+[12] J. Thorpe,”Low-density parity-check (LDPC) codes constructed from pro-
+     tographs,” IPN Progress Report, Aug. 2003.
+
+[13] S. Brink, G. Kramer, A. Ashikhmin “Design of low-density parity-check codes for
+     modulation and detection”, IEEE Trans. on Comm., Apr. 2004.
+
+[14] T.Richardson and R.Urbanke, The capacity of low-density parity-check codes un-
+     der message-passing decoding, IEEE Trans. Inform. Theory, Feb. 2001.
+
+[15] A. Bennatan, D. Burshtein, Design and analysis of nonbinary LDPC codes for
+     arbitrary discrete-memoryless channels, IEEE Trans. Inform. Theory, Feb. 2006.
+
+[16] G. Liva, M. Chiani, Protograph LDPC codes design based on EXIT analysis,
+     Global Telecommunications Conference, 2007.
+
+[17] X.-Y. Hu and D.M. Arnold, Regular and irregular progressive edge-growth tanner
+     graphs, IEEE Tran. Inf. Theory, Jan. 2005.
+
+[18] A. Abbasfar, D. Divsalar, K. Yao, Accumulate-repeat-accumulate codes, IEEE
+     Trans. Comm., Apr. 2007.
+
+[19] S. Abu-Surra, D. Divsalar, W. E. Ryan “Enumerators for protograph-based ensem-
+     bles of LDPC and generalized LDPC codes,”IEEE Trans., Feb. 2011.
+
+[20] B. Chang, D. Divsalar, L. Dolecek “Non-binary protograph-based LDPC codes
+     for short block-lengths”
+
+[21] B. Chang, L. Dolecek, D. Divsalar “EXIT chart analysis and design of non-binary
+     protograph-based LDPC codes”
+
+                                         39
+[22] D. Divsalar, L. Dolecek “Enumerators for Protograph-Based Ensembles of Non-
+     binary LDPC Codes,” 2011 ISIT.
+
+[23] D. Divsalar, L. Dolecek “Graph cover ensembles of non-binary protograph LDPC
+     codes,” 2012 ISIT.
+
+[24] M.C.Davey, D.MacKay,”Low-density parity-check codes over GF (q)”, IEEE
+     Comm. Lett., June 1998.
+
+[25] C. Poulliat, M. Fossorier, D. Declercq,”Design of regular (2, dc )-LDPC codes over
+     GF (q) using their binary images,” IEEE Trans. Comm., Oct. 2008.
+
+[26] D. Divsalar, L. Dolecek, “On the typical minimum distance of protograph-based
+     non-binary LDPC codes,”ITA, Feb, 2012.
+
+[27] F. Sun and H. van Tilborg, “Approaching Capacity by Equiprobable Signaling on
+     the Gaussian Channel,” Trans. on Info. Theory, vol. 39, no. 5, pp. 1714-1716, Sep.
+     1993.
+
+[28] M. Shin, J. Kim, H. Song, “Generalizaion of Tanner’s minimum distance bounds
+     for LDPC codes,” IEEE Communication Leters, March, 2005.
+
+[29] J. Ha, J. Kim, D. Klinc, S. McLaughlin, “Rate-compatible punctured low-density
+     parity-check codes with short block lengths,” Trans. on Info. Theory, February
+     2006.
+
+
+
+
+                                          40
+

@@ -1,0 +1,371 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Prob}{\mathbb P}
+\newcommand{\HH}{\mathsf H}
+\newcommand{\II}{\mathsf I}
+\newcommand{\F}{\mathbb F_2}
+\title{Addendum: polynomial blind recovery with zero omission weights}
+\author{Partitioning frontier session}
+\date{November 15, 2026}
+\begin{document}
+\maketitle
+\begin{abstract}
+The frozen strict-weight recovery theorem requires a positive omission
+weight on every active factor. This separate addendum permits zero
+weights while retaining the strict upper bound of one half. A weighted
+variance comparison gives an explicit one-hot entropy gap without a
+positive lower bound on the omission weights. The polynomial moment,
+mixed-degree support argument and complete unknown-frame algorithm
+therefore extend. A connected twelve-type example has a factor on which
+every certificate must vanish. No constant modular moment, quadratic
+runtime or finite-field phase classification is asserted here.
+\end{abstract}
+
+\section{Model and the separate extension}
+Use the independent simple-factor frame model of the frozen source
+dated November 15, 2026,
+\begin{center}\texttt{strict-q-blind-frame-recovery.tex},\end{center}
+whose SHA256 is
+\begin{center}\small\ttfamily
+0042ca4067451330f955c9621bc741694369f4743ee4823c70f16f6a87d4c634.
+\end{center}
+For clarity, fix supplied bounds $K,D$. The unknown nonnegative integer
+frame $Q=(d_{ij})_{i,j\in[k]}$ has $k\le K$, connected off-diagonal
+support (with the one-type case allowed), and total degrees
+$d_i=\sum_jd_{ij}\le D$. Its positive class sizes satisfy
+$n_id_{ij}=n_jd_{ji}$ and internal parity, and $\alpha_i=n_i/n$,
+$n=\sum_i n_i$. Independently sample a uniform simple internal
+$d_{ii}$-regular graph for each active internal factor and a uniform
+simple $(d_{ij},d_{ji})$-biregular graph for every active cross factor.
+The planted indicator $J$ obeys $AJ=JQ$. Sizes tend to infinity along
+any admissible fixed-proportion sequence on which these factors exist.
+
+The new hypothesis is the existence, on every active factor, of
+\begin{equation}\label{eq:certificate}
+ q_{ij}=q_{ji},\qquad 0\le q_{ij}<\tfrac12,
+ \qquad \sum_jd_{ij}q_{ij}=1\quad\text{for every }i.
+\end{equation}
+An internal weight is used once per physical slot. Define
+\[
+ c=\min_{d_{ij}>0}(1-2q_{ij})>0.
+\]
+Necessarily $d_i\ge3$: at most two weights strictly below one half
+cannot sum to one. No positive lower bound on the $q_{ij}$ is assumed.
+The certificate is a hypothesis on the true frame and is not supplied
+to the algorithm.
+
+\begin{theorem}\label{thm:extension}
+Under \eqref{eq:certificate}, with high probability every equitable
+partition with at most $K$ nonempty classes is a compatible coarsening
+of $J$. Given only $A,K,D$, the frozen source's complete binary
+intertwiner enumeration recovers $J$, its unknown number $k$ of classes
+and $Q$, up to class names, with high probability. Its unconditional
+expected bit work is polynomial and its bit space is $O_K(n^2)$.
+The same deterministic polynomial cap with explicit abstention gives
+worst-case polynomial work and high-probability recovery.
+\end{theorem}
+
+The statement extends the frozen theorem; it does not alter that
+theorem's hypotheses. The proof below supplies the new gap and checks
+every input needed to compose the existing support and enumeration
+arguments. All constants concern fixed $K,D$ and a fixed true frame.
+
+\section{Entropy and the modular polynomial moment}
+A legal ordered star at old type $i$ has root $X_i$ and $d_i$ ordered
+physical neighbor labels $Z_{is}$. Its equation determines any one
+neighbor from the root and the other $d_i-1$ neighbors. For binary
+vector labels the equation is $\sum_s Z_{is}=X_iR$; for one-hot labels
+it is the original integer equation. Let $P_i$ be its law. Symmetrize
+only physical slots with the same old neighbor type, writing
+$\overline P_i$. This preserves legality, root laws and pooled pair
+laws, and increases star entropy.
+
+Let $\rho_i$ be the root law, $\nu_{ij}$ the pooled pair law and
+\[
+ w_{ii}=\alpha_id_{ii}/2,\quad
+ w_{ij}=\alpha_id_{ij}\ (i<j),\quad
+ \Phi(P)=\sum_i\alpha_i\HH(P_i)
+              -\sum_{i\le j}w_{ij}\HH(\nu_{ij}).
+\]
+Compatible pair laws reverse across cross factors and are symmetric
+internally. Put $I_{ij}=\II(\nu_{ij})$. For omission of physical slot
+$t$ let
+\[
+ J_{it}=\sum_{s\ne t}\HH(Z_{is}\mid X_i)
+              -\HH((Z_{is})_{s\ne t}\mid X_i)\ge0.
+\]
+The frozen entropy calculation remains valid with zero weights:
+\begin{equation}\label{eq:entropy}
+ \Phi(P)\le\Phi(\overline P)
+ =-\sum_{i\le j}w_{ij}(1-2q_{ij})I_{ij}
+   -\sum_i\alpha_i\sum_tq_{it}J_{it}\le0.
+\end{equation}
+Indeed, lossless omission and $\sum_tq_{it}=1$ give
+\[
+ \HH(\overline P_i)=\HH(\rho_i)
+   +\sum_s(1-q_{is})\HH(Z_{is}\mid X_i)-\sum_tq_{it}J_{it}.
+\]
+Substitute pair entropy minus root entropy. Balance and symmetry
+cancel the root coefficient
+$\alpha_i(1-\sum_jd_{ij}q_{ji})=0$, and leave precisely the pair
+coefficients in \eqref{eq:entropy}, including the internal half factor.
+This uses no division by an omission weight.
+
+Here and below entropies use natural logarithms. With
+\begin{equation}\label{eq:B}
+ a_*=2^K,\qquad F=K+\frac{K(K+3)}2a_*^2,
+ \qquad B=Ka_*^D+F,
+\end{equation}
+the frozen exact configuration type count and uniform factorial
+remainder give, for every fixed candidate $r\le K$ and every binary
+$r$-by-$r$ matrix $R$,
+\begin{equation}\label{eq:moment}
+ \E_{\mathrm{config}}|\{Y:AY=YR\}|
+ \le (3D)^F(n+1)^B,\qquad
+ \E_{\mathrm{simple}}2^{h_R}\le C(K,D)(n+1)^B.
+\end{equation}
+To check precisely what is inherited, the exact type is specified by
+its legal-star counts, with at most $(n+1)^{Ka_*^D}$ possibilities.
+Its expectation is at most
+$\exp(n\Phi+F[\log(Dn+1)+1])$.
+These counts and remainders do not involve $q$; their only entropy
+input is $\Phi\le0$, now proved in \eqref{eq:entropy}.
+Conditioning the finitely many fixed-degree configuration factors on
+simplicity costs a bounded factor. The resulting laws are exactly the
+stated independent simple factors. Thus \eqref{eq:moment} is
+unconditional, including on graphs that fail structural recovery,
+and it requires no feasibility of the candidate $R$.
+
+\section{The new one-hot gap}
+Here labels are ordinary unit vectors in $\mathbb R^r$, and every
+occupied star satisfies
+\[
+ \sum_{s=1}^{d_i}e_{Z_{is}}=R_{X_i,*}
+\]
+over the integers, with a nonnegative integer candidate matrix $R$.
+Set
+\[
+ \delta(P)=\sum_i\alpha_i(1-\max_a\rho_i(a)).
+\]
+This is the normalized distance to an arbitrary old-type point map.
+Unused labels and non-surjective maps are permitted.
+
+\begin{lemma}\label{lem:gap}
+Every compatible legal one-hot collection satisfies
+\begin{equation}\label{eq:gap}
+ \Phi(P)\le-\gamma\delta(P)^2,
+ \qquad \gamma=\frac{9c^3}{4D^4}>0.
+\end{equation}
+In particular zero entropy forces every old root law to be a point
+mass, even when some omission weights vanish.
+\end{lemma}
+\begin{proof}
+Root laws are unchanged by symmetrization, so it suffices to prove the
+bound after symmetrizing. Write $L=-\Phi\ge0$ and
+$J_q=\sum_i\alpha_i\sum_tq_{it}J_{it}$.
+For each $(i,t)$ let $\mathsf Q_{it}$ keep the actual root law and
+independently draw the retained neighbor labels from their old-type
+marginals, independently also of the root. The divergence of the actual
+retained law from this reference law is
+\[
+ \kappa_{it}=J_{it}+\sum_{s\ne t}\II(X_i;Z_{is}).
+\]
+It is finite, including on boundary distributions, because a product
+of marginals is positive on each tuple having positive actual mass.
+Define the omission-weighted divergence
+\begin{align}\label{eq:kappa}
+ A_q&=\sum_i\alpha_i\sum_tq_{it}\kappa_{it}\nonumber\\
+ &=J_q+\sum_{i\le j}2w_{ij}(1-q_{ij})I_{ij}
+ \le \frac{2}{c}L.
+\end{align}
+For the equality, each physical slot $s$ is retained with total weight
+$1-q_{is}$, and reversibility combines its two orientations. The
+internal half factor gives the same expression. For the inequality
+use $2(1-q_{ij})\le2$, $1-2q_{ij}\ge c$,
+$0<c\le1$, and \eqref{eq:entropy}. No $q_{ij}^{-1}$ occurs.
+
+Write
+\[
+ \mu_{is}=\E e_{Z_{is}},\quad
+ V_{is}=1-\|\mu_{is}\|_2^2,\quad S_i=\sum_sV_{is},
+ \qquad B_i=\E\bigl\|R_{X_i,*}-\sum_s\mu_{is}\bigr\|_2^2\ge0.
+\]
+For the retained data define
+\[
+ f_{it}=\left\|R_{X_i,*}-\sum_{s\ne t}e_{Z_{is}}-\mu_{it}\right\|_2^2.
+\]
+Its actual expectation is $V_{it}$, since the legal equation makes
+the vector inside the norm equal to $e_{Z_{it}}-\mu_{it}$.
+Independence under $\mathsf Q_{it}$ gives
+$\E_{\mathsf Q_{it}}f_{it}=S_i-V_{it}+B_i$.
+Consequently
+\begin{equation}\label{eq:Delta}
+ \Delta_{it}:=\E_{\mathsf Q_{it}}f_{it}-\E f_{it}
+                 =S_i-2V_{it}+B_i.
+\end{equation}
+Every occupied row $R_{X_i,*}$ has total mass $d_i$; so does
+$\sum_{s\ne t}e_{Z_{is}}+\mu_{it}$. Both are nonnegative under both
+laws. Hence $0\le f_{it}\le2D^2$. Total variation and Pinsker give
+\begin{equation}\label{eq:pinsker}
+ |\Delta_{it}|\le \sqrt2D^2\sqrt{\kappa_{it}}.
+\end{equation}
+The decisive change from the frozen argument is to average
+\eqref{eq:Delta} with the omission weights themselves:
+\[
+ \sum_tq_{it}\Delta_{it}
+ =S_i-2\sum_tq_{it}V_{it}+B_i
+ \ge c S_i.
+\]
+This holds since $\sum_tq_{it}=1$, $B_i\ge0$ and
+$q_{it}\le(1-c)/2$. Individual $\Delta_{it}$ need not be positive.
+After summing over old types, \eqref{eq:pinsker}, weighted
+Cauchy--Schwarz and \eqref{eq:kappa} imply
+\begin{equation}\label{eq:upper}
+ c\sum_i\alpha_iS_i
+ \le \sqrt2D^2\sum_i\alpha_i\sum_tq_{it}\sqrt{\kappa_{it}}
+ \le \sqrt2D^2\sqrt{A_q}
+ \le 2D^2\sqrt{L/c}.
+\end{equation}
+The total Cauchy--Schwarz weight is exactly
+$\sum_i\alpha_i\sum_tq_{it}=1$.
+
+For the reverse bound, reversibility of the actual frame gives
+\begin{align*}
+ \sum_i\alpha_iS_i
+ &=\sum_i\alpha_i\sum_jd_{ij}(1-\|\rho_j\|_2^2)\\
+ &=\sum_j\alpha_jd_j(1-\|\rho_j\|_2^2)
+ \ge3\sum_j\alpha_j(1-\max_a\rho_j(a))=3\delta(P).
+\end{align*}
+Here $\|\rho_j\|_2^2\le\max_a\rho_j(a)$ and $d_j\ge3$.
+Combine this with \eqref{eq:upper} and square to obtain
+$9c^2\delta(P)^2\le4D^4L/c$, which is exactly
+\eqref{eq:gap}. The initial symmetrization then proves it for the
+original laws as well.
+\end{proof}
+
+For each fixed $\eta>0$, the same exact one-hot type count and
+factorial remainder therefore give, uniformly over the finite bounded
+integer candidate family,
+\begin{equation}\label{eq:macro}
+ \E_{\mathrm{simple}}\#\{Y:\ AY=YR,\ Y\text{ one-hot},\
+             \delta(Y)\ge\eta\}
+ \le C(K,D)(n+1)^B e^{-\gamma\eta^2 n}.
+\end{equation}
+There is no lower bound on candidate class masses. If $\delta=0$,
+the root laws and hence all compatible stars are deterministic; their
+integer legality is precisely $QT=TR$ for the corresponding point
+map $T$. Conversely each compatible point map has entropy zero.
+
+\section{Support closure and the complete algorithm}
+We record why no remaining recovery step needs positive omission
+weights. Balance and connectedness imply
+$\alpha_{\min}\ge\rho:=1/(KD^{K-1})$ by following paths of length at
+most $K-1$. Thus every active stub pool has at least $\rho n$ stubs.
+The mixed-degree support lemma in the frozen source uses only these
+pool bounds and $3\le d_i\le D$. It gives a constant
+$\eta=\eta(K,D)>0$, which may also be chosen less than
+$\rho/[2(D+1)]$, such that
+\begin{equation}\label{eq:support}
+ \Prob_{\mathrm{simple}}(\exists\varnothing\ne S,\ |S|\le\eta n:
+      \text{no outside vertex has exactly one neighbor in }S)
+       =O_{K,D}(n^{-(d_{\min}-2)}).
+\end{equation}
+Specifically, if all stubs at $S$ produce $a$ internal edges and $b$
+boundary edges reaching $w$ exterior vertices, then
+$2a+b\ge d_{\min}|S|$ and $b\ge2w$.
+Writing $e=a+b$ gives
+$e-|S|-w\ge(d_{\min}-2)|S|/2$.
+All witness probabilities and counts in that lemma concern uniform
+pairings or bijections and therefore contain no omission weight.
+Its summable bound is $C^s(s/n)^{\lceil(d_{\min}-2)s/2\rceil}$;
+the simple model excludes singleton bad sets. This is precisely the
+proof of \eqref{eq:support}. The same event excludes every nonzero
+row-sparse matrix solution of $AV=VR$, over any field and for any $R$:
+an exterior vertex with one neighbor in the support has a nonzero
+row in $AV$ and a zero row in $VR$.
+
+There are finitely many candidate integer matrices $R$ with $r\le K$
+and row sums at most $D$. Apply \eqref{eq:macro} to all of them and
+intersect with the good support event. Any accepted equitable indicator
+$Y$ then differs from an old-type point map $JT$ on fewer than $\eta n$
+vertices. At most $(D+1)\eta n$ vertices are changed or adjacent to
+a change. Each old class contains a vertex whose entire closed
+neighborhood is unchanged. Evaluating the integer equations there
+proves $QT=TR$, including for non-surjective $T$. Hence
+$V=Y-JT$ obeys $AV=VR$ and has small row support, so the support event
+forces $V=0$. This proves the structural assertion of
+Theorem~\ref{thm:extension}.
+
+The complete algorithm needs only $A,K,D$. For every candidate $r,R$
+compute a binary basis of
+\[
+ \ker_{\F}(I_r\otimes A-R^T\otimes I_n),
+\]
+enumerate all basis combinations, and retain exactly the one-hot
+matrices with nonempty classes satisfying the original integer
+identity $AY=YR$. After completing all enumeration, output an accepted
+partition of maximum class count. The true $(J,Q)$ is included.
+On the structural event every accepted partition is a compatible
+coarsening; its maximum class count is $k$ and equality makes its map
+$T$ a permutation. This recovers the partition and quotient.
+
+Binary elimination costs $O_K(n^3)$ bit operations, and each enumerated
+matrix costs at most $O_{K,D}(n^2)$ bit operations, including the
+integer verification. The unconditional moment \eqref{eq:moment}
+therefore gives the frozen bounds
+\[
+ \E[\text{base bit work}]\le C(K,D)n^{B+2},\qquad
+ \E[\text{total bit work}]\le C(K,D)n^{B+3},
+\]
+with $O_K(n^2)$ bit space. These bounds include rare large kernels.
+Instrumenting the base operations with a binary clock and stopping at
+$n^{B+4}$ operations gives $O_{K,D}(n^{B+5})$ deterministic total
+bit work; the clock has $O_{K,D}(\log n)$ bits. Return explicit
+\texttt{FAILURE/ABSTENTION} if interrupted, never an unfinished maximum.
+Markov bounds interruption by $O_{K,D}(n^{-2})$. Overall failure is
+bounded by
+\[
+ O_{K,D}(n^{-(d_{\min}-2)}+n^{-2})
+       +C(K,D)(n+1)^B e^{-\gamma\eta^2 n}.
+\]
+Thus both versions have the claimed recovery guarantee, and the capped
+version has worst-case polynomial work.
+
+For fixed $K,D$ only finitely many connected integer frames occur.
+Choose one certificate \eqref{eq:certificate} for each qualifying
+frame. Each chosen $c$ is positive, and their finite minimum is positive.
+Consequently the entropy rates and eventual constants may be made
+uniform over this qualifying bounded family without exposing the
+certificate to the algorithm. This completes the proof.
+
+\section{A strict enlargement of the positive-weight hypothesis}
+Take two disjoint copies of $K_{3,3}$ and add one bridge from a left
+vertex of the first copy to a right vertex of the second. Regard the
+twelve vertices as twelve types, with $d_{ij}=1$ on base edges and
+equal type sizes $N$. All total degrees are three or four, and the
+base is connected. Give each edge within either copy weight $1/3$
+and the bridge weight zero. These weights satisfy
+\eqref{eq:certificate}, with $c=1/3$.
+
+Every symmetric row-sum-one certificate must give the bridge weight
+zero. Sum its row equations over the three left vertices of the first
+copy and subtract those over the three right vertices of that copy.
+All edges within the copy cancel and only the bridge remains, so its
+weight is $3-3=0$. This example therefore has no all-positive
+certificate and is not covered by the frozen positive-weight theorem.
+Its independent matching lifts are covered by this addendum.
+
+The proof does not allow $q_{ij}=1/2$: its constant $c$ would vanish.
+It proves a polynomial modular moment through entropy and exact type
+counting. It does not prove a bounded modular moment for frames that
+require zero omission weights, nor an improved runtime from such a
+moment. Finite-field zero phases need not be those of the all-positive
+case; they are not classified or used here. Historical novelty and
+practical efficiency are not claimed.
+\end{document}

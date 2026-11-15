@@ -1,0 +1,185 @@
+Independent actual-source proof and exact-code audit
+2026-11-15. Verdict: PASS within the stated finite diagnostic/input scope.
+
+Audited sources
+--------------
+exact_kernel_certificate.py, full source:
+ SHA256 4b469f280cac007e3b7a835cd9ccee3e255b496939669820761974fc2cabf406
+ Includes the final isinstance(eigenvalue,int), |eigenvalue|<=degree guard.
+biregular-defects/embedded-mode-proof.tex, all 326 lines:
+ SHA256 6efb95a93a83971f7f0097bd92cab127ebe8299b8abefe0e1df3d55b9cd8f18b
+ Includes the added signed spanning-tree proposition and revised one-minor
+ formulation. The earlier supplied d962... source was superseded while this
+ audit was running; this audit binds only the above fully inspected hash.
+
+No modifications were made to either source. All audit writes are inside
+partitioning-sparse-session/literature-robust/.
+
+Mathematical reconstruction
+---------------------------
+1. Equitable bisections and exact rank.
+For a d-regular graph and a sign vector tau, let x_v count opposite-sign
+neighbors. Then (A tau)_v=(d-2x_v)tau_v. Therefore A tau=lambda tau is
+exactly the (a,b)-equitable condition when a+b=d and a-b=lambda. A real
+one-dimensional lambda-eigenspace containing sigma has only the two sign
+vectors +/-sigma. Balance must also be checked; the code does check it.
+The converse 'unique sign bisection implies nullity one' is not used and
+would not follow. Fraction-free exact linear algebra has polynomial bit
+complexity for the bounded integer entries here.
+
+2. Signed spanning-tree identity.
+S=diag(sigma) gives C=SAS with row sum lambda and
+L=lambda I-C=S(lambda I-A)S. This is an incidence Laplacian with edge
+weight sigma_u*sigma_v. Deleting any row of the incidence matrix and
+applying Cauchy--Binet gives a sum over spanning trees of the edge-weight
+products, namely (-1)^(number of crossing edges). The squared incidence
+minor is one on trees and zero otherwise, even though weights can be
+negative. Principal conjugation by S leaves each minor unchanged. All
+cofactors equal the signed tree count Z, and differentiating det(tI-A)
+gives P_A'(lambda)=N*Z. Since A is symmetric and lambda is already known
+to be an eigenvalue, nonzero derivative is equivalent to multiplicity one.
+Thus any one principal cofactor suffices. The sign factor from lambda I-A
+to A-lambda I is (-1)^(N-1), harmless for nonvanishing and important for
+the actual signed value. The source handles it correctly.
+
+3. Finite-field certificate and reconstruction.
+A principal (N-1)-minor nonzero modulo p is nonzero as an integer, so
+rank_R M>=N-1. The exact verified nonzero nullvector gives rank_R M<=N-1.
+No floating-point rank decision is involved. If modular nullity is one,
+the planted sigma reduces to a nonzero modular vector; since all its
+coordinates are +/-1, every coordinate is nonzero, and normalization at
+vertex0 is valid. For odd p, residues +1 and -1 are distinct. The code
+normalizes by v0=1 using M[1:,1:] z=-M[1:,0], then verifies the omitted
+row as part of its full integer residual test. Consequently a nonzero
+minor alone cannot cause a false accepted candidate.
+
+If p divides d-lambda=2b, then 1 and sigma are independent modular kernel
+vectors (both signs occur and p is odd); the principal solve must fail.
+Other bad primes can divide all maximal minors. Returning UNDECIDED is
+correct and does not assert nonuniqueness. There is no high-probability
+success theorem for the three fixed primes.
+
+4. All-real-parameter Bethe-Hessian barrier.
+H(r)sigma=(r^2-lambda*r+d-1)sigma. Completing the square gives the exact
+strict/equality/supercritical classification in the source. If the scalar
+eigenvalue is positive, sigma is orthogonal to every negative eigenspace
+of the symmetric H(r); if it is zero, the same orthogonality still holds.
+This excludes retaining negative eigenspaces at any collection of real
+parameters as a method of including this exact signal direction. It does
+not exclude interior-eigenvector algorithms or arbitrary nonlinear graph
+algorithms. Examples (2,1) and (4,3) give positive minima 7/4 and 23/4.
+
+5. Nonbacktracking conversion.
+For f_theta(u,v)=sigma_v-theta^(-1)sigma_u, summing over w~v,w!=u gives
+(lambda-(d-1)/theta)sigma_v-sigma_u=theta*f_theta(u,v). The conjugate
+quadratic roots have product d-1 and nonzero imaginary parts in the
+embedded regime, hence modulus sqrt(d-1), and f_theta is nonzero. These
+are not separated real insider modes.
+
+6. Two-switch brittleness.
+The four distinct endpoints each lose a same-sign neighbor and gain an
+opposite-sign neighbor, so their residual is -2*sigma_v. Its normalized
+Euclidean norm is sqrt(4*4/N)=4/sqrt(N). Degree and simplicity hold under
+the stated absent-edge hypotheses. This proves fragility of the exact
+equation and makes no inference that robust statistical recovery is
+impossible.
+
+7. Cube-lift theorem.
+Every lift of the simple cube remains simple and cubic. The three old
+coordinate characters (-1)^x_j have balanced fibers, zero pairwise inner
+products, two preserving neighbors and one reversing neighbor. Their
+unit-normalized fourth-power sums equal 8n/(8n)^2=1/(8n). The common
+BH curve is the positive r^2-r+2.
+
+The cube has 12-8+1=5 chords after choosing a spanning tree. Gauge the
+tree permutations to identity. Conditional on its permutations, the five
+chord permutations remain independent uniform permutations. Components
+are their orbits. A fixed k-subset is invariant with probability
+binom(n,k)^(-5); summing over subsets of size k and then k<=n/2 gives
+sum binom(n,k)^(-4). The k=1 term is n^(-4); all k>=2 together are
+O(n^(-7)), so the source's O(n^(-4)) bound is valid. Fixed-radius local
+tree convergence follows from O(2^R) exposures and O(4^R/n) collision
+probability. This is convergence at a uniform root, not a claim that all
+R-balls are trees simultaneously.
+
+The old cube eigenvalues are +/-3 (once each) and +/-1 (three each).
+The cited fixed-base random-lift almost-Ramanujan theorem supplies the
+new-spectrum bound. The exceptional disconnection probability tends to
+zero, so discarding the two trivial bipartite eigenvalues is legitimate
+for the in-probability conclusion. This is the only non-elementary input
+in the cube spectral assertion; this audit checks its use, not a fresh
+proof of that published theorem.
+
+Given the realized graph and any independent vertex relabeling, the
+designated index among three distinct partitions remains independent
+uniform. An algorithm can exactly output at most one of them, giving
+conditional success <=1/3. This is an exact designated-partition
+identifiability obstruction in the stated model. It is not an assertion
+that no output can weakly correlate with multiple partitions, nor a
+counterexample to the uniform RSBM conjecture.
+
+Code and arithmetic audit
+-------------------------
+Gaussian elimination multiplies the determinant by the unnormalized
+pivot at each stage; each row swap reverses the sign. Row normalization
+and elimination then preserve the tracked determinant relation. A missing
+pivot correctly detects singularity modulo a prime. Back-substitution is
+valid because the resulting upper triangular diagonal is one.
+
+For the supplied diagnostics, N<=192 and p<=1019. Each residue is at
+most1018, each product at most1,036,324, and each back-substitution dot
+sum is below192*1,036,324<2.0e8, far below signed-int64 capacity. Matrix
+construction and integer residuals are also far within range. Determinant
+tracking uses Python arbitrary-size integers. The API's final degree
+bound on integer lambda protects construction for its validated binary
+regular graph input. This is an audit of the stated diagnostic sizes and
+default primes, not an arbitrary-dimension or arbitrary-dtype arithmetic
+library. Input validation is expressed as Python assertions; use normal
+execution, as in the supplied runs, rather than python -O if relying on
+those validations for untrusted input.
+
+Sampler law
+-----------
+Uniformly shuffling the regular-graph stub list and pairing consecutive
+entries samples uniform configuration pairings. Every simple d-regular
+graph on the fixed vertex set has the same number of labeled-stub
+realizations, namely (d!)^n. Early rejection is equivalent to rejecting
+the complete pairing whenever it is nonsimple. Resampling until accepted
+therefore gives the exact uniform simple regular law.
+
+For the bipartite block, fixing the left stubs and uniformly shuffling
+the right stubs gives a uniform perfect matching of the labeled stub
+sets; every simple d-regular bipartite graph has (d!)^(2n) labeled-stub
+matchings. Rejection again yields the uniform simple bipartite law.
+The three blocks use independent draws in the ideal random model, and
+the final independent vertex permutation makes the ordered balanced
+partition uniform. A fixed seeded PRNG produces reproducible examples,
+not true independent random variables or evidence of an asymptotic law.
+All sampled degrees satisfy the usual nonnegative graphical constraints.
+
+Independent computations
+------------------------
+The retained script audit_exact_certificate.py uses Python integer
+Bareiss determinants independent of the code's modular determinant.
+EXACT_CERTIFICATE_CHECKS.json records:
+* 210 random square-system checks (sizes0,1,2,3,5,10,20; ten samples each;
+  primes1009,1013,1019), matching singularity and determinants modulo p,
+  and integer-verified residuals for every returned solution.
+* Explicit pivot-swap, modular-only singularity, and real-singularity
+  examples.
+* All182 labeled regular graphs on2,4,6 vertices, all feasible integer
+  eigenvalues tested. Each of134 accepted graph/eigenvalue pairs has
+  exactly two balanced sign solutions, counted by independent exhaustive
+  enumeration.
+* The stored96-vertex (4,3) example checked entirely with Python integers.
+  Its principal cofactor of A-I is -440232599373979758624, which is
+  935 modulo1009, matching the certificate. Every vertex has exactly
+  four same-sign and three opposite-sign neighbors.
+* The full supplied144-sample diagnostic run was independently rerun into
+  this directory's reproduced/ subdirectory. It returned144 certified,
+  zero undecided; both JSON files are byte-identical to the supplied ones.
+  These finite checks establish neither random-model asymptotics nor
+  historical novelty.
+
+No substantive correctness defect was found in the inspected final source.
+The random-model exact-collision statement remains explicitly UNPROVED.

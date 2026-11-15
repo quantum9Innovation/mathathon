@@ -1,0 +1,1454 @@
+                                               Separator Theorem for Minor-Free Graphs in Linear Time*
+
+                                             Édouard Bonnet†               Tuukka Korhonen‡                 Hung Le§          Jason Li¶         Tomáš Masařík‖
+
+
+                                                                                                    Abstract
+                                                  The planar separator theorem by Lipton and Tarjan [FOCS ’77, SIAM Journal on Applied Mathematics ’79]
+                                                                                                                                 p
+                                              states that any planar graph with n vertices has a balanced separator of size O( n) that can be found in linear
+
+
+
+
+arXiv:2512.01587v2 [cs.DS] 8 Sep 2026
+                                              time. This landmark result kicked off decades of research on designing linear or nearly linear-time algorithms on
+                                              planar graphs. In an attempt to generalize Lipton–Tarjan’s theorem to nonplanar graphs, Alon, Seymour, and
+                                              Thomas [STOC ’90, Journal of the AMS ’90] showed that any minor-free graph admits a balanced separator of
+                                                      p
+                                              size O( n) that can be found in O(n3/2 ) time. The superlinear running time in their separator theorem is a key
+                                              bottleneck for generalizing algorithmic results from planar to minor-free graphs. Despite extensive research for
+                                                                                                                p
+                                              more than two decades, finding a balanced separator of size O( n) in (linear) O(n) time for minor-free graphs
+                                                                                                                                                              p
+                                              has remained a major open problem. Known algorithms either give a separator of size much larger than O( n)
+                                              or have superlinear running time, or both.
+                                                  In this paper, we answer the open problem affirmatively. Our algorithm is very simple: it runs a vertex-weighted
+                                              variant of breadth-first search (BFS) a constant number of times on the input graph. Our key technical contribution
+                                              is a weighting scheme on the vertices to guide the search for a balanced separator, offering a new connection
+                                              between the size of a balanced separator and the existence of a clique-minor model. We believe that our weighting
+                                              scheme may be of independent interest.
+
+
+                                        1     Introduction
+                                        In the late 70s, Lipton and Tarjan [LT79] introduced a planar separator theorem in linear time: there is a linear-time
+                                                                                                                                     p
+                                        algorithm that, given any n-vertex planar graph, returns a balanced separator of size O( n). (Their separator
+                                                                                        p
+                                        bound improved upon the earlier bound of O( n log3/2 n) by Ungar [Ung51].) In a follow-up paper [LT80], they
+                                        gave a plethora of algorithmic applications of their separator theorem, from approximating NP-hard problems
+                                        to data structures, circuit lower bounds, and maximum matching problems, to name a few. Their results have
+                                        unleashed decades of intensive research on planar graph algorithms, continuing to this day. (See the book draft by
+                                        Klein and Mozes [KM24] for a sample of results on planar graphs.) There is hardly any result on planar graphs
+                                        that does not use the separator theorem or its variants [Mil86, Tho04]. Clearly, the linear running time is crucial
+                                        for many algorithmic applications.
+                                            The planar separator theorem by Lipton and Tarjan has motivated a long line of research on separator theorems
+                                        for nonplanar graphs. Note that constant-degree expander graphs only have balanced separators of size Ω(n), and
+                                        therefore, one has to impose additional structures besides sparsity on the input graph to guarantee the existence
+                                        of a separator of sublinear size. A well-studied and perhaps most natural approach is to study graphs excluding
+                                        a fixed minor. We say that a graph H is a minor of G if H can be obtained from G by a sequence of vertex and
+                                        edge deletions, and edge contractions. We say that G is H-minor-free if it does not contain H as a minor. Wagner’s
+                                        theorem [Wag37] characterizes planar graphs in terms of forbidden minors: a graph is planar if and only if it
+                                          * A conference version of this paper will appear in the proceedings of the 58th Annual ACM Symposium on Theory of Computing (STOC
+                                        2026) [BKL+ 26].
+                                          †
+                                             CNRS, ENS de Lyon, Université Claude Bernard Lyon 1, LIP UMR 5668, 69342 Lyon. edouard.bonnet@ens-lyon.fr
+                                          ‡
+                                             University of Copenhagen. tuko@di.ku.dk
+                                          §
+                                             University of Massachusetts, Amherst. hungle@cs.umass.edu
+                                           ¶
+                                             Carnegie Mellon University. jmli@cs.cmu.edu
+                                          ‖
+                                             University of Warsaw. masarik@mimuw.edu.pl
+
+
+
+                                                                                                        1
+excludes K5 and K3,3 as minors. Therefore, planar graphs form a subclass of K5 -minor-free graphs. This point of
+view naturally raises the following questions:
+                                                             p
+Question 1. Can we construct a balanced separator of size O( n) for any given Kh -minor-free graph in O(n) time
+for any fixed h? Can the dependence on h in the separator size and the running time be made polynomial?
+
+    A resolution of the first part in Question 1 casts the separator theorem for planar graphs by Lipton and Tarjan
+as a special case (when h = 5) of a much broader landscape. The second part seeks a stronger guarantee for
+a more practical purpose: by imposing a polynomial dependence on h, one has to avoid sophisticated approaches
+based on the Robertson–Seymour structure theorem [RS03], such as in [KR10], which are often considered highly
+impractical [LR10].
+    Partial progress on this question was made on graphs embeddable on a surface of genus g; such graphs exclude
+                                                                                                       p
+KO(p g) as a minor. Indeed, the paper by Lipton and Tarjan [LT80] constructed a separator of size O(g n). Gilbert,
+                                                                         p
+Hutchinson, and Tarjan [GHT84] improved the separator size to O( gn) and gave an algorithm that runs in
+O(gn) time, given a genus-g embedding of the input graph. However, finding such an embedding in linear time
+is difficult: when g is part of the input, it is NP-hard [Tho89]. For a small genus g, an algorithm with running
+                                                                                    p
+time 2O(poly(g)) n was found decades later [Moh96, KMR08]. To find an O(poly(g) n)-size separator, it suffices to
+embed a genus-g graph G into a surface with genus poly(g). There is a polynomial-time algorithm [KS15] (even
+when g is unbounded) with such a guarantee, but it is unclear if the algorithm can be implemented in O(poly(g)n)
+time. In other words, even in the special case of genus-g graphs, Question 1 still does not have a satisfactory
+answer. Note that a K5 -minor-free graph can have genus g = Ω(n), and therefore the class of Kh -minor-free graphs
+for a fixed h is vastly broader than bounded-genus graphs.
+    In a breakthrough paper, Alon, Seymour, and Thomas [AST90a, AST90b] made significant progress toward
+                                                                                                        p
+Question 1 by showing that any Kh -minor-free graph has a balanced separator of size O(poly(h) n). Their
+existential proof can then be turned into a polynomial-time algorithm.
+
+Theorem 1 (Alon, Seymour, and Thomas [AST90a, AST90b]). For any integer h ⩾ 1, any Kh -minor-free graph
+                                          p                                   p
+admits a balanced separator of size O(h3/2 n) that can be found in time O(h1/2 nm).
+
+    In concluding their paper, Alon, Seymour, and Thomas [AST90b] wrote: “It may be that by using more
+sophisticated, dynamic data structures, the algorithm can be implemented more efficiently, but at the moment we do not
+see how to do so.” Indeed, subsequent efforts to obtain linear (or almost linear) time algorithms are by designing
+completely different algorithms. Reed and Wood [RW09] gave an algorithm that finds a balanced separator of size
+2O(h ) n2/3 in time 2O(h ) n; these bounds are part of a more general trade-off between separator size and running
+    2                   2
+
+                                                                                                        p
+time. Ignoring the dependence on h, their separator size is O(n2/3 ), which is much larger than the O( n) bound in
+Theorem 1. Kawarabayashi and Reed [KR10] used Robertson–Seymour’s structure theorem for minor-free graphs,
+                                                                    p
+giving a quadratic algorithm for finding a separator of size O(h n), and sketching another algorithm in time
+O(g(h)n1+ε ) for any fixed constant ε ∈ (0, 1). One of the authors [Kaw11] later clarified that the precise separator
+                p
+bound is O(h n + f (h)). Here f (h) and g(h) are functions of the Robertson–Seymour type: a tower of several
+exponentials. Their algorithm is very complicated, along the lines of Robertson–Seymour decomposition. The full
+version has not yet appeared after over fifteen years.
+    Plotkin, Rao, and Smith [PRS94] introduced the notion of shallow minor1 and derived a polynomial-time
+algorithm for finding a balanced separator for Kh -minor-free graphs of size
+
+                                                              O(n/ℓ + h2 ℓ log n)                                         (1)
+                                                                     p
+    p ℓ ∈ [1, n] is a parameter. For example, by setting ℓ = n/(h log n), we obtain a separator of size
+                                                                                              p
+where
+O(h n log n). While the running time of their algorithm [PRS94] is not better than Theorem 1, it is amenable to
+a fast implementation. Specifically, Wulff-Nilsen [Wul11] designed a faster implementation ofp      the algorithm by
+Plotkin, Rao, and Smith, obtaining two interesting trade-offs: a balanced separator of size O(h n log n) in time
+O(poly(h)n5/4+ε ) or of size O(poly(h)n4/5+ε ) in linear time O(poly(h)n). In a follow-up paper, Wulff-Nilsen [Wul14]
+  1
+      Interestingly, it turns out that shallow minors play a crucial role in the recent theory of sparse graphs [NO12].
+
+
+
+                                                                         2
+                                                                                                     p
+improved the running time further when ℓ ≈ nε ; however, the improvement is not significant when ℓ ≈ n. Biswal,
+Lee, and Rao [BLR10] gave an alternative proof of Theorem 1 based on spectral graph theory, but the running
+time is not discussed. In summary, despite intensive research for more than two decades, known algorithms either
+                                                      p
+give a separator of size much larger than O(poly(h) n) or have superlinear running time, or both. Therefore,
+Question 1 remained wide open. See Table 1 for a summary.
+
+        Separator size               Running time                           References   Notes
+                 p                          p
+           O(h3/2 n)                  O(h1/2 nm)                            [AST90b]
+              O(h2 ) 2/3                           O(h2 )                                    2                      2
+           2     n                             2            n                 [RW09]     2O(h ) n(2−ε)/3 -size in 2O(h ) n1+ε time ∀ε ∈ [0, 1/2]
+          p
+       O(h n + f (h))                O(g(h) n1+ε )                             [KR10]    full proof not available yet
+                                                                                                     p
+                                                                              [PRS94]    setting ℓ = n/(h log n) in Equation (1)
+           p                          p                                                                     p
+        O(h n log n)               O(h n log nm)
+    O(poly(h)n     )
+                 4/5+ε
+                                      O(poly(h) n)                            [Wul11]    fast implementation of [PRS94]
+                                                            )                 [Wul11]    fast implementation of [PRS94]
+          p                                        5/4+ε
+       O(h n log n)              O(poly(h) n
+          p
+ O(poly(h) n log2 n)       O(poly(h) n polylog(n))              [RST14, Pen16, LS22]     balanced cut, do not output a minor model directly
+               p
+      O(poly(h) n)                    O(poly(h) n)                          This paper   Theorem 2
+               p
+             O( n)                                 O(n)                        [LT79]    planar graphs
+              p
+            O( g n)                      2   O(poly(g))
+                                                            n       [GHT84, KMR08]       genus-g graphs
+               p
+      O(poly(g) n)                    O(poly(g) n)                          This paper   genus-g graphs, direct corollary of Theorem 2
+
+Table 1. The top part of the table contains separator theorems for Kh -minor-free graphs. Functions f (h) and g(h) in line 3 are of the
+Robertson–Seymour type: a tower of several exponentials.
+
+
+    We note that a balanced separator could be obtained by approximating (vertex variants of) sparsest cuts, or more
+precisely, balanced cuts, in graphs. The cut-matching game [KRV09] and its non-stop version [RST14], together
+with recent developments on approximate maxflow [She13, Pen16] and vertex-expander decomposition [LS22],
+give a polylog(n)-approximation algorithm in O(m polylog(n)) time. For minor-free graphs, one may assume
+m = O(poly(h)n) [Kos82], and therefore, the running time becomes O(poly(h)n polylog(n)). However, these
+techniques inherently have multiple log-factor overheads in both the separator size and the running time—in
+particular, the polylog(n) in the running time is at least log40 n—and hence do not seem to be the right approach for
+settling Question 1 completely. Furthermore, they often require sophisticated subroutines, e.g., the cut-matching
+game or graph sparsifiers. When they fail to construct a small separator, these techniques often output expander-like
+subgraphs as a failure certificate. In the context of this paper, when an algorithm fails, we want a Kh -minor model
+instead. To turn an expander-like subgraph into a Kh -minor model, non-trivial additional effort seems to be needed.
+Here, a Kh -minor model of a graph G is a collection of h vertex-disjoint connected subgraphs {C1 , C2 , . . . , Ch } of
+G such that for every two subgraphs Ci , C j where i ̸= j, there exists an edge uv ∈ E(G) where u ∈ V (Ci ) and
+v ∈ V (C j ).
+
+
+1.1     Our Contribution
+In this paper, we answer Question 1 completely: for a given Kh -minor-free graph with n vertices, we construct
+                                p
+a balanced separator of size O( n) in O(n) time for any fixed h, and furthermore, the dependence on h in both the
+separator size and the running time is polynomial. Specifically, in deterministic O(poly(h)n) time, our algorithm
+                                               p
+either constructs a separator of size O(poly(h) n) or outputs ⊥ to indicate that the input graph G contains a Kh as
+a minor. Whenever the algorithm fails to construct a balanced separator, if we are required to output a Kh -minor
+model, we can do so in randomized linear time O(poly(h)n) with success probability at least 1/2. As an added
+bonus, our algorithm is extremely simple: we find a balanced separator by running breadth-first search (BFS) on
+a suitable graph O(poly(h)) times! See Section 1.2 for more details. Our results are summarized in the following
+theorem.
+
+
+                                                                        3
+Theorem 2. Let G be any given graph with n vertices, and h > 0 be a parameter. There is an algorithm that runs
+in deterministic O(poly(h)n) time and outputs either:
+                                            p
+    • a balanced separator of size O(poly(h) n) or
+      • ⊥ if G contains a Kh as a minor.
+Furthermore, in the latter case, we can output a Kh -minor model of G with probability at least 1/2 in an additional
+randomized O(poly(h)n) time.
+                                        p
+    The precise separator size is O(h13 n) and the precise running time is O(h13 n). In this paper, we do not attempt
+to minimize the exponent of h to keep a simple
+                                             p presentation. When we are not required to output a Kp          h -minor
+model, since a Kh -minor-free graph has O(h log hn) edges [Kos82], we simply output ⊥ when m > c · h log hn,
+where m := |E(G)|, for a sufficiently large constant c to indicate that G is not
+                                                                              p Kh -minor-free. If we are required to
+output a Kh -minor model in this case, then we can only keep the first c · h log hn (arbitrary) edges from G, and
+find a Kh -minor model of the resulting graph. However, existing algorithms [RW09, DHJ+ 13] have running    p time
+2Ω(h) n: [RW09] requires at least 2h−3 n edges and takes time 2O(h) n, while [DHJ+ 13] requires only Θ(h log h)n
+edges but takes time poly(h)n + 2Õ(h ) due to a brute-force step on a Θ(h2 log h)-vertex graph. There are two ways
+                                      2
+
+
+we can resolve this issue. We could run our algorithm without the assumption that m = O(poly(h)n), and the final
+running time would be O(poly(h)m). Alternatively, and more efficiently, we provide an algorithm (Lemma 4) that
+in deterministic O(poly(h)n) time, produces a Kh -minor model when m ⩾ 100h2 n. As a result, we can assume that
+m = O(h2 n). Note that we do not have a dependence on m in the running time since we only read the first 100h2 n
+edges of G, and ignore other edges.
+    Our Theorem 2 applied to graphs of genus-g also gives a new result: we can find a separator of size
+            p
+O(poly(g) n) in O(poly(g)n) time, avoiding computing the surface embedding of the input graph, which is
+a difficult task, as remarked above.
+
+1.2       Technical Ideas
+For simplicity, we assume that the input graph is Kh -minor-free, and our goal is to construct a separator of size
+            p
+O(poly(h) n) in deterministic linear time O(poly(h)n). We say that a subset of vertices S ⊆ V is an α-balanced
+separator of G = (V, E) for some α ∈ (0, 1) if every connected component of G \ S has size at most α · |V |. We
+simply say  that S is a balanced separator if it is 2/3-balanced. Our algorithm is given in Algorithm 1; it outputs
+          1                                             p
+a 1 − 200h  2 -balanced separator of size O(poly(h)       n). To get a 2/3-balanced separator, we simply repeat the
+algorithm O(h2 ) times and take the union of all the separators from all the runs. The size of the separator increases
+                                                       p
+by a factor of O(h2 ) and hence remains O(poly(h) n). The highlighted lines in Algorithm 1 are where we apply
+the vertex-weighted variant of BFS to G. These weights are designed by our algorithm, starting from uniform
+weights for all vertices. We will clarify the role of the weight function shortly.
+    To formally define our weighted variant of BFS, we need to introduce some notation. Let w : V → Z+ be a
+positive integer weight function on the vertices of G; we write 〈G, w〉 to denote G with weight function w attached
+to it. We define the length of a path P (w(P)) in 〈G, w〉 to be the total weight of the vertices on the path. (Note
+that if the path contains a single vertex v, its length is w(v) instead of 0.) The (vertex-weighted) distance between
+two vertices u and v, denoted by d〈G,w〉 (u, v), is the length of the shortest path between u and v. Edges of graphs
+in our paper are not weighted, so the length and distance terminologies are meant to be vertex-weighted only.
+    The procedure BFS(〈G, w〉, v, r) computes a (vertex-weighted) shortest-path tree, say T , rooted at v in   P〈G, w〉
+truncated at radius r. That is, BFS(〈G, w〉, v, r) only contains vertices at distance at most r from v. Let W = v w(v)
+be the total vertex weight. By standard reduction, one could reduce computing the vertex-weighted shortest-path
+tree to computing a BFS tree in a (directed) graph with {0, 1}-edge weights in time O(m + W ); see Lemma 8. In our
+algorithm, we will guarantee that W = poly(h)n and hence the running time of BFS(〈G, w〉, v, r) is O(m+poly(h)n).
+    Another key subroutine of our algorithm is the vertex-weighted variant of the KPR decomposition, named after
+Klein, Plotkin, and Rao [KPR93]. The KPR decomposition, given an unweighted2 Kh -minor-free graph G with
+m edges and a parameter ∆ > 0, decomposes G into connected components of weak (hop) diameter O(h2 ∆) by
+  2
+      KPR could work for edge-weighted graphs as well; in our paper, the intuition came from the unweighted version.
+
+
+                                                                     4
+                                                            p                                               p
+removing O(h · m/∆) = (h2 log hn/∆) edges. When ∆ ≈ n, the number of edges removed is O(poly(h) n),
+                             p
+
+coinciding with the separator bound that we are aiming for. The decomposition is obtained by computing BFS
+trees in h rounds. Here in our work, we need (i) a vertex-weighted version of KPR and (ii) to output a Kh -minor
+model in linear time whenever the algorithm fails to output the largest component of small (weak) hop diameter.
+Therefore, our guarantees, summarized in Lemma 1 below, are slightly different from the original KPR [KPR93].
+The proof will be given in Section A.
+
+     FINDSEPARATOR(G = (V, E)):               〈〈Assume that G is Kh -minor-free〉〉
+       w1 (v) ← 40 for every v ∈ V
+       S←;              〈〈The separator 〉〉
+       for t ← 1 to 20h2
+                                            p                                    p
+            (C t∗ , S t ) ← KPR(〈G, w t 〉, ⌊ n/12h2 ⌋, h)     〈〈KPR with ∆ = ⌊ n/12h2 ⌋, applying BFS 2h) times〉〉
+            S ← S ∪ St
+                                 1                                             1
+            if |C t∗ | ⩽ (1 − 200h 2 )n      〈〈The current separator is (1 − 200h 2 )-balanced〉〉
+
+                    return S
+            c t ← an arbitrary vertex in C t∗
+                                        p                                    p
+            Tt ← BFS(〈G, w t 〉, c t , n)          〈〈BFS truncated at radius n〉〉
+            for every v ∈ V (Tt )
+                                             |Tt (v)|203 h6
+                   w t+1 (v) ← w t (v) + ⌈         p
+                                                     n
+                                                            · w t (v)⌉       〈〈Reweighting vertices for next iteration〉〉
+        return S
+                                                1                                            p
+Algorithm 1. An algorithm for finding a (1 − 200h2 )-balanced separator with size O(poly(h) n) of a Kh -minor-free graph G . Ti (v) denotes
+the vertex set of the subtree of Ti rooted at v .
+
+
+
+Lemma 1 (Vertex-Weighted KPR). GivenPa graph 〈G = (V, E), w〉 with integer weights on vertices, m edges and
+integer parameters ∆ > 0, h > 0. Let W = v∈V w(v). The procedure KPR(〈G, w〉, ∆, h) runs in time O(h · (m + W ))
+and returns either:
+    • a pair (C ∗ , S) where S is a subset of vertices of size h · W /∆, and C ∗ is the connected component of maximum
+      size of G − S, which is guaranteed to have (vertex-weighted) weak diameter at most 12 · h2 ∆, or
+    • a Kh -minor model.
+       we will guarantee that W = poly(h)n, the total running time of KPR(〈G, w〉, ∆) is O(poly(h)m). We will set
+    As p
+                                                                                                                  p
+∆ = ⌊ 12hn2 ⌋ (in Algorithm 1) and therefore, the number of vertices in the separator returned by KPR is O(poly(h) n).
+Similar to the original KPR [KPR93], our vertex-weighted version of KPR decomposition can be constructed by
+applying (vertex-weighted) BFS 2h times. Thus, in total, our algorithm calls vertex-weighted BFS O(h3 ) times.
+Therefore, it is both simple, efficient, and completely different from all other existing algorithms!
+    Our key technical contribution is a weighting scheme on the vertices, which offers a new insight into the
+dynamics between the size of the balanced separator and the existence of a Kh -minor model. The scheme serves
+two different purposes: guiding the search for the small balanced separator, and the search for the minor model
+when such a separator does not exist. (The second purpose does not show up in Algorithm 1; instead, it will be
+part of the analysis and in the algorithm for constructing a minor model if required.)
+    We first describe how the weighting scheme guides the search for a balanced separator. Initially, every vertex v
+has the same role and hence is given the same weight w1 (v) = 40. When we apply KPR to find a separator S t (at
+                                                                                                              p
+an iteration t), the largest component C t∗ of G − S t is only guaranteed to have a small diameter (of O( n)); it
+could contain almost all the vertices. If in the next iteration, we simply apply KPR again on the large component,
+we might not get anything, i.e., the returned separator is empty. By increasing the current weight of a vertex v to:
+                                                |Tt (v)|203 h6                         |Tt (v)|203 h6
+                                                                                                   
+                        w t+1 (v) ← w t (v) +         p        · w t (v) ≈ w t (v) 1 +       p          ,          (2)
+                                                        n                                      n
+where Tt (v) is the vertex set of the subtree rooted at v and |Tt (v)| is its (unweighted) size, the (vertex-weighted)
+diameter of the component in the next iteration increases. The ceiling in Equation (2) is to guarantee that w t+1 (v)
+
+
+                                                                         5
+is an integer. (In Algorithm 1, we apply BFS to G in every iteration, but we should think of this as applying BFS
+to the largest component from the previous iteration.) Vertices that have many descendants in Tt have more
+weights, and therefore, are more likely to be added to the separator in the next iteration. Intuitively, vertices with
+more descendants are responsible for connecting many other vertices, and therefore should be in the separator. A
+                                                                                                         p
+simplistic yet illuminating example is the star graph: the center of the star will be assigned Ω( n) weight, which
+is larger than 12h2 ∆, and hence will be added to the separator by KPR in the next iteration. (Note that in general,
+                                                                         p
+removing a single or O(1) vertices in a graph of diameter O( n) does not produce small components, e.g., the
+p       p
+   n × n planar grid.) If we only want to take vertices with many descendants to the separator, then we can
+                                                                         p
+simply choose a threshold on the number of descendants, say n, and add a vertex to the separator if the number
+of its descendants crosses the threshold. Simple thresholding does not work since there is no basis for stopping
+after O(h2 ) iterations of KPR. The second purpose of our weighting scheme, described next, provides such a basis,
+limiting the number of iterations to 20h2 .
+     Suppose that we want to certify that our algorithm fails by constructing a Kh -minor model. We construct a
+(random) function φ that maps each vertex i ∈ [h] of Kh to a (unique) vertex φ(i) ∈ V and each edge (i, j) ∈ Kh to a
+path, denoted by φ(i, j), in G. Two paths φ(i, j) and φ(a, b) have to be vertex-disjoint whenever {i, j} ∩ {a, b} = ;.
+For each vertex i ∈ Kh , φ(i) is a vertex in V chosen uniformly at random. To find a path φ(i, j) for every edge
+(i, j) ∈ Kh , we rely on the set of trees T = {T1 , T2 , . . . , Th2 }, which is produced by the algorithm3 in Algorithm 1
+after all iterations. Specifically, edge (i, j) ∈ Kh is assigned a unique tree Ti j ∈ T , and the path φ(i, j) is the
+(only) path between4 φ(i) and φ( j) in Ti j . To obtain a Kh -minor model from φ, it must have the guarantee that
+whenever {i, j} ∩ {a, b} = ;, the probability of φ(i, j) ∩ φ(a, b) = ; is high, say 1 − h12 , for the union bound to
+work. Suppose that Ti j is added to T before Tab . If the subtree Ti j (v) rooted at v has a large size, say n/2 vertices,
+then with probability 1/4, φ(i, j) will contain v since φ maps vertices to V uniformly at random. If in Tab , Tab (v)
+also has a large size, then φ(a, b) will also contain v with a good probability, say 1/4. Thus, in this thought
+experiment, with a probability 1/16, φ(i, j) ∩ φ(a, b) ̸= ;. (Recall we want this probability to be at most 1/h2 .) By
+reweighting w t (v) after the construction of Ti j in iteration t, w t+1 (v) will be substantially larger than w t (v). Thus,
+in future iterations, if v has accumulated too much weight, it will be added to the separator by KPR. Otherwise,
+v has not accumulated too much weight, then in future trees, v will have very few descendants, which directly
+translates to a low collision probability between φ(i, j) and φ(a, b). We formalize this intuition via the notion
+of a stochastic connector (Definition 1). The precise weight update rule in Equation (2) allows us to construct
+a stochastic connector, which in turn gives a Kh -minor model, whenever our algorithm fails to return a small
+separator. Given that balanced separators are deeply connected to sparsest cuts, we believe that the notion of a
+stochastic connector may be of broader interest.
+
+
+1.3     Other Related Work
+An orthogonal research direction motivated by the work of Alon, Seymour, and Thomas [AST90a, AST90b] is to
+                                                                                                        p
+minimize the dependency on h in the size of the separator. Recall that their separator has size O(h3/2       The
+                                                                                                       p n). p
+aforementioned result (Equation (1)) by Plotkin, Rao, and Smith [PRS94] implies a separator of size O(h log n n),
+                                     p
+which is an improvement over O(h3/2 n) whenever h ≫ log(n). Kawarabayashi and Reed [KR10, Kaw11] claimed
+                              p
+to improve the bound to O(h n + f (h)) by following the deep structure decomposition of minor-free graphs
+in the graph minor theory of Robertson and Seymour. Recently, Spalding-Jamieson [SJ25] gave a separator of
+                    p
+size O(h polylog(h) n) based on a reweighted spectral partitioning technique. The algorithm uses complicated
+subroutines, e.g., semidefinite programming and padded decomposition [CF25]. This approach has a Ω(n · m)
+barrier, which seems to require Ω(n) iterations of the algorithm, which takes Ω(m) time each.
+   3
+   The algorithm produces 20h2 trees, and the constant 20 is needed for the probabilistic analysis; we assume a constant 1 for simplicity.
+   4
+   Ti j might not include all the vertices of G. But it does include at least (1 − 1/(10h2 ))n vertices from G, which is the size of the largest
+component. Therefore, our probabilistic analysis remains feasible, albeit somewhat more complex.
+
+
+
+
+                                                                       6
+2     Stochastic Connector
+A central concept in the analysis of our algorithm is that of a stochastic connector, which is essentially a collection
+of rooted trees that have a certain probabilistic guarantee on the random paths sampled from them. We can show
+that if a stochastic connector of large size (having many trees) exists, then we can construct a clique minor of
+large size.
+    Let T be a tree and u, v be two vertices in T . We denote by T [a, b] the (unique) path between a and b in T .
+Suppose that T is rooted at a vertex r. We denote by R(T ) = {T [r, v] : v ∈ V (T )} the set of all rooted paths in T .
+By P ∼ R(T ), we denote a path P sampled uniformly at random, or u.a.r, from R(T ). The sampling of P can be
+realized in linear time by sampling a vertex v ∈ V (T ) u.a.r and returning the path T [r, v].
+
+Definition 1 (Stochastic Connector). A stochastic connector of size k for a given graph G = (V, E) is a set of k
+trees T = {T1 , T2 , . . . , Tk } such that:
+
+    1. |V (Ti )| ⩾ n − n/(10k) for every i ∈ [k].
+    2. For every i, j ∈ [k] such that i ̸= j:
+
+                                                                                   1
+                                                       Pr        [P ∩ Q ̸= ;] ⩽       .                            (3)
+                                                P∼R(Ti ),Q∼R(T j )                5k2
+
+The constants 10 and 5 in Definition 1 look somewhat arbitrary. We choose these constants for the union bound to
+work, and they better fit our algorithm given in Algorithm 1. Here, we note that a tree in T might not contain all
+vertices of G.
+    Let H be a graph. Let P(G) be the set of all simple paths in G. An almost-embedding of H to G is a function φ
+that maps V (H) → V (G) and E(H) → P(G) such that:
+
+    1. for every e = uv ∈ E(H), φ(e) is a φ(u)-to-φ(v) path.
+    2. for any two edges e1 ̸= e2 of H that do not share an endpoint, φ(e1 ) ∩ φ(e2 ) = ;.
+
+   An object similar to an almost-embedding was considered by Korhonen and Lokshtanov [KL24]. Their techniques
+show that one can construct a K t -minor model from an almost embedding (into G) of a graph of sufficient size. We
+capture this in the following lemma, whose proof follows directly from the ideas of [KL24], but for completeness
+we include a proof in Section B.
+
+Lemma 2 (Corresponds to Lemma 4.3 in [KL24]). Let G be a connected graph with m edges. For every t ⩾ 1,
+there is a graph H with |V (H)| + |E(H)| ⩽ 3t 2 such that an almost-embedding of H can be turned into a K t -minor
+model of G in O(t 2 m) time.
+
+   The key result of this section is the following lemma, showing that the existence of a large stochastic connector
+implies the existence of a large clique minor.
+
+Lemma 3. Given a stochastic connector T of size k in a connected graph G with m edges, for any t such that
+20t 2 ⩽ k, we can construct a K t -minor model of G in O(km) time with probability at least 2/5.
+
+Proof: By Lemma 2, it suffices to construct an almost-embedding φ of any graph H with |V (H)| + |E(H)| ⩽ 20t 2
+into G whenever k ⩾ 20t 2 . Our construction is randomized and as follows:
+
+    1. For every vertex v ∈ V (H), we assign φ(v) to be a vertex in V (G) chosen u.a.r.
+    2. For each edge e = uv ∈ E(H), we associate e with a distinct tree in T , denoted by Te . This is possible since
+       k ⩾ |E(H)|. Then we assign φ(e) to be the path Te [u, v] in Te . (It could be that u or v is not in Te , and in
+       this case, we set φ(e) = ;.)
+
+   Now we bound the probability that φ is valid. We say that two edges are adjacent if they share an endpoint,
+and non-adjacent otherwise. We say that φ is invalid when at least one of the following events happens:
+
+
+                                                                7
+        • Event A: there exists e = uv ∈ E(H) such that {φ(u), φ(v)} ̸⊆ V (Te ).
+        • Event B: there exist two non-adjacent e1 , e2 such that, conditioning on Ā, φ(e1 ) ∩ φ(e2 ) ̸= ;.
+   By the first property of T in Definition 1, for any tree T ∈ T and any vertex v ∈ H, Pr[φ(v) ̸∈ V (T )] ⩽ 1/(10k).
+Thus, for every edge uv, by the union bound, Pr[{φ(u), φ(v)} ̸⊆ V (Te )] ⩽ 2/(10k) = 1/(5k). Then by union
+bound over at most 20t 2 ⩽ k edges of H, we have:
+
+                                                            Pr[A] ⩽ k · 1/(5k) ⩽ 1/5.                                        (4)
+
+   To bound Pr[B], for every edge e = uv, let φ̂(e) = Te [u, re ] ∪ Te [re , v] where re is the root of Te . Then for any
+two non-adjacent edges e1 = (u1 , v1 ) and e2 = (u2 , v2 ), we have:
+
+                               Pr[φ(e1 ) ∩ φ(e2 ) ̸= ;] ⩽ Pr[φ̂(e1 ) ∩ φ̂(e2 ) ̸= ;]
+                                                            X        X
+                                                        ⩽                  Pr[Te1 [x, re1 ] ∩ Te2 [ y, re2 ] ̸= ;]
+                                                                x∈{u1 ,v1 } y∈{u2 ,v2 }
+                                                                                                                             (5)
+                                                                 4
+                                                            ⩽       .         (by union bound and Equation (3))
+                                                                5k2
+Thus, by taking the union bound over all non-adjacent pairs, we have:
+
+                                                                          k2 4
+                                                             Pr[B] ⩽        ·   ⩽ 2/5.                                       (6)
+                                                                          2 5k2
+        By union bound, and Equation (4) and Equation (6), we get:
+
+                                                   Pr[φ is invalid] ⩽ Pr[A] + Pr[B] ⩽ 3/5.
+
+   Thus, with probability at least 2/5, φ is a valid almost-embedding. Since finding a path in each tree in T takes
+O(kn) time, by Lemma 2, we can construct a K t -minor model in time O(k(n + m)) = O(km).                         □
+
+
+3         Constructing Balanced Separators
+In this section, we prove Theorem 2, which we restate below for convenience.
+Theorem 2. Let G be any given graph with n vertices, and h > 0 be a parameter. There is an algorithm that runs
+in deterministic O(poly(h)n) time and outputs either:
+                                            p
+    • a balanced separator of size O(poly(h) n) or
+        • ⊥ if G contains a Kh as a minor.
+Furthermore, in the latter case, we can output a Kh -minor model of G with probability at least 1/2 in an additional
+randomized O(poly(h)n) time.
+    The algorithm for constructing a balanced separator in Algorithm 1 assumes that the input graph is Kh -minor-
+free. Here in Theorem 2, we do not make this assumption; instead, we want to output a Kh -minor when we
+fail to find a good balanced separator. We do so by making two simple changes to Algorithm 1. First, the KPR
+decomposition in every iteration t returns a tuple (C t∗ , S t , M t ) where M t is a Kh -minor model whenever it fails
+to find a small separator S t such that the largest component C t∗ has small weak diameter. By Lemma 1, either
+M t = ;—in this case, the KPR returns the pair (C t∗ , S t )—or M t ̸= ;, and in this case M t is a Kh -minor model.
+Second, instead of returning a separator at the end of the algorithm5 as in Algorithm 1, we run the algorithm
+FINDMINOR(G, {T1 , T2 , . . . , Tk }) with k = 20h2 to construct a Kh -minor by Lemma 3. Note that Lemma 3 requires
+the set of trees {T1 , T2 , . . . , Tk } to be a stochastic connector. Our analysis in this section shows that this indeed is the
+case. Finally, as noted in Section 1.1, to reduce the running time from O(poly(h)m) to O(poly(h)n), we construct
+a Kh -minor model directly as formally stated in the following lemma, whose proof will be given in Section 4.
+    5
+        If G is Kh -minor-free, then the analysis in this section shows that the algorithm will never reach this line.
+
+
+                                                                              8
+  FINDSEPARATOR(G = (V, E)):
+    if |E| ⩾ 100h2 n                〈〈G is dense〉〉
+          return Kh -minor model given by Lemma 4
+    w1 (v) ← 40 for every v ∈ V
+    S←;                       〈〈The separator 〉〉
+    k ← 20h2
+    for t ← 1 to k                〈〈O(h2 ) iterations〉〉
+                                               p                                    p
+          (C t , S t , M t ) ← KPR(〈G, w t 〉, ⌊ n/12h2 ⌋, h)
+              ∗
+                                                                  〈〈KPR with ∆ = ⌊ n/12h2 ⌋, applying weighted BFS 2h times〉〉
+          if M t ̸= ;            〈〈Kh -minor model found〉〉
+                 return M t
+          S ← S ∪ St
+                               1                                            1
+          if |C t∗ | ⩽ (1 − 10k  )n        〈〈The current separator is (1 − 10k )-balanced〉〉
+                 return S
+          c t ← an arbitrary vertex in C t∗
+                                       p                                    p
+          Tt ← BFS(〈G, w t 〉, c t , n)            〈〈BFS truncated at radius n〉〉
+          for every v ∈ V (Tt )
+                                         |T (v)|k3
+             w t+1 (v) ← w t (v) + ⌈ t pn · w t (v)⌉     〈〈Reweighting vertices for next iteration〉〉
+    return FINDMINOR(G, {T1 , T2 , . . . , Tk })     〈〈Find Kh -minor model by Lemma 3〉〉
+                                               1                                          p
+Algorithm 2. An algorithm that finds a (1 − 200h2 )-balanced separator with size O(poly(h) n) of G if exists, or outputs a Kh -minor model
+otherwise.
+
+
+
+Lemma 4. There is a deterministic algorithm that, given any n-vertex graph G with at least 100h2 n edges, reads
+the first 100h2 n edges of G and outputs a Kh -minor model of G in O(h6 n) time.
+
+    Now we have all the ideas needed for proving Theorem 2.
+
+Proof of Theorem 2: By Lemma 4 we can assume that m = O(h2 n) since we can find a Kh -minor model in O(h6 n)
+time whenever m ⩾ 100h2 n.
+                                                                                                            p
+    If the algorithm returns a separator S, in Lemma 6 of Section 3.1, we will show that |S| = O(h11 n). Oth-
+erwise, we will show in Lemma 7 of Section 3.1 that the set of trees {T1 , T2 , . . . , Tk } found by the algorithm is
+a stochastic connector. Thus, the algorithm will return a Kh -minor model either in one of the iterations or by
+calling FINDMINOR(G, {T1 , T2 , . . . , Tk }).
+    If we are not required to output a minor, then in the last line of the algorithm, we return ⊥ instead of calling
+FINDMINOR(G, {T1 , T2 , . . . , Tk }). The running time, as we will show in Lemma 9, is O(h3 m + h11 n) = O(h11 n).
+    If we are required to output a minor, then by Lemma 3, the total running time is:
+
+                                   O(h3 m + h11 n) + O(h2 m) = O(h3 m + h11 n) = O(h11 n).
+
+Also by Lemma 3, the algorithm is randomized and succeeds with a probability of at least 2/5.
+                                                               1
+    Since the separator output by Algorithm 2 is only (1 − 200h  2 )-balanced, we need to run the algorithm O(h )
+                                                                                                                 2
+                                                                                               13 p
+times to get a 2/3-balanced separator. The total separator size and running time are |S| = O(h                13
+                                                                                                    n) and O(h n),
+respectively.                                                                                                    □
+
+
+3.1     Correctness
+Here, we only consider weight functions on vertices, not on edges. If 〈G, w〉 is a graph with a weight function w,
+we say that X ⊆ V (G) has weak diameter at most D if d〈G,w〉 (u, v) ⩽ D for every u, v ∈ X .
+     Let E t,v be the event that a random rooted path P ∼ R(Tt ) contains v, where Tt is the tree at iteration t. We
+first show that the algorithm maintains five invariants.
+
+Lemma 5. Algorithm 2 maintains the following invariants at every iteration t if it does not return a Kh -minor
+model or a separator S:
+
+
+                                                                    9
+                                         p
+   • Invariant 1: Pr[Ei,v ] ⩽ (20k3           n)−1 w t+1 (v) for every i ⩽ t and every v.
+   • Invariant 2: Pr[Ei,v ∩ E j,v ] ⩽ (10k6 n)−1 w t+1 (v) for every i ̸= j ⩽ t and every v.
+   • Invariant 3: v∈V w t (v) ⩽ (40 + (k3 + 1)(t − 1))n.
+                  P
+
+                                    1
+   • Invariant 4: |V (Tt )| ⩾ (1 − 10k )n.
+   • Invariant 5: w t (v) ⩾ 40 for every v.
+
+Proof: Initially, t = 1 and the algorithm sets w1 (v) = 40 for every v. Since w t (v) only increases as t increases,
+Invariant 5 holds. Herein, we focus on four other invariants.
+    For Invariant 4, we first note that since the algorithm does not return a Kh -minor model or a separator S at
+iteration t, it must be that:
+   • The largest connected component C t∗ of G − S t has size at least (1 − 1/10k)n.
+                                                                    p
+   • C t∗ has weak (vertex-weighted) diameter 12h2 ∆ ⩽ n by Lemma 1.
+                                                                                            p
+Thus, for any vertex c t ∈ V (C ∗ ), every other vertex v ∈ V (C t∗ ), d〈G,w t 〉 (c t , v) ⩽ n. Thus, the BFS tree rooted at c t
+                    p
+truncated at radius n contains all vertices of C t∗ . Thus, we have:
+                                                                           1
+                                                                                 
+                                            |V (Tt )| ⩾ |V (C t∗ )| ⩾ 1 −            n,                                    (7)
+                                                                          10k
+giving Invariant 4. (The BFS tree might contain vertices not in C t∗ , and their weights get updated as well, but this
+has no effect on the algorithm.) P
+    To show Invariant 3, let Wt = v∈V w t (v). By induction, we assume that Wt ⩽ (40 + (k3 + 1)(t − 1))n. We now
+show that Wt+1 ⩽ Wt + (k3 + 1)n ⩽ (40 + (k3 + 1)t)n by a simple charging scheme. Observe that, by the definition
+of w t+1 (v):
+                                                             |Tt (v)|k3
+                                                                        
+                                     w t+1 (v) ⩽ w t (v) 1 +     p         + 1,                                    (8)
+                                                                    n
+                                                                    |T (v)|k3
+    For each vertex v ∈ V (Tt ), the algorithm add at most t pn · w t (v) + 1 to w t (v). We will charge an amount of
+     p
+(k3 / n)w t (v) to each vertex u ∈ Tt (v). Since u is only charged by its ancestors, the total charge of each vertex
+u ∈ V (G) at iteration t is:
+                                             X             w t (v)k3    w t (Tt [u, c t ])k3
+                                                              p       ⩽         p             ⩽ k3
+                                     v ancestor of u in Tt
+                                                                 n                n
+                                                        p
+since Tt has (vertex-weighted) radius at most n. Thus, the total weight increase of all vertices at iteration t is at
+most n · k + n (including the +1 for each vertex in Equation (8)), giving Invariant 3.
+          3
+
+    For Invariant 1, we note that |V (Tt )| ⩾ n/2 by Invariant 4. Furthermore, by the weight update rule, we have:
+                                                                                       p
+                                                 |Tt (v)|k3                               n w t+1 (v)
+                                  w t+1 (v) ⩾         p        w t (v) ⇒ |Tt (v)| ⩽                   .          (9)
+                                                         n                               k3 w t (v)
+                         / V (Tt ), then Pr[E t,v ] = 0, and otherwise:
+Now we observe that if v ∈
+                                          |Tt (v)|     2|Tt (v)|
+                               Pr[E t,v ] =         ⩽                (since |V (Tt )| ⩾ n/2)
+                                          |V (Tt )|       n
+                                           p
+                                          2 n w t+1 (v)
+                                        ⩽                      (by Equation (9))                                          (10)
+                                            k3 n w t (v)
+                                          w t+1 (v)
+                                        ⩽       p .       (since w t (v) ⩾ 40 by Invariant 5)
+                                          20k3 n
+By induction, for any i ⩽ t − 1, we have
+                                                                w t (v)   w t+1 (v)
+                                                 Pr[Ei,v ] ⩽        3
+                                                                      p ⩽       p
+                                                               20k n      20k3 n
+
+                                                                  10
+since w t (v) only increases as t increases. Thus, Invariant 1 holds.
+    It remains to show Invariant 2. Observe that Ei,v and E t,v are independent for any i ⩽ t − 1. Thus, we have:
+
+
+                                                     w t (v) |Tt (v)|
+              Pr[Ei,v ∩ E t,v ] = Pr[Ei,v ] Pr[E t,v ] ⩽  p              (by Invariant 1 and i ⩽ t − 1)
+                                                    20k3 n |V (Tt )|
+                                             p
+                                  w t (v) 2 n w t+1 (v)
+                               ⩽       p                     (by Equation (9) and |V (Tt )| ⩾ n/2)
+                                 20k3 n k3 n w t (v)
+                                 w t+1 (v)
+                               ⩽           ,
+                                  10k6 n
+giving Invariant 2.                                                                                                  □
+
+   Next, we bound the size of the separator if the algorithm returns one.
+                                                               p
+Lemma 6. If Algorithm 2 returns a separator S, then |S| ⩽ O(h11 n).
+
+Proof: Let Wt = v∈V w t (v). By Lemma 1, we have:
+               P
+
+                                                    p                        p
+                                 |S t | = O(hWt /( n/h2 ))       (since ∆ = ⌊ n/(12h2 )⌋)
+                                                       p
+                                        = O(h3 k3 t n/ n)     (by Invariant 3 in Lemma 5)
+                                              3 4
+                                                  p                                                               (11)
+                                        ⩽ O(h k n)        (since t ⩽ k)
+                                                 p
+                                        = O(h 11
+                                                   n),    (since k = O(h2 ))
+
+as claimed.                                                                                                          □
+
+   Finally, we show that:
+
+Lemma 7. Suppose that the algorithm does not return a separator S after k iterations, then T := {T1 , . . . , Tk } is
+a stochastic connector.
+
+Proof: We verify all the properties of T in Definition 1. Observe that the size bound follows directly from Invariant 4
+in Lemma 5. It remains to bound the collision probability of two random paths by 1/(5k2 ). Consider two trees Ti
+and Tt where i < t formed in iteration i and t, respectively. By Invariant 3, we have:
+                                       X
+                                           w t+1 (v) ⩽ (40 + (k3 + 1)t)n ⩽ 2k4 n                                  (12)
+                                          v∈V
+
+
+since t ⩽ k and k4 = 204 h8 ⩾ 40 + k as h ⩾ 1. By taking the union bound from the probability in Invariant 2, we
+have:
+
+                                                                     t+1 (v)               2k4 n
+                                                              Xw               eq. (12)            1
+                                   Pr        [P ∩ Q ̸= ;] ⩽                      ⩽               = 2,
+                            P∼R(Ti ),Q∼R(Tt )
+                                                              v∈V
+                                                                    10k6 n                10k6 n  5k
+as desired.                                                                                                          □
+
+
+3.2    Running time
+We first bound the running time of (vertex-weighted) BFS.
+
+Lemma 8. Let 〈G = (V, E), w〉Pbe a connected vertex-weighted graph with m edges. Suppose that the vertex
+weights are integers. Let W = v∈V w(v). In O(m + W ) time, we can compute a node-weighted shortest-path tree
+rooted at any vertex c ∈ V .
+
+
+                                                               11
+Proof: First, we apply the textbook reduction (for maxflow with vertex capacities) to reduce to computing the
+shortest-path tree in a directed graph with edge weights in {0, 1}: split every vertex v into vin and vout , add
+a directed path from vin to vout of total length w(v) (so each edge has length 1), and for every edge uv ∈ E(G),
+we add two arcs (vout → uin ) and (uout → vin ) of length 0 each. Let Ĝ be the resulting graph. Observe that Ĝ has
+O(m + W ) directed edges. Now we can find a shortest-path tree of Ĝ from cin by doing a breadth-first search in
+time O(m + W ). Then in the same time, we can convert the BFS tree of Ĝ into a node-weighted shortest-path tree
+rooted at c ∈ V .                                                                                                 □
+
+    Now we bound the running time of Algorithm 2.
+
+Lemma 9. The running time of Algorithm 2, excluding the running time of FINDMINOR (the last line), is O(h3 m +
+h11 n)
+
+Proof: Let Wt = t w t (v). By Lemma 1, the running time of the KPR decomposition in iteration t is O(h(m + Wt )).
+                P
+
+The running time to compute the (vertex-weighted) BFS is O(m + Wt ) by Lemma 8. Thus, the total running time is:
+                    k
+                    X                                 k
+                                                      X
+                          O(h(m + Wt )) = O(hkm + h         Wt ) = O(hkm + hk5 n) = O(h3 m + h11 n),                 (13)
+                    t=1                               t=1
+
+as desired.                                                                                                            □
+
+
+4    Reduction to Sparse Graphs
+The goal of this section is to show Lemma 4, restated below, in order to avoid any dependence on the number m of
+edges of Theorem 2.
+
+Lemma 4. There is a deterministic algorithm that, given any n-vertex graph G with at least 100h2 n edges, reads
+the first 100h2 n edges of G and outputs a Kh -minor model of G in O(h6 n) time.
+
+    To that end, we could combine the results in [DHJ+ 13] and [AKS23]. Dujmović, Harvey, Joret, Reed, and
+Wood [DHJ+ 13] describe an algorithm that    p finds in O(poly(h)n + 2
+                                                                         Õ(h2 )
+                                                                                 ) time a Kh -minor model in any n-vertex
+graph with average degree at least 10h log h. Apart from the final brute-force search on an O(h2 log h)-vertex
+graph, their algorithm runs in time O(poly(h)n). As this graph still has large enough average degree, one can thus
+substitute this last step with an effective version of the short proof by Alon, Seymour, and Thomas [AKS23] of the
+Kostochka–Thomason’s bound. One can indeed easily derive a randomized polynomial-time algorithm from their
+proof.
+    Instead, we will give a simple proof with a worst (quadratic) bound on the average degree. This way our
+algorithm is deterministic and self-contained. The first step is to efficiently find, in any graph of average degree 2d,
+a minor with minimum degree at least d and only Θ(d) vertices.
+    We denote the minimum degree of G by δ(G). Given a graph H with vertex set {v1 , . . . , vh }, an H-minor model
+of a graph G is a collection of h vertex-disjoint connected subgraphs {C1 , C2 , . . . , Ch } of G such that for every two
+subgraphs Ci , C j when (vi , v j ) ∈ E(H), there exists an edge uv ∈ E(G) with u ∈ V (Ci ) and v ∈ V (C j ).
+
+Lemma 10. For any positive integer d, there is an algorithm that on any n-vertex graph G with |E(G)| = dn
+outputs an H-minor model of G with |V (H)| ⩽ 2d and δ(H) ⩾ d, and runs in time O(d 3 n).
+
+Proof: The algorithm goes through a strictly decreasing chain of graphs for the minor relation. In particular, it
+builds at most |E(G)| + |V (G)| = (d + 1)n (distinct) graphs. In addition to the current graph G ′ , it maintains
+
+    • an array t of length n such that t[i] contains a doubly linked list of vertices with degree exactly i in G ′ ,
+    • an array s of length n such that for any v ∈ V (G), s[v] is a pointer to the occurrence of v in t, or ⊥ if
+      v∈/ V (G ′ ),
+
+
+                                                             12
+   • δ := δ(G ′ ) the minimum degree of G ′ , and
+   • an array f of length n such that for any v ∈ V (G ′ ), f [v] contains the list of original vertices of G contracted
+     into v.
+
+From a representation of G by adjacency lists, s, t, f and δ can be initialized (for G ′ = G) in time O(dn). For
+G ′ , we use a data structure that supports edge deletion and edge addition in O(1) time, and deletion of vertex
+v ∈ V (G ′ ) in time O(dG ′ (v)). We define the positive measure µ(G ′ ) := 2|E(G ′ )| + |V (G ′ )| + (n − δ(G ′ )) ⩽ (2d + 2)n.
+      We iteratively apply the following steps:
+
+   1. Let u be the first vertex in t[δ].
+   2. If δ < d, simply delete u from G ′ ,
+   3. else if δ > 2d, delete all but 2d edges incident to u (arbitrarily),
+   4. else if there is an edge uv ∈ E(G ′ ) such that |NG ′ (u) ∩ NG ′ (v)| < d, then contract uv, by deleting u and adding
+      the edges vw for every w ∈ NG ′ (u) \ NG ′ (v),
+   5. else break the loop and output H := G ′ [NG ′ (u)], f|NG′ (u) (where f|Z is the restriction of f to Z).
+
+    If second item holds, it takes O(dG ′ (u)) time to delete u from G ′ and update s and t, and O(δ(G ′ )−δ(G ′ −{u})+1)
+time to update δ. Meanwhile, µ drops by 2dG ′ (u) + 1 + δ(G ′ ) − δ(G ′ − {u}).
+    If the third item holds, it takes O(δ − 2d) time to delete the edges from G ′ and update s and t, and O(1) time
+to set the new δ. The measure µ decreases by 2(δ − 2d) − (δ − 2d) = δ − 2d.
+    Checking if the 4th item holds takes O(d 2 ) time since after the third step, u has at most 2d neighbors in G ′ ,
+whereas in O(d) time the contraction of uv can be emulated by deleting u and adding fewer than d edges incident
+to v. Note that the minimum degree cannot decrease by more than one, and the new graph has one less vertex
+and at least one less edge. Therefore, µ drops by at least 2 + 1 − 1 = 2. Again, we update s, t, f , δ in O(d) time.
+    The most time invested per one unit drop of µ is O(d 2 ), in the third item; hence the total running time O(d 3 n).
+We should now check that the algorithm indeed reaches the fourth item, and that the output graph H has the
+required properties.
+    Note that initially (in G) the average degree is 2d, and each operation of the first three items cannot produce
+a graph with average degree less than d from a graph with average degree at least d. In particular, as |E(G ′ )|+|V (G ′ )|
+strictly decreases and G ′ cannot have less than d + 1 vertices (as otherwise its average degree would be smaller
+than d), the algorithm eventually returns H := G ′ [NG ′ (u)] with d ⩽ dG ′ (u) ⩽ 2d and |NG ′ (u) ∩ NG ′ (v)| ⩾ d for
+every v ∈ NG ′ (u). Therefore, H has at most 2d vertices and minimum degree at least d.                                 □
+
+    We now greedily build, in the minor given by the previous lemma, a (⩽ 2)-subdivision of an appropriately large
+clique. If this fails, we obtain a subgraph on Θ(d) vertices in which every pair of vertices shares Θ(d) neighbors.
+
+Lemma 11. There is an algorithm that given any graph H with at most 2d vertices and minimum degree at least d,
+outputs:
+
+   • a K⌊pd/10⌋ -minor model of H or
+   • a subgraph H ′ of H with at most 1.02d vertices and minimum degree at least 0.94d,
+
+and runs in O(d 3 ) time.
+                                                              p
+Proof: Let X ⊆ V (H) be an arbitrary subset of size s := ⌊ d/10⌋. We denote by H̃ the current graph, initialized
+by H̃ := H. We in fact try to build Ks as a topological minor whose branching vertices are the vertices of X , and
+every edge is subdivided at most twice. For each pair x ̸= y ∈ X , if there is an x– y path P on at most 3 edges in
+H̃ − (X \ {x, y}), add the 0, 1, or 2 internal vertices of P to the topological minor and remove them from H̃. Else,
+output H ′ := H̃[(NH̃ (x) \ X ) ∪ {x}] and terminate.
+                                     s
+    First, note that if none of the 2 iterations terminates by outputting a subgraph H ′ , then we have eventually
+built a Ks -minor model. Checking if there is such a path of length at most 3 between x and y, and if so, removing
+
+
+
+                                                              13
+                                                                            s
+                                                                              
+its internal vertices, can be done in O(d 2 ) time. We repeat this at most 2 = O(d) times, hence the total running
+time O(d 3 ).
+                                                                   ′
+     We now show that    if the algorithm outputs a subgraph H , it has the required properties. Overall,   as we
+                      s                                                                                   s
+remove at most 2 2 vertices from H, the minimum degree in every built subgraph H̃ is at least d − 2 2 ⩾ 0.99d.
+Let x ̸= y ∈ X be the (first) pair such that the algorithm outputs a subgraph H ′ . Let A := (NH̃ (x) \ X ) ∪ {x}
+and B := (NH̃ ( y) \ X ) ∪ { y}. In particular, |A| > 0.99d − s > 0.98d and |B| > 0.99d − s > 0.98d. As x and
+y are by assumption at distance greater than 3, A and B are disjoint and no vertex of A has a neighbor in B.
+Therefore, every vertex of A has at least 0.98d − 0.04d = 0.94d neighbors in A. Indeed, |V (H̃)| ⩽ 2d so there
+are at most 2d − 2 · 0.98d = 0.04d vertices in V (H̃) \ (A ∪ B). Finally, as A ∩ B = ; and |B| > 0.98d, it holds that
+|A| = |V (H ′ )| ⩽ 1.02d.                                                                                          □
+
+    In the very dense graphs given by the previous lemma, it is easy to find the 1-subdivision of a large clique as
+a subgraph.
+
+Lemma 12. Given a graph H ′ with at most 1.02d vertices and minimum degree at least 0.94d, a K⌊pd/10⌋ -minor
+model of H ′ can be found in time O(d 2 ).
+                                                        p
+Proof: Take an arbitrary set X ⊆ V (H ′ ) of size s := ⌊ d/10⌋. We find the 1-subdivision of Ks as a subgraph of H ′
+with branching vertices in X . For each pair x ̸= y ∈ X , pick a common neighbor of x and y outside X , add it to
+the topological minor, and remove it from the graph.
+    This can be done in time O(d 2 ). We just need to argue that every pair has a common neighbor outside X in the
+                                        s                                                                      s
+remaining graph. In total, we remove 2 vertices. Thus, at any point, the minimum degree is at least 0.94d − 2 >
+0.93d. Therefore, x and y have at least 0.93d − s > 0.92d neighbors outside X . As the total number of vertices is
+at most 1.02d, this implies the existence of a shared neighbor outside X .                                         □
+
+    We can now prove the main lemma of the section.
+
+Proof of Lemma 4: We apply Lemma 10 to the spanning subgraph of the input graph G made by its first 100h2 n
+edges, and d := 100h2 . This yields an H-minor model of G such that H satisfies the preconditions of Lemma 11.
+The latter lemma either returns a Kh -minor model (and we are done), or a subgraph H ′ of H satisfying the
+preconditions of Lemma 12. In turn, this lemma yields a Kh -minor model. Unpacking the Kh -minor model in G is
+straightforward via the contraction array f|V (H) . The overall running time is O(d 3 n + d 3 + d 2 ) = O(h6 n). □
+
+
+5    Conclusion
+                                                                                          p
+In this paper, we gave the first algorithm that finds a balanced separator of size O( n) in O(n) time in any
+graph class excluding a minor. If the smallest excluded minors have h vertices (equivalently, Kh is excluded),
+the multiplicative dependence on h in both the separator size and the running time is polynomial, and more
+precisely, h13 . There are a few places where we can further optimize the exponent of this polynomial. For example,
+in Lemma 3, we could apply the Lovász local lemma instead of the union bound to reduce the value of k in
+Algorithm 2. If randomness is allowed, we could use the probabilistic construction of [AKS23], which has a smaller
+dependence on h. However, these optimizations would complicate our construction. These optimizations, if
+implemented, are unlikely to give us a running time, say, O(h polylog(h) n).
+    For bounded-degree graphs, we can trade running time for separator size: we can construct a separator of size
+      p
+O(h26 n) in O(n) time. The idea is rather simple: we contract connected subgraphs of size Θ(h13 ) to get a new
+graph H of size O(n/h13 ), apply our separator algorithm in Theorem 2 to get a balanced separator SH , and then
+uncontract vertices in SH to get a balanced separator of G. The details are given in Section C.
+                                                                                                              p
+    Ideally, we would want an algorithm with running time O(h polylog(h) n) producing a separator of size O(h n).
+Such an algorithm seems to require substantially more (complicated) ideas. We leave it as an open problem for
+future work.
+
+
+
+
+                                                         14
+Acknowledgments. We thank Jack Spalding-Jamieson for clarifying the running time of reweighted spectral
+partitioning, and Thatchaphol Saranurak for answering a question about the vertex expander. This research has
+been initiated/conducted at the AlgUW workshop (Bedlewo 09.2025), supported by the Excellence Initiative –
+Research University (IDUB) funds of the University of Warsaw. H.L. is supported by NSF grant CCF-2517033 and
+NSF CAREER Award CCF-2237288. É.B. has been supported by the French National Research Agency through
+the project TWIN-WIDTH with reference number ANR-21-CE48-0014. T.K. is supported by the European Union
+
+under Marie Skłodowska-Curie Actions (MSCA), project no. 101206430                 , and by the VILLUM
+Foundation, Grant Number 54451, Basic Algorithms Research Copenhagen (BARC). T.M. was supported by the
+Polish National Science Centre SONATA-17 grant number 2021/43/D/ST6/03312.
+
+
+References
+[AKS23]   Noga Alon, Michael Krivelevich, and Benny Sudakov. Complete minors and average degree: A short
+          proof. Journal of Graph Theory, 103(3):599–602, 2023. doi:10.1002/JGT.22937.
+
+[AST90a] Noga Alon, Paul Seymour, and Robin Thomas. A separator theorem for graphs with an excluded minor
+         and its applications. In Proceedings of the 22nd Annual ACM Symposium on Theory of Computing, STOC
+         ’90, pages 293–299, 1990. Conference version of [AST90b]. doi:10.1145/100216.100254.
+
+[AST90b] Noga Alon, Paul Seymour, and Robin Thomas. A separator theorem for nonplanar graphs. Journal
+         of the American Mathematical Society, 3(4):801–808, 1990. Announced at STOC ’90. doi:10.1090/
+         s0894-0347-1990-1065053-0.
+
+[BKL+ 26] Édouard Bonnet, Tuukka Korhonen, Hung Le, Jason Li, and Tomáš Masařík. Separator theorem for
+          minor-free graphs in linear time. In Proceedings of the 58th Annual ACM Symposium on Theory of
+          Computing, STOC ’26, page 61–71, New York, NY, USA, 2026. Association for Computing Machinery.
+          doi:10.1145/3798129.3800727.
+
+[BLR10]   Punyashloka Biswal, James R. Lee, and Satish Rao. Eigenvalue bounds, spectral partitioning, and
+          metrical deformations via flows. J. ACM, 57(3), 2010. Announced at FOCS ’08. doi:10.1145/1706591.
+          1706593.
+
+[CF25]    Jonathan Conroy and Arnold Filtser. How to protect yourself from threatening skeletons: Optimal
+          padded decompositions for minor-free graphs. In Proceedings of the 57th Annual ACM Symposium on
+          Theory of Computing, STOC ’25, pages 2281–2292, 2025. doi:10.1145/3717823.3718252.
+
+[DHJ+ 13] Vida Dujmović, Daniel J. Harvey, Gwenaël Joret, Bruce Reed, and David R. Wood. A linear-time
+          algorithm for finding a complete graph minor in a dense graph. SIAM Journal on Discrete Mathematics,
+          27(4):1770–1774, 2013. doi:10.1137/120866725.
+
+[GHT84] John R Gilbert, Joan P Hutchinson, and Robert Endre Tarjan. A separator theorem for graphs of bounded
+        genus. Journal of Algorithms, 5(3):391–407, 1984. doi:10.1016/0196-6774(84)90019-1.
+
+[Kaw11] Kenichi Kawarabayashi. A separator theorem in minor-closed class of graphs, 2011. Talk at KAIST
+        Graph Theory Day. Accessed: 2025-11-03. URL: https://youtu.be/xTEwQ6KgBdU?si=ZFII4GZWAIC_
+        ywfj&t=1470.
+
+[KL24]    Tuukka Korhonen and Daniel Lokshtanov. Induced-minor-free graphs: Separator theorem, subexponen-
+          tial algorithms, and improved hardness of recognition. In Proceedings of the 2024 Annual ACM-SIAM
+          Symposium on Discrete Algorithms, SODA ’24, pages 5249–5275, 2024. doi:10.1137/1.9781611977912.
+          188.
+
+[KM24]    Philip N Klein and Shay Mozes. Optimization algorithms for planar graphs. 2024. Book draft, available
+          at https://planarity.org/.
+
+
+                                                     15
+[KMR08] Ken-ichi Kawarabayashi, Bojan Mohar, and Bruce Reed. A simpler linear time algorithm for embedding
+        graphs into an arbitrary surface and the genus of graphs of bounded tree-width. In Proceedings of the
+        49th Annual IEEE Symposium on Foundations of Computer Science, FOCS ’08, pages 771–780. IEEE,
+        2008. doi:10.1109/FOCS.2008.53.
+
+[Kos82]   Alexandr Kostochka. A lower bound for the hadwiger number of a graph as a function of the average
+          degree of its vertices. Diskret. Analiz. Novosibirsk, 38:37–58, 1982.
+
+[KPR93]   Philip Klein, Serge A. Plotkin, and Satish Rao. Excluded minors, network decomposition, and multicom-
+          modity flow. In Proceedings of the Twenty-Fifth Annual ACM Symposium on Theory of Computing, STOC
+          ’93, pages 682–690, 1993. doi:10.1145/167088.167261.
+
+[KR10]    Ken-ichi Kawarabayashi and Bruce Reed. A separator theorem in minor-closed classes. In Proceedings of
+          the 51st Annual Symposium on Foundations of Computer Science, FOCS ’10, pages 153–162. IEEE, 2010.
+          doi:10.1109/FOCS.2010.22.
+
+[KRV09]   Rohit Khandekar, Satish Rao, and Umesh Vazirani. Graph partitioning using single commodity flows. J.
+          ACM, 56(4), 2009. Announced at STOC ’06. doi:10.1145/1538902.1538903.
+
+[KS15]    Ken-ichi Kawarabayashi and Anastasios Sidiropoulos. Beyond the euler characteristic: Approximating
+          the genus of general graphs. In Proceedings of the Forty-Seventh Annual ACM Symposium on Theory of
+          Computing, STOC ’15, pages 675–682, 2015. doi:10.1145/2746539.2746583.
+
+[LR10]    Richard Lipton and Ken Regan. Galactic algorithms, 2010. Accessed: 2025-10-26. URL: https:
+          //rjlipton.com/2010/10/23/galactic-algorithms/.
+
+[LS22]    Yaowei Long and Thatchaphol Saranurak. Near-optimal deterministic vertex-failure connectivity oracles.
+          In 2022 IEEE 63rd Annual Symposium on Foundations of Computer Science (FOCS), pages 1002–1010.
+          IEEE, 2022.
+
+[LT79]    Richard J. Lipton and Robert Endre Tarjan. A separator theorem for planar graphs. SIAM Journal on
+          Applied Mathematics, 36(2):177–189, 1979. doi:10.1137/0136016.
+
+[LT80]    Richard J. Lipton and Robert Endre Tarjan. Applications of a planar separator theorem. SIAM Journal
+          on Computing, 9(3):615–627, 1980. Announced at FOCS ’77. doi:10.1137/0209046.
+
+[Mil86]   Gary L. Miller. Finding small simple cycle separators for 2-connected planar graphs. Journal of Computer
+          and System Sciences, (3):265–279, 1986. Announced at STOC ’84’. doi:10.1016/0022-0000(86)
+          90030-9.
+
+[Moh96] Bojan Mohar. Embedding graphs in an arbitrary surface in linear time. In Proceedings of the 28th annual
+        ACM symposium on Theory of computing, STOC ’96, pages 392–397, 1996. doi:10.1145/237814.
+        237986.
+
+[NO12]    Jaroslav Nešetřil and Patrice Ossona de Mendez. Sparsity: Graphs, Structures, and Algorithms. 2012.
+          doi:10.1007/978-3-642-27875-4.
+
+[Pen16]   Richard Peng. Approximate undirected maximum flows in O(mpolylog(n)) time. In Proceedings of
+          the 27th annual ACM-SIAM symposium on Discrete algorithms, SODA ’16, pages 1862–1867, 2016.
+          doi:10.1137/1.9781611974331.ch130.
+
+[PRS94]   Serge Plotkin, Satish Rao, and Warren D. Smith. Shallow excluded minors and improved graph
+          decompositions. In Proceedings of the 5th Annual ACM-SIAM Symposium on Discrete Algorithms, SODA
+          ’94, pages 462–470, 1994.
+
+[RS03]    Neil Robertson and Paul D. Seymour. Graph minors. XVI. Excluding a non-planar graph. Journal of
+          Combinatorial Theory, Series B, 89(1):43–76, 2003. doi:10.1016/S0095-8956(03)00042-X.
+
+
+                                                      16
+[RST14]   Harald Räcke, Chintan Shah, and Hanjo Täubig. Computing cut-based hierarchical decompositions
+          in almost linear time. In Proceedings of the 25th Annual ACM-SIAM Symposium on Discrete algorithms,
+          SODA ’14, pages 227–238, 2014. doi:10.1137/1.9781611973402.17.
+
+[RW09]    Bruce Reed and David R. Wood. A linear-time algorithm to find a separator in a graph excluding a
+          minor. ACM Transactions on Algorithms, 5(4):1–16, 2009. doi:10.1145/1597036.1597043.
+
+[She13]   Jonah Sherman. Nearly maximum flows in nearly linear time. In Proceedings of the 54th Annual
+          Symposium on Foundations of Computer Science, FOCS ’13, pages 263–269, 2013. doi:10.1109/FOCS.
+          2013.36.
+
+[SJ25]    Jack Spalding-Jamieson. Reweighted spectral partitioning works: A simple algorithm for vertex
+          separators in special graph classes, 2025. arXiv:2506.01228.
+
+[Tar72]   Robert Endre Tarjan. Depth-first search and linear graph algorithms. SIAM J. Comput., 1(2):146–160,
+          1972. doi:10.1137/0201010.
+
+[Tho89]   Carsten Thomassen. The graph genus problem is np-complete. Journal of Algorithms, 10(4):568–576,
+          1989. doi:10.1016/0196-6774(89)90006-0.
+
+[Tho04]   Mikkel Thorup. Compact oracles for reachability and approximate distances in planar digraphs. J. ACM,
+          51(6):993–1024, November 2004. doi:10.1145/1039488.1039493.
+
+[Ung51]   Peter Ungar. A theorem on planar graphs. Journal of the London Mathematical Society, s1-26(4):256–262,
+          1951. doi:10.1112/jlms/s1-26.4.256.
+
+[Wag37] Klaus Wagner. Über eine eigenschaft der ebenen komplexe. Mathematische Annalen, 114(1):570–590,
+        1937. doi:10.1007/BF01594196.
+
+[Wul11]   Christian Wulff-Nilsen. Separator theorems for minor-free and shallow minor-free graphs with appli-
+          cations. In Proceedings of the 52nd Annual Symposium on Foundations of Computer Science, FOCS ’11,
+          pages 37–46. IEEE, 2011. doi:10.1109/focs.2011.15.
+
+[Wul14]   Christian Wulff-Nilsen. Faster separators for shallow minor-free graphs via dynamic approximate
+          distance oracles. In International Colloquium on Automata, Languages, and Programming, ICALP ’14,
+          pages 1063–1074. Springer, 2014. doi:10.1007/978-3-662-43948-7_88.
+
+
+
+
+                                                      17
+A     Proof of Lemma 1
+                                                                 P
+In this section, we will work with 〈G, w〉 and we set W :=            v∈V (G) w(v). We restate Lemma 1 here for convenience.
+
+Lemma 1 (Vertex-Weighted KPR). GivenPa graph 〈G = (V, E), w〉 with integer weights on vertices, m edges and
+integer parameters ∆ > 0, h > 0. Let W = v∈V w(v). The procedure KPR(〈G, w〉, ∆, h) runs in time O(h · (m + W ))
+and returns either:
+
+    • a pair (C ∗ , S) where S is a subset of vertices of size h · W /∆, and C ∗ is the connected component of maximum
+      size of G − S, which is guaranteed to have (vertex-weighted) weak diameter at most 12 · h2 ∆, or
+    • a Kh -minor model.
+
+    We first slightly modify the procedure BFS(〈G, w〉, v, r) defined in Section 1.2. For simplicity, we define w-BFS
+as a shortcut for BFS(〈G, w〉, v, r) with r = W and v being an arbitrary vertex unless explicitly specified otherwise.
+For a w-BFS r-rooted tree T of a connected graph F and for every integer j ⩾ 1, we define the j-th level of T as
+                                         
+                              L j (T ) := v ∈ V (F ) : d〈F,w〉 (r, v) − w(v) < j ⩽ d〈F,w〉 (r, v) .
+
+Thus every vertex v occurs in exactly w(v) consecutive levels. We say that T has at most x levels if L j (T ) = ; for
+every j > x. Observe that Lemma 8 still applies in this setting. Moreover, if a graph consists of multiple components,
+we can run Lemma 8 component-wise, which yields the very same bound on the whole graph. Similarly, it is easy
+to observe that we can run w-BFS from a set of vertices, still with the same running-time guarantee.
+    Next, we define the core objects of the KPR approach. Given integers ∆, D, ℓ > 0, we define a (∆, D, ℓ)-KPR-
+separator S in a vertex-weighted graph 〈G, w〉 as a collection S = (S1 , . . . , Sℓ ) of ℓ vertex sets (some of which may
+be empty) such that:
+
+    • for all i ∈ [ℓ], |Si | ⩽ W
+                               ∆ , and
+    • the weak diameter of a largest connected component C ∗ of G −
+                                                                                 S
+                                                                                     i∈[ℓ] Si is at most D.
+
+It is readily seen that a (∆, 12h2 ∆, h)-KPR-separator matches the first outcome of Lemma 1 with S = S.
+                                                                                                                      S
+
+     We define a complementary object that will serve as a certificate for the second outcome. Given integers
+∆, D, ℓ > 0, we define a (∆, D, ℓ)-KPR-decomposition in a vertex-weighted graph 〈G, w〉 as a collection S =
+(S1 , . . . , Sℓ ) of ℓ separators (vertex sets), ℓ rooted trees T := (T1 , . . . , Tℓ ), and two vertices a, b ∈ V (G) satisfying
+the following properties (P1)–(P4).
+     Before stating the properties, we define a couple of auxiliary notions. For every i ∈ [ℓ + 1], let
+                                                                    i−1
+                                                                    [
+                                                       H i := G −         Sq .
+                                                                    q=1
+
+
+Let C ∗ be a largest connected component of Hℓ+1 . For every i ∈ [ℓ + 1], let Ci be the connected component of H i
+containing C ∗ . In particular, Cℓ+1 = C ∗ and C ∗ ⊆ C j+1 ⊆ C j for j ∈ [ℓ]. For vertices x, y ∈ V (Ti ) lying on a common
+leaf-to-root path, let Ti [x, y] denote the unique x– y path in Ti . A set X ⊆ V (Ti ) is convex in Ti if Ti [x, y] ⊆ X
+whenever x, y ∈ X lie on a common leaf-to-root path.
+
+(P1) The component C ∗ has weak diameter greater than D/2, which is witnessed by a, b ∈ V (C ∗ ) such that
+     d〈G,w〉 (a, b) > D/2.
+(P2) for all v ∈ V (G) \ S1 , w(v) ⩽ ∆,
+(P3) for all i ∈ [ℓ], Ti is the w-BFS tree of Ci , rooted at a vertex ri , and every connected component of Ci − Si is
+     convex in Ti ,
+(P4) for all i ∈ [ℓ], every connected component of Ci − Si is fully contained in at most ∆ consecutive levels of Ti .
+
+
+
+
+                                                               18
+    For vertices x, y ∈ V (G), we write dG (x, y) := d〈G,w〉 (x, y). For a vertex set X ⊆ V (G) and v ∈ V (G), we write
+dG (X , v) := min x∈X dG (x, v). We also need to measure distances in H i , for which we introduce the following
+shortcuts. For every i ∈ [ℓ] and x, y ∈ V (Ci ), we write di (x, y) := d〈Hi ,w〉 (x, y), and for the distance to the root we
+use di (x) := di (ri , x). Note that d1 = dG . We repeatedly use the following simple variant of the triangle inequality:
+
+                                               di (x, z) ⩽ di (x, y) + di ( y, z) − w( y).                                           (14)
+
+    The following is a weighted variant of the moat property of Klein, Plotkin, and Rao [KPR93, Lemma 4.5]. It is
+a straightforward consequence of (P3) and (P4).
+
+Lemma 13 (Moat property). For every i ∈ [2, ℓ] and every x, y ∈ V (Ci ) such that y is an ancestor of x in Ti−1 ,
+di (x, y) ⩽ ∆.
+
+Proof: By (P3), Ti−1 [x, y] ⊆ Ci . By (P4), this path has length at most ∆.                                                             □
+
+   The following lemma states that, given a KPR-decomposition with sufficiently large D, we can extract a Kh,h−1
+minor model. In the proof of Lemma 1, we will turn this model into the required Kh minor model.
+
+Lemma 14 (Extracting K h,h−1 minor model). Let h ⩾ 3 and ∆ > 0 be integers. If a graph admits a (∆, 12h2 ∆, h)-
+KPR-decomposition (S, T , a, b), then it contains a Kh,h−1 minor. Moreover, a Kh,h−1 -minor model can be constructed
+in time O(h(m + W )).
+
+Proof: We set δ := 6(h + 1)∆.
+
+Claim 1. There are vertices a1 , . . . , ah ∈ V (C ∗ ) whose pairwise weak distances are at least δ.
+
+Proof (Proof of Claim 1): Recall that a, b are two vertices in (P1) satisfying
+
+                                                                  12h2 ∆
+                                                    dG (a, b) >          = 6h2 ∆.
+                                                                    2
+We set a1 := a and ah := b. Let P be an a1 –ah path fully contained in C ∗ . The plan is to select a2 , . . . , ah−1
+successively along P. Suppose that a1 , . . . , a j−1 have already been selected. We denote X j−1 := {a1 , . . . , a j−1 }. We
+maintain dG (X j−1 , ah ) > δ, which is true for j = 2 as h ⩾ 2.
+    Let a j be the first vertex of P such that dG (X j−1 , a j ) ⩾ δ. Such a vertex exists as ah could potentially be such a
+vertex. It remains to show that dG (a j , ah ) > δ for every j ∈ [2, h − 1]. Let u j be the predecessor of a j on P. By the
+choice of a j , there is an index p < j such that dG (a p , u j ) < δ. Since u j and a j are consecutive on P and w(a j ) ⩽ ∆
+by (P2), dG (a p , a j ) < δ + w(a j ). Hence, using induction and Equation (14), a j satisfies the following inequality:
+
+                 dG (a1 , a j ) ⩽ dG (a1 , a p ) + dG (a p , a j ) − w(a p ) < (p − 1)δ + w(a p ) + δ + w(a j ) − w(a p )
+                              ⩽ ( j − 1)δ + w(a j ).
+
+Consequently,
+
+                   dG (a j , ah ) ⩾ dG (a1 , ah ) − dG (a1 , a j ) + w(a j ) > 6h2 ∆ − ( j − 1)δ ⩾ 6h2 ∆ − (h − 2)δ
+                               = 6(h + 2)∆ > δ.
+
+By construction, a1 , . . . , ah have pairwise weak distances at least δ. Algorithmically, the selection uses at most
+h − 2 multi-source w-BFS runs from the vertices already selected.                                                  ♦
+
+    We construct the minor model by growing the A-branch sets along paths to the roots of trees in T \ {T1 }. All
+tree paths in this construction lie in some Ci with i ⩾ 2, and hence all their vertices have weight at most ∆ by (P2).
+    Let i ⩾ 2 and x ∈ V (Ci ). Let t be the first vertex on the x–ri path in Ti such that di (x, t) ⩾ 6∆, and let q be
+the first vertex such that di (x, q) ⩾ 3∆ (if they exist). We call Q := Ti [x, t] a tail in Ti , x its start, t its tip, and
+q its junction. A family of tails Q 1 , . . . , Q h is proper for branch sets A1 , . . . , Ah , Bi+1 , . . . , Bh if the tails are pairwise
+
+
+                                                                   19
+vertex-disjoint, each Q p starts in A p , its tip lies outside every branch set, and Q p is disjoint from every branch set
+other than possibly A p . At step i, all vertices of Q p except its tip will be added to A p , the tip will connect A p to Bi ,
+and the junction will be the start of the tail used at step i − 1. By (P2),
+
+                                              3∆ ⩽ di (x, q) < 3∆ + w(q) ⩽ 4∆,                                                 (15)
+                                              6∆ ⩽ di (x, t) < 6∆ + w(t) ⩽ 7∆.                                                 (16)
+
+Since q and t are ancestors of x in the w-BFS tree Ti ,
+
+                                                    2∆ ⩽ di (x) − di (q) < 3∆,                                                 (17)
+                                                    5∆ ⩽ di (x) − di (t) < 6∆.                                                 (18)
+
+Moreover, every vertex z ∈ V (Q) satisfies
+                                                          dG (q, z) < 5∆.                                                      (19)
+Indeed, if z ∈ V (Ti [x, q]), then by Equation (15),
+
+                                             dG (q, z) ⩽ di (q, z) ⩽ di (x, q) < 4∆.
+
+If z ∈ V (Ti [q, t]), then by Equation (17) and Equation (18),
+
+                                 dG (q, z) ⩽ di (q, z) ⩽ di (q, t) = di (q) − di (t) + w(t) < 5∆.
+
+Claim 2. Let i ⩾ 2, and let x 1 , . . . , x h ∈ V (Ci ) be contained in at most ∆ consecutive levels of Ti . If their pairwise
+weak distances are at least 14∆, then the tails in Ti starting at x 1 , . . . , x h exist and are pairwise vertex-disjoint.
+
+Proof (Proof of Claim 2): The values di (x 1 ), . . . , di (x h ) differ by less than ∆. If di (x p ) < 6∆ for some p, then
+di (x k ) < 7∆ for every k, and any two starting vertices would be connected through ri by a path of length less
+than 14∆, a contradiction. Thus all tails exist. By Equation (16), each tail has length less than 7∆. If two tails
+intersected, their initial subpaths to an intersection vertex would give a path of length less than 14∆ between
+their starts. Hence the tails are pairwise vertex-disjoint.                                                              ♦
+
+    We process i = h, . . . , 2. At the beginning of step i, we maintain:
+
+ (I1) a Kh,h−i -minor model contained in Ci+1 , with branch sets A1 , . . . , Ah on one side and Bi+1 , . . . , Bh on the other
+      side,
+ (I2) proper tails Q i1 , . . . , Q ih in Ci , each of which is a subpath of a path to ri in Ti , and
+ (I3) if q pi denotes the junction of Q ip , then
+
+                                    dG (a p , q pi ) − w(q pi ) < 3(h − i + 1)∆   for every p ∈ [h].                           (20)
+
+Whenever the invariant holds, Claim 1 together with Equations (14) and (20) implies that, for distinct p, k ∈ [h],
+
+                                            dG (q pi , qki ) > δ − 6(h − i + 1)∆ = 6i∆.                                        (21)
+
+    For i = h, we set A p := {a p } for every p ∈ [h]. Since Ch+1 is contained in at most ∆ consecutive levels of Th
+by (P4) and δ > 14∆, Claim 2 gives pairwise vertex-disjoint tails Qh1 , . . . , Qhh starting at a1 , . . . , ah . These tails
+are proper: each starts in the corresponding singleton A p , its tip differs from its start, and pairwise disjointness
+excludes every other A-branch set. If qhp is the junction of Qhp , then Equation (17) gives dG (a p , qhp ) − w(qhp ) < 3∆.
+Hence the invariant holds for i = h.
+    We fix i ∈ {h, . . . , 2} and suppose that the invariant holds at the beginning of step i. For brevity, we write
+Q p := Q ip , and let s p , q p , t p be its start, junction, and tip, respectively. We first construct Bi and verify (I1). If i > 2,
+we then construct the tails for step i − 1 and verify (I2)–(I3).
+
+
+                                                                 20
+   By (P4), the values di (s p ) differ by less than ∆, and every x ∈ Ci+1 satisfies |di (x) − di (s p )| < ∆. Together with
+Equation (17) and Equation (18), this gives, for every x ∈ Ci+1 and all p, k ∈ [h],
+
+             di (x) − di (q p ) = di (x) − di (s p ) + di (s p ) − di (q p ) > −∆ + 2∆ = ∆,                                    (22)
+                                                                                                         
+           |di (t p ) − di (t k )| ⩽ |di (s p ) − di (sk )| + di (s p ) − di (t p ) − di (sk ) − di (t k ) < 2∆,               (23)
+                                                                                                      
+            di (q p ) − di (t k ) = di (s p ) − di (sk ) + di (sk ) − di (t k ) − di (s p ) − di (q p ) > −∆ + 5∆ − 3∆ = ∆.    (24)
+
+    We define
+                                                                h
+                                                                [
+                                                        Bi :=         V (Ti [t p , ri ]).
+                                                                p=1
+
+This is a connected subtree of Ti . It is disjoint from Ci+1 . Indeed, if x ∈ Ci+1 and y ∈ Ti [t p , ri ], then, for any
+k ∈ [h], Equation (24) gives di (x) > di (qk ) + ∆ > di (t p ) + 2∆ ⩾ di ( y).
+    We next show that Bi is disjoint from Q k − {t k } for every k. Suppose that z ∈ (Q k − {t k }) ∩ Ti [t p , ri ] for some
+p. The vertex z is a strict descendant of t k and an ancestor of t p . Hence, p ̸= k. By Equation (23),
+
+                       dG (t p , z) − w(z) ⩽ di (t p , z) − w(z) = di (t p ) − di (z) < di (t p ) − di (t k ) < 2∆.
+
+Furthermore, Equations (17) and (18) give
+
+                              dG (q p , t p ) − w(t p ) ⩽ di (q p , t p ) − w(t p ) = di (q p ) − di (t p )
+                                                                                                         
+                                                        = di (s p ) − di (t p ) − di (s p ) − di (q p ) < 4∆,
+
+while Equation (19) gives dG (z, qk ) < 5∆. Concatenating these paths yields dG (q p , qk ) < 11∆, contrary to
+Equation (21). Thus Bi ∩ (Q k − {t k }) = ; for every k.
+     For every p, we enlarge A p by all vertices of Q p except its tip t p . The tails were proper, and the preceding
+paragraphs show that the enlarged branch sets and Bi are pairwise disjoint. The last edge of Q p joins the enlarged
+A p to Bi , while all previous adjacencies are preserved because the A p only grow. We have therefore obtained a
+Kh,h−i+1 -minor model contained in Ci , with branch sets A1 , . . . , Ah and Bi , . . . , Bh , concluding (I1) for the next step.
+     If i = 2, this is the required Kh,h−1 -minor model and we are done with the proof. Hence, we may assume
+that i > 2. Since Ci is contained in at most ∆ consecutive levels of Ti−1 by (P4) and the junctions q1 , . . . , qh are
+pairwise at weak distance greater than 6i∆ ⩾ 18∆, Claim 2 gives pairwise vertex-disjoint tails Q i−1                              i−1
+                                                                                                                     1 , . . . , Qh
+in Ti−1 starting at q1 , . . . , qh . Let z ∈ V (Q p ) ∩ V (Ci ) for some p ∈ [h]. If z ∈ Ci+1 , then Equation (22) gives
+                                                   i−1
+
+di (z, q p ) > di (z) − di (q p ) > ∆, contradicting Lemma 13. If z ∈ Bi , then di (z) ⩽ di (t k ) for some k ∈ [h], and by
+Equation (24), di (z, q p ) > di (q p ) − di (z) ⩾ di (q p ) − di (t k ) > ∆. This is again a contradiction with Lemma 13. Thus
+Q i−1
+  p    is disjoint from both Ci+1 and Bi . By (I1), all branch sets present before step i are contained in Ci+1 , so
+the new tail avoids them as well. If, for some k ̸= p, a vertex z belonged both to Q i−1            p   and to the part of Q k just
+added to Ak , then Lemma 13 and Equation (19) give dG (q p , qk ) ⩽ di (q p , z) + dG (z, qk ) − w(z) < 6∆, contradicting
+Equation (21). Hence Q i−1      p   meets no branch set other than possibly A p .
+     Its tip does not belong to Ci . Otherwise, the convexity in (P3) would imply that the start-to-tip path is contained
+in Ci , and (P4) would imply that it has length at most ∆, whereas its length is at least 6∆. Since every current
+branch set is contained in Ci , the tip lies outside every branch set. Thus the tails are proper, which establishes (I2)
+for step i − 1.
+     Let q pi−1 be the junction of Q i−1p . Equations (14) and (17) give
+                                                                                                                    
+                        dG (a p , q pi−1 ) − w(q pi−1 ) ⩽ dG (a p , q p ) − w(q p ) + dG (q p , q pi−1 ) − w(q pi−1 )
+                                                                                                           
+                                                        < 3(h − i + 1)∆ + 3∆ = 3 h − (i − 1) + 1 ∆.
+
+This establishes (I3) for step i − 1. Thus all invariants (I1)–(I3) hold at step i − 1, which concludes the construction.
+    The selection of a2 , . . . , ah−1 uses at most h − 2 multi-source runs of w-BFS. At each step, the new tails are
+pairwise disjoint, and the union of the root paths defining Bi is a subtree of one w-BFS tree. Hence all objects of
+one step can be constructed in one pass over that tree, and the total running time is O(h(m + W )).                    □
+
+
+                                                                      21
+    Now, we are ready to prove the main statement of this section.
+
+Proof of Lemma 1: If h < 3, the problem is trivial.
+    It suffices to prove the statement for connected graphs. Indeed, we apply the connected-case procedure
+independently to every connected component F of G, with the restriction of w to V (F ). If one invocation returns a
+Kh -minor
+       S model, then this∗ is also a Kh -minor model of      G. Otherwise, let (C F∗ , S F ) be the pair returned for F . We set
+                                                           ∗
+S := F S F and choose C among the components C F with maximum cardinality. It is straightforward to verify that
+this meets the requirement of the lemma. Hence, in the remainder of the proof, we assume that G is connected.
+    By Lemma 8, we construct a w-BFS tree T1 rooted at an arbitrary node v of G. If there are at most 12h2 ∆ levels
+                                                                                                                         2
+
+
+in T1 , we stop the procedure, as G has weak diameter at most 12h ∆. In that case, S := ; and C := G. Otherwise,
+                                                                         2                                   ∗
+
+we show how to construct in linear time a (∆, 12h2 ∆, h)-KPR-separator S or a (∆, 12h2 ∆, h)-KPR-decomposition
+(S, T , a, b). In the latter case, Lemma 14 gives a Kh,h−1 -minor model with sides A1 , . . . , Ah and B2 , . . . , Bh . For every
+i ∈ {2, . . . , h}, choose an edge joining Ai to Bi and contract it. The resulting h branch sets, namely A1 and Ai ∪ Bi
+for i ∈ {2, . . . , h}, form a Kh -minor model. In the former case, we return S, for which C ∗ has weak diameter at
+most 12h2 ∆.
+    Hence, there are more than 12h2 ∆ levels in T1 . Given a w-BFS tree T S
+                                         2
+                                                                                    of a connected component, we define
+S ∈ S as the cheapest out of the following possible separators Zi (T ) := q⩾0 L i+q∆ (T ) for i ∈ [∆]. In the first
+round, let S1 be a minimum-cardinality set among Z1 (T1 ), . . . , Z∆ (T1 ). Observe that, as the total vertex weight is W ,
+which corresponds to the total number of occurrences of the vertices in all levels, the cheapest of the proposed ∆
+separators has size at most ⌊ W   ∆ ⌋. Moreover, if a vertex v ∈ V (G) has w(v) > ∆, then it belongs to all the separators
+defined above and will not be part of G − S1 , which yields (P2). As a result of this step, we are left with a set of
+connected components of G − S1 denoted by C1 . Now, we repeat the same procedure for each component in C1
+separately and recursively. That means that, in step j ⩽ h, we consider all unmarked connected components of
+the graph H j . We run w-BFS for each separately. If such a connected component has at most 12h2 ∆ levels, we do
+                                                                                                               2
+
+
+nothing, as its weak diameter is even smaller. That component is marked and will not be considered in any later
+round. If all connected components are marked, then, setting S j = · · · = Sh = ;, we return S := S1 ∪ . . . ∪ S j−1
+together with a largest component C ∗ as a (∆, 12h2 ∆, h)-KPR-separator. If a connected component with w-BFS tree
+T has more levels, we apply the cutting procedure described above by choosing the smallest cut Zi (T ) among the
+options i ∈ [∆]. Then we set S j as the union of the smallest-size cuts over all connected components considered
+in that step. The analysis still holds, as in each component we take a cut of size at most the average over the ∆
+options.
+    After completing step h, we have a set of connected components Ch . We check which component has the
+largest size, and we denote it as C ∗ . This can be easily checked by a component-wise w-BFS check in total time
+m + W . If C ∗ was marked earlier, we return (C ∗ , S). Otherwise, we run w-BFS on G starting at a vertex a ∈ V (C ∗ ).
+If all vertices of C ∗ appear within the first 12h2 ∆/2 levels of the resulting tree, then C ∗ has weak diameter at
+most 12h2 ∆. Hence, we have the right KPR-separator and so we return (C ∗ , S). Otherwise, there are vertices
+a, b ∈ V (C ∗ ) that witness (P1). For the other properties, we take the w-BFS trees built during the procedure for
+the residual components containing C ∗ and set them as T . Observe that these trees exist because the connected
+component containing C ∗ was cut in every round of the procedure: a component was left unchanged only if the
+corresponding tree had at most 12h2 ∆/2 levels, and such components were not considered again. Then (P3)
+follows because these trees are w-BFS trees. Convexity follows because an ancestor path between two vertices
+of a connected component cannot cross a cut layer. Property (P4) follows because each residual component
+is contained between two cut levels that are ∆ apart. Therefore, T , S, and the vertices a, b ∈ V (C ∗ ) form a
+(∆, 12h2 ∆, h)-KPR-decomposition.
+    The running time matches the statement because we invoked the w-BFS algorithm component-wise at most h
+times (Lemma 8), with each invocation running in total time O(m + W ). In addition, we run one more w-BFS
+on the whole graph when determining C ∗ . If we return the Kh -minor model, we run Lemma 14 to construct a
+Kh,h−1 -minor model and then perform the h − 1 contractions described above. The total additional running time is
+O(h · (m + W )).                                                                                                                □
+
+
+
+
+                                                               22
+B     Proof of Lemma 2
+We restate Lemma 2 and then prove it.
+
+Lemma 2 (Corresponds to Lemma 4.3 in [KL24]). Let G be a connected graph with m edges. For every t ⩾ 1,
+there is a graph H with |V (H)| + |E(H)| ⩽ 3t 2 such that an almost-embedding of H can be turned into a K t -minor
+model of G in O(t 2 m) time.
+
+Proof: Let H be the graph obtained by subdividing every            edge of K t twice, i.e., replacing the edges of K t by paths
+                                                                t
+of 3 edges. We have that |V (H)| + |E(H)| = t + 5 · 2 ⩽ 3t 2 . We claim that an almost-embedding of H can be
+turned into a K t -minor model {C1 , C2 , . . . , C t } in O(t 2 m) time.
+    Denote the almost-embedding           by φ, and the vertices of H corresponding to the vertices of K t by v1 , . . . , vt .
+First, we set Ci′ = u∈N (vi ) V (φ(vi u)), i.e., it is the union of the paths of φ corresponding to the edges incident
+                    S
+
+to vi . The properties of φ guarantee that (1) each G[Ci′ ] is connected, and (2) the sets Ci′ are pairwise disjoint.
+    Then, consider a pair i, j with 1 ⩽ i < j ⩽ t. Let vi , ai, j , bi, j , v j be the path of three edges in H between vi
+and v j . We have that φ(ai, j bi, j ) is a path that intersects both Ci′ and C j′ . We let Ci,′ j be the internal vertices of
+a minimal subpath of φ(ai, j bi, j ) that intersects both Ci′ and C j′ . In particular, Ci,′ j can be empty if Ci′ and C j′ are
+adjacent. It holds that (1) each G[Ci,′ j ] is connected or empty, (2) each Ci,′ j either is adjacent to both Ci′ and C j′ , or
+is empty, in which case Ci′ and C j′ are adjacent, and (3) the sets Ci,′ j are pairwise disjoint and disjoint from the
+sets Ck′ for all k.
+    Now, taking Ci = Ci′ ∪ j>i Ci,′ j results in {C1 , C2 , . . . , C t } being a K t -minor model. This construction can clearly
+                           S
+
+be implemented in O(t 2 m) time.                                                                                               □
+
+                                       p
+C Balanced Separators of Size O(poly(h) n) in Time O(n) in Bounded-
+  Degree K t -Minor-Free Graphs
+Lemma 15. There is an algorithm that, given any connected graph G of maximum degree ∆ and positive integer
+p ⩽ |V (G)|, builds a partition P = {P1 , . . . , Ps } of V (G) such that for every i ∈ [s]
+
+    • G[Pi ] is connected, and
+    • p ⩽ |Pi | ⩽ p(∆ + 1),
+
+and runs in time O(n∆).
+
+Proof: In O(n∆) time run a depth-first search (DFS) on G [Tar72], from an arbitrary vertex u. Let T be the
+resulting rooted spanning tree. In O(n) time, mark each node v of T whenever the subtree of T rooted at v has
+fewer than p nodes. This can be done in a bottom-up way by computing the size of each subtree (and capping
+at p). Let Q be the leftmost root-to-leaf branch of T .
+    We build the first part of P as follows. Initialize x := u and X := {u} ∪ Y , where Y is the union of the vertex
+sets of the subtrees of T rooted at a marked child of x. While |X | < p, set the new x as the first node appearing
+after (the old) x in the preorder traversal of T that is not yet in X , add it to X as well as every subtree of T rooted
+at a marked child of x. When exiting the while loop, the size of X is between p and p∆. We set P1 := X . It is
+indeed connected, and p ⩽ |P1 | ⩽ p(∆ + 1).
+    We then proceed inductively in each connected component of T − P1 (observe that several such components
+may well be a single component in G − P1 ) and same marking. Note that each such component has at least p
+vertices, so the while loop of each call terminates. Computing a new part P of P takes O(|P|) time. The partition P
+is thus computed in O(n∆) total time.                                                                                  □
+
+Theorem 3. Let G be a given graph with n vertices and maximum degree ∆ = O(1), and h > 0 be a parameter.
+There is an algorithm that runs in deterministic O(n) time and outputs either:
+
+
+
+                                                              23
+                                       p
+   • a balanced separator of size O(h26 n) or
+   • ⊥ if G contains a Kh as a minor.
+
+Furthermore, in the latter case, we can output a Kh -minor model of G with probability at least 1/2 in an additional
+randomized O(n) time.
+
+Proof: Apply Lemma 15 to G, p := h13 , ∆, and get, in O(n) time, a partition P satisfying the lemma. In further
+O(n) time, compute the graph G ′ obtained by contracting each part of P into a single vertex. As each part of P is
+connected, G ′ is a minor of G. Note that G ′ has at most n/h13 vertices.
+     Now run Theorem 2 on G ′ . This takes time O(h13 n/h13 ) = O(n). If this yields a K t -minor model, the partition P
+                                                                                                  p
+lifts it to a K t -minor model in G. If, instead, we get a balanced separator of size O(h13 n) in G ′ , this gives
+           1                                  26 p
+a (1 − 2∆+3 )-balanced separator of size O(h       n) in G. With a constant number of iterations (recall ∆ = O(1)),
+                                                                       p
+we get a Kh -minor model in G or a balanced separator of size O(h26 n).                                                □
+
+
+
+
+                                                          24
+

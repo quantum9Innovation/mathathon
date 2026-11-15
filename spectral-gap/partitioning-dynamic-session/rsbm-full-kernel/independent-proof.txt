@@ -1,0 +1,422 @@
+FULL BASE-FIELD KERNEL IN EXPECTED NEAR-QUADRATIC TIMES CORANK WORK
+Independent proof audit; November 15, 2026
+
+This note writes only in the authorized rsbm-full-kernel directory.
+It audits the proposal in rsbm-nearquadratic-full-kernel-root.txt.
+The linear algebra ingredients are classical. The RSBM moment bound
+is an INPUT to the averaging corollary, not proved in this note.
+
+VERDICT
+-------
+The full-kernel algorithm works for EVERY fixed sparse symmetric
+matrix M over one fixed odd prime field, including M=0 and full-rank
+M. It is Las Vegas, never produces an incorrect basis or rank, and
+has expected soft-O(n^2(r+1)) BIT cost at fixed row sparsity, where
+r is the actual BASE-FIELD corank. There is no real-corank-one
+promise, spectral gap, or exceptional-graph fallback.
+
+The essential certification remains the shifted-sequence inequality
+ell<=rank(M). Collecting n-ell independent, verified kernel vectors
+supplies the matching upper bound. Bad preconditioning or projection
+can delay this agreement but cannot make a false certificate pass.
+
+A fixed base-field moment E p0^r=O(1) then suffices for unconditional
+expected soft-O(n^2) kernel construction AND exact listing of all
+admissible integer sign assignments. Enumeration must use incremental
+updates, rather than spending O(n r) work separately per candidate;
+otherwise E p0^r alone would not directly bound that extra factor r.
+
+1. PRECISE THEOREM AND MODEL
+------------------------------
+Fix an odd prime p0 and a positive row-sparsity bound Delta. Let
+M be any symmetric n-by-n matrix over F_p0, with at most Delta n
+nonzero entries. Put
+
+  k=rank_Fp0 M,       r=n-k.
+
+There is a randomized algorithm returning:
+
+  * a basis B0 in F_p0^{n x r} of ker_Fp0 M;
+  * the exact rank k;
+  * a noninteractive certificate deterministically checkable within
+    soft-O(n^2(r+1)) bit operations.
+
+It always returns a correct result, terminates almost surely, and
+uses expected soft-O(n^2(r+1)) bit operations. The suppressed factors
+are logarithmic in n, with constants allowed to depend on fixed p0
+and Delta. Storage can be O(n(r+1) log n) bits up to logarithmic
+factors; the output itself has n r base-field entries.
+
+The statement is for base-field rank. If M is an integer matrix
+reduced modulo p0, its rational rank need not equal its base-field
+rank. Exact INTEGER sign verification in the final enumeration step
+removes spurious modular solutions. No modular rank is silently
+identified with a rational rank.
+
+2. FINITE EXTENSION AND ITS FULL COST
+--------------------------------------
+Choose s minimal such that
+
+  q=p0^s >= 64(n+1)^6.
+
+Then q<64 p0(n+1)^6 and s=O(log n). Work in
+
+  F_q = F_p0[X]/(h(X)),
+
+where h is an irreducible monic polynomial of degree s. Rank does
+not change on extending the field, so rank_Fq M=k and its corank
+remains r.
+
+Construct h by sampling monic degree-s polynomials and testing
+irreducibility EXACTLY. For s>=2 the irreducible fraction is at least
+1/(2s). An elementary proof is
+
+  p0^s=sum_{d|s} d I_p0(d),
+  sum_{d|s,d<s} d I_p0(d)
+       <= sum_{j=1}^{floor(s/2)} p0^j <= p0^s/2,
+
+where I_p0(d) counts monic degree-d irreducibles; p0>=3 is enough.
+For s=1 every monic linear polynomial is irreducible.
+
+One deterministic test computes z_j=X^{p0^j} mod h for j=1,...,s,
+requires z_s=X mod h, and for every prime divisor a of s requires
+
+  gcd(h,z_{s/a}-X)=1.
+
+The first test forces all factors to be distinct and of degrees
+dividing s; the remaining tests force their degrees to be exactly s.
+Thus the test is exact. Factoring the small integer s, polynomial
+exponentiation, and gcd computation all take poly(s) base-field work
+with elementary algorithms. Expected O(s) candidate tests therefore
+cost polylog(n) bits. No irreducibility oracle is free.
+
+Naive polynomial multiplication, reduction, and inversion modulo h
+cost poly(s) base-field operations. Since p0 is fixed, every F_q
+operation costs polylog(n) bits. A uniform F_q element is sampled by
+s independent uniform base-field coefficients. Nonzero samples use
+rejection of zero, of expected cost q/(q-1). All random choices below
+have this charged representation. Construction of the field is done
+once, outside the retry loop.
+
+3. THE TWO PRIMARY PRECONDITIONING THEOREMS
+--------------------------------------------
+Primary source actually inspected:
+Li Chen, Wayne Eberly, Erich Kaltofen, B. David Saunders,
+William J. Turner, Gilles Villard,
+  Efficient matrix preconditioners for black box linear algebra,
+  Linear Algebra and its Applications 343--344 (2002), 119--146.
+https://kaltofen.math.ncsu.edu/bibliography/02/CEKSTV02.pdf
+
+Use independently uniform nonzero diagonal entries of D over F_q
+and T=DM. Their Theorem 4.2 gives cyclicity of the nonzero part with
+failure probability at most n(n-1)/(2(q-1)). Their Theorem 4.5, for
+SYMMETRIC M, gives zero semisimplicity with failure probability at
+most r/(q-1). Both apply over arbitrary fields, with NO restriction
+that the characteristic exceed n and NO leading-minor hypothesis.
+The characteristic restriction in their squarefree Theorem 4.3 is
+irrelevant here.
+
+Consequently, except with probability at most
+
+  epsilon_D = [n(n-1)/2+r]/(q-1),                         (1)
+
+there is a direct sum decomposition over F_q
+
+  F_q^n = ker T direct-sum im T,
+  T similar to diag(0_r,C),
+
+where C is an invertible CYCLIC k-by-k matrix. In particular its
+minimal polynomial has degree k and nonzero constant coefficient.
+For k=0 this nonzero-part polynomial is 1. Left preconditioning
+preserves the actual kernel: ker T=ker M because D is invertible.
+
+4. SHIFTED KRYLOV PROBING AND AN UNCONDITIONAL LOWER CERTIFICATE
+---------------------------------------------------------------
+Choose u,v independently uniformly in F_q^n. Form 2n terms
+
+  a_j = u^T T^{j+1} v,      j=0,...,2n-1.                (2)
+
+This requires exactly 2n sparse T-matvecs and O(n^2) further field
+work. Run exact Berlekamp--Massey, obtaining the actual minimum
+finite-sequence recurrence LENGTH ell and its monic forward
+recurrence polynomial g of degree ell. Do not use a degree padded
+with zero coefficients as a substitute for the minimum length.
+
+ALWAYS-VALID LOWER-RANK CERTIFICATE:
+
+  ell <= rank T = k.                                    (3)
+
+Proof. T v belongs to the invariant space im T of dimension k.
+Cayley--Hamilton for T restricted to that space gives a recurrence
+of order at most k for the entire sequence (2). In particular its
+first 2n terms have a recurrence of order at most k. Exact minimality
+of Berlekamp--Massey gives (3). This proof works for every T,u,v,
+including singular matrices with nilpotent zero blocks. QED.
+
+On the good preconditioner event in Section 3, T|_{im T}=C is
+invertible and cyclic of dimension k. The projected start T v is
+uniform on im T and u restricts to a uniform functional there.
+The two k-dimensional controllability/observability determinants
+are nonzero polynomials of degree k in these projections. Thus
+Schwartz--Zippel gives joint failure probability at most 2k/q.
+When both determinants are nonzero, the leading k-by-k scalar
+Hankel matrix is nonsingular. Therefore the first 2n>=2k terms
+have shortest recurrence length k, and their degree-k recurrence
+is uniquely the minimal polynomial of C. In particular
+
+  ell=k,       g(0)!=0,       g(C)=0.                    (4)
+
+Let G denote this combined good preconditioner/projection event.
+Its probability satisfies
+
+  P(G^c) <= epsilon
+    := [n(n-1)/2+r]/(q-1) + 2k/q = O(n^2/q).             (5)
+
+The bound is uniform over every fixed symmetric M. With our q,
+it is much smaller than a fixed constant, even in small dimension.
+The k=0 case has an empty nonzero part, ell=0, and g=1 without any
+projection failure.
+
+The polynomial assertion in (4) is exact, not a guessed global
+matrix identity. Full scalar complexity k forces both reachable
+and observable nonzero-part spaces to have dimension k. Their
+leading Hankel matrix is invertible, so its k equations determine
+the monic recurrence uniquely. The actual minimal polynomial of C
+satisfies those same equations, proving equality. Extra terms up
+to 2n do not alter this unique recurrence.
+
+5. ONE TRIAL: VERIFY EVERY CANDIDATE AND CAP THE PROBES
+-------------------------------------------------------
+One trial consists of fresh D,u,v and (2)--(4), followed by:
+
+  (a) If ell=n, return the empty kernel basis immediately. By (3)
+      the matrix is full rank, deterministically.
+  (b) If g(0)=0, declare this trial unsuccessful and restart.
+  (c) Otherwise set target dimension t=n-ell. Draw at most n+1
+      fresh uniform vectors z in F_q^n. For each compute
+
+        x=g(T)z
+
+      by Horner evaluation using at most ell T-matvecs and O(n ell)
+      vector field operations. VERIFY Mx=0, and retain x only if
+      this exact check passes AND x is independent of the previously
+      retained candidates, over F_q.
+  (d) Stop successfully only after t independent verified candidates
+      have been retained; otherwise restart after n+1 probes.
+
+A successful trial ALWAYS certifies the exact kernel and rank.
+Indeed (3) gives rank M>=ell, while the t=n-ell independent verified
+kernel vectors give rank M<=n-t=ell. Thus rank M=ell and t=r.
+This argument remains sound even if the preconditioner or projection
+was bad. An underestimated ell cannot pass: it asks for more than r
+independent actual kernel vectors. No random choice can fabricate
+them. All comparisons, residual checks, and independence tests are
+exact finite-field computations.
+
+On event G,
+
+  g(T) = g(0) P,
+
+where P is the projection onto ker T along im T. The decomposition
+in Section 3 makes this identity immediate: g acts by g(0) on the
+zero part and by zero on C. Since P maps onto the r-dimensional
+kernel and g(0)!=0, each fresh x=g(T)z is UNIFORM on ker M; samples
+are independent. They all pass the residual check.
+
+For r>=1, the expected number of uniform r-dimensional vectors
+needed to span is
+
+  sum_{j=0}^{r-1} 1/(1-q^{j-r})
+    =r+sum_{i=1}^r 1/(q^i-1)
+    <=r+q/(q-1)^2 <=r+2.                               (6)
+
+For r=0 no probes are needed. After n+1 samples, failure to span
+has probability at most
+
+  1-prod_{j=0}^{r-1}(1-q^{j-(n+1)})
+    <=sum_{j=0}^{r-1} q^{j-(n+1)}
+    <=q^{r-n-1}/(q-1)
+    <=1/[q(q-1)].                                       (7)
+
+This is at most the probability bound for r=n. A union bound over
+all nonzero linear functionals, modulo scalar, gives the same bound.
+The cap is therefore safe on good trials, and controls arbitrary
+bad trials without any unproved stopping heuristic.
+
+6. COMPLETE EXPECTED COST ON EVERY FIXED INPUT
+-----------------------------------------------
+Let m0=nnz(M)=O(n). One application of T=D M costs O(m0+n)=O(n)
+F_q operations. The sequence and recurrence phase costs O(n^2).
+A polynomial probe has degree at most n and costs O(n^2) field
+operations in the worst case. Testing Mx=0 costs O(n), and inserting
+one candidate into a maintained echelon basis of j vectors costs
+O(n(j+1)) field operations. This charges all candidate independence
+work and storage, rather than treating a rank oracle as free.
+
+On G, the expected O(r+1) probes from (6), even with the cap, cost
+O(n^2(r+1)) field operations in total. The more detailed independence
+cost is O(n r^2) plus rejected-dependent probes; this is bounded by
+O(n^2(r+1)) because r<=n. Randomness costs O(n(r+1) log q) bits on
+these good trials and is included in that bound.
+
+On G^c, the fixed cap bounds the ENTIRE trial by O(n^3) field
+operations, including all n+1 polynomial actions and independence
+tests. Therefore an unconditional single-trial expectation is
+
+  E cost(trial)
+     <= O(n^2(r+1)) + O(n^3) P(G^c)
+     <= O(n^2(r+1)) + O(n^5/q)
+     = O(n^2(r+1)).                                     (8)
+
+The last equality uses q>=64(n+1)^6. Thus rare bad draws cannot
+contribute an uncontrolled cubic expected cost. The probability
+of successful termination in a trial is at least
+
+  (1-epsilon)(1-1/[q(q-1)]),                             (9)
+
+which is uniformly greater than 1/2 with this q. Trials are fresh
+and independent conditional on the fixed M. A renewal identity,
+valid even when trial cost and success are correlated, yields
+
+  E total cost = E cost(trial) / P(trial succeeds)
+               = O(n^2(r+1)) field operations.          (10)
+
+Every F_q operation costs polylog(n) bits, and extension construction
+costs only polylog(n) bits. Hence (10) is the asserted expected
+soft-O(n^2(r+1)) bitwork. It also proves almost-sure termination.
+No quantitative graph-probability estimate enters this all-input
+algorithmic claim.
+
+Boundary checks:
+
+  * If M is full rank, r=0; a good trial has ell=n and returns the
+    empty basis after O(n^2) work.
+  * If M=0, r=n; every sequence is zero, ell=0, g=1, and probes are
+    ordinary uniform F_q^n vectors. Their basis construction may
+    cost O(n^3), exactly consistent with n^2(r+1).
+  * If a bad projection understates rank, target n-ell exceeds r,
+    so verified independence prevents false acceptance; the cap
+    prevents infinite looping within that trial.
+
+7. DESCENT TO F_p0, FULLY CHARGED
+----------------------------------
+A successful trial gives r verified F_q-independent columns
+v_1,...,v_r spanning ker_Fq M. Write each in the chosen polynomial
+basis of F_q/F_p0:
+
+  v_i = sum_{a=0}^{s-1} theta^a v_{i,a},
+  v_{i,a} in F_p0^n.
+
+Because M has base-field coefficients, Mv_i=0 implies
+Mv_{i,a}=0 separately for every component. The r s component
+vectors therefore all lie in ker_Fp0 M. Their F_q span contains
+the original v_i, so their base-field rank is at least r; field
+extension preserves ranks. Their base-field rank is at most r
+because the base kernel has dimension r. Hence it is exactly r.
+
+Select an F_p0 basis by ordinary incremental elimination. Coefficient
+extraction costs O(n r s) base-field operations. Selecting from r s
+candidates costs O(n r^2 s), and stores O(n r) base-field basis
+entries, in addition to the extension-field basis if retained.
+Since r<=n and s=O(log n), the bit cost is soft-O(n^2(r+1)).
+The output has exactly r BASE-FIELD vectors, not extension vectors
+whose enormous F_q kernel would later be enumerated.
+
+An alternative is to choose r pivot rows I of the extension basis
+V, set C=V(V_I)^{-1}, and observe that C has base-field entries:
+Frobenius C^{p0} has the same kernel columns and identity pivot
+coordinates as C; their unique coordinates in this kernel basis
+force C^{p0}=C. Matrix inversion and multiplication cost
+O(r^3+n r^2)<=O(n^2 r) F_q operations. Component extraction avoids
+needing this alternative argument in an implementation.
+
+8. DETERMINISTIC OUTPUT VERIFIER
+---------------------------------
+Output the base-field basis B0 and the successful trial data
+(h,D,u,v), where h defines the extension field. A checker:
+
+  * verifies the prescribed extension degree/size, monicity, and
+    irreducibility of h;
+  * verifies all residue encodings and each D_ii!=0;
+  * recomputes the 2n shifted terms and exact recurrence length ell;
+  * verifies M B0=0 over F_p0;
+  * computes the base-field column rank of B0 and requires it to be
+    exactly r=n-ell, with B0 containing r columns.
+
+The shifted-sequence argument gives rank_Fq M>=ell. The independent
+base-field kernel columns give rank_Fq M<=n-r=ell. Field extension
+preserves the rank of M, so the asserted BASE-FIELD rank and full
+kernel are certified exactly. The checker need not trust g(T),
+preconditioning success, any claimed probability, or how the basis
+was generated. Its cost is soft-O(n^2+n r^2), within
+soft-O(n^2(r+1)). The successful trial data have O(n log n) bits;
+the output basis has O(n r) bits at fixed p0.
+
+9. EXPECTED RSBM COST FROM ONE RAW BASE-FIELD KERNEL MOMENT
+-----------------------------------------------------------
+Suppose an ensemble of fixed-degree integer graph matrices M_Z
+satisfies, for one fixed odd prime p0,
+
+  E p0^r <= C,
+  r=dim_Fp0 ker(M_Z mod p0),                             (11)
+
+uniformly in n. The all-input algorithm above has a constant-factor
+bound uniform over each fixed reduced matrix. Since r+1<=p0^r,
+iterated expectation gives
+
+  E(kernel construction bitwork)
+       <=soft-O(n^2) E(r+1)=soft-O(n^2).                 (12)
+
+A bounded configuration-model raw moment transfers through
+conditioning on simplicity: if the simplicity probability is at
+least c>0, the conditioned moment is at most C/c. This uses actual
+conditioning, not contiguity of an unbounded random variable.
+Whether the proposed direct all-parity/cubic RSBM calculation proves
+(11) must be audited separately; this note assumes it only here.
+
+Enumerate the p0^r base-field kernel vectors with an odometer or
+p0-ary Gray code. Maintain the current vector explicitly. Increasing
+a digit, including wrapping p0-1 to zero, changes its coefficient by
++1 modulo p0, so update by adding the corresponding basis vector.
+The total number of digit changes in a complete odometer pass is
+at most
+
+  p0^r sum_{j>=0}p0^{-j} = p0^{r+1}/(p0-1).
+
+Thus enumeration costs O(n p0^r), with NO multiplicative r factor.
+For each candidate, require all coordinates to be 1 or -1 modulo
+p0, convert uniquely to integer signs (p0 is odd), normalize one
+fixed sign if desired, and verify M_Z sigma=0 over the INTEGERS.
+Check the requested balance and model degrees too. At fixed degree
+these checks cost soft-O(n) bits per candidate. Therefore
+
+  E(enumeration and exact checking) <=soft-O(n) E p0^r
+                                   =soft-O(n).          (13)
+
+Every integer sign solution reduces to a base-field kernel vector,
+and +1/-1 are distinct modulo p0, so the enumeration misses none.
+Spurious modular solutions fail integer verification. In a regular
+RSBM with known d1,d2, the equation A sigma=(d1-d2)sigma and total
+degree d1+d2 forces exactly d1 same-sign and d2 opposite-sign
+neighbors at every vertex; exact balance supplies the equal block
+sizes. Thus this procedure lists ALL admissible planted-parameter
+partitions, up to global exchange. It does not select arbitrarily
+among statistically indistinguishable multiple partitions.
+
+Combining (12) and (13) gives unconditional expected near-quadratic
+BIT work whenever the raw moment input (11) has been proved. The
+only source of recovery nonuniqueness is then actual ambiguity in
+the integer sign list. A high-nullity base-field event is handled
+within the algorithm's expected cost; no exact dense fallback or
+real-eigenvalue gap is used.
+
+10. CLAIM BOUNDARIES
+----------------------
+This is a classical black-box-kernel specialization with explicit
+one-sided rank certification and charged field descent. It is not a
+new matrix preconditioner, a proof of the proposed RSBM moment, a
+proof of its ambiguity probability, or a historical-priority claim.
+The result holds in fixed odd characteristic because the exact
+preconditioner inputs are Theorems 4.2 and 4.5; substituting the
+squarefree Theorem 4.3 would incorrectly introduce a characteristic
+restriction and would break the fixed-base-field argument.

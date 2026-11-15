@@ -1,0 +1,265 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsthm,hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newcommand{\E}{\mathbb E}
+\newcommand{\KL}{\operatorname{KL}}
+\newcommand{\TV}{\operatorname{TV}}
+\title{All-slot one-hot entropy rigidity\\without a lower bound on internal degrees}
+\author{Independent adversarial rigidity audit}
+\date{November 15, 2026}
+\begin{document}
+\maketitle
+
+\paragraph{Scope.}
+This note independently audits the real one-hot rigidity step in
+\texttt{regular-frame-no-internal-root.txt}. It proves an explicit entropy
+gap, so no compactness argument or positive lower bound on candidate-class
+sizes is needed. It does not audit configuration factorial counts,
+simplicity conditioning, small supports, running time, or priority.
+All entropies and divergences use natural logarithms. The vector identity
+used below is over the ordinary integers or reals, not a finite field.
+
+\paragraph{Model for the local laws.}
+Let $Q=(d_{ij})_{1\leq i,j\leq k}$ be a nonnegative integer frame with
+\[
+ \sum_jd_{ij}=d\geq3\quad\text{for every }i.
+\]
+Allow $d_{ii}=0$ or $1$, and allow $k=1$. Let positive numbers
+$\alpha_i$ sum to one and satisfy the reversible balance equations
+$\alpha_i d_{ij}=\alpha_jd_{ji}$. Put
+\[
+ w_{ii}=\frac{\alpha_i d_{ii}}2,\qquad
+ w_{ij}=\alpha_i d_{ij}\quad(i<j),\qquad
+ \alpha_{\min}=\min_i\alpha_i.
+\]
+Zero-weight terms are omitted throughout. No connectedness is required
+for this local inequality; the connected-frame model is a special case.
+
+Fix a finite candidate label set $[r]$, represented by distinct unit
+vectors $e_1,\ldots,e_r\in\mathbb R^r$, and a nonnegative integer
+$r\times r$ matrix $R$. For old type $i$, let $P_i$ be a law on an
+ordered star $(X_i,Y_{i,1},\ldots,Y_{i,d})$, with exactly $d_{ij}$ slots
+whose old neighbor type is $j$. Every supported star obeys
+\begin{equation}
+ \sum_{s=1}^d e_{Y_{i,s}}=R_{X_i,*}.                 \label{legal}
+\end{equation}
+Denote the root law by $\rho_i$. Define $\pi_{ij}$ to be the pair law
+$(X_i,Y_{i,s})$ pooled uniformly over all type-$j$ slots. Assume the
+matching constraints
+\[
+ \pi_{ii}(x,y)=\pi_{ii}(y,x),\qquad
+ \pi_{ij}(x,y)=\pi_{ji}(y,x).
+\]
+The first marginal of $\pi_{ij}$ is $\rho_i$; matching and balance give
+its second marginal $\rho_j$. Define
+\begin{equation}
+ \begin{split}
+ \Phi(P)&=\sum_i\alpha_iH(P_i)
+                  -\sum_{i\leq j}w_{ij}H(\pi_{ij}),\\
+ \delta(P)&=\sum_i\alpha_i\bigl(1-\max_x\rho_i(x)\bigr).
+ \end{split}                                      \label{functional}
+\end{equation}
+The defect $\delta$ is the minimum weighted disagreement with an
+old-block point map $T:[k]\to[r]$. Such a map need not be onto.
+
+\begin{theorem}[Explicit all-slot rigidity]
+For every collection of legal laws just specified,
+\begin{equation}
+ \Phi(P)\leq
+ -\frac{\alpha_{\min}(d-2)^3}{4d^6(d-1)}\,\delta(P)^2
+ \leq -\frac{\alpha_{\min}}{8D^6}\,\delta(P)^2
+ \quad\text{if }3\leq d\leq D.                    \label{gap}
+\end{equation}
+Moreover $\Phi(P)=0$ if and only if every root law is a point mass,
+$\rho_i=\delta_{T(i)}$, and the one-hot matrix of this map satisfies
+$QT=TR$. There is no assumption of an internal slot, distinct rows of
+$R$, invertibility of $R$, or a positive mass for every candidate label.
+\end{theorem}
+
+\begin{proof}
+Symmetrize each $P_i$ over permutations of slots within each old neighbor
+type, without permuting slots across different types. This preserves
+\eqref{legal}, the root laws, and all pooled pair laws. Concavity of
+entropy increases $H(P_i)$, so it suffices to prove the upper bound for
+the symmetrized laws. The resulting laws need not be empirical integer
+types: only an analytic entropy inequality is being used.
+
+Work henceforth with these within-type exchangeable laws. For every
+physical slot $t$, the legal vector sum determines $Y_{i,t}$ uniquely
+from the root and all retained slots. Thus
+\[
+ H(P_i)=H(\rho_i)+H((Y_{i,s})_{s\ne t}\mid X_i).
+\]
+Let the nonnegative conditional total correlation of those retained
+slots be
+\[
+ J_{it}=\sum_{s\ne t}H(Y_{i,s}\mid X_i)
+                  -H((Y_{i,s})_{s\ne t}\mid X_i).
+\]
+Averaging the displayed entropy identity over \emph{all} $d$ omissions
+gives exactly
+\begin{equation}
+ H(P_i)=H(\rho_i)+\frac{d-1}{d}\sum_{s=1}^d
+ H(Y_{i,s}\mid X_i)-\frac1d\sum_{t=1}^dJ_{it}.
+                                                        \label{average}
+\end{equation}
+No exchangeability between different old neighbor types was used.
+
+Write $I_{ij}=I(X_i;Y_{i,s})$ for any type-$j$ slot after the within-type
+symmetrization. Matching reversal makes $I_{ij}=I_{ji}$. The sum of
+conditional entropies in \eqref{average} is
+\[
+ \sum_jd_{ij}\bigl(H(\rho_j)-I_{ij}\bigr).
+\]
+On weighting by $\alpha_i$, reversibility and row regularity yield
+\[
+ \sum_i\alpha_i\sum_jd_{ij}H(\rho_j)
+       =d\sum_j\alpha_jH(\rho_j),\qquad
+ \sum_i\alpha_i\sum_jd_{ij}I_{ij}
+       =2\sum_{i\leq j}w_{ij}I_{ij}.
+\]
+The factor two in the second identity includes internal terms because
+$w_{ii}=\alpha_i d_{ii}/2$. Similarly
+\[
+ \sum_{i\leq j}w_{ij}H(\pi_{ij})
+ =d\sum_i\alpha_iH(\rho_i)-\sum_{i\leq j}w_{ij}I_{ij}.
+\]
+Substitution proves the exact cancellation
+\begin{equation}
+ L:=-\Phi(P)=\frac{d-2}{d}\underbrace{\sum_{i\leq j}w_{ij}I_{ij}}_{E}
+   +\frac1d\underbrace{\sum_i\alpha_i\sum_tJ_{it}}_{J}\geq0.
+                                                        \label{cancellation}
+\end{equation}
+In particular the internal coefficient has the correct double-counting
+factor even when $d_{ii}=1$, and a zero internal degree contributes no
+term at all.
+
+For each $i,t$, let $P_i^{-t}$ be the retained-star law including the
+root. Define an auxiliary law $\mathsf Q_{it}$ that keeps the same root
+law $\rho_i$ and samples all retained neighbor labels independently,
+independently also of the root, using their neighboring root laws.
+The divergence is finite: every positive actual tuple has positive
+probability under the product of its marginals. Direct expansion gives
+\begin{equation}
+ \kappa_{it}:=\KL(P_i^{-t}\Vert\mathsf Q_{it})
+   =J_{it}+\sum_{s\ne t}I(X_i;Y_{i,s}).              \label{kl}
+\end{equation}
+For one fixed old type $i$, set
+$A_i=\alpha_i\sum_{s=1}^dI(X_i;Y_{i,s})$.
+Its internal edge contributes twice its weight in $E$ and each incident
+cross edge contributes once; hence $A_i\leq2E$. Also
+$\alpha_i\sum_tJ_{it}\leq J$. Summing \eqref{kl} over all omissions
+therefore gives
+\begin{align}
+ \alpha_i\sum_t\kappa_{it}
+ &\leq J+2(d-1)E\notag\\
+ &\leq \frac{2d(d-1)}{d-2}\,L.                    \label{sumkl}
+\end{align}
+The last step compares the coefficients separately in
+\eqref{cancellation}: the required maximum is
+$\max\{d,2d(d-1)/(d-2)\}=2d(d-1)/(d-2)$.
+It does not assume different local divergences are disjoint globally.
+
+For each slot of the fixed old type $i$, put
+\[
+ \mu_s=\E e_{Y_{i,s}},\qquad
+ V_s=\E\|e_{Y_{i,s}}-\mu_s\|_2^2
+     =1-\|\rho_{j(s)}\|_2^2,
+\]
+where $j(s)$ is that slot's old neighbor type. For omission $t$ define
+\[
+ W_t=R_{X_i,*}-\sum_{s\ne t}e_{Y_{i,s}},\qquad
+ f_t=\|W_t-\mu_t\|_2^2,
+\]
+as functions of retained data. Under $P_i^{-t}$, the legal equation
+gives $W_t=e_{Y_{i,t}}$, so $\E_{P_i^{-t}}f_t=V_t$. Under
+$\mathsf Q_{it}$, all retained neighbors are independent of each other
+and of the root, giving
+\begin{equation}
+ \E_{\mathsf Q_{it}}f_t
+ =\sum_{s\ne t}V_s+B_i,\qquad
+ B_i=\E\left\|R_{X_i,*}-\sum_{s=1}^d\mu_s\right\|_2^2\geq0.
+                                                        \label{variance}
+\end{equation}
+The same $B_i$ occurs for every omission. This calculation uses no
+injectivity assumption on $x\mapsto R_{x,*}$.
+Consequently, writing $\Delta_t=\E_{\mathsf Q_{it}}f_t-
+\E_{P_i^{-t}}f_t$,
+\begin{equation}
+ \sum_{t=1}^d\Delta_t=(d-2)\sum_{s=1}^d V_s+dB_i
+                  \geq(d-2)\sum_sV_s.              \label{sumvariance}
+\end{equation}
+Individual $\Delta_t$ need not be nonnegative; only this sum is used.
+
+Every occupied row $R_{X_i,*}$ is a nonnegative count vector of mass $d$
+by \eqref{legal}. The retained sum plus $\mu_t$ is another nonnegative
+vector of mass $d$, even on auxiliary tuples that are not legal stars.
+Thus $0\leq f_t\leq2d^2$ under both laws. The range form of total
+variation and natural-logarithm Pinsker give
+\[
+ |\Delta_t|\leq2d^2\TV(P_i^{-t},\mathsf Q_{it})
+               \leq2d^2\sqrt{\kappa_{it}/2}.
+\]
+Cauchy--Schwarz, \eqref{sumkl}, and \eqref{sumvariance} now imply
+\[
+ (d-2)\sum_sV_s
+ \leq2d^2\sqrt{\frac d2\sum_t\kappa_{it}}
+ \leq2d^2\sqrt{\frac{d^2(d-1)}{\alpha_i(d-2)}L}.
+\]
+Squaring gives the useful local estimate
+\begin{equation}
+ L\geq\frac{\alpha_i(d-2)^3}{4d^6(d-1)}
+             \left(\sum_sV_s\right)^2.              \label{localgap}
+\end{equation}
+
+For every probability vector $\rho$,
+$1-\|\rho\|_2^2\geq1-\max_x\rho(x)$. Hence some old type $j$ has
+$V_j:=1-\|\rho_j\|_2^2\geq\delta(P)$. There is an old type $i$ with
+$d_{ij}>0$: old type $j$ has positive degree, and reversibility supplies
+a reverse neighbor, or $i=j$ for an internal edge. One of the slots at
+that $i$ has variance $V_j$, so $\sum_sV_s\geq\delta(P)$. Apply
+\eqref{localgap} and $\alpha_i\geq\alpha_{\min}$ to prove the first
+bound in \eqref{gap}. Since $(d-2)^3/(d-1)\geq1/2$ for integer $d\geq3$
+and $d\leq D$, the second bound follows. Returning to the unsymmetrized
+laws preserves $\delta$ and can only decrease $\Phi$, so it also holds
+there.
+
+If $\Phi=0$, the gap forces $\delta=0$, and every root law is a point
+mass $T(i)$. Matching marginals force every old-type-$j$ neighbor label
+to equal $T(j)$. Every star is therefore deterministic, and
+\eqref{legal} becomes $(QT)_{i,*}=(TR)_{i,*}$ for each $i$.
+Conversely such a compatible point map produces deterministic star and
+pair laws, all their entropies vanish, and $\Phi=0$.
+\end{proof}
+
+\paragraph{The proposed zero-phase conditional variance is valid.}
+At $L=0$, \eqref{cancellation} forces every positive-weight pair mutual
+information and every $J_{it}$ to vanish. Thus each retained law is the
+root law times independent neighbor marginals. Also the omitted neighbor
+is independent of the root by its pair mutual information. Taking the
+conditional variance trace in \eqref{legal}, for each omission $t$,
+gives $V_t=\sum_{s\ne t}V_s$. Summing over all $t$ yields
+$(d-2)\sum_sV_s=0$. The explicit proof above is a quantitative version
+of precisely this valid argument, including slots of different types.
+
+\paragraph{Consequences and limits.}
+If $\alpha_i=N_i/n$ are empirical old-block proportions, the corresponding
+unnormalized configuration entropy is $n\Phi$. Thus types at defect at
+least $\varepsilon>0$ have count exponent at most
+$-n\alpha_{\min}\varepsilon^2/(8D^6)$. A separate fixed-alphabet exact
+type count then gives the macroscopic exclusion needed by the parent
+recovery theorem. There is no compactness boundary issue from tiny
+candidate classes or unused labels; occupied rows alone were used.
+Internal matchings, no internal edges, unequal positive proportions, and
+the one-class regular-graph case are covered. No parity condition enters
+this local entropy proof beyond feasibility of the star laws; graph
+factor construction imposes its own necessary parity conditions.
+
+The threshold $d\geq3$ is substantive. For $d=2,k=1$, an even cycle
+alternating two labels has $R=\left(\begin{smallmatrix}0&2\\2&0\end{smallmatrix}\right)$,
+positive root defect, and $\Phi=0$. Both the coefficient in
+\eqref{cancellation} and the variance-sum coefficient vanish there.
+Nothing here claims a result for degree-two covers, irregular total
+degrees, modular variance, noisy edits, or historical priority.
+\end{document}

@@ -1,0 +1,2249 @@
+                                                 Expander Decomposition for Non-Uniform Vertex Measures∗
+                                                                Daniel Agassy†             Dani Dorfman‡              Haim Kaplan§
+
+                                                                                        November 2, 2026
+
+
+
+
+arXiv:2510.23913v3 [cs.DS] 29 Oct 2026
+                                                                                              Abstract
+                                                     A (ϕ, ϵ)-expander-decomposition of a graph G (with n vertices and m edges) is a partition
+                                                 of V into clusters V1 , . . . , Vk with conductance Φ(G[Vi ]) ≥ ϕ, such that there are O(ϵm) inter-
+                                                 cluster edges. Such a decomposition plays a crucial role in many graph algorithms. [ADK23]
+                                                 gave a randomized Õ(m) time algorithm for computing a (ϕ, ϕ log2 n)-expander decomposition.
+                                                     In this paper we generalize this result for a broader notion of expansion. Let µ ∈ Rn≥0 be
+                                                 a vertex measure. A standard generalization of conductance         of a cut (S, S) is its µ-expansion
+                                                 ΦµG (S, S) = |E(S, S)|/ min{µ(S), µ(S)}, where µ(S) = v∈S µ(v).
+                                                                                                            P
+
+                                                 We present a randomized Õ(m) time algorithm for computing a (ϕ, ϕ log2 n · µ(V           )
+                                                                                                                                         m )-expander
+                                                 decomposition with respect to µ-expansion. A substantial portion of the exposition is adapted
+                                                 from [ADK23], and this work serves as a convenient reference for generalized expander decom-
+                                                 position.
+
+
+                                         1       Introduction
+                                                                                                  |E(S,S)|
+                                         The conductance of a cut (S, S) is ΦG (S, S) = min(vol(S),vol(S))   , where vol(S) is the sum of the
+                                         degrees of the vertices of S. The conductance of a graph G is the smallest conductance of a cut in G.
+                                              A (ϕ, ϵ)-expander decomposition of a graph G is a partition of the vertices of G into clusters
+                                         V1 , . . . , Vk , each with conductance Φ(G[Vi ]) ≥ ϕ such that there are at most O(ϵm) inter-cluster
+                                         edges, where ϕ, ϵ ≥ 0. Consider the problem of computing a (ϕ, ϵ)-expander decomposition for a
+                                         given graph G and ϕ > 0, while minimizing ϵ as a function of ϕ. It is known that a (ϕ, ϵ)-expander
+                                         decomposition, with ϵ = O(ϕ log n), always exists and that ϵ = Θ(ϕ log n) is best possible [SW19,
+                                         AALG17]. In a recent result, [ADK23] achieved a (ϕ, ϕ log2 n)-expander decomposition in Õ(m)
+                                         time.
+                                              The following is an overview on the result of [ADK23] which builds on [SW19]. The naive
+                                         way to compute an expander decomposition is to use an approximation algorithm for the sparsest
+                                         cut problem. Given an f (n)-approximation algorithm for the problem of finding a minimum con-
+                                         ductance cut, one can get a (ϕ, O(f (n) · ϕ log n))-expander decomposition algorithm by recursively
+                                         computing approximate cuts until all components are certified as expanders. The drawback of
+                                         this approach is a possible linear recursion depth (because of unbalanced cuts - one side has very
+                                             ∗
+                                             This work was supported in part by Israel Science Foundation grant no. 1595-19, 1156-23, and the Blavatnik
+                                         Family Foundation.
+                                           †
+                                             Tel Aviv University, danielagassy@mail.tau.ac.il
+                                           ‡
+                                             Max Planck Institute for Informatics, Saarbrücken , Germany, ddorfman@mpi-inf.mpg.de
+                                           §
+                                             Tel Aviv University, haimk@tau.ac.il
+
+
+                                                                                                  1
+small volume) which affects the running time. To solve this problem, Saranurak and Wang [SW19]
+developed a sparse cut algorithm that either returns a balanced sparse cut or an unbalanced sparse
+cut in which the larger side is an expander (and therefore they only need to recur on the smaller
+side of the cut). Their algorithm is based on the Cut-Matching Game [KRV09].
+    Cut-matching: The cut-matching game, played by a cut player and a matching player to
+construct an expander, is a well known technique to reduce the approximation task for sparsest
+cut to a polylogarithmic number of maximum flow problems [KRV09]. Khandekar et al. [KRV09]
+devised a strategy for the cut player that translates to an O(log2 n) approximation algorithm for
+the sparsest cut problem. This cut player of [KRV09] is robust, in the sense that it is simple and
+can be flexibly adapted for other applications [RST14, SW19]. A more sophisticated spectral cut
+player was devised by Orecchia et al. [OSVV08] which yields O(log n) approximation. This cut
+player is less flexible and harder to modify.
+    By modifying the cut-matching game and the cut player of [KRV09], [SW19] achieved a (ϕ, ϕ log3 n)-
+expander decomposition in Õ( m  ϕ ) time. In a recent result [ADK23] were able by a careful spectral
+analysis, to combine the techniques of [SW19] and the spectral cut player of [OSVV08] to get a
+(ϕ, ϕ log2 n)-expander decomposition in Õ( m  ϕ ) time. Using the recent fair-cuts result [LNPS22],
+both expander decomposition algorithms [SW19, ADK23] can be implemented in Õ(m) time.
+    A useful generalization of conductance is µ-expansion. Let µ ∈ V → Rn≥0 be a vertex mea-
+                                                             |E(S,S)|
+sure. The µ-expansion of a cut (S, S) is ΦµG (S, S) = min(µ(S),µ(S))
+                                                                                       P
+                                                                      , where µ(S) = v∈S µ(v). If
+min(µ(S), µ(S)) = 0 then ΦµG (S, S) = ∞. Note that by setting µ(v) = degG (v), we get con-
+ductance. The µ-expansion of G is defined as Φµ (G) = minS⊆V ΦµG (S, S). We say that G is a
+(ϕ, µ)-expander if Φµ (G) ≥ ϕ.
+     A (ϕ, ϵ, µ)-expander decomposition of a graph G is a partition of the vertices of G into clusters
+V1 , . . . , Vk , each with µ-expansion Φµ (G[Vi ]) ≥ ϕ such that there are at most O(ϵm) inter-cluster
+edges, where ϕ, ϵ ≥ 0 and µ ∈ V → Rn≥0 .
+     Our Contribution: In this paper we generalize the result of [ADK23] to the notion of µ-
+expansion and present an Õ(m) algorithm for computing a (ϕ, ϕ log2 n µ(V        )
+                                                                               m )-expander decompo-
+sition with respect to µ-expansion. The generalization is quite straightforward; we derive it by
+modifying a simplified version of [ADK23] (this simplification is possible due to a recent result on
+fair-cut [LNPS23]). As an immediate consequence of our balanced sparse cut procedure, used in the
+expander decomposition algorithm (see Lemma 3.1), we get an O(log n) approximation algorithm
+to the balanced sparse cut problem with respect to a vertex measure µ ∈ Rn≥0 .
+     The core ideas of this paper are the same as in our previous work [ADK23]. However, the gen-
+eralization we pursue here alters the technical development and many internal details substantially.
+For this reason, rather than layering modifications onto [ADK23], we provide a fresh and self-
+contained account of the result. Several passages are therefore intentionally adapted from [ADK23]
+to maintain continuity and clarity of exposition.
+     Related work: In a recent paper, Ameranis et al. [AOTT22] use a generalized notion of µ-
+expansion, also mentioned in [Ore11], where they allowed to consider overlapping partitions of V .
+They define a corresponding generalized version of the cut-matching game, and show how to use
+a cut strategy for this game to get an approximation algorithm for two generalized cut problems.
+They claim that one can construct a cut strategy for this measure using ideas from [Ore11].1
+      The structure of this paper is as follows. Section 2 contains basic definitions. In section 3 we
+  1
+      The details of such a cut player do not appear in [AOTT22] or [Ore11].
+
+
+                                                          2
+present a version of the cut-matching game, together with a cut player and a matching player which
+are suitable for our expander decomposition algorithm with respect to a vertex measure µ. Finally,
+Section 4 contains the balanced cut algorithm, from which we obtain an expander decomposition in
+a standard way which is described in Section 5. Appendix A contains proofs that were deferred from
+the main text. Appendices B and C contain algebraic tools and probabilistic lemmas, respectively.
+
+
+2        Preliminaries
+Throughout the paper we work with the undirected graph G = (V, E). Let n := |V | and m := |E|.
+We denote the transpose of a vector or a matrix x by x′ . That is if v is a column vector then v ′
+                                                               √
+is the corresponding row vector. For a vector v ∈ Rk≥0 , define v to be vector whose coordinates
+are the square roots of those of v. Given A ∈ Rk×l , we denote by A(i, j) the element at the i’th
+row and j’th column of A. We denote by A(i, ), A(, i) the i’th row and column of A, respectively.
+We think of both A(i, ) and A(, i) as column vectors. We use the abbreviation A(i) := A(i, ) only
+with respect to the rows of A. Given a vector v ∈ Rk , we denote its i’th element by v(i). For
+disjoint A, B ⊆ V , we denote by EG (A, B) the set of edges connecting A and B. We denote by
+|EG (A, B)| the number of edges in EG (A, B), or the sum of their weights if the graph is weighted.
+We sometimes omit the subscript when the graph is clear from the context. For a weighted graph
+H = (V, E, w), we define degH (v) = w (EH ({v}, V \ {v})). If A = V \ B, then we call (A, B) a cut.
+                                                                                2
+         P the paper we work with an arbitrary vertex measure µ : V → R≥0 . For S ⊆ V we let
+Throughout
+µ(S) = v∈S µ(v). We define the set of terminals to be T = {v ∈ V | µ(v) > 0}. We assume the
+following on µ. This assumption is mainly used in the proof of Lemma 4.9.
+                                           1
+Assumption 2.1. For every v ∈ T we have poly(n) ≤ µ(v) ≤ poly(n).
+
+   We show in Appendix D how to remove Assumption 2.1 and obtain refined guarantees that
+depends on the support size and range of the vertex measure µ.
+
+Definition 2.2 (µ-Matching). Given a vertex measure µ ∈ Rn≥0 and a collection of weighted pairs
+M = {(ui , vi , wi )}ki=1 . We say that M is a µ-matching if the graph defined by M satisfies degM (v) =
+µ(v), for every v.
+
+Definition 2.3 (µ-stochastic). Let µ ∈ Rn≥0 be a vertex measure. A matrix F ∈ Rn×n is called
+µ-stochastic if the following two conditions hold: (1) F · 1n = µ and (2) 1′n · F = µ′ .
+
+Definition 2.4 (Laplacian, Normalized Laplacian). Let A ∈ Rn×n be a symmetric matrix and
+let d = A · 1n , D = diag(d). The Laplacian of A is defined as L(A) = D − A. The normalized-
+                                         1         1          1     1
+Laplacian of A is defined as N (A) = D− 2 L(A)D− 2 = I − D− 2 AD− 2 . The (normalized) Laplacian
+of an undirected graph is defined analogously using its adjacency matrix.
+
+Definition 2.5 (µ-expansion). Let G = (V, E) and S ⊂ V , S ̸= ∅. Let µ ∈ Rn≥0 . The µ-expansion
+of the cut (S, S) satisfying min(µ(S), µ(S)) > 0, denoted by ΦµG (S, S), is
+
+                                                              |E(S, S)|
+                                            ΦµG (S, S) =                   .
+                                                           min(µ(S), µ(S))
+    2
+        We identify the set V with [n], and therefore we sometimes write µ ∈ Rn
+                                                                              ≥0 .
+
+
+
+
+                                                            3
+The µ-expansion of G is defined to be
+
+                                          Φµ (G) =          min          ΦG (S, S)
+                                                            S⊆V
+                                                      min(µ(S),µ(S))>0
+
+.
+
+Definition 2.6 (µ-Expander, µ-Near-Expander). Let G = (V, E). We say that G is a (ϕ, µ)-
+expander if Φµ (G) ≥ ϕ. Let A ⊆ V . We say that A is a near (ϕ, µ)-expander in G if
+
+                                                           |E(S, V \ S)|
+                                             min                            ≥ ϕ.
+                                           S⊆A          min(µ(S), µ(A \ S))
+                                       0<µ(S)≤µ(A)/2
+
+    That is, a near expander is allowed to use cut edges that go outside of A. Note that a subset of
+a near expander is also a near expander. This notion is useful in several contexts. Specifically, using
+the “trimming” algorithm of [SW19], under certain conditions on A, one can extract an expander
+B ⊆ A by “trimming” a part of A (see Theorem 5.1).
+
+Definition 2.7 (Embedding). Let G = (V, E) be an undirected graph. Let F ∈ RV≥0×V be a matrix
+(not necessarily symmetric). We say that F is embeddable in G with congestion c, if there exists a
+multi-commodity flow f in G, with |V | commodities, one for each vertex (the vertex v is the source
+of its commodity), such that, simultaneously for each (u, v) ∈ V × V , f routes F (u, v) units of u’s
+commodity from u to v, and the total flow on each edge is at most c times the capacity of the edge.
+    If F is the weighted adjacency matrix of a graph H on the same vertex set V , we say that H is
+embeddable in G with congestion c if F is embeddable in G with congestion c.3
+
+Lemma 2.8. Let G, H be two graphs on the same vertex set V . Let A ⊆ V . Assume that H is
+embeddable in G with congestion c, and that A is a near (ϕ, µ)-expander in H. Then, A is a near
+( 2ϕ
+   c , µ)-expander in G.
+
+Proof. Let S ⊆ A, S = V \ S be a cut, and assume 0 < µ(S) ≤ µ(A \ S). In the embedding of H in
+G, each edge (u, v) ∈ E(H) corresponds to wH (u, v) units of flow, routed in G from u to v. Since
+each edge of G carries at most c units of flow (times its capacity, for weighted graphs) we get that
+|EG (S, S)| ≥ 2c |EH (S, S)|.4 Since A is a near (ϕ, µ)-expander in H, we get that
+
+
+                                                   |EG (S, S)|   2 |EH (S, S)|   2ϕ
+                                   ΦµG (S, S) =                ≥               ≥    .
+                                                     µ(S)        c µ(S)           c
+
+
+
+Corollary 2.9. Let G, H be two graphs on the same vertex set V . Assume that H is embeddable
+in G with congestion c, and that H is a (ϕ, µ)-expander. Then, G is a ( 2ϕ
+                                                                         c , µ)-expander.
+
+Proof. This follows from Lemma 2.8 by choosing A = V .
+    3
+        This definition requires to route F (u, v) = F (v, u) units both from u to v and from v to u if F is symmetric.
+    4
+        Recall that by definition for every {u, v} ∈ E(H) we send flow in G in both directions.
+
+
+
+
+                                                              4
+3       Balanced Sparse-Cut via spectral Cut-Matching
+In this section we state our main theorem and present our algorithm, whose analysis appears in the
+next section. The result of [ADK23] for finding a balance sparse cut for the case of conductance is a
+special case of our theorem in which the vertex measure corresponds to degrees (i.e. µ(v) = degG (v)
+for every v ∈ V ).
+
+Theorem 3.1. Given a graph G = (V, E) with n vertices and m edges, a vertex measure µ ∈ Rn≥0
+that satisfies Assumption 2.1 and a parameter ϕ > 0, there exists a randomized algorithm which
+takes Õ (m) time5 and must end with one of the following three cases:
+
+    1. We certify that G has µ-expansion Φµ (G) = Ω(ϕ).
+                                                 µ
+    2. We
+         finda cut (R, A) in G of µ-expansion ΦG (R, A) = O(ϕ log n), and µ(R), µ(A) are both
+            µ(V )
+        Ω   log n   , i.e, we find a relatively balanced low conductance cut.
+
+    3. We find a cut (R, A) with ΦµG (R, A) ≤ c0 ϕ log n for some constant c0 > 0, 0 < µ(R) ≤
+         µ(V )
+       10c0 log n , and A is a near (Ω(ϕ), µ)-expander in G.
+
+The correctness of the algorithm holds with high probability.6 .
+
+    This theorem is a straightforward generalization of [ADK23, Theorem 5.1]. The main algo-
+rithmic difference is the usage of fractional matchings during the cut matching game and zeroing
+out rows and columns in the random walk matrix that correspond to vertices v ∈   / T . (Recall that
+T = {v ∈ V | µ(v) > 0}.)
+    To get Theorem 3.1 we use the cut matching game, specified in the next subsection. Theorem 3.1
+implies the following theorem.
+
+Theorem 3.2. Given a graph G = (V, E) with n vertices and m edges, a vertex measure µ ∈ Rn≥0
+that satisfies Assumption 2.1, and a parameter ϕ > 0, there is a randomized algorithm that with
+high probability finds a partition of V into clusters V1 , ..., Vk such that ∀i : ΦµG[Vi ] = Ω(ϕ) and
+P                                2
+   i |E(Vi , Vi )| = O(ϕµ(V ) log n). The running time of the algorithm is Õ(m).
+
+    The derivation of Theorem 3.2 using Theorem 3.1 uses the same methods as in [SW19, LNPS23,
+ADK23]. For completeness, we give this derivation in Section 5.
+    The rest of this section is organized as follows. In Section 3.1 we introduce a generalized version
+of the cut matching game of [ADK23]. In Sections 3.2 and 3.3 we present a cut player and a
+matching player, respectively. Finally, in Section 3.4 we present the algorithm for Theorem 3.2
+using the cut and matching players.
+
+3.1     Cut matching for µ-expansion
+The following is a generalized version of the cut matching games in [SW19, ADK23], suited for µ.
+    5
+    The Õ hides log n factors .
+    6
+    By “with high probability” we mean a probability of at least 1 − n1ℓ , where ℓ is an arbitrary constant that affects
+our running time linearly.
+
+
+
+
+                                                           5
+  The Cut-Matching game for µ-expansion, with parameters T and a vector µ:
+
+        • The game is played on a series of graphs Gi . Initially, G0 = ∅, A0 = V .
+
+        • At iteration t, the cut player produces two sets, Lt , Rt ⊆ At , and weights mt : Lt →
+                                                                µ(A )             µ(A )
+          R≥0 , m̄t : Rt → R≥0 .7 The weights satisfy mt (Lt ) ≤ 8 t , m̄t (Rt ) ≥ 2 t , and the total
+          weight mt (v) + m̄t (v) of each v ∈ Lt ∪ Rt is at most µ(v).
+
+        • The matching player responds with a set St ⊆ At and a µ-matching Mt that only matches
+          vertices in Lt \ St to vertices in Rt \ St .
+
+        • We set Gt+1 = Gt ∪ Mt , At+1 = At \ St . The union Gt ∪ Mt refers to the graph whose
+          weighted adjacency matrix is the sum of the weighted adjacency matrices of Gt and Mt .
+
+        • The game ends at iteration T , and the quality of the game is r, the near µ-expansion of
+          At in Gt .
+
+
+    Our cut matching game iteratively shrinks the domain At ⊆ V . So we start by introducing the
+following matrices that would be useful to work with a shrinking domain.
+
+Definition 3.3 (It , µt , Ut , Pt ). We define the following variables
+
+  1. It = diag(1At ∩T ) ∈ Rn×n . Similarly, 1t = It · 1.
+
+  2. µt = It · µ ∈ Rn , i.e the projection of µ onto At .
+
+  3. Ut = It · U = diag(µt ) ∈ Rn×n , where U = diag(µ).
+                 1 √                                                                        √
+                           µ′t ∈ Rn×n . This matrix projects on the orthogonal complement of µt .
+                          p
+  4. Pt = It − µ(A t)
+                      µ t
+
+                                                                                                1
+Remark 3.4. Throughout the paper we abuse the inverse notation and write U −1 (or U − 2 ) to the
+denote the pseudo inverse of U (i.e. inverse each entry on the diagonal if it is not zero).
+
+3.2      Cut player
+Let δ = Θ(log n) be a power of 2 which we formally set later in the proof of Lemma 4.12.8 The
+cut player implicitly maintains a µ-stochastic matrix Ft ∈ Rn×n , and the graph Gt which is the
+union of the matchings that it obtained so far from the matching player (t is the index of the
+round). The matrix Ft and the graph Gt have two crucial properties. First, we can embed (recall
+Definition 2.7) Ft in Gt with O( 1δ ) congestion (Lemma 4.4) and embed Gt in G with O( ϕ log     t
+                                                                                                    n)
+                                                     2
+congestion (Lemma 4.5). Second, after T = Θ(log n) rounds, At will be a near (Ω(1), µ)-expander
+in FT with high probability (Lemma 4.12). By Lemma 2.8, this implies that, with high probability,
+At will be a near (Ω(ϕ), µ)-expander in G.
+                                        1      1
+    We define the matrix Wt = (Pt U − 2 Ft U − 2 Pt )δ (we recall again that δ = Θ(log n) as specified
+above). This definition makes us “focus” only on the remaining vertices At ∩ T , as any row/column
+of Wt corresponding to a vertex v ∈ V \ (At ∩ T ) is zero. The matrix Wt is used in this section to
+  7
+      We denote mt (v) = 0 for each v ∈
+                                      / Lt and m̄t (v) = 0 for each v ∈
+                                                                      / Rt .
+  8
+      We need δ to be a power of 2 to apply Theorem B.3 to a δ matrix power later on.
+
+
+                                                         6
+define the projections that the cut player needs to update Ft . It is also used in Section 4.2 to define
+the potential that measures how far is the remaining part of the graph AT from a near µ-expander.
+In particular, we show in Lemma 4.12 and Corollary 4.13 that if WT2 has small eigenvalues (which
+will be the case when the potential is small) then AT is near (Ω(δ), µ)-expander in GT .
+    The cut player updates Ft as follows. Let r ∈ Rn be a random unit vector. Consider the
+                                                                                              √
+projections ui = √ 1 ⟨Wt (i), r⟩, for i ∈ At ∩ T and ui = 0 otherwise. Note that since Pt µt = 0,
+                          µ(i)
+and Wt is symmetric we have that:
+                                                             *                        +
+                X               Xp                               Xp                            √
+                       µ(i)ui =   µ(i) ⟨Wt (i), r⟩ =                  µ(i)Wt (i), r       = ⟨Wt µ, r⟩ = 0
+                i∈At             i∈At                        i∈At
+
+    We use the following lemma to partition (some of) the vertices of At into two weighted sets Alt
+and Art .9 The lemma is a continuous modification of [RST14, Lemma 3.3]. For completeness, we
+include the proof in Appendix A.
+                                                                                    P
+Lemma 3.5 ([RST14, Lemma 3.3]). Given ui ∈ R for all i ∈ At , such that i∈At µ(i)ui = 0, we
+can find in time O(|At | · log(|At |)) disjoint sets of source nodes Alt ⊆ At and target nodes Art ⊆ At ,
+weights µ(i)/4 ≤ mt (i) ≤ µ(i) for all i ∈ Alt , µ(i)/4 ≤ m̄t (i) ≤ µ(i) for all i ∈ Art , and a separation
+value η ∈ R such that:
+   1. η separates the sets Alt , Art , i.e., either maxi∈Al ui ≤ η ≤ minj∈Art uj , or mini∈Al ui ≥ η ≥
+                                                          t                                 t
+      maxj∈Art uj ,
+
+   2. ∀i ∈ V : mt (i) + m̄t (i) ≤ µ(i),
+
+   3. m̄t (Art ) ≥ µ(A t)     l
+                     2 , mt (At ) ≤
+                                    µ(At )
+                                      8 ,
+
+   4. ∀i ∈ Alt : (ui − η)2 ≥ 91 u2i ,
+      P              2    1 P             2
+   5.    i∈Al mt (i)ui ≥ 80
+                t               i∈At µ(i)ui .
+
+    The cut player sends Al , Ar and At to the matching player.
+    In turn, the matching player (see Subsection 3.3) returns a cut (St , At \ St ) and a fractional
+matching Mt of total weight mt (Alt \ St ) between Alt \ St and Art \ St . Define Nt = δ−1      1
+                                                                                         δ U + δ Mt , the
+                                                                           1
+lazy random walk that takes a step according to Mt with probability δ , and otherwise takes a step
+according to U . The cut player then updates Ft as follows: Ft+1 = Nt ·U −1 Ft U −1 Nt . Intuitively, this
+applies a weighted average of the rows and columns of Ft according to Mt , where each row/column
+“keeps” δ−1
+          δ fraction of its value. For the analysis, we update Gt+1 as Gt+1 = Gt ∪ Mt .
+                                                                                             10
+
+
+
+3.3       Matching player
+The matching player receives Alt and Art and the current At . For a vertex v ∈ V , denote by
+mt (v) the weight of v in Alt , and by m̄t (v) the weight of v in Art (mt (v) + m̄t (v) ≤ µ(v)). The
+matching player solves the flow problem on G[At ], specified by the following lemma, that closely
+resembles [LNPS23, Lemma 8.1] when setting V = At . For completeness, we include the proof in
+Appendix A.2.
+   9
+       Note that this does not produce a bisection of At .
+  10
+       We allow parallel edges.
+
+
+                                                             7
+Lemma 3.6 ([LNPS23, Lemma 8.1]). Let G = (V, E) be a graph with n vertices, let Al , Ar ⊆ V
+be disjoint, and let ϕ > 0 be a parameter. For a vertex v ∈ V , denote by m(v) the weight of v in
+Al , and by m̄(v) the weight of v in Ar . Assume that m(v) + m̄(v) ≤ µ(v), that each positive weight
+m(v) or m̄(v) is at least µ(v)/4, and that m̄(Ar ) ≥ 21 µ(V ), m(Al ) ≤ 18 µ(V ). We define the flow
+problem Π(G), as the problem in which a source s is connected to each vertex v ∈ Al with an edge
+of capacity m(v) and each vertex v ∈ Ar is connected to a sink t with an edge of capacity m̄(v).
+Every edge of G has the same capacity c = c1 /(ϕ log n), where c1 > 0 is a fixed constant chosen in
+the proof of Corollary 4.13. A feasible flow for Π(G) is a maximum flow that saturates all the edges
+outgoing from s. Then, there exists a randomized algorithm, which in time Õ(|E|), finds either
+
+    1. A feasible flow f for Π(G); or
+
+    2. A cut S where ΦµG (S, V \ S) ≤ 7c = O(ϕ log n), µ(V \ S) ≥ 13 µ(V ) and a feasible flow for the
+       problem Π(G[V \ S]), where we only consider the sub-graph G[V \ S ∪ {s, t}] (that is, vertices
+       v ∈ Al \ S are sources of m(v) units, and vertices v ∈ Ar \ S are sinks of m̄(v) units).
+
+The correctness of the algorithm holds with high probability.
+
+Remark 3.7. It is possible that Al ⊆ S, in which case the feasible flow for Π(G[V \ S]) is trivial
+(the total source mass is 0).
+
+    Let St be the cut returned by the lemma. If the lemma terminates with the first case, we set
+St = ∅. Using dynamic trees [ST83], we can decompose the returned flow into a set of (at most
+m) weighted paths, each carrying some flow from a vertex u ∈ Alt \ St to a vertex v ∈ Art \ St .
+Each u ∈ Alt \ St is the starting point of exactly mt (u) ≤ µ(u) units of flow, and each v ∈ Art \ St
+is the target of at most m̄t (v) ≤ µ(v) units of flow. Define the weighted matching M̃t as M̃t =
+             |Al \S |
+((ui , vi , wi ))i=1t t , where ui and vi are the endpoints of path i which carries wi flow. We can view
+M̃t as a symmetric n × n matrix, such that M̃t (u, v) = M̃t (v, u) = wuv , where wuv is the total flow
+sent on paths between u and v. We turn M̃t into a µ-stochastic matrix by increasing its diagonal
+entries by µ − M̃t 1n . Formally, we set Mt := M̃t + diag(µ − M̃t 1n ). Notice that µ − M̃t 1n has only
+non-negative entries, so Mt also has non-negative entries. The matching player sends back Mt , St
+as the response to the subsets Alt and Art given by the cut player.
+
+3.4    The Algorithm
+Let T = Θ(log2 n) and c = c1 /(ϕ log n). The algorithm for Theorem 3.1 is presented in Algorithm 1.
+The algorithm runs for at most T rounds and stops when µ(Rt ) > µ(V70)·c·ϕ = Ω( µ(V         )
+                                                                                       log n ). In each
+round t, we implicitly update Ft (see Section 3.2). In order to keep the running time near linear,
+we compute the flow of Lemma 3.6 using the fair cut result of [LNPS23]. The fair-cut routine may
+also return a cut St ⊆ At which satisfies ΦG[A] (St , At \ St ) ≤ 7c (with high probability), in which
+case we “move” St from At+1 to Rt+1 . After T rounds, FT certifies that the remaining part of AT
+is a near (Ω(ϕ), µ)-expander with high probability.
+
+
+4     Proof of Theorem 3.1
+In this section we prove that Algorithm 1 satisfies the conditions of Theorem 3.1. We start by
+giving a high-level overview of the analysis of our algorithm. The potential we use here to measure
+
+                                                   8
+Algorithm 1 Cut-Matching
+ 1: function Cut-Matching(G, ϕ, µ)
+ 2:    T ← Θ(log2 n), c ← c1 /(ϕ log n).
+ 3:    t ← 0.
+ 4:    A0 ← V , R0 ← ∅.
+ 5:    Set F0 ← U := diag(µ).
+ 6:    while µ(Rt ) ≤ µ(V70)·c·ϕ and t < T do
+ 7:        Update Ft to Ft+1 .                          ▷ Sections 3.2 and 3.3 describe this update.
+ 8:        This update returns St ⊆ At where ΦµG[At ] (St , At \ St ) ≤ 7c , or St = ∅.
+ 9:        At+1 ← At − St , Rt+1 ← Rt ∪ St .
+10:        t ← t + 1.
+11:    end while
+12:    if t = T then
+13:        if Rt = ∅ then
+14:            Certify that Φµ (G) = Ω(ϕ).                                    ▷ Case (1) of Theorem 3.1.
+15:        else if µ(Rt ) > µ(V70)·c·ϕ then return (AT , RT ).                ▷ Case (2) of Theorem 3.1.
+16:        else return (AT , RT ).                                            ▷ Case (3) of Theorem 3.1.
+17:        end if
+18:    else
+19:        return (At , Rt ).                                                 ▷ Case (2) of Theorem 3.1.
+20:    end if
+21: end function
+
+
+                                                                         2
+the progress of the cut player is ψ(t) = Tr[Wt2 ] =
+                                                         P
+                                                            i∈At ∥Wt (i)∥2 ,   where Wt was defined as
+           − 21   − 21
+Wt = (Pt U Ft U          Pt )δ .
+                             Recall δ = O(log n) is a power of 2, which is specified in the proof of
+Lemma 4.12.
+    Our key technical Lemmas 4.8 and 4.9 carefully establish the decrease in potential achieved
+by the cut player, taking into account the matchings and the deleted cuts. We conclude in Corol-
+lary 4.11 that after O(log2 n) iterations the potential falls below 1/n with high probability. We then
+prove, using our variation on Cheeger’s inequality (see Lemma 4.12), that having a small potential
+means that At is a near (Ω(1), µ)-expander in Ft .
+    Using the fact that Ft is embeddable in Gt (Lemma 4.4) and that Gt is embeddable in G
+(Lemma 4.5) we can conclude that if we reach round T , then with high probability, AT is a near
+(Ω(ϕ), µ)-expander in G (Corollary 4.13).
+    This section is organized as follows. Subsection 4.1 shows that Ft is embeddable in Gt with
+congestion 4δ and that Gt is embeddable in G with congestion 2c · t. Subsection 4.2 shows that if
+we reach round T , then with high probability, AT is a near (Ω(ϕ), µ)-expander in G. Finally, in
+Subsection 4.3 we prove Theorem 3.1.
+
+4.1   Ft is embeddable in G
+To begin the analysis of the algorithm, we first define a blocked matrix. This notion will be useful
+when our matrices “operate” only on vertices of At .
+
+
+
+
+                                                   9
+Definition 4.1. Let A ⊆ V . A matrix B ∈ Rn×n is A-blocked if B(i, j) = 0 for all i ̸= j such that
+(i, j) ∈
+       / A × A. Diagonal entries may be non-zero.
+Lemma 4.2. The following holds for all t:
+  1. Mt , Nt , Ft and Wt are symmetric.
+
+  2. Mt and Nt are At ∩ T -blocked. Ft is T -blocked.
+
+  3. Mt , Nt and Ft are µ-stochastic.
+Proof.      1. This is clear from the definitions.
+
+  2. Since M̃t is a matching of vertices in Alt \ St ⊆ At to vertices in Art \ St ⊆ At , then M̃t (i, j) = 0
+     for all i ̸= j such that (i, j) ∈/ At × At . After the addition of diag(µ − M̃t 1n ), we still have
+     Mt (i, j) = 0 for all i ̸= j such that (i, j) ∈
+                                                   / At ×At , so Mt is At -blocked. Now, for Nt , note that
+                                     / At × At , Nt (i, j) = δ−1
+     for all i ̸= j such that (i, j) ∈                                      1            δ−1      1
+                                                               δ U (i, j) + δ Mt (i, j) = δ · 0 + δ · 0 = 0.
+     Finally, Ft is T -blocked because it a product of T -blocked matrices.
+
+  3. For Mt this is true because we obtain it by explicitly making M̃t µ-stochastic. For Nt , note
+     that
+                                                  
+                                    δ−1        1            δ−1     1
+                          Nt 1n =        U + Mt 1n =            µ+ µ=µ
+                                      δ        δ             δ      δ
+
+     and 1′n Nt = µ′ follows from symmetry. For Ft , we use induction on t. F0 = U = diag(µ) is
+     clearly µ-stochastic. After step t,
+
+         Ft+1 1n = Nt U −1 Ft U −1 Nt · 1n = Nt U −1 Ft U −1 · µ = Nt U −1 Ft 1T = Nt U −1 · µ = Nt 1T = µ,
+                                                                               (4)                    (6)
+
+
+
+
+     where Equalities (4) and (6) follow from part 2 of Lemma 4.2. We get 1′n Ft+1 = µ′ from
+     symmetry.
+
+
+   The following lemmas show that Ft is embeddable in Gt and that Gt is embeddable in G. The
+proof of Lemma 4.3 is deferred to Appendix A.
+Lemma 4.3. Let F ∈ Rn×n be a µ-stochastic matrix, and let H be a graph. Fix any t. Assume
+that F is embeddable in H such that the congestion on each edge e ∈ H is c(e), then
+  1. Nt · U −1 F is embeddable in H ∪ Mt such that the congestion on edges of Mt is 2δ and the
+     congestion on each edge e ∈ H is still c(e).
+
+  2. F U −1 · Nt is embeddable in H ∪ Mt such that the congestion on edges of Mt is 2δ and the
+     congestion on each edge e ∈ H is still c(e).
+
+  3. Nt · U −1 Ft U −1 Nt is embeddable in H ∪ Mt such that the congestion on edges of Mt is 4δ and
+     the congestion on each edge e ∈ H is still c(e).
+Lemma 4.4. For all rounds t, Ft is embeddable in Gt with congestion 4δ .
+Proof. This is a direct consequence of Lemma 4.3.
+
+                                                     10
+Lemma 4.5. For all rounds t, Gt is embeddable in G with congestion 2ct.
+
+Proof. For every t, routing the flow paths from round t in both directions embeds Mt in G with
+congestion 2c. Summing these routings gives a routing of Gt = ti=1 Mi in G with congestion
+                                                                  S
+2c · t.
+
+4.2   AT is a near expander in FT
+In this section we prove that after T = Θ(log2 n) rounds, with high probability, AT is a near
+(Ω(1), µ)-expander in FT , which implies that it is a near (Ω(ϕ), µ)-expander in G.
+    The section is organized as follows. Lemma 4.6 proves matrix identities and Lemma 4.7 specifies
+a spectral property that our proof requires. We then define a potential function and lower bound
+the decrease in potential in Lemmas 4.8-4.11. Finally, in Lemma 4.12 and Corollary 4.13 we use
+the upper bound on the potential at round T , to show that with high probability AT is a near
+(Ω(1), µ)-expander in FT and a near (Ω(ϕ), µ)-expander in G.
+
+Lemma 4.6. The following relations hold for all t:
+
+  1. For any At ∩ T -blocked matrix B ∈ Rn×n that is either µt -stochastic or µ-stochastic, we have
+            1      1       1      1                 1      1       1      1
+     It U − 2 BU − 2 = U − 2 BU − 2 It and Pt · U − 2 BU − 2 = U − 2 BU − 2 · Pt .
+
+  2. It Pt = Pt , It2 = It and Pt2 = Pt .
+
+  3. Pt Pt+1 = Pt+1 Pt = Pt+1 .
+                1                     1
+  4. Pt = U − 2 L( µ(A
+                     1
+                       t)
+                          µt µ′t )U − 2 .
+                                                                                1       2
+  5. for any v ∈ Rn , it holds that v ′ L              1        ′
+                                                     µ(At ) µt µt       v = Ut2 v                 1
+                                                                                              − µ(A t)
+                                                                                                       ⟨v, µt ⟩2 .
+                                                                                          2
+                                                                    2
+  6. For any B ∈ Rn×n , Tr(It BB ′ ) =
+                                                 P
+                                                      i∈At ∩T ∥B(i)∥2 .
+                                                            1            1            1           1
+Proof.    1. Since B is At ∩ T -blocked, It U − 2 BU − 2 = U − 2 BU − 2 It . Under either stochasticity
+      assumption, the block property gives
+
+                                                  B 1t = µt ,                1′t B = µ′t .
+      Consequently,
+                                    1√                                          √
+                                         q               q               q        q
+                         U − 2 BU − 2 µt µ′t = U − 2 B 1t µ′t = U − 2 µt µ′t = µt µ′t ,
+                             1                     1                1
+
+
+
+                         √                      √               √              √
+                              q                                                   q
+                           µt µ′t U − 2 BU − 2 = µt 1′t BU − 2 = µt µ′t U − 2 = µt µ′t .
+                                      1      1               1              1
+
+
+
+
+      Thus,
+                                                         1 √
+                              1        1
+                                                                q          1      1
+                     Pt · U − 2 BU − 2 = (It −                µt  µ′t )U − 2 BU − 2
+                                                       µ(At )
+                                                                  1 √
+                                                  1      1
+                                                                             q         1      1
+                                            = U − 2 BU − 2 It −           µt µ′t = U − 2 BU − 2 · Pt .
+                                                                µ(At )
+
+                                                                11
+  2. The first and second equalities are clear from the definitions. For Pt ,
+                                 q                        q 
+              2           1 √         ′             1 √
+            Pt = It −           µt µt · It −               µt µ′t
+                        µ(At )                    µ(At )
+                         2 √               1 √             √                1 √
+                                 q                  q        q                    q
+                = It −              ′
+                               µt µt +                   ′        ′
+                                                  µt µt µt µt = It −            µt µ′t = Pt
+                       µ(At )           µ(At )2                          µ(At )
+  3. We show Pt Pt+1 = Pt+1 . The other direction follows by symmetry.
+                               q                                   
+                        1 √         ′               1   √      q
+                                                                   ′
+     Pt Pt+1 = It −          µt µt · It+1 −               µt+1 µt+1
+                      µ(At )                   µ(At+1 )
+                         1     √                1 √                          1         √       √
+                                      q                 q                                  q        q
+             = It+1 −            µt+1 µ′t+1 −         µt µ′t It+1 +                      µt µ′t µt+1 µ′t+1
+                      µ(At+1 )                µ(At )                 µ(At ) · µ(At+1 )
+                         1     √      q
+                                        ′       1 √     q
+                                                            ′        1 √ q ′
+             = It+1 −            µt+1 µt+1 −          µt µt+1 +             µt µt+1
+                      µ(At+1 )                µ(At )              µ(At )
+                         1     √      q
+             = It+1 −            µt+1 µ′t+1 = Pt+1 .
+                      µ(At+1 )
+
+  4. Since ⟨µt , 1⟩ = µ(At ), we get that the degree matrix of µ(A
+                                                                 1
+                                                                   t)
+                                                                      µt µ′t is Ut . Hence
+                              
+                     1                   1                      1 √
+                                                       1
+                                                                          q         1     1   1
+                             ′                    ′
+             L           µt µt = Ut −         µt µt = U (It −
+                                                       2               µt µ′t )U 2 = U 2 Pt U 2 .
+                  µ(At )               µ(At )                 µ(At )
+
+        The result follows since Pt is At ∩ T -blocked (and has zeros on the diagonal outside of the
+        block).
+  5.
+                                     
+              ′            1                          1                             1
+              vL                µt µt v = v ′ (Ut −
+                                    ′
+                                                           µt µ′t )v = v ′ Ut v −        v ′ µt µ′t v
+                         µ(At )                     µ(At )                        µ(At )
+                                                                                                2
+                                                 1        1        1                         1       1
+                                          = (Ut2 v)′ (Ut2 v) −          (v ′ µt )(µ′t v) = Ut2 v −         ⟨v, µt ⟩2 .
+                                                                 µ(At )                         2  µ(A t )
+                   P               2            2
+  6. Observe that    i∈At ∩T ∥B(i)∥2 = ∥It B∥F . Indeed, X = It B satisfies X(i, j) = B(i, j) if
+     i ∈ At ∩ T (and otherwise X(i, j) = 0). Therefore
+                       X
+                             ∥B(i)∥22 = ∥It B∥2F = Tr((It B)(It B)′ ) = Tr(It BB ′ It )
+                                i∈At ∩T
+                                                     = Tr(It2 BB ′ ) = Tr(It BB ′ ).
+        Where the fourth equality follows from Fact B.1 and the last equality follows from (2).
+
+                                                                                  2
+   We define the potential ψ(t) = Tr[Wt2 ] =
+                                                                 P
+                                                                     i∈At ∥Wt (i)∥2 , where Wt was defined as Wt         =
+       − 12   − 12
+(Pt U Ft U           Pt )δ . Intuitively, by projecting using Pt , the potential only “cares” about the vertices
+of At ∩ T . We prove in Lemma 4.12 that having small potential certifies that AT is a near expander
+in Ft .
+    Before we bound the decrease in potential, we recall Definition 2.4 of a normalized Laplacian
+             1         1           1      1
+N (A) = U − 2 L(A)U − 2 = IT − U − 2 AU − 2 , where A is a symmetric T -blocked µ-stochastic matrix.
+The proof of the following technical lemma appears in Appendix A.
+
+                                                                12
+                                                                    1         1
+Lemma 4.7. For any matrix A ∈ Rn×n , Tr(A′ (IT − (U − 2 Nt U − 2 )4δ )A) ≥ 31 Tr(A′ N (Mt )A).
+
+   In the following lemma we bound the decrease in potential. The bound consists of the contri-
+bution of the matched vertices and it also takes into account the removal of St from At .
+
+Lemma 4.8. For each round t,
+                                                                        ! 2                          2
+                           1                      W (i)  Wt (k)                              Wt (j)
+                                                  pt
+                                  X                                               X
+         ψ(t) − ψ(t + 1) ≥                 wik          −p                    +         µ(j) p
+                           3                       µ(i)   µ(k)                                µ(j) 2
+                                {i,k}∈Mt                                    2   j∈St ∩T
+
+                                                               1        1               1      1
+Proof. To simplify the notation, we denote N̄t := U − 2 Nt U − 2 and F̄t := U − 2 Ft U − 2 . We rewrite
+the potential in the next iteration as follows:
+                                                                          2δ 
+                                  2                     − 12          − 12
+                ψ(t + 1) = Tr(Wt+1 ) = Tr       Pt+1 U Ft+1 U Pt+1
+                                                                           2δ 
+                                        − 12      −1        −1         − 12
+                         = Tr     Pt+1 U (Nt U Ft U Nt )U Pt+1
+                                                                                   2δ 
+                                        − 12      − 12 − 12       − 12 − 12     − 12
+                         = Tr     Pt+1 U (Nt U U Ft U U Nt )U Pt+1
+                                                   2δ 
+                         = Tr Pt+1 N̄t F̄t N̄t Pt+1
+                         (6)
+                                                   2δ 
+                         = Tr N̄t Pt+1 F̄t Pt+1 N̄t
+                         (7)
+                                                         2δ 
+                         = Tr N̄t Pt+1 Pt F̄t Pt Pt+1 N̄t
+                                                            2δ 
+                         = Tr N̄t Pt+1 (Pt F̄t Pt )Pt+1 N̄t          ,
+
+where Equality (6) follows from part 1 of Lemma 4.6 for Nt (which is At+1 -blocked µ-stochastic by
+Lemma 4.2), and Equality (7) follows from part 3 of Lemma 4.6.
+    By Properties (1) and (2) of Lemma 4.6 it holds that N̄t Pt+1 = Pt+1 N̄t = Pt+1 N̄t Pt+1 . There-
+fore, the potential can be written in terms of symmetric matrices:
+                                                                     2δ 
+           ψ(t + 1) = Tr (Pt+1 N̄t Pt+1 )(Pt F̄t Pt )(Pt+1 N̄t Pt+1 )
+                    ≤ Tr((Pt+1 N̄t Pt+1 )2δ (Pt F̄t Pt )2δ (Pt+1 N̄t Pt+1 )2δ )
+                    (2)
+                    = Tr((Pt+1 N̄t Pt+1 )4δ (Pt F̄t Pt )2δ ) = Tr((N̄t Pt+1 )4δ Wt2 )
+                    (4)                     (5)
+                    = Tr(N̄t4δ Pt+1 Wt2 ) = Tr(N̄t2δ Pt+1 N̄t2δ Wt2 )
+                    (6)
+                    = Tr(Wt N̄t2δ Pt+1 N̄t2δ Wt )
+                                                              
+                    (7)        2δ − 21           1                    1
+                    = Tr(Wt N̄t U L                   µt+1 µt+1 U − 2 N̄t2δ Wt )
+                                                            ′
+                                             µ(At+1 )
+                                           ′                                            
+                              − 12     2δ                1          ′           − 12     2δ
+                    = Tr    U      · N̄t Wt · L               µt+1 µt+1 · U          · N̄t Wt    ,
+                                                     µ(At+1 )
+
+where the inequality follows from Theorem B.3, Equality (2) follows from Fact B.1, Equalities (4)
+and (5) follow from Properties (1) and (2) of Lemma 4.6 (and from the fact that Nt is At+1 -blocked
+
+                                                       13
+µ-stochastic, by Lemma 4.2), Equality (6) again uses Fact B.1 and Equality (7) follows from part
+4 of Lemma 4.6.
+                 1
+    Let Zt = U − 2 · N̄t2δ Wt . By applying part 5 of Lemma 4.6 we get
+                                             X      n                                       
+                  ′         1            ′                           ′         1             ′
+   ψ(t + 1) ≤ Tr Zt L             µt+1 µt+1 Zt =           (Zt (, i)) L             µt+1 µt+1 Zt (, i)
+                        µ(At+1 )                                          µ(At+1 )
+                                                       i=1
+                 n                                                       n
+                                                                   !
+                                 2                                                             2
+            (2)
+                X     1                    1                     2
+                                                                        X        1
+            =       Ut+1 Zt (, i) −
+                      2
+                                               ⟨Zt (, i), µt+1 ⟩     ≤           2
+                                                                              Ut+1 Zt (, i)
+                                 2    µ(At+1 )                                                 2
+                i=1                                                     i=1
+                 n                                                       2
+                X X p                   2    X            1
+                                                                             (5)
+                                                                                   X                   2
+            =               µ(j)Zt (j, i) =                 2
+                                                          Ut+1  Zt (j) =                    N̄t2δ Wt (j)
+                                                                                            2             2
+                i=1 j∈At+1                                j∈At+1                                 j∈At+1
+                X                        2       X                          2
+            =          N̄t2δ Wt (j)            −          N̄t2δ Wt (j)              ,                         (1)
+                                           2                                    2
+                j∈At                               j∈St
+
+where Equality (2) holds by Property (5) of Lemma 4.6 and Equality (5) holds since we only
+sum rows  in At+1 . Since N̄t is diagonal outside At+1 (By the definition of Mt ), we have that
+ N̄t2δ Wt (j) = Wt (j), for every j ∈ St . Thus,
+                                    X                    2  X
+                                               N̄t2δ Wt (j) =   ∥Wt (j)∥22 .                                  (2)
+                                                                 2
+                                    j∈St                                 j∈St
+
+   By part 6 of Lemma 4.6, we get
+                             X                  2                  X                         2
+                                      N̄t2δ Wt (j) =                                N̄t2δ Wt (j)              (3)
+                                                          2                                      2
+                             j∈At                                j∈At ∩T
+
+                                                              = Tr(It · N̄t2δ · Wt2 · N̄t2δ )
+                                                              = Tr(N̄t2δ · It · Wt2 · N̄t2δ )
+                                                              = Tr(N̄t2δ · Wt2 · N̄t2δ )
+                                                              = Tr(N̄t4δ Wt2 )                                (4)
+
+    where the first equality holds because Nt (i) = 0 for i ∈ T . The second equality holds by part 6
+of Lemma 4.6. The third equality holds since Nt is At+1 ∩ T -blocked µ-stochastic (by Lemma 4.2),
+so in particular it is At ∩ T -blocked µt -stochastic, and we can use part 1 of Lemma 4.6. The fourth
+equality holds because It Wt = It (Pt F̄t Pt )δ and It Pt = Pt (by part 2 of Lemma 4.6), and the last
+equality follows from Fact B.1. Plugging Equations (2) and (4) into (1) we get the following bound
+
+
+
+
+                                                               14
+on the decrease in potential:
+                                                          X
+          ψ(t) − ψ(t + 1) ≥ Tr((I − N̄t4δ )Wt2 ) +               ∥Wt (j)∥22
+                                                          j∈St
+                                                                 X
+                           = Tr(Wt (IT − N̄t4δ )Wt ) +                    ∥Wt (j)∥22
+                                                                 j∈St
+                            1                    X
+                           ≥ Tr(Wt N (Mt )Wt ) +   ∥Wt (j)∥22
+                            3
+                                                               j∈St
+                                                                                       2
+                            1        1                  1           X          Wt (j)
+                           = Tr((U − 2 Wt )′ L(Mt )(U − 2 Wt )) +         µ(j) p
+                            3                                                   µ(j) 2
+                                                                  j∈St ∩T
+                                                                               2           2
+                             1                    W (i)  Wt (k)               Wt (j)
+                                                  pt
+                                   X                               X
+                           =                wik         −p      +        µ(j) p
+                             3                     µ(i)   µ(k) 2 j∈St ∩T       µ(j) 2
+                                 {i,k}∈Mt
+
+    where the first equality follows from Fact B.1 and since as implied before IT Wt = Wt , the
+second inequality follows Lemma 4.7, and the last equality follows from Lemma B.5.
+
+   The following shows that the potential is expected to drop by a factor of 1 − Ω(1/ log n).
+Lemma 4.9. For each round t,
+                                                          
+                                    2                    2
+     1    X        Wt (i)    Wt (k)     X         Wt (j)          1               1
+  E           wik p      −p          +      µ(j) p          ≥             ψ(t) − α/16
+     3              µ(i)      µ(k) 2 j∈St ∩T       µ(j) 2      3000α log n       n
+       {i,k}∈M  t
+
+
+for some constant α, where the expectation is taken over the unit vector r ∈ Rn .
+                                                                               
+                                                                         Wt (i)
+                          1
+Proof. Recall that ui = √ ⟨Wt (i), r⟩ for i ∈ At ∩ T . Notice that √              (j) = W
+                                                                                        √t (i,j) . Use
+                          µ(i)                                             µ(i)           µ(i)
+                                                                             
+Lemma C.3 from Appendix C for the set of vectors √ 1 Wt (i) | i ∈ At ∩ T . By Lemma C.3(2),
+                                                                      µ(i)
+we have with high probability:
+                                                                      2
+                                      Wt (i)  Wt (k)     n
+                     ∀i, k ∈ At ∩ T : p      −p      ≥        · (ui − uk )2
+                                       µ(i)    µ(k) 2 α log n
+                                                      2
+                                     Wt (i)       n
+                       ∀i ∈ At ∩ T : p       ≥         · u2i
+                                      µ(i) 2   α log n
+
+for some constant α > 0. In order to replace the inequality with high probability by an inequality
+in expected values, we introduce a random variable z that is non-zero only when this inequality
+fails to hold, such that
+                                                                  2
+                                     Wt (i)  Wt (k)     n
+                    ∀i, k ∈ At ∩ T : p      −p      ≥        · (ui − uk )2 − z
+                                      µ(i)    µ(k) 2 α log n
+                                                  2
+                                    Wt (i)       n
+                      ∀i ∈ At ∩ T : p       ≥         · u2i − z
+                                     µ(i) 2   α log n
+
+
+                                                          15
+holds with probability 1. I.e., we define
+                                                                                               
+                  n                                         2
+                                           Wt (i)     Wt (k)                                    
+      B = {0} ∪            (ui − uk )2 − p         −p          : (i, k) ∈ (At ∩ T ) × (At ∩ T )
+                  α log n                    µ(i)      µ(k) 2                                  
+                                                         
+                  n                       2
+                                   W t (i)                
+               ∪           u2i − p           : i ∈ At ∩ T
+                  α log n           µ(i)                 
+                                                2
+
+and z = max(B). Let K := ⟨1, µ⟩ = poly(n). We get that
+                                                    2
+            1                     W (i)  Wt (k)       n
+                                  pt
+                    X                                          X
+                           wik          −p       ≥                  wik (ui − uk )2 − K · z
+            3                      µ(i)   µ(k) 2   3α log n
+                {i,k}∈Mt                                    {i,k}∈M            t
+                                                    2
+                                 X         Wt (j)        n      X
+                                      µ(j) p        ≥                 µ(j)u2j − K · z.
+                                            µ(j)      α log n
+                                 j∈St             2           j∈St ∩T
+
+   This means that
+                                                  ! 2                      2
+                1      X         Wt (i)   Wt (k)           X       Wt (j)
+                           wik  p       −p             +     µ(j) p
+                3                 µ(i)      µ(k) 2 j∈St ∩T           µ(j) 2
+                  {i,k}∈Mt
+                        n      X                       n    X
+                 ≥                wik (ui − uk )2 +            µ(j)u2j − 2K · z
+                    3α log n                        α log n
+                                 {i,k}∈Mt                           j∈St ∩T
+                 (2)  n     X                      n    X
+                 ≥            mt (i)(ui − η)2 +           µ(j)u2j − 2K · z
+                   3α log n                     α log n
+                            l    i∈At \St                          j∈St
+                      n     X                      n                     X
+                 ≥            mt (i)(ui − η)2 +                                µ(j)u2j − 2K · z
+                   3α log n l
+                                                α log n
+                                 i∈At \St                          j∈Alt ∩St
+                 (4)      n      X                n            X
+                 ≥                 mt (i)u2i +                           µ(j)u2j − 2K · z
+                       27α log n l
+                                               α log n
+                                  i∈At \St                   j∈Alt ∩St
+                 (5)      n      X                           n       X
+                 ≥                  mt (i)u2i − 2K · z ≥               µ(i)u2i − 2K · z .
+                       27α log n                         3000α log n
+                                  l
+                                  i∈At                                       i∈At
+
+
+Inequality (2) is due to Lemma 3.5(1), the fact that µ(v) = 0 for everyPv ∈     / T and because each
+i ∈ Alt \ St is matched to Art \ St with a total weight of mi (that is, j:{i,j}∈Mt wij = m(i) for
+i ∈ Alt \ St ), Inequality (4) follows from Lemma 3.5(4), Inequality (5) is true because mi ≤ µ(i) for
+
+
+
+
+                                                        16
+all i ∈ Alt , and the last inequality follows from Lemma 3.5(5). Finally, in expectation,
+                                                           ! 2                       
+                                                                                    2
+                      1                  W (i)       Wt (k)                 Wt (j) 
+                                        pt
+                           X                                      X
+                  E             wik             −p             +     µ(j) p
+                      3                    µ(i)        µ(k) 2 j∈St ∩T         µ(j) 2
+                        {i,k}∈Mt
+                           n      X
+                   ≥                   µ(i) E[u2i ] − 2K · E[z]
+                     3000α log n
+                                   i∈At
+                                                            2
+                         1         X             Wt (i)
+                   =                     µ(i) p          − 2K · E[z]
+                     3000α log n                  µ(i) 2
+                                 i∈At ∩T
+                         1       X
+                   =                  ∥Wt (i)∥22 − 2K · E[z]
+                     3000α log n
+                                   i∈At
+                         1
+                   =             ψ(t) − 2K · E[z]
+                     3000α log n
+
+where the first equality follows from Lemma C.3 (1).
+   We note that z = O(poly(n)). Indeed, for every i ∈ At ∩ T
+                   *           +
+                      Wt (i)         Wt (i)    ∥Wt (i)∥2     1
+              ui = p         ,r ≤ p           = p        ≤p      = O(poly(n)), 11
+                        µ(i)           µ(i) 2     µ(i)      µ(i)
+
+where the first inequality holds due to Cauchy-Schwartz since r is a unit vector and the last
+                                                                                               1       1
+inequality holds since all eigenvalues of Wt are in [0, 1]: By Lemma B.6 we get that U − 2 Ft U − 2 =
+IT − N (Ft ) has eigenvalues in [−1, 1]. Since Pt is a projection matrix, it has eigenvalues in [0, 1].
+                  1        1                                                      1        1
+Therefore, Pt U − 2 Ft U − 2 Pt has eigenvalues in [−1, 1]. Finally, Wt = (Pt U − 2 Ft U − 2 Pt )δ is PSD
+since δ is a power of 2, so its eigenvalues are in [0, 1].
+                                                                   1
+    By Lemma C.3, z is non-zero with probability at most nα/8        , so for large enough α, we get
+2K E[z] ≤ 2K npoly(n)
+               α/8
+                          1
+                      ≤ nα/16 ,12 completing the proof.
+
+    The following two corollaries follow by Lemmas 4.8 and 4.9.
+                                                             
+                                                                       1
+Corollary 4.10. For each round t, E[ψ(t+1)] ≤ 1 − 3000α1 log n ψ(t)+ nα/16 , where the expectation
+                             n
+is over the unit vector r ∈ R .
+
+Corollary 4.11 (Total Potential). With high probability over the choices of r, ψ(T ) ≤ n1 .
+
+Lemma 4.12. Let H = (V, Ē) be a graph on n vertices, such that FT is its weighted adjacency
+matrix. Assume that ψ(T ) ≤ n1 . Then, AT is a near ( 15 , µ)-expander with respect to µ in H.
+
+Proof. Recall that FT is symmetric and µT -stochastic. Let k = µ(AT ). Let S ⊆ AT be a cut,
+                                                         µ(u) if u ∈ S,
+and denote µS ∈ Rn to be the vector where µS (u) =                        Additionally, denote
+                                                           0   otherwise.
+                           √    2
+ℓ = µ(S) ≤ 12 k. Note that   µS 2 = ℓ.
+ 11                                                                           1
+      The last equality explains why Assumption 2.1 requires minv∈T µ(v) ≥ poly(n) .
+ 12
+      The second Inequality explains why Assumption 2.1 requires maxv∈T µ(v) ≤ poly(n).
+
+
+
+                                                       17
+                                                                              1         1
+    Denote by λ̄ ≥ 0 the largest singular value of XT := PT U − 2 FT U − 2 PT (square root of the
+                              1        1
+largest eigenvalue of (PT U − 2 FT U − 2 PT )2 ). Because Tr(XT2δ ) = ψ(T ) ≤ n1 , we have in particular
+that the largest eigenvalue of XT2δ is at most n1 , so we have λ̄ ≤ 11 . We choose δ = Θ(log n)13
+                                                                               n 2δ
+               1      1            1
+such that      1    ≤ 20 , so λ̄ ≤ 20 .
+             n 2δ
+    In order to prove near-expansion we need to lower bound |EFT (S, S)|. We do so by upper
+bounding |EFT (S, S)| = 1′S FT 1S . Because Ft is T -blocked we get that 1′S FT 1S = 1′S (IT FT IT )1S .
+Observe the following relation between XT and IT FT IT :
+  1      1     1
+                     − 21    − 12      1    1        1√ q ′       − 12    − 12      1√ q ′           1
+U XT U = U (PT U FT U PT )U = U (IT −
+  2      2     2                       2    2           µT µT )U FT U (IT −             µT µT )U 2
+                                                     k                              k
+                   1                 1                      1              1                 1
+           = (IT − µT 1′T )FT (IT − 1T µ′T ) = IT FT IT − µT 1′T FT IT − IT FT 1T µ′T + 2 µT 1′T FT 1T µ′T .
+                   k                 k                     k               k                k
+    Rearranging the terms, we get
+                                     1              1              1
+             IT FT IT = U 2 XT U 2 + µT 1′T FT IT + IT FT 1T µ′T − 2 µT 1′T FT 1T µ′T .
+                          1      1
+
+                                     k              k             k
+   Therefore
+                                                                                         
+                                            1              1                1
+ |EFT (S, S)| =1S FT 1S = 1S U 2 XT U 2 + µT 1T FT IT + IT FT 1T µT − 2 µT 1T FT 1T µT 1S .
+                                   1   1
+                 ′          ′                     ′                  ′            ′     ′
+                                            k             k                k
+    We analyze the summands separately. The first summand can be bounded using λ̄, the largest
+singular value of XT :
+                       q       √      √      √        √          √          √           ℓ
+     1S U XT U 1S = µ′S X µS = ⟨ µS , X µS ⟩ ≤ ∥ µS ∥2 ∥XT µS ∥2 ≤ ∥ µS ∥22 λ̄ ≤ ,
+          1      1
+      ′   2      2
+                                                                                       20
+where the first inequality is the Cauchy-Schwartz inequality. Observe that the second and third
+summands are equal because:
+                 1 ′                      ℓ           ℓ          1
+                    1S µT 1′T FT IT 1S = 1′T FT 1S = 1′S FT 1T = 1′S IT FT 1T µ′T 1S ,
+                 k                        k           k          k
+   where the second equality follows by transposing and since FT is symmetric. We now bound
+the sum of the second, third and fourth summands:
+                                                                                    ℓ2
+                                                             
+             1                 1               1                    2ℓ
+      1S µT 1T FT IT + IT FT 1T µT − 2 µT 1T FT 1T µT 1S = 1′T FT 1S − 2 1′T FT 1T
+        ′         ′                       ′         ′       ′
+             k                 k               k                     k              k
+                    2                        2                   2
+                                                                                  
+       (1)   2ℓ   ℓ                    2ℓ   ℓ               2ℓ  ℓ            ℓ         ℓ
+       ≤        − 2 1T FT 1S ≤
+                         ′
+                                          − 2 1 FT 1S =
+                                                 ′
+                                                               − 2 µ 1S =
+                                                                       ′
+                                                                                  2−       ℓ,
+             k   k                     k    k                k  k            k         k
+   where the Inequality (1) follows since
+                                          S ⊆ At . Note that kℓ ∈ [0, 12 ]. The last inequality is true
+                                    ℓ2
+because for kℓ in this range, 2ℓ                                 ℓ
+                                                                       1               ℓ      ℓ
+                                                                                                   3
+                               k − k2 ≥ 0. Moreover, because k ∈ 0, 2 , we have k 2 − k ≤ 4 .
+                           1
+Therefore, |EFT (S, S)| ≤ 20 ℓ + 34 ℓ = 45 ℓ, and
+                              XX                   XX             XX
+                 |E(S, S)| =           FT (u, v) =    FT (u, v) −    FT (u, v)
+                                     u∈S v∈S                  u∈S v∈V         u∈S v∈S
+                                     X              XX                       4   ℓ
+                                 =         µ(u) −             FT (u, v) ≥ ℓ − ℓ = .
+                                                                             5   5
+                                     u∈S            u∈S v∈S
+ 13
+      This gives the upper bound on δ. The lower bound comes from Lemma 4.4, ensuring a low congestion embedding.
+
+
+                                                              18
+So ΦG (S, S) = |E(S,S)| 1                                            µ(S)     1
+                 µ(S) ≥ 5 , and this is true for all cuts S ⊆ A with µ(At ) ≤ 2 .
+
+
+
+Corollary 4.13. If we reach round T , then with high probability, AT is a near (ϕ, µ)-expander in
+G.
+
+Proof. Assume we reach round T . By Corollary 4.11 and Lemma 4.12, with high probability,
+AT is a near ( 15 , µ)-expander in FT . By Lemma 4.4, FT is embeddable in GT with congestion 4δ .
+                                             δ
+Therefore, by Lemma 2.8, AT is a near ( 10     , µ)-expander in GT .
+    Furthermore, by Lemma 4.5, GT is embeddable in G with congestion 2cT . Applying Lemma 2.8
+                                    δ
+again, we get that AT is a near ( 10cT  , µ)-expander in G. After fixing the constants in δ = Θ(log n)
+and T = Θ(log n), we choose the fixed constant c1 > 0 sufficiently small that δ10c
+                 2                                                                    log n
+                                                                                        1T
+                                                                                            ≥ 1 for all
+                                                           δ
+sufficiently large n. With c = c1 /(ϕ log n), this gives 10cT ≥ ϕ, as required.
+
+4.3       Proof of Theorem 3.1
+We are now ready to prove Theorem 3.1.
+
+Proof of Theorem 3.1. Recall that St denotes the cut returned by Lemma 3.6 (applied on G[At ])
+at iteration t, so that At+1 = At \ St . Let c0 := c71 .
+                                                     µ        7
+S Observe first that in any round t, we have ΦG (At , Rt ) ≤ c = O(ϕ log ′
+                                                                            n). Indeed, since Rt =
+                                                                              µ              ¯′    7
+         S                                                                    G[At′ ] (St , St ) ≤ c =
+     ′    t′ , Lemma 3.6 implies that, with high probability, for each t , Φ             ′
+  0≤t <t
+O(ϕ log n).
+    Assume Algorithm 1 terminates because µ(Rt ) > µ(V70)·c·ϕ = Ω( µ(V      )
+                                                                       log n ). Hence, µ(Rt−1 ) ≤
+µ(V )·c·ϕ
+   70    = µ(V     )·c1                                             2              2
+              70 log n . By Lemma 3.6, we also have µ(St−1 ) ≤ 3 µ(At−1 ) ≤ 3 µ(V ) with high prob-
+ability. Combining these inequalities gives µ(Rt ) = µ(Rt−1 ) + µ(St−1 ) ≤ 34 µ(V )14 . In particu-
+lar, µ(At ) = µ(V ) − µ(Rt ) = Ω(µ(V )) = Ω( µ(V        )
+                                                   log n ). Therefore (At , Rt ) is a balanced cut where
+ΦG (At , Rt ) = O(ϕ log n). We end in Case (2) of Theorem 3.1.
+    Otherwise, Algorithm 1 terminates at round T and we apply Corollary 4.13. If R = ∅, then
+we obtain the first case of Theorem 3.1 because the whole vertex set V is, with high probability,
+a near (Ω(ϕ), µ)-expander, which means that G is an (Ω(ϕ), µ)-expander. Otherwise, we have
+ΦG (AT , RT ) ≤ 7c = c71 ϕ log n = c0 ϕ log n. Additionally, µ(Rt ) ≤ µ(V70)·c·ϕ = µ(V  )·c1    µ(V )
+                                                                                   70 log n = 10c0 log n , and,
+with high probability, AT is a near (Ω(ϕ), µ)-expander in G, which means we obtain the third case
+of Theorem 3.1.
+    Finally, the running time of Algorithm 1 is Õ(m): The time of iteration t is the sum of the
+running times of the following steps:
+
+   1. Sample a random unit vector r ∈ Rn .
+                                                        1
+   2. Compute the projections vector u = U − 2 Wt · r. This takes O(t · δ · m) = O(m · t · log n) time
+      since Wt is a multiplication of O(t · δ) matrices, where each matrix either has O(m) non-zero
+      entries or is a projection matrix Pt .
+
+   3. Computing Alt and Art in time O(n log n) (Lemma 3.5).
+  14
+       For sufficiently large n, we have log n ≥ c1 .
+
+
+
+                                                            19
+    4. Computing the cut St and the flow f on G[V \ St ] in time Õ(m) (Lemma 3.6).
+
+    5. Moving St from At to Rt+1 in time O(m).
+
+    6. Constructing Mt in time O(m log n) (using dynamic trees [ST83]).
+
+This gives a total running time of Õ(m) for iteration t. As t ranges from 1 to T = Θ(log2 n), this
+completes the proof of Theorem 3.1.
+
+
+5     Expander Decomposition
+In this section, we present the standard derivation of an expander decomposition (Theorem 3.2)
+from Theorem 3.1.
+    The following lemma, called “the trimming step”, is the last key component for the expander de-
+composition algorithm. This is a slight generalization of [LNPS23, Theorem 8.2]. For completeness,
+we include its proof in Appendix A.
+
+Theorem 5.1. Given a graph G = (V, E), a set A ⊆ V , a parameter ϕ > 0, and a vertex measure
+µ : V → R≥0 , such that A is a near (ϕ, µ)-expander in G and |E(A, A)| ≤ ϕ·µ(A)
+                                                                             9 , there exists a
+randomized algorithm (the trimming step) which finds in time Õ(m) a set A′ ⊆ A such that with
+high probability:
+
+    • Φµ (G[A′ ]) ≥ ϕ/6,
+
+    • µ(A′ ) ≥ µ(A) − 4|E(A,A)|
+                          ϕ     , and
+
+    • |E(A′ , A′ )| ≤ 2|E(A, A)|.
+
+    Using Theorem 5.1 and Theorem 3.1, we prove the following improvement on Theorem 3.1.
+
+Theorem 5.2. Given a graph G = (V, E) with n vertices and m edges, a parameter ϕ > 0, and a
+vertex measure µ : V → R≥0 satisfying Assumption 2.1, there exists a randomized algorithm which
+takes Õ(m) time and must end in one of the following three cases:
+
+    1. We certify that G has µ-expansion Φµ (G) = Ω(ϕ).
+                                                  µ
+         find a cut (A, A) in G of µ-expansion ΦG (A, A) = O(ϕ log n), and µ(A), µ(A) are both
+    2. We
+          µ(V )
+      Ω   log n   , i.e, we find a relatively balanced low µ-expansion cut.
+
+    3. We find a cut (A, A) with 0 < µ(Ā) ≤ µ(V )  µ
+                                               2 , ΦG (A, A) = O(ϕ log n), and G[A] is Ω(ϕ)-
+       expander with respect to µ.
+
+The correctness of the algorithm holds with high probability.
+
+Proof of Theorem 5.2. We apply Theorem 3.1. Cases (1) and (2) translate directly to Cases (1)
+and (2) of Theorem 5.2. If Theorem 3.1 terminates with Case (3), we use Theorem 5.1. We have
+µ(A) ≤ 10cµ(V  )
+           0 log n
+                   , and ΦµG (A, A) ≤ c0 ϕ log n. This means that for large enough n, |E(A, A)| ≤
+µ(V )·ϕ
+  10    ≤ µ(A)·ϕ                                                              ′  ′
+            9 . The trimming step takes Õ (m) time, and we return the cut (A , A ) as Case (3).
+             ′
+Indeed, G[A ] is a Ω(ϕ) expander with respect to µ. Additionally, for large enough n, µ(A′ ) =
+
+                                                    20
+µ(A) + µ(A) − µ(A′ ) ≤ µ(A) + 4|E(A,A)|
+                                    ϕ     ≤ 10cµ(V  )
+                                                0 log n
+                                                        + 2µ(V
+                                                            5
+                                                               )
+                                                                 ≤ µ(V )                  ′
+                                                                     2 . This means that A is still the
+smaller side of the cut, with respect to µ. By Theorem 5.1, we have that |E(A′ , A′ )| ≤ 2|E(A, A)|,
+                        ′   ′
+so ΦµG (A′ , A′ ) = |E(A ,A )|
+                      µ(A′ )
+                               ≤ 2 |E(A,A)|
+                                     µ(A)
+                                            = 2ΦµG (A, A) = O(ϕ log n).
+
+   Note that case (3) may return a balanced cut. We get the following stronger version of Theo-
+rem 5.2 by classifying case (3) as case (2) whenever µ(A) > µ(V  )
+                                                            log n .
+
+Corollary 5.3. Given a graph G = (V, E) with n vertices and m edges, a parameter ϕ > 0, and a
+vertex measure µ : V → R≥0 satisfying Assumption 2.1, there exists a randomized algorithm which
+takes Õ(m) time and must end in one of the following three cases:
+
+   1. We certify that G has µ-expansion Φµ (G) = Ω(ϕ).
+                                                 µ
+   2. We
+        find a cut (A, A) in G of µ-expansion ΦG (A, A) = O(ϕ log n), and µ(A), µ(A) are both
+          µ(V )
+      Ω   log n   , i.e, we find a relatively balanced low µ-expansion cut.
+
+   3. We find a cut (A, A) with 0 < µ(Ā) ≤ µ(V )    µ
+                                            log n , ΦG (A, A) = O(ϕ log n), and G[A] is Ω(ϕ)-
+      expander with respect to µ.
+
+The correctness of the algorithm holds with high probability.
+
+Proof. In case Theorem 5.2 terminated with Case (3) and the cut was relatively balanced (specif-
+                       µ(V )
+ically, µ(V )
+        log n < µ(A) ≤   2 ), we instead terminate with Case (2). All conditions of Case (2) are
+satisfied.
+
+   We now show how to get an expander decomposition from Theorem 5.2. The following is based
+on the expander decomposition procedure of [SW19, ADK23].
+
+Algorithm 2 Expander Decomposition [SW19, ADK23]
+ 1: function Decomp(G, ϕ, µ)
+ 2:    Apply Theorem 5.3 to (G, ϕ, µ).
+ 3:    if Case (1): we certify that ΦµG ≥ ϕ then return {V }.
+ 4:    else if Case (2): we find a relatively balanced cut (A, A) then
+ 5:        return Decomp(G[A], ϕ, µ) ∪ Decomp(G[A], ϕ, µ).
+ 6:    else Case (3): we find a very unbalanced cut (A, A)                     ▷ G[A] is an expander.
+ 7:        return Decomp(G[A], ϕ, µ) ∪{A}.
+ 8:    end if
+ 9: end function
+
+
+
+Proof of Theorem 3.2. First, note that by definition, the leaves of the recursion tree give an ex-
+pander decomposition with µ-expansion of Ω(ϕ).
+   To bound the running time, notethat ifwe get
+                                               Case (2) of Corollary 5.3 then both sides of the cut
+                                             1
+have total µ(·) measure of at most 1 − Ω log n ·µ(V ). If we get Case (3), then µ(A) = Ω(µ(V )),
+so the total µ(·) is reduced by a constant factor (i.e., µ(A) ≤ (1 − Ω(1)) · µ(V )). In any
+                                                                                           case,
+                                                                                        1
+the total µ(·) measure of the largest component drops by a factor of at least 1 − Ω log n across
+
+
+                                                     21
+each level of the recursion, so (as µ(V ) = O(poly(n)), by Assumption 2.1) the recursion depth is
+O(log2 n).
+    Since the components on one level of the recursion are all disjoint, the total running time on
+all components of one level of the recursion is Õ(m). Since the depth of the recursion is O(log2 n)
+we get that the running time is Õ(m).
+    To bound the number of edges between expander clusters, observe that in both Case (2) and
+Case (3), we always cut a component along a cut of µ-expansion O(ϕ log n). Thus, we can charge
+the edges on the cut to the µ(·) of the vertices on the smaller side of the cut (with respect to µ),
+so each vertex v is charged O(ϕµ(v) log n). A vertex can be on the smaller side of a cut at most
+O(log n) times, so we can charge each vertex v at most O(ϕµ(v) log2 n) to pay for all the edges
+between the final clusters. This bounds the total number of edges between the expanders to be at
+most O(ϕµ(V ) log2 n).
+
+AI statement. All research ideas are original to the authors. GPT-6 Astra identified and cor-
+rected a technical bug in the proof of Lemma 3.5: source-edge capacities were defined using sub-
+traction, which could produce arbitrarily small positive capacities and invalidate the polynomial
+capacity-ratio bound needed for the near-linear running time of the fair-cut routine, Theorem A.2.
+The correction assigns source weights mt (i) = µ(i)/4 instead.
+
+
+
+
+                                                22
+References
+[AALG17] Vedat Levi Alev, Nima Anari, Lap Chi Lau, and Shayan Oveis Gharan. Graph clustering using
+         effective resistance. arXiv preprint arXiv:1711.06530, 2017.
+
+ [ADK23] Daniel Agassy, Dani Dorfman, and Haim Kaplan. Expander decomposition with fewer inter-
+         cluster edges using a spectral cut player. In 50th International Colloquium on Automata, Lan-
+         guages, and Programming (ICALP 2023), pages 9–1. Schloss Dagstuhl–Leibniz-Zentrum für In-
+         formatik, 2023.
+
+[AOTT22] Konstantinos Ameranis, Lorenzo Orecchia, Kunal Talwar, and Charalampos Tsourakakis. Prac-
+         tical almost-linear-time approximation algorithms for hybrid and overlapping graph clustering.
+         In Proceedings of the 39th International Conference on Machine Learning (ICML), pages 17071–
+         17093, 2022.
+
+   [AT11] Haim Avron and Sivan Toledo. Randomized algorithms for estimating the trace of an implicit
+          symmetric positive semi-definite matrix. Journal of the ACM (JACM), 58(2):1–34, 2011.
+
+  [Bha13] Rajendra Bhatia. Matrix analysis, volume 169. Springer Science & Business Media, 2013.
+
+ [KRV09] Rohit Khandekar, Satish Rao, and Umesh Vazirani. Graph partitioning using single commodity
+         flows. Journal of the ACM, 56(4):1–15, 2009.
+
+   [LL25] Jason Li and Owen Li. A simple and fast algorithm for fair cuts. In International Conference on
+          Integer Programming and Combinatorial Optimization, pages 400–411. Springer, 2025.
+
+[LNPS22] Jason Li, Danupon Nanongkai, Debmalya Panigrahi, and Thatchaphol Saranurak. Fair cuts,
+         approximate isolating cuts, and approximate gomory-hu trees in near-linear time. arXiv preprint
+         arXiv:2203.00751, 2022.
+
+[LNPS23] Jason Li, Danupon Nanongkai, Debmalya Panigrahi, and Thatchaphol Saranurak. Near-linear
+         time approximations for cut problems via fair cuts. In Proceedings of the 2023 Annual ACM-
+         SIAM Symposium on Discrete Algorithms (SODA), pages 240–275, 2023.
+
+  [Ore11] Lorenzo Orecchia. Fast approximation algorithms for graph partitioning using spectral and
+          semidefinite-programming techniques. PhD thesis, Berkeley, 2011.
+
+[OSVV08] Lorenzo Orecchia, Leonard J. Schulman, Umesh V. Vazirani, and Nisheeth K. Vishnoi. On
+         partitioning graphs via single commodity flows. In Proceedings of the 40th Annual Symposium
+         on Theory of Computing (STOC), pages 461–470, 2008.
+
+  [RST14] Harald Räcke, Chintan Shah, and Hanjo Täubig. Computing cut-based hierarchical decompo-
+          sitions in almost linear time. In Proceedings of the 25th Annual ACM-SIAM Symposium on
+          Discrete Algorithms (SODA), pages 227–238, 2014.
+
+   [ST83] Daniel D. Sleator and Robert Endre Tarjan. A data structure for dynamic trees. Journal of
+          Computer and System Sciences, 26(3):362–391, 1983.
+
+  [SW19] Thatchaphol Saranurak and Di Wang. Expander decomposition and pruning: Faster, stronger,
+         and simpler. In Proceedings of the 30th Annual ACM-SIAM Symposium on Discrete Algorithms
+         (SODA), pages 2616–2635, 2019.
+
+
+
+
+                                                  23
+A     Omitted proofs
+This appendix contains the proofs that were deferred from the main text. Section A.1 gives algebraic
+and embedding lemmas that support the analysis of the cut-matching game. In Section A.2 we
+introduce the fair-cut framework of [LNPS23] and use it to analyze flow-based routines: first the
+flow subroutine in the cut-matching game (Lemma 3.6), and then the trimming step (Theorem 5.1).
+
+A.1     Algebraic and Embedding Proofs
+Proof of Lemma 3.5. Let L = {i ∈ At | ui < 0} and R = {i ∈ At | ui ≥ 0} and assumeP        w.l.o.g. that
+µ(L) ≤ µ(R). In particular, µ(L) ≤ µ(At )/2 ≤ µ(R). For a set B ⊆ At , denote PB = i∈B µ(i)u2i .
+We divide into cases.
+                  1
+    Case PL ≥ 20     PAt : We set η = 0, Art = R, and m̄t (i) = µ(i) for i ∈ Art . We set Alt = L and
+mt (i) = µ(i)/4 for i ∈ Alt .
+    It is easy to verify that Properties (1) and (2) of the lemma hold. Property (3) follows from
+µ(R) ≥ µ(At )/2 and mt (Alt ) = µ(L)/4      ≤ µ(At )/8. Property (4) holds because of the choice η = 0.
+Finally, Property (5) holds since i∈Al mt (i)u2i = PL /4 ≥ PAt /80.
+                                     P
+                                           t
+                   1
+P   Case   P L <  20 P A t : Therefore P R   > 19
+                                               20 PAt . By the statement of thePlemma, we have that
+  i∈AtP µ(i)ui = 0.  Denote
+                        P     by ∆  the total  distance from zero, that is ∆ =   i∈At µ(i)|ui |. Observe
+that i∈L µ(i)|ui | = i∈R µ(i)|ui | = ∆/2. Let M = µ(At ). We set:
+    • η = 4∆/M .
+
+    • Art = {i ∈ At | ui ≤ η}, and m̄t (i) = µ(i) for i ∈ Art .
+
+    • Alt = {i ∈ At | ui ≥ 6∆/M }, and mt (i) = µ(i) for i ∈ Alt .
+    It is easy to see that Properties (1), (2) of the lemma hold. Since ∆ > 0 in this case and
+                                                       6∆   X          ∆
+                                             µ(Alt )      ≤    µ(i)ui ≤ ,
+                                                       M     l
+                                                                       2
+                                                              i∈At
+
+we have mt (Alt ) = µ(Alt ) ≤ M/12 ≤ M/8, proving the first bound in Property (3). Note that
+µ(R \ Art ) ≤ µ(R)/2, as otherwise
+             X                     X                       X               4∆               4∆   2µ(R)∆
+       ∆=           µ(i)|ui | ≥             µ(i)|ui | ≥             µ(i)      = µ(R \ Art )    >        ≥ ∆,
+                                                                           M                M      M
+             i∈At                 i∈R\Art                 i∈R\Art
+
+a contradiction. Therefore, µ(Art ) = µ(L) + µ(R ∩ Art ) ≥ (µ(L) + µ(R))/2 = µ(At )/2, proving
+property (3) of the lemma. To see property (4), let i ∈ Alt . Observe that ui ≥ 6∆/M and
+η = 4∆/M , so ui − η ≥ 13 ui and therefore (ui − η)2 ≥ 19 u2i . We now prove property (5). We show
+             1
+that PAl ≥ 20  PAt , which directly implies Property (5) because mt (i) = µ(i) for every i ∈ Alt . By
+       t                                           p                  p
+applying the Cauchy–Schwarz inequality on ai = µ(i)ui and bi = µ(i) for i ∈ L, we get
+                                     X                               ⟨⃗a, ⃗b⟩2    ∆2     ∆2
+                            PL =            µ(i)u2i = ⟨⃗a, ⃗a⟩ ≥               =       ≥    ,
+                                     i∈L                              ⟨⃗b, ⃗b⟩   4µ(L)   4M
+
+    and therefore
+
+                                                               24
+                            X                    6∆ X            6∆ X          3∆2
+                 PR\Al =             µ(i)u2i ≤          µ(i)ui ≤      µ(i)ui =     ≤ 12PL .
+                      t                          M               M              M
+                           i∈R\Alt                    l
+                                                    i∈R\At                 i∈R
+
+                                         7        1
+Thus, PAl = PR − PR\Al > 19
+                         20 PAt − 12PL ≥ 20 PAt ≥ 20 PAt .
+             t                t
+
+Proof of Lemma 4.3.
+
+                                   1
+  1. Recall that Nt = δ−1  δ U + δ Mt . Let P : E × V → R≥0 be a routing of F in H (where
+     P ((u, v), w) indicates how much of w’s commodity goes through the edge (u, v) ∈ E from u
+     to v). For brevity, we denote wuv := Mt (u, v), for every u, v ∈ V . Note that Nt U −1 F is the
+     flow matrix obtained by performing a weighted average on the rows of F described by Mt .
+     Explicitly, for every v ∈ V, a ∈ V , we have
+                                               
+           −1              δ−1        1     −1            δ−1            1   X      wvu
+     (Nt U F )(v, a) =          F + Mt U F (v, a) =            F (v, a)+                  F (u, a).15
+                             δ        δ                     δ            δ          µ(u)
+                                                                                  u:{u,v}∈Mt
+
+
+        The precise construction of the new embedding of Nt ·U −1 F = δ−1    1
+                                                                       δ F + δ Mt U
+                                                                                    −1 F is as follows.
+
+
+
+      P ′ ← δ−1 δ · P.
+      for {a, b} ∈ Mt do
+          P ′ ((a, b), a) ← P ′ ((a, b), a) + wδab .
+          P ′ ((b, a), b) ← P ′ ((b, a), b) + wδab .
+      end for
+      for {a, b} ∈ Mt do
+          for (u, v) ∈ H do
+                                                     wab
+               P ′ ((u, v), a) ← P ′ ((u, v), a) + δµ(b) P ((u, v), b).
+                 ′                  ′                w
+               P ((u, v), b) ← P ((u, v), b) + δµ(a) P ((u, v), a).
+                                                      ab
+
+          end for
+      end for
+
+
+        The argument that we indeed obtain an embedding of Nt U −1 F = δ−1                1
+                                                                                   δ F + δ Mt U
+                                                                                                −1 F is as
+
+        follows. We think of P ′ in stages. In the first stage, we scale P by δ−1              δ−1
+                                                                               δ . This routes δ F (v, a)
+        units of flow (of v’s commodity) from v to a for every v and a. After this stage, each vertex
+        v ∈ V currently P sends (δ−1)δ µ(v) units of its commodity. In the next stage we wish to route
+                                        wvu
+        an additional 1δ u:{u,v}∈Mt µ(u)    F (u, a) units from v to a. To this end, we first move wδvu
+        units from v’s commodity to each u with {u, v} ∈ Mt (this flow is sent through the edge
+        {v, u} ∈ H ∪ Mt from v to u). Now, each vertex u ∈ V “mixes” the commodities it got
+        from its neighbors and routes the µ(u) δ “new” units according to P , as if they were of its own
+        commodity. Thus, δ is the total flow sent from u to a when it routes the µ(u)
+                              F (u,a)
+                                                                                                δ   “new”
+ 15
+      Recall the notation Mt (u, v) = Mt (v, u) = wuv = wvu , for every u ̸= v.
+
+
+
+                                                             25
+                                                            wvu
+   units and the “share” of v’s commodity from this flow is µ(u) . It follows that out of the wδvu
+                              wvu F (u,a)
+   units v sent to u, exactly µ(u)   δ    units go to a.
+   As for the congestion, note that on each edge of the matching Mt , we route wδab units of flow
+   in each direction, so the congestion on each such edge is 2δ . For each (directed) arc (u, v) ∈ H
+                                                                           wab
+   and a ∈ V , we have P ′ ((u, v), a) = δ−1
+                                                              P
+                                          δ · P ((u, v), a) +  b:{a,b}∈Mt δµ(b) P ((u, v), b). Therefore,
+   on each arc (u, v) ∈ H, the congestion is
+             X                     δ−1 X                      X X           wab
+                 P ′ ((u, v), a) =      ·    P ((u, v), a) +                       P ((u, v), b)
+                                     δ                                     δµ(b)
+              a∈V                             a∈V              a∈V b:{a,b}∈Mt
+                                   δ−1 X                 1X
+                                 =    ·  P ((u, v), a) +    P ((u, v), b)
+                                    δ                    δ
+                                              a∈V                 b∈V
+                                   δ−1            1
+                                 =     · c(u, v) + c(u, v) = c(u, v) .
+                                    δ             δ
+2. Let P be the routing of F in H. Note that F U −1 Nt = δ−1    1
+                                                          δ F + δFU
+                                                                    −1 M is the flow matrix
+                                                                        t
+   obtained by performing a weighted average on the columns of F matched by U −1 Mt , i.e. we
+   average the flow received by matched vertices.
+   We define a routing P ′ of F U −1 Nt in H ∪ Mt as follows:
+
+ P′ ← P.
+ for {a, b} ∈ Mt do
+    for u ∈ V do
+                           wab
+        P ′ ((a, b), u) ← δµ(a) · F (u, a).
+                           wba
+        P ′ ((b, a), u) ← δµ(b) · F (u, b).
+    end for
+ end for
+
+   That is, P ′ routes the same as P over edges in H. For every {a, b} ∈ Mt , u ∈ V , we set
+                      wab                                                     wba
+   P ′ ((a, b), u) = δµ(a)  · F (u, a), and symmetrically, P ′ ((b, a), u) = δµ(b) · F (u, b). That is, for
+                                                      wab
+   every {a, b} ∈ Mt , a (respectively, b) sends δ units of its received flow, which is a mix of
+   commodities (commodity u has a Fµ(a)      (u,a)
+                                                   share in this mix), to b (respectively, a). Note that
+         −1                                              wab
+                           δ−1            1P
+                                                             F (u, b). Thus, P ′ routes F U −1 Nt in H.
+                
+    F U Nt (u, a) = δ F (u, a) + δ b:{a,b}∈Mt µ(b)
+   Note thatPthe congestion of P ′ P
+                                   on each edge e ∈ H is still c(e), and on each arc (a, b) ∈ Mt ,
+                                          wab
+                    ′
+   we have u∈V P ((a, b), u) = u∈V δµ(a)      · F (u, a) = wδab (the last equality follows as F is
+                                      wab
+   µ-stochastic). Therefore at most δ flow was routed in each direction, so the congestion on
+   the edge {u, v} ∈ Mt is at most 2δ .
+3. Note that if F and Nt are µ-stochastic (see part 2 of Lemma 4.2) then Nt · U −1 F is also
+   µ-stochastic, since:
+                                      Nt U −1 F · 1n = Nt U −1 µ = µ
+                                      1′n · Nt U −1 F = µ′ · U −1 F = µ′ .
+   Therefore we can apply Parts (1) and (2) to get the result.
+
+                                                    26
+                                      1       1
+Proof of Lemma 4.7. Let Xt = U − 2 Nt U − 2 . Therefore
+                        
+       − 12   δ−1    1        1    δ−1         1    1       1       1         1        1         1
+Xt = U            U + Mt U − 2 =          IT + U − 2 Mt U − 2 = IT − (IT −U − 2 Mt U − 2 ) = IT − N (Mt ).
+               δ     δ                δ        δ                    δ                            δ
+
+Observe that N (Mt ) and IT − Xt4δ have the same eigenvectors. Indeed, since both matrices are
+T -blocked, their null space contains all vectors whose non-zero coordinates are outside T . Consider
+an eigenvector v ∈ Rn , whose non-zero coordinates are in T , of N (Mt ), with an eigenvalue of λ.
+Then,
+                                                                      
+                                        1                  λ           λ
+                         Xt v = IT − N (Mt ) v = v − v = 1 −               v.
+                                        δ                   δ          δ
+                                         4δ 
+Therefore, (IT − Xt4δ )v = 1 − 1 − λδ           v. We can see that an eigenvector v ∈ Rn of N (Mt ),
+with eigenvalue λ, is an eigenvector of IT − Xt4δ with eigenvalue 1 − (1 − λδ )4δ . A known property
+of normalized Laplacians (see Lemma B.6) is that all of their eigenvalues are in the interval [0, 2],
+so λ ∈ [0, 2]. For any such λ it holds that 1 − (1 − λδ )4δ ≥ 1 − e4λ
+                                                                   1
+                                                                      . Indeed, for λ = 0 an equality is
+                                                           δ
+achieved, and for λ ∈ (0, 2], note that δ = Θ(log n), so λ ≥ 1 and we get
+                                                           δ !4λ
+                                λ 4δ
+                                                  
+                                                        λ λ             1
+                          1− 1−      =1−             1−           ≥ 1 − 4λ
+                                δ                       δ              e
+
+                                 1
+Simple calculus shows that 1 − e4x ≥ 13 x for any x ∈ [0, 2]. Therefore, we get that any eigenvector
+v ∈ R of N (Mt ), with eigenvalue λ, is also an eigenvector of I − Xt4δ with eigenvalue at least
+      n
+1
+3 λ. The result follows since both matrices are symmetric and therefore have a spanning basis of
+eigenvectors.
+
+A.2    Fair Cuts
+In this section, we prove Lemma 3.6 and Theorem 5.1, concerning the flow routines in the cut-
+matching step and the trimming step. The proofs are based on fair cuts, a stronger notion of
+approximate min-cut, introduced by [LNPS23].
+Definition A.1 (Fair Cut, [LNPS23, LL25]). Let G = (V, E) be an undirected graph with edge
+capacities c ∈ RE >0 . Let s, t be two vertices in V . For any parameter α ≥ 1, we say that a cut (S, T )
+is a α-fair (s, t)-cut if there exists a feasible (s, t)-flow f such that f (u, v) ≥ α1 · c(u, v) for every
+(u, v) ∈ E(S, T ), where u ∈ S and v ∈ T .
+Theorem A.2 (Fair Cut, [LNPS23, Theorem 1.1]). Given a graph G = (V, E) whose positive
+edge capacities have ratio poly(n), two vertices s, t ∈ V and ϵ ∈ (0, 1], we can compute with high
+probability a (1 + ϵ)-fair (s, t)-cut, together with a corresponding feasible flow f , in Õ( ϵm3 ) time.
+Proof of Lemma 3.6. Let α = 0.1. Consider the following (s, t)-flow problem on a new graph
+H = (VH = V ∪ {s, t}, EH , wH ) constructed as follows. We begin with G and set its edge capacities
+    c
+to 1+α . We then add the source s and connect it to every v ∈ Al with capacity m(v). Finally, we
+                                                              1
+add the sink t and connect it to every v ∈ Ar with capacity 1+α m̄(v).
+
+                                                    27
+    Using Theorem A.2, we compute (with high probability) a (1 + α)-fair cut (S ′ , T ′ ) with a
+corresponding feasible flow f in Õ(|E|) time. We split into the following two cases:
+    Case 1: µ(S ′ \ {s}) = 0. Every v ∈ Al with m(v) > 0 lies in T ′ , since m(v) ≤ µ(v). By the
+                                                                             1
+definition of fair cut, for every v ∈ Al , f sends from s to v at least 1+α     m(v) units of flow. By
+decomposing f into flow paths and reducing the flow sent on each path, we obtain a flow f ′ for H
+that sends from s to v exactly 1+α1
+                                     m(v) units of flow, for every v ∈ Al . We claim that f ′′ = (1+α)f ′
+is a feasible flow for Π(G). Indeed, in f ′′ , every v ∈ Al receives m(v) units of flow from s, every
+                                   1
+v ∈ Ar sends at most (1 + α) · 1+α   m̄(v) = m̄(v) units of flow to t, and every e ∈ E carries at most
+(1 + α) · 1+α c = c units of flow. The algorithm returns f ′′ as Case (1) of the lemma.
+           1
+
+    Case 2: µ(S ′ \ {s}) > 0. We split the cut edges EH (S ′ , T ′ ) into three sets: (i) the edges of G
+crossing the cut: Em = EG (S ′ \ {s}, T ′ \ {t}), (ii) the cut edges incident to s: Es = {(s, v) ∈ EH |
+v ∈ T ′ }, and (iii) the cut edges incident to t: Et = {(v, t) ∈ EH | v ∈ S ′ }. Let Ēs be the incident
+edges to s that are not in Es .
+    We decompose f into paths. By the definition of a fair cut, every edge (s, v) ∈ Es sends at
+         1
+least 1+α  m(v) units of flow. We scale down the flow in the flow paths as follows. We delete all
+flow paths that start with an edge of Ēs . The rest of the flow paths are scaled down until each
+edge (s, v) ∈ Es sends exactly 1+α 1
+                                     m(v) units of flow. This results in a flow f ′ . The algorithm then
+returns f = (1 + α)f and the cut S = S ′ \ {s}.
+           ′′            ′
+
+    Similarly to the previous case, f ′′ is a feasible flow for the flow problem Π(G \ S). It remains
+                                        |Em |
+to prove that ΦµG (S, V \ S) := min{µ(S),µ(V          7
+                                              \S)} ≤ c . We begin by upper bounding the numerator.
+For the remainder of the analysis, we consider again the flow f and its path decomposition. By the
+definition of a fair cut, every flow path that traverses through Em must start with an edge in Ēs ,
+                                     1
+and every edge in Em is at least 1+α    -saturated. Therefore,
+         c
+            · |EG (S, V \ S)| = wH (Em ) ≤ (1 + α)wH (Ēs ) = (1 + α)mt (S) ≤ (1 + α)µ(S).                 (5)
+        1+α
+To bound the denominator we prove that µ(V \ S) = Ω(µ(S)). Recall the assumption of the lemma
+m̄(Ar ) ≥ µ(V )/2. We prove that m̄(Ar ∩ S) is small. Indeed, for every v ∈ Ar ∩ S, (v, t) ∈ Et
+is crossing the cut (S ′ , T ′ ) and therefore is 1+α
+                                                   1
+                                                      -saturated. Since the total flow crossing (S ′ , T ′ ) is
+bounded by the total source capacity (which is m(Al )), we get that
+                       1                                          1+α
+                          m̄(Ar ∩ S) = wH (Et ) ≤ (1 + α)m(Al ) ≤     µ(V ),
+                      1+α                                          8
+where the last inequality follows from the assumption of the lemma. Putting everything together,
+
+
+                                                           µ(V ) (1 + α)2        1       1
+     µ(V \ S) ≥ m̄(V \ S) = m̄(Ar ) − m̄(Ar ∩ S) ≥              −         µ(V ) ≥ µ(V ) ≥ µ(S).
+                                                             2       8           3       3
+Together with (5), we conclude that
+
+                                                                     (1+α)2
+                                             |EG (S, V \ S)|                µ(S)  7
+                      ΦµG (S, V \ S) :=                       ≤         c
+                                                                        1        ≤ .
+                                          min{µ(S), µ(V \ S)}           3 µ(S)
+                                                                                  c
+
+
+
+                                                      28
+    As a direct corollary, we observe that if Lemma 3.6 terminates with Case (2), we can “break”
+the flow paths at the (fair-)cut (S, V \ S) and obtain two flows satisfying the following guarantees.
+
+Corollary A.3. Let (S, V \ S) be the cut returned by Lemma 3.6, and assume S ̸= ∅. Then:
+                                                                                            
+  • There exists a flow of congestion O(1) in G[S] such that every v ∈ S sends degG − degG[S] (v)
+    units of flow and receives at most O(ϕ log n · µ(v)) units of flow.
+                                                                                                     
+  • There exists a flow of congestion O(1) in G[V \S] such that every v ∈ V \S sends degG − degG[V \S] (v)
+    units of flow and receives at most O(ϕ log n · µ(v)) units of flow.
+
+Proof. In the notation of the proof of Lemma 3.6, the assumption S ̸= ∅ corresponds to Case (2) of
+the proof. Let f be the flow returned by the fair-cut routine, and recall Em = EG (S ′ \{s}, T ′ \{t}) =
+EG (S, V \S), the set of edges of G that cross the fair-cut. Recall that f is routed in H, the auxiliary
+graph, with constant congestion. In particular, f may be routed in G with congestion O(c).
+     To construct the two flows required by the corollary, we proceed as follows. Decompose f into
+flow paths and remove the paths that do not traverse any edge of Em . Denote the remaining
+                                                                                           1
+flow by f1 . By the definition of a fair-cut, every edge (u, v) ∈ Em is at least 1+α         -saturated
+                                                                         
+                                                 1                 1
+(recall α = 0.1). Hence f1 routes at least (1+α)2 c = Θ (1+α)2 ϕ log n units of flow through each
+(u, v) ∈ Em in the direction from S to V \ S. We then scale down the flow paths of f1 so exactly
+   1
+(1+α)2
+       c units of flow are routed on each edge of Em . Denote this scaled flow by f2 . Finally, define
+           2
+f3 := (1+α)
+         c   f2 . Then f3 routes exactly one unit of flow across each edge in Em and has congestion
+O(1)
+     in G.  Moreover,
+                       for every v ∈ V the source and sink capacities at v in f3 are bounded by
+    (1+α)2
+O      c   µ(v) = O(ϕ log nµ(v)).
+    Observe that f3 consists of flow paths that cross each edge of the cut (S, V \ S) once. We obtain
+the two desired flows as follows:
+
+   • The first flow is obtained by taking the prefix of each path until the crossing edge, deleting s
+     and then reversing the path so that the flow is routed from the cut Em = EG (S, V \ S) to S.
+
+   • The second flow is obtained by taking the suffix of each path that starts at the crossing edge,
+     deleting t.
+
+
+
+   Recall that during the cut-matching game, the matching player produces cuts S1 , . . . , St (up to
+some t < T ) by applying Lemma 3.6. Since these cuts are disjoint, we get the following corollary.
+
+Corollary A.4. Let (A, A) be the cut returned by Case (2) or Case (3) of Theorem
+                                                                                 3.1. Then,
+                                                                                         
+there exists a flow of congestion O(1) in G[A] such that every v ∈ A sends degG − degG[A] (v)
+units of flow and receives at most O(ϕ log n · µ(v)) units of flow.
+
+Proof. Follows from Corollary A.3.
+
+Proof of Theorem 5.1. Assume |E(A, A)| > 0, as otherwise A is a (ϕ, µ)-expander and we set
+A′ = A. Consider the following (s, t)-flow problem on a new graph H = (VH = A ∪ {s, t}, EH )
+constructed as follows. Start from G, and contract V \ A into a single vertex, labeled as the source
+
+                                                  29
+                                                         𝐴′ ∖ 𝑈
+                                        𝑉∖𝐴
+                                        𝑠
+
+                                                𝐴 ∖ 𝐴′ 𝑈
+
+
+                               Figure 1: Visualization of the sets A, A′ and U .
+
+
+s (ignoring self loops at s). Next, set the capacity of each edge (G[A] and edges touching s) to be
+ 3
+ϕ . Finally, add a new sink vertex t and connect it to each vertex v ∈ A with an edge of capacity
+µ(v). Let α = 0.1, and compute a (1 + α)-fair cut (S, T ) of H in time Õ(m). Let A′ = T \ {t}.16
+We now show that A′ satisfies the requirements of the lemma.
+    First, suppose for contradiction that G[A′ ] is not a ϕ6 -expander with respect to µ. Then, there
+is a violating set U ⊆ A′ (see Figure 1), satisfying 0 < µ(U ) ≤ µ(A′ \ U ) and
+
+                                                                ϕ
+                                            |E(U, A′ \ U )| <     µ(U ) .
+                                                                6
+Since A is a near (ϕ, µ)-expander with respect to µ then so is A′ and therefore,
+
+                                            |E(U, V \ U )| ≥ ϕµ(U ) .
+Taking the difference of the two inequalities above,
+                                                                                5ϕ
+                         |E(U, V \ A′ )| = |E(U, V \ U )| − |E(U, A′ \ U )| ≥      µ(U ) .
+                                                                                 6
+Since (S, T ) is a (1 + α)-fair cut, there is a feasible flow f that saturates each edge of EH (S, T ) up
+                 1
+to a factor of 1+α  . Each edge (u, v) in E(U, V \ A′ ) corresponds to an edge in EH (S, T ) of capacity
+3                                           1    3    2
+ϕ , and the flow f must send at least 1+α · ϕ ≥ ϕ flow along the edge (in the direction from S to
+T ). In total, the amount of flow entering U in H is at least
+
+                                     2                  2 5ϕ        5
+                                       |E(U, V \ A′ )| ≥ ·   µ(U ) = µ(U ) .
+                                     ϕ                  ϕ 6         3
+
+On the other hand, at most µ(U ) flow can leave U along the edges incident to t, and at most
+
+                                      3                  3 ϕ       1
+                                        |E(U, A′ \ U )| ≤ · µ(U ) = µ(U )
+                                      ϕ                  ϕ 6       2
+
+flow can cross from U to A′ \U . This totals at most 32 µ(U ) flow that can exit U , which is strictly less
+than the ≥ 35 µ(U ) flow that enters U (as µ(U ) > 0), a contradiction. Thus G[A′ ] is a ϕ6 -expander.
+  16
+       We later show that A′ ̸= ∅.
+
+
+                                                       30
+     Finally, we show the properties µ(A′ ) ≥ µ(A) − ϕ4 |E(A, A)| and |E(A′ , A′ )| ≤ 2|E(A, A)|
+promised by the lemma. Since (S, T ) is a (1 + α)-fair cut, it is in particular a (1 + α)-approximate
+(s, t)-mincut. Since ({s}, VH \ {s}) is an (s, t)-cut of capacity ϕ3 |E(A, A)|, it follows that the cut
+(S, T ) has capacity at most (1 + α) ϕ3 · |E(A, A)|. To establish the first inequality of the theorem,
+observe that every vertex v ∈ A \ A′ lies on the S-side of the cut (S, T ), and therefore contributes
+µ(v) to the capacity of (S, T ) through the edge (v, t). Summing over all v ∈ A \ A′ , we obtain
+                                                                  3            4
+                        µ(A \ A′ ) ≤ |E(S, T )| ≤ (1 + α) ·         |E(A, A)| ≤ |E(A, A)| ,
+                                                                  ϕ            ϕ
+
+which proves the first property. Moreover, since µ(A) ≥ 9|E(A,A)|·
+                                                                ϕ    , it follows that A′ ̸= ∅. For the
+second inequality, note that each edges (u, v) in E(A′ , A′ ) corresponds to an edge in E(S, T ) with
+capacity ϕ3 , so summing over all such edges
+
+                                3                                     3
+                                  |E(A′ , A′ )| ≤ |E(S, T )| ≤ (1 + α) |E(A, A)| ,
+                                ϕ                                     ϕ
+
+meaning |E(A′ , A′ )| ≤ (1 + α)|E(A, A)| which proves the second property.
+
+
+    From the auxiliary flow problem defined in the preceding proof, we deduce the following corol-
+lary.
+
+Corollary A.5. Let (A′ , A′ ) be the cut returned from the trimming step (Theorem 5.1) in the proof
+of Theorem 5.2. Then, the following flows exist.
+                                                                                       
+   1. A flow of congestion O(1) in G[A′ ], such that every v ∈ A′ sends degG − degG[A′ ] (v) units
+      of flow and receives at most O(ϕ · µ(v)) units of flow.
+                                                                                       
+   2. A flow of congestion O(1) in G[A′ ] such that every v ∈ A′ sends degG − degG[A′ ] (v) units
+        of flow and every v ∈ A receives at most O(ϕ log n · µ(v)) units of flow.17
+
+Proof. Let H be the auxiliary graph in the proof of Theorem 5.1, and let f denote the flow
+constructed therein. We decompose f into flow paths from s to t and scale down each flow path so
+that the flow crossing every edge of EH (S, T \ {t}) equals ϕ2 (because (S, T ) is a fair cut). Let f1
+denote the resulting flow. Let f2 := ϕ2 f1 . Note that f2 routes exactly one unit of flow across every
+edge of EH (S, T \ {t}), at most 23 units of flow across the remaining edges of H \ {t}, and at most
+ϕ
+2 µ(v) units across each edge (v, t).
+    For the first item, we delete from f2 all flow paths that contain an edge (v, t), where t is the
+sink and v ∈ S = {s} ∪ A′ \ A. Denote the resulting flow by f3 . The desired flow is then obtained
+by restricting the flow paths in f3 to their suffix, starting from the edge crossing the fair-cut (S, T ).
+    We proceed to the second item, and prove it in two steps. We first route flow from the new cut
+edges EG (A′ , A′ ) \ EG (A, A) to EG (A, A), and then we route the flow from EG (A, A) to A so that
+every v ∈ A receives at most O(ϕ log n · µ(v)) units of flow.
+ 17
+      Note that vertices in A′ \ A don’t receive any flow.
+
+
+
+                                                             31
+    For the first step, observe that there is         (1) of congestion 3 = O(1) in G[A′ ] such
+                                           a flow f                   2
+that every v ∈ A′ sends degG − degG[A′ ] (v) units of flow and each u ∈ A receives at most
+                   
+3
+2   deg G − deg G[A] (u) units of flow. This flow is obtained by restricting the flow paths of f3 to
+their prefix from s until the first edge in the fair-cut (S, T ), and then reversing them, so that they
+route flow from the cut (S, T ) towards s. In the last edge (v1 , s) of each flow path, instead of sending
+the flow to s, we send it to the vertex v0 of G[A] corresponding to the edge (v0 , v1 ) ∈ E(A, A).
+    In the second step, note that the cut (A, A) was produced in the cut-matching step. Therefore,
+by  Corollary  A.4,                       (2) of congestion O(1) in G[A] such that every v ∈ A sends
+                  there exists a flow f
+  degG − degG[A] (v) units of flow and receives at most O(ϕ log n · µ(v)) units of flow.
+   Thefinal flow is as follows. We first route according to f (1) . Each v ∈ A must then send at
+most 32 degG − degG[A] (v) units of flow, which are the units it receives from f (1) . We route this
+flow using a scaled version of f (2) , specifically 23 f (2) , which incurs a congestion of O(1).
+
+
+B      Algebraic Tools
+Fact B.1 ([Bha13, Exercise IX.3.3]). Let X, Y, A ∈ Rn×n , m ∈ N, then
+    1. Tr(XY ) = Tr(Y X).
+    2. Tr(A2m ) ≤ Tr((A · A′ )m ).
+                                              Pn Pn                                Pn         Pn
+Proof.     1. Follows since Tr(XY ) =            i=1      j=1 X(i, j)Y(j, i) =          j=1    i=1 Y(j, i)X(i, j) = Tr(Y X).
+
+    2. Using Schur decomposition, we decompose A = V U V ∗ , where V ∈ Cn×n is a unitary matrix
+       and U ∈ Cn×n is an upper triangular matrix. Observe that
+                                                                                                             n
+                                                                                                             X
+               2m                 ∗ 2m                    2m        ∗    ∗         2m              2m
+          Tr(A      ) = Tr((V U V )         ) = Tr(V U         V ) = Tr(V V U           ) = Tr(U        )=         U(i, i)2m .
+                                                                                                             i=1
+
+       Let S = U U ∗ , then S(i, i) = nj=1 |U(i, j)|2 ≥ |U(i, i)|2 , for every i. Moreover, S is PSD
+                                         P
+       Hermetian matrix so S can be decomposed to S = RDR∗ , where R is a unitary    Pn matrix and   D
+                                                                                                   2
+       is diagonal with non-negative real entries. Since R is unitary, it holds that j=1 |R(i, j)| = 1,
+       for every i. By convexity, we get
+                                                                                               m
+                                                 n
+                                                 X                         n
+                                                                           X
+              (S m ) (i, i) = (RDm R∗ ) (i, i) =   |R(i, j)|2 D(j, j)m ≥     |R(i, j)|2 D(j, j)
+                                                       j=1                               j=1
+                                        m                 2m
+                          = (S(i, i))       ≥ |U(i, i)|        .
+
+       Therefore
+                     Tr((A · A′ )m ) = Tr((V U U ∗ V ∗ )m ) = Tr(V (U U ∗ )m V ∗ ) = Tr((U U ∗ )m )
+                                                  X n                   n
+                                                                        X
+                                     = Tr(S m ) =       (S m ) (i, i) ≥   (U(i, i))2m = Tr(A2m ).
+                                                        i=1                  i=1
+
+
+
+
+                                                                   32
+Lemma B.2 (In the proof of [Bha13, Theorem IX.3.5]). Let X, Y ∈ Rn×n be symmetric matrices.
+                                          k          k   k
+Then for any positive integer k, Tr((XY )2 ) ≤ Tr(X 2 Y 2 ).
+Proof. By Fact B.1, we get
+                     k                               k−1                      k−1                        k−1
+           Tr((XY )2 ) ≤ Tr(((XY )(XY )′ )2                ) = Tr((XY 2 X)2         ) = Tr((X 2 Y 2 )2         ).
+
+The result follows by induction.
+
+Theorem B.3 (Symmetric Rearrangement; [OSVV08, Theorem A.2]). Let X, Y ∈ Rn×n be sym-
+metric matrices. Then for any positive integer k,
+                                          k
+                                                  k k k
+                             Tr (XY X)2 ≤ Tr X 2 Y 2 X 2   .
+
+Proof. By Lemma B.2 and Fact B.1
+                        k
+                                     k          k+1 k          k   k   k
+             Tr (XY X)2 = Tr((X 2 Y )2 ) ≤ Tr(X 2 Y 2 ) = Tr(X 2 Y 2 X 2 )
+
+
+
+   The following lemma is standard.
+Lemma B.4.
+         P For every weighted graph      G = (V, E, w) and v ∈ Rn , where n = |V |, it holds that
+ t                                    2
+v L(G)v = (s,t)∈E w(s, t) · (vs − vt ) .
+
+Lemma B.5. Let G = (VP= [n], E, w) be a weighted undirected graph. For every A ∈ Rn×n , it
+holds that Tr(A′ L(G)A) = {i,j}∈E w(i, j) · ∥A(i) − A(j)∥22 , where A(i) ∈ Rn is row i of A.
+
+Proof. The i’th column of A is A′ (i) ∈ Rn . By Lemma B.4
+                         n                         n
+                         X           ′            X X
+     Tr(A′ L(G)A) =            A′ (k) L(G)A′ (k) =     w(i, j) · (A(i, k) − A(j, k))2
+                         k=1                               k=1 {i,j}∈E
+                             X   n
+                                 X                                            X
+                    =                  w(i, j) · (A(i, k) − A(j, k))2 =                w(i, j) · ∥A(i) − A(j)∥22
+                         {i,j}∈E k=1                                         {i,j}∈E
+
+
+
+
+Lemma B.6. Let A ∈ Rn×n be a symmetric µ-stochastic T -blocked matrix, then the eigenvalues
+                                             1      1
+of the normalized Laplacian N (A) = IT − U − 2 AU − 2 are in the range [0, 2].
+                                                            1            1
+Proof. Since L(A) ≥ 0 we get that N (A) = U − 2 L(A)U − 2 ≥ 0. Therefore, it is left to show that
+                       1      1
+the eigenvalues of U − 2 AU − 2 are at least −1. Let X = U + A. Note that X ≥ 0. Indeed, similarly
+to Lemma B.4 ,for any v ∈ Rn
+                                                 n    n
+                                               1 XX
+                                 v ′ Xv =           A(i, j)(vi + vj )2 ≥ 0.
+                                               2
+                                                i=1 j=1
+
+                1        1        1        1                                                              1         1
+Hence, IT + U − 2 AU − 2 = U − 2 XU − 2 ≥ 0 which means that the eigenvalues of U − 2 AU − 2 are at
+least −1.
+
+                                                            33
+Lemma B.7. Let {vi }ki=1 be a set of k vectors in Rn . Then,
+                                                       Pk            2        k
+                                                          i=1 vi
+                                                                              X
+                                                 k                        ≤         ∥vi ∥22
+                                                           k
+                                                                     2        i=1
+
+Proof. By the Cauchy-Schwartz inequality, for all j ∈ [n],
+                      Pk        !2        k
+                                                  !2       k        k
+                            v
+                        i=1 i,j      1  X              1   X
+                                                              2
+                                                                    X
+                                                                       2
+                  k                =         vi,j    ≤ ·k·   vi,j =   vi,j
+                          k          k                 k
+                                                           i=1                                i=1         i=1
+
+Therefore,
+                   Pk          2       n         Pk             !2        n X
+                                                                            k                   k X
+                                                                                                  n                k
+                      i=1 vi                         i=1 vi,j
+                                       X                                  X                     X                  X
+               k                   =         k                       ≤                2
+                                                                                     vi,j =                2
+                                                                                                          vi,j =         ∥vi ∥22
+                       k                               k
+                               2       j=1                                j=1 i=1               i=1 j=1            i=1
+
+
+
+
+C        Projection Lemmas
+The following fact is quite standard in the analysis of algorithms in the cut-matching framework.
+Lemma C.1 (Gaussian Behavior of Projections; Variation of [KRV09, Lemma 3.5]). Let {vi }ki=1
+be a set of k ≤ n vectors in Rn . For i ∈ [k], let ui = ⟨vi , r⟩ be the projection of vi onto a random
+unit vector r ∈ Sn−1 ⊆ Rn . Then:
+    1. E[u2i ] = n1 ∥vi ∥22 for all i.
+    2.
+                                                        α log n
+                                                           u2i ≤∥vi ∥22
+                                                           n
+                                                            1
+         holds for all i with probability of at least 1 − nα/8 , for any α ≥ 8.
+Remark C.2. Lemma C.1 follows from [KRV09, Lemma 3.5] as follows: For a single projection,
+condition (2) fails to hold with probability at most e−α log n/4 = n−α/4 . By the union bound it fails
+for some vector with probability n1−α/4 . For this failure probability to be small we need α to be
+sufficiently large; If α ≥ 8 then the failure probability is at most n−α/8 .
+Corollary C.3. Let {vi }ki=1 be a set of k ≤ n vectors in Rn . For i ∈ [k], let ui = ⟨vi , r⟩ be the
+projection of vi onto a random unit vector r ∈ Sn−1 ⊆ Rn . Then:
+    1. E[u2i ] = n1 ∥vi ∥22 for all i, and E[(ui − uj )2 ] = n1 ∥vi − vj ∥22 for all pairs (i, j).
+    2.
+                                                               α log n
+                                                                u2i ≤  ∥vi ∥22
+                                                                  n
+                                                               α log n
+                                                 (ui − uj )2 ≤         ∥vi − vj ∥22
+                                                                  n
+                                                                                    1
+         holds for all indices i and pairs (i, j) with probability of at least 1 − nα/8 , for some constant
+         α ≥ 16.
+
+                                                                     34
+Proof. Apply Lemma C.1 and Remark C.2 on the set of vectors
+                                      {vi : i ∈ [k]} ∪ {vi − vj : i, j ∈ [k]}
+
+
+
+D      Removing Assumption 2.1
+In this appendix, we remove Assumption 2.1 from the proof of Theorem 5.2 and make the depen-
+dence on the vertex measure explicit. We bound the error terms in the projection argument in
+terms of the support size and the ratio of the largest to the smallest positive weight. The relevant
+log n factors are then replaced by log(kµ∆ ), where k := |T | and
+                            µmax
+                     µ∆ :=       ,     µmin := min µ(v),      µmax := max µ(v).
+                            µmin               v∈T                     v∈T
+
+    This replacement gives success probability with respect to kµ∆ , rather than with respect to n.
+To recover high probability in n, we add a small algorithmic verification step: after each run, we
+estimate the final potential using a Gaussian trace estimator (see Corollary D.5), and we repeat
+the algorithm O(log n) times until the potential is verified to be small. Since a successful run is
+recognizable by this verifier, the final algorithm succeeds with high probability in n while preserving
+near-linear running time, up to the additional polylogarithmic factors.
+Theorem D.1 (Refined Statement of Theorem 5.2). Given a graph G = (V, E) of n vertices and
+m edges, a parameter ϕ > 0, and a weighting µ : V → R≥0 of the vertices, there exists a randomized
+algorithm which takes Õ (m · polylog(k, µ∆ )) time and must end in one of the following three cases:
+    1. We certify that G has µ-expansion Φµ (G) = Ω(ϕ), with high probability.
+                                                  µ
+                        Ā) in G of µ-expansion ΦG (A, Ā) = O(ϕ log(µ∆ · k)), and µ(A), µ(Ā) are
+    2. We find a cut (A,
+                   µ(V )
+       both Ω   log(µ∆ ·k)   , i.e., we find a relatively balanced µ-sparse cut.
+
+    3. We find a cut (A, Ā) with 0 < µ(Ā) ≤ µ(V   )   µ
+                                                  2 , ΦG (A, Ā) = O(ϕ log(µ∆ · k)), and with high
+       probability, G[A] is an Ω(ϕ)-expander with respect to µ.
+    As a first step towards proving Theorem D.1, we normalize the measure so that µmin = 1. This
+is without loss of generality. Indeed, for any α > 0 and any cut (S, S̄) with min{µ(S), µ(S̄)} > 0,
+we have
+                                              |E(S, S̄)|       1
+                            Φαµ (S, S̄) =                    = Φµ (S, S̄).
+                                          min{αµ(S), αµ(S̄)}   α
+Thus replacing µ by αµ simply scales all µ-expansion values by a factor 1/α. By scaling the
+parameter ϕ by the same factor, all statements of Theorem D.1 are preserved. We therefore assume
+from now on that µmin = 1, and hence µmax = µ∆ and µ(V ) ≤ kµ∆ .
+    Let L := max{2, kµ∆ }. We now describe the changes required in the proof of Theorem D.1.
+Throughout the cut-matching game, every relevant occurrence of log n is replaced by log L. In par-
+ticular, the cut player uses lazy-walk parameter δ = Θ(log L) and thegame is run for T = Θ(log2 L)
+                                                                         1
+rounds. The matching player uses auxiliary edge capacities c = Θ ϕ log     L    in the corresponding
+flow problems.
+    With these parameters, the same embedding argument gives cuts of µ-expansion O(ϕ log L),
+and the balance guarantee becomes Ω(µ(V )/ log L).
+
+                                                        35
+D.1    The potential analysis
+The main analytical change concerns Lemma 4.9, where Assumption 2.1 was used to bound the
+error terms in the random projection argument. To obtain bounds in terms of L, we also modify
+the choice of the projection vector. Since every row of Wt is supported on T , these rows lie in a
+k-dimensional coordinate subspace of Rn . In each round, independently of the preceding rounds,
+we sample r uniformly from the unit sphere of this subspace and set
+                                    *           +
+                                      Wt (i)
+                               ui = p        ,r      for i ∈ At ∩ T .
+                                        µ(i)
+
+Thus the projection identities have normalization factor k rather than n. With this change, we
+obtain the following analogue of Lemma 4.9.
+Lemma D.2. For each round t and every sufficiently large constant α,
+                                                             
+                                  2                         2
+     1 X         Wt (i)   Wt (j)       X             Wt (j)          1               1
+  E        wij p       −p          +        µ(j) p             ≥             ψ(t) − α/16 ,
+     3             µ(i)     µ(j)                       µ(j)       3000α log L       L
+         {i,j}∈Mt                           2    j∈St ∩T                2
+
+where the expectation is over the random unit vector r supported on T defined above.
+                                                                     p
+Proof. Fix the choices made before round t, and write xi = Wt (i)/ µ(i) for i ∈ At ∩ T . The
+projection identities in dimension k give
+
+                                                   2       ∥xi ∥22
+                                                E[ui ] =           .
+                                                             k
+Applying the single-vector bound used in Remark C.2 in dimension k, with threshold α log L, and
+taking a union bound over the O(k 2 ) vectors xi and xi − xj , we obtain, for sufficiently large α and
+using k ≤ L,
+                                   k
+                      ∥xi ∥22 ≥         u2 ,                           for all i ∈ At ∩ T ,
+                                α log L i
+                                   k
+                 ∥xi − xj ∥22 ≥         (ui − uj )2 ,                  for all i, j ∈ At ∩ T ,
+                                α log L
+
+simultaneously with probability at least 1 − L−α/8 .
+   Define z to be the maximum of zero and the violations of these inequalities, as in the proof of
+Lemma 4.9. Then z = 0 on the event above. Since µmin = 1 and ∥Wt ∥2 ≤ 1, we have ∥xi ∥2 ≤ 1
+and therefore |ui | ≤ 1 and |ui − uj | ≤ 2. Consequently,
+                                                             4k
+                                                0≤z≤               .
+                                                           α log L
+With K = µ(V ) ≤ L, it follows that
+                                         8Lk −α/8      8
+                            2K E[z] ≤           L ≤         L2−α/8 ≤ L−α/16
+                                        α log L     α log L
+for sufficiently large α.
+
+                                                        36
+   The calculation in the proof of Lemma 4.9, with n/(α log n) replaced by k/(α log L), now bounds
+the left-hand side of the claimed inequality from below by
+
+                      k       X                             ψ(t)
+                                µ(i) E[u2i ] − 2K E[z] =             − 2K E[z]
+                  3000α log L                            3000α log L
+                              i∈At ∩T
+                                                                  ψ(t)
+                                                           ≥               − L−α/16 ,
+                                                               3000α log L
+as required.
+
+    As in the original proof, summing the potential decrease over T = Θ(log2 L) rounds gives the
+following analogue of Corollary 4.11.
+
+Corollary D.3. With high probability with respect to L, over the choices of r, ψ(T ) ≤ L1 .
+
+    The issue is that Corollary D.3 gives high probability with respect to L, not with respect to n.
+We address this algorithmically. The key observation is that the condition ψ(T ) ≤ O(1/L) can be
+verified efficiently with high probability in n by approximating the trace Tr(WT2 ), see Corollary D.5.
+We then repeat the modified cut-matching game O(log n) times and accept a run only if its final
+potential is verified to be sufficiently small, achieving high probability in n.
+
+Theorem D.4 (Gaussian trace estimator, [AT11]). Let A ∈ Rn×n be a symmetric positive semidef-
+inite matrix. Let ϵ, δ ∈ (0, 1), and let q ≥ 20ϵ−2 log(2/δ). Sample independent Gaussian vectors
+g1 , . . . , gq ∼ N (0, In ), and define
+                                                    q
+                                                  1X ′
+                                         Tr(A) :=
+                                         c            gj Agj .
+                                                  q
+                                                    j=1
+
+Then, with probability at least 1 − δ, Tr(A)
+                                       c     ∈ [(1 − ϵ) Tr(A), (1 + ϵ) Tr(A)].
+
+  Recall from Section 4.3 that vector products with WT can be computed in Õ(mT log L) time.
+Applying Theorem D.4 with A = WT2 , ϵ = 12 , and δ = n1a gives the following.
+
+Corollary D.5 (Approximating the potential). Let ψ(T ) := Tr(WT2 ). For every constant a ≥ 1,
+there is a randomized algorithm that computes, in Õ(mT log L) time, an estimate ψ(T
+                                                                                 b ) such that,
+                               −a 1
+with probability at least 1 − n , 2 ψ(T ) ≤ b
+                                            ψ(T ) ≤ 2ψ(T ).
+
+
+
+
+                                                  37
+

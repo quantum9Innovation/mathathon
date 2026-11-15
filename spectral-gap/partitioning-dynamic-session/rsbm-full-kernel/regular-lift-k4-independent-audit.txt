@@ -1,0 +1,183 @@
+INDEPENDENT AUDIT OF THE NEW KNOWN-QUOTIENT K4-LIFT CHECK
+November 15, 2026
+
+VERDICT: PASS.
+
+This audit inspected ONLY the new K4 script and its new JSON/certificate
+and report, then performed one fresh deterministic verification of that
+NEW saved kernel certificate. No old regression suite was run, no new
+kernel-recovery call was made, and no frozen solver/manuscript/fixture
+was edited. Independently re-enumerating this one new fixture confirmed
+all 59049 field vectors, exactly 24 accepted integer one-hot maps, and
+one unlabeled partition. The selected small-characteristic degeneracy
+is genuinely supported by this path.
+
+INSPECTED NEW FILES
+--------------------
+  regular_lift_k4_check.py
+  regular-lift-k4-checks.json
+  regular-lift-k4-certificate.json
+  regular-lift-k4-output.txt
+  regular-lift-k4-verification.txt
+
+New script SHA256:
+  e6f9179bf0e877dd23ffc58439df6defdafe12cc512376cbd784ffdcc2c25fd1
+
+Frozen source and manuscript hashes matched before and after this audit:
+  full_kernel.py:
+  d57957a6d4c5535513ce700609ed5336a15e60284c578053c86f56a7c501b3ed
+  certified-full-kernel.tex:
+  bb6ec1086a2d46f4a1d0b66c69aadc2d120b07157ba8e95f3c08ffb187843473
+The new script's own recorded before/after hashes additionally agree
+for all previous full-kernel JSON fixtures.
+
+DATA FLOW: RECOVERY DOES NOT USE THE HIDDEN PLANT
+--------------------------------------------------
+The graph generator returns adjacency, hidden planted labels, matching
+permutations, and vertex relabeling. In the recovery path, quotient_rows
+receives only adjacency A, the given quotient R, and the fixed field p.
+The kernel solver receives only that sparse operator and p (plus a
+reproducible solver seed). enumerate_one_hot receives only adjacency,
+R, the computed full kernel basis, p, and fiber size N=n/4. Fiber size
+is determined by the observed order and the known four-vertex quotient.
+
+Hidden labels first influence assertions AFTER recovered maps have
+been computed. The independent dense Gaussian span check, lifted-old-
+commutant comparison, and comparison with permutations of the plant
+are all validation code afterward. No rank oracle or planted-label
+oracle enters the recovery path.
+
+Importing fresh_run_check.py defines reference helpers but does NOT
+execute its test driver, which is guarded by __name__=='__main__'.
+Likewise importing full_kernel.py does not run its old test suite.
+The new script makes exactly one kernel_basis() recovery call. This
+independent audit made zero such calls and one saved-certificate
+verify() call, using only the new K4 instance.
+
+COLUMN VECTORIZATION AND INTEGER CONSTRAINTS: CORRECT
+------------------------------------------------------
+Let X be an n-by-t candidate frame, n=12 and t=4. The flattening index
+is a*n+i for X[i,a], i.e. column stacking. At row index a*n+i the
+operator contains
+
+  sum_j A[i,j] X[j,a] - sum_b R[b,a] X[i,b].
+
+Thus quotient_rows is exactly
+
+  calK = I_t tensor A - R^T tensor I_n,
+  calK vec(X) = vec(A X-X R).
+
+This orientation is correct. Here A and R are symmetric, so calK is
+symmetric and may be passed directly to the frozen symmetric solver;
+no nonsymmetric dilation is being omitted. The independently rebuilt
+48-by-48 operator agreed with this formula and was symmetric. It has
+288 nonzero entries.
+
+The candidate filter checks more than a modular row sum. It requires
+all entries to be actual residues 0 or 1, exactly one 1 in each vertex
+row using an INTEGER sum, and exactly three vertices of each label.
+It then checks INTEGER neighbor counts against R[label_i,:]. Thus
+accepted X is a genuine one-hot equal-fiber map satisfying A X=X R
+over the integers. Field congruences alone are not substituted for
+one-hot or balance conditions.
+
+For R=A_K4 these integer local conditions say: zero neighbors inside
+a cell and exactly one neighbor in each of the other three cells.
+They are exactly the regular-lift covering-map conditions in this
+fixture. Every genuinely valid such frame reduces into the certified
+finite-field kernel, so exhaustive enumeration of that kernel cannot
+miss a valid integer frame.
+
+FRESH READ-ONLY REVERIFICATION AND ENUMERATION
+-----------------------------------------------
+The new certificate was parsed and its operator independently rebuilt
+from A and R by the direct coefficient formula
+
+  coefficient[(a,i),(b,j)]
+       = 1_{a=b} A[i,j] - 1_{i=j} R[b,a] (mod 3).
+
+The frozen deterministic verifier was called exactly ONCE on this new
+certificate and accepted. Its rank lower certificate has ell=38, and
+the ten canonical base-field kernel columns give corank 10. The field
+is the verified extension F_(3^26), size 2541865828329; the returned
+basis is in the BASE field F3, as required for enumeration.
+
+For an independent enumeration, this audit iterated all 3^10 coefficient
+vectors using itertools.product and directly recomputed every length-48
+linear combination. This is separate from the script's incremental
+odometer path. Independent integer one-hot, equal-size, and neighbor-
+count filters gave exactly the saved map set:
+
+  kernel vectors checked:          59049
+  accepted named quotient maps:       24
+  unlabeled equal-fiber partitions:    1
+
+Hidden labels were read only AFTER this independent certified recovery
+and enumeration, to validate that the 24 maps are precisely
+
+  { pi composed with the planted map : pi in S4 }.
+
+Every color is used on three vertices, so these 24 permutations give
+24 distinct named maps. Since Aut(K4)=S4, they are expected equivalent
+names of one fiber partition, not 24 different planted partitions.
+No old fixture or old test suite participated in this re-verification.
+
+WHY THE TEN-DIMENSIONAL KERNEL AND 24 MAPS ARE CONSISTENT
+---------------------------------------------------------
+The script's additional validation lifts the K4 commutant through the
+hidden planted indicator J, after recovery. This is a sound independent
+explanation of the observed complete kernel.
+
+Over F3, write R=J_4-I_4, where J_4 is the all-one 4-by-4 matrix.
+Since 4=1 in F3, J_4^2=J_4. Its image has dimension one and its kernel
+has dimension three. R acts on those two summands by distinct scalars
+0 and -1. Its commutant therefore has dimension 1^2+3^2=10. Lifting
+Z to J Z is injective because every planted fiber is nonempty.
+The independently checked full intertwiner kernel also has dimension
+ten, so these lifted old intertwiners comprise the entire kernel.
+
+Every candidate frame is consequently constant on each old fiber.
+One-hot rows force each old fiber to choose a new color; equal size
+three forces different old fibers to choose different colors. The
+corresponding 4-by-4 matrix is a permutation matrix. Every permutation
+commutes with R=A_K4. This accounts for exactly 24 maps and exactly
+one unlabeled partition, consistently with both exhaustive runs.
+
+SMALL CHARACTERISTIC: p DIVIDES DEGREE AND FIBER SIZE
+------------------------------------------------------
+The prime is p=3, the observed/base degree is 3, and the fiber size is
+also N=3. This is not covered by an argument that silently assumes
+p does not divide the degree or N. The actual code does neither:
+
+  * it never divides by degree or fiber size;
+  * the kernel solver uses coordinate pivots, not an invertible
+    Euclidean Gram matrix of a planted frame;
+  * exact integer balance and one-hot tests are performed after
+    finite-field enumeration;
+  * fixed-characteristic diagonal preconditioning remains applicable.
+
+The saved basis is in fact totally isotropic for the ordinary F3 dot
+product. A separate read-only check computed all 100 entries of its
+10-by-10 Gram matrix; every entry was zero modulo 3. This is consistent
+with fiber-constant vectors: each fiber contributes N times a product,
+and N=0 in F3. It is an actual degeneracy exercised by this fixture,
+not a claim inferred from a nondegenerate-mass shortcut.
+
+FIXTURE SELECTION AND CLAIM BOUNDARIES
+---------------------------------------
+The observed graph is the specified N=3 lift of K4, generated from six
+matching permutations with deterministic graph seed 2 and then a hidden
+vertex relabeling. The new script checks simplicity, connectivity,
+undirectedness, and degree three. The fixture was selected because its
+kernel has the manageable minimal dimension ten. It is a deterministic
+correctness example, NOT a statistical sampling or runtime experiment.
+
+The given quotient is exactly the fixed R=A_K4. The potentially large
+family of unknown quotient/frame matrices was not enumerated and is
+not claimed to have been tested. The new report's separate all-lift
+moment theorem is an external theoretical input; this audit does not
+re-audit or derive it from the small example.
+
+No substantive error was found in the new script, JSON, or certificate.
+All writes by this independent audit are confined to this new audit
+text file. Frozen core code and manuscript remain unchanged.

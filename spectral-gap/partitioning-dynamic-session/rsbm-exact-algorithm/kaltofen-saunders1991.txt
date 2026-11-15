@@ -1,0 +1,555 @@
+     On Wiedemann’s Method of Solving Sparse Linear Systems*
+                                           Erich Kaltofen
+             Department of Computer Science, Rensselaer Polytechnic Institute
+              Troy, New York 12180-3590; Inter-Net: kaltofen@cs.rpi.edu
+                                        B. David Saunders
+         Department of Computer and Information Sciences, University of Delaware
+             Newark, Delaware 19716; Inter-Net: saunders@dewey.udel.edu
+                                        Preliminary Report
+
+
+                                         1. Introduction
+Douglas Wiedemann’s (1986) landmark approach to solving sparse linear systems over finite
+fields provides the symbolic counterpart to non-combinatorial numerical methods for solving
+sparse linear systems, such as the Lanczos or conjugate gradient method (see Golub and van
+Loan (1983)). The problem is to solve a sparse linear system, when the individual entries
+lie in a generic field, and the only operations possible are field arithmetic; the solution is
+to be exact. Such is the situation, for instance, if one works in a finite field. Wiedemann
+bases his approach on Krylov subspaces, but projects further to a sequence of individual
+field elements. By making a link to the Berlekamp/Massey problem from coding theory —
+the coordinate recurrences — and by using randomization an algorithm is obtained with the
+following property. On input of an n × n coefficient matrix A given by a so-called black box,
+which is a program that can multiply the matrix by a vector (see Figure 1), and of a vector b,
+the algorithm finds, with high probability in case the system is solvable, a random solution
+vector x with Ax = b. It is assumed that the field has sufficiently many elements, say no
+less than 50n2 log(n), otherwise one goes to a finite algebraic extension. The complexity of
+the method is in the general singular case O(n log(n)) calls to the black box for A and an
+additional O(n2 log(n)2 ) field arithmetic operations.
+     Note that the black box model for matrix sparsity is a significant abstraction. For a
+matrix that has an abundance of zero entries, multiplying the matrix by a vector may cost
+no more than O(n) field operations, in which case the algorithm becomes almost quadratic.
+However, the model also applies to structured matrices with few or no zero entries, such as
+Toeplitz- and Vandermonde-like matrices, or matrices that correspond to resultants (Canny
+
+     * This material is based on work supported in part by the National Science Foundation under Grant
+No. CCR-90-06077 and under Grant No. CDA-88-05910 (first author). This paper appears in Proc. Ninth
+Internat. Symp. Applied Algebra, Algebraic Algor., Error-Correcting Codes, Springer Lect. Notes Comput.
+Sci. 539, pp. 29–38 (1991).
+
+                                                  1
+                            y ∈ Kn                               Ay ∈ Kn
+                         −−−−−−−−−→                            −−−−−−−−−→
+
+                                              A ∈ Kn×n
+                             K a field of sufficiently large cardinality
+                         Figure 1: Black box representation of a matrix.
+et al. 1989). Most importantly, the algorithm makes no assumptions on the systems, such
+as symmetricity or positive definiteness.
+    We contribute to Wiedemann’s approach in several ways. For singular systems, we show
+how to randomly sample from the solution manifold by randomly perturbing the entire
+system and then solving a non-singular one. Our method is a purely algebraic one, while
+Wiedemann uses padding with random sparse rows to enforce non-singularity. When com-
+puting the rank or determinant of a matrix, one requires left and right multiplier matrices
+such that the product with the coefficient matrix has a maximal non-zero minor in the left
+upper corner. We present an alternate to Wiedemann’s perturbation that requires asymp-
+totically fewer field elements and is again based on algebraic rather than combinatorical
+properties. As it turns out, the multipliers can be chosen unit triangular Toeplitz matrices.
+We also present a new method for finding the rank of a matrix that is asymptotically a factor
+log(n) faster than the previous ones. Furthermore, we present in greater detail a method
+based on p-adic lifting for solving a sparse system over the rationals.
+    LaMacchia and Odlyzko (1991) have explored the use of conjugate gradients for solving
+sparse systems over finite fields. While that approach appears, in practice, to be competitive
+with ones based on coordinate recurrences, the probability of success for their randomizations
+seems difficult to analyze. Of course, for particularly structured matrices one may also
+proceed by nested dissection (Lipton et al. 1979) or block elimination (Abdali and Wise 1988)
+and (Wise and Franco 1990).
+    In his concluding remarks, Wiedemann raises the question whether it may be possible
+to solve a transposed problem xtr A = b from a black box for A. We wish to add that if the
+black box is an algebraic circuit, it is possible to construct a black box for A tr with the same
+asymptotic complexity (Kaminski et al. 1988) and (Kaltofen and Pan 1991, §4).
+
+                  2. Wiedemann’s Method for Non-Singular Matrices
+Wiedemann (1986) presents a randomized Las Vegas algorithm for solving a sparse linear
+system over a finite field. As it turns out, his method constitutes an algorithm based on
+field arithmetic alone that can solve a non-singular system given as an n-dimensional black
+box matrix. It requires linear space and quadratic time, while applying the black box for
+the coefficient matrix no more than 3n times. In the following we present Wiedemann’s
+argument with the change in the probabilistic analysis taken from (Kaltofen and Pan 1991),
+which is warranted because we work over an abstract field.
+     Let V be a vector space over the field K, and let {ai }∞
+                                                            i=0 be an infinite sequence with ele-
+ments ai ∈ V . The sequence {ai }∞i=0 is linearly generated  over K if there exist c0 , c1 , . . . , cn ∈
+K, n ≥ 0, ck 6= 0 for some k with 0 ≤ k ≤ n, such that
+                                  ∀j ≥ 0: c0 aj + · · · + cn aj+n = 0.
+
+                                                   2
+The polynomial c0 + c1 λ + · · · + cn λn is called a generating polynomial for {ai }∞i=0 . The set
+                                        ∞
+of all generating polynomials for {ai }i=0 together with the zero polynomial forms an ideal in
+K[λ]. The unique polynomial generating that ideal, normalized to have leading coefficient 1,
+is called the minimum polynomial of a linearly generated sequence {ai }∞ i=0 . Every generating
+polynomial is a multiple of the minimum polynomial.
+                                                                                          n×n N
+     Let A ∈ Kn×n be a square matrix over a field. The sequence {Ai }∞         i=0 ∈ (K      ) is
+linearly generated, and its minimum polynomial is the minimum polynomial of A, which
+                                                                                            n N
+will be denoted by f A . For any column vector b ∈ Kn , the sequence {Ai b}∞      i=0 ∈ (K ) is
+also linearly generated by f A . However, its minimum polynomial, denoted by f A,b , can be a
+proper divisor of f A . For any row vector u ∈ K1×n , the sequence {uAi b}∞           N
+                                                                            i=0 ∈ K is linearly
+generated as well, and its minimum polynomial, denoted by fuA,b , is again a divisor of f A,b .
+Wiedemann proves the following fact (loc. cit., §VI).
+Theorem 1. Let m = deg(f A,b ), and let W be the linear space of polynomials of degree
+less than m in K[λ]. There exists a surjective linear map `: K1×n −→ W such that
+                      ∀u ∈ K1×n : fuA,b = f A,b ⇐⇒ GCD(f A,b , `(u)) = 1.
+    Thus, the probability that fuA,b = f A,b for a randomly selected row vector u is essentially
+the probability of randomly selecting a polynomial of degree less than n that is relatively
+prime to f A,b . For a finite field with q elements, Wiedemann (loc. cit., Proposition 3) proves
+that the probability is no less than
+                                               1
+                                                               .                              (1)
+                                   6 max{dlogq (deg f A )e, 1}
+In (Kaltofen and Pan 1991, §2) we establish the following alternate approach.
+Lemma 1. Let A ∈ Kn×n , b ∈ Kn , and let S ⊂ K. Randomly and uniformly select a row
+vector u ∈ S 1×n . Then the probability
+                                                               deg(f A,b )
+                              Prob(fuA,b = f A,b ) ≥ 1 −                   .
+                                                                card(S)
+
+    If A is non-singular, we may compute x = A−1 b from
+                          f A,b (λ) =: c0 + c1 λ + · · · + cm−1 λm−1 + λm
+by m − 2 applications of A as
+                                   1 m−1
+                           x←−        (A b + cm−1 Am−2 b · · · + c1 b),                       (2)
+                                   c0
+since f A,b (A)b = 0. The polynomial f A,b is computed by picking a random row vector u and
+computing fuA,b . That is accomplished by first construction the sequence of field elements
+                               {a0 , a1 , . . . , a2m−1 },   ai := uAi b.
+and finding its minimum degree linear generating polynomial. By the theory of linearly
+generated sequences, this polynomial is equal to fuA,b , and it can be determined by the
+Berlekamp/Massey algorithm in O(m deg(fuA,b )) field operations. Wiedemann shows further
+that fuA,b for an unlucky choice of u can be used with the next trial.
+
+                                                     3
+Algorithm Minimum Polynomial
+Input: A ∈ Kn×n , b ∈ Kn , and d ≥ deg(f A,b ).
+Output: f A,b ∈ K[λ].
+Step 1: Pick a random row vector u ∈ S 1×n , S ⊂ K, and compute
+
+                  a0 ← ub, a1 ← uAb, . . . , ai ← uAi b, . . . , a2d−1 ← uA2d−1 b.
+
+
+Step 2: Here we determine fuA,b by the Berlekamp/Massey algorithm (Massey 1969). For
+completeness, we give the entire method.
+Λ0 (λ) ← 1; Σ0 (λ) ← 0; l0 ← 0; δ ← 1;
+For r = 1, 2, . . . , 2d Do {
+     With Λr (λ) = c0 λnr + c1 λnr −1 + · · · + cnr , c0 6= 0, find the r-th discrepancy
+     δr ← cnr ar−1 + cnr −1 ar−2 + · · · + c0 ar−nr −1 ;
+     If δr = 0 Then {Λr (λ) ← Λr−1 (λ); Σr (λ) ← λΣr−1 (λ); lr ← lr−1 ; }
+                Else {Λr (λ) ← Λr−1 (λ) − δδr λΣr−1 (λ);
+                         If 2lr < r Then {Σr (λ) ← Λr−1 (λ); lr ← r − lr−1 ; δ ← δr ; }
+                                    Else {Σr (λ) ← λΣr−1 (λ); lr ← lr−1 ; }}}
+ A,b          l2d
+fu (λ) ← λ Λ2d (1/λ).
+Step 3: Now we check if fuA,b is a proper divisor of f A,b .
+If d = deg(fuA,b ) Then Return f A,b ← fuA,b ;
+Else {b0 ← fuA,b (A)b. Clearly, b0 can be determined by deg(fuA,b ) − 1 multiplications of A by
+       vectors, or from the vectors Ai b if they have been saved in Step 1.
+       If b0 = 0 Then Return f A,b ← fuA,b ;
+                                                                                              0
+       Else {Call the algorithm recursively with A, b0 and d − deg(fuA,b ) to determine f A,b .
+                                                    0
+               Finally, Return f A,b ← fuA,b × f A,b .}} 
+
+     Several observations can be made about this algorithm. First, for randomly chosen b, the
+probability that f A,b = f A , the minimum polynomial of A, can be also shown to be bounded
+by (1) and as in Lemma 1. That observation gives a Las Vegas randomized algorithm to
+determine that a matrix is singular by establishing that f A,b (0) = 0 for a random b. For
+non-singular matrices, the determinant can be found with a Las Vegas randomized method
+as well (Wiedemann, loc. cit., §V), but we will not need that algorithm in this paper. Second,
+the probability that the algorithm determines f A,b after k invocations is much higher than
+if one were to try to obtain fuA,b (A)b = 0 for one of k different u’s. In fact, Wiedemann (loc.
+cit., Eq. (12)) proves that for k ≥ 2 and K a field with q elements, the probability is no less
+than
+                                       k−1 
+                                          q                    1
+                               1 − log k−1         ≥ 1 − k−1        .
+                                        q    −1           q      −1
+
+Third, the algorithm can be implemented storing only O(n) many field elements, using, for
+a sufficiently large field, with high probability no more than 3n multiplications of A by a
+vector, and O(n2 ) additional arithmetic operations in K. Clearly, from (2) and Step 3, the
+same complexity bounds hold for computing x with Ax = b, provided f A,b (0) 6= 0.
+
+                                                  4
+                               3. The Rational Non-Singular Case
+Although the algorithm presented in §2 for abstract fields is applicable to the rational num-
+bers, the bit size of the intermediately computed rational numbers requires analysis. Alter-
+nately, one can lift a modular solution p-adically and then convert to a rational one. Here
+we shall discuss that method further (cf. Wiedemann, loc. cit., §7). We shall assume that
+the system to be solved is square, non-singular, with integer entries:
+
+                                   Ax = b,            A ∈ Zn×n , b ∈ Zn .
+
+Furthermore, we suppose that the black box for A can be supplied with both a modulus
+q ∈ Z and a vector y ∈ Z/(q), and then computes (A mod q) y ∈ (Z/(q))n .
+Algorithm Rational Non-Singular System Solver
+Step 1: Find a prime p that does not divide Det(A) by probabilistically testing if Det(A mod
+p) 6= 0 using the method described in §2. As a by-product, we will have a polynomial
+fuA mod p,v ∈ Z/(p)[λ]. Initialize the estimate for f A mod p , f (λ) ← fuA mod p,v (λ).
+Step 2: Now we determine how far the p-adic solution must be lifted in order to recover
+the rational solution from the p-adic one. Let
+                           nq                              o             q
+                                       2                 2
+            kAk2 := max         A[1, j] + · · · + A[n, j] , kbk2 := b21 + · · · + b2n ,
+                    1≤j≤n
+
+
+where A[i, j] denotes the entry in row i and column j of the matrix A. By Hadamard’s
+determinant inequality, |Det(A)| ≤ kAkn2 =: B1 , and by Cramer’s rule the numerator of
+(A−1 b)j is bounded by kAkn−12  kbk2 =: B2 . By the well-known continued fraction recovery
+procedure (see, e.g., Kaltofen and Rolletschek (1989, §5)) the necessary modulus is twice the
+product of the numerator and denominator bound, hence
+
+                                     pk ≥ 2kAk22n−1 kbk2 =: B0 .
+
+For i ← 0, . . . , k Do Steps 3 and 4.
+Step 3: The p-adic expansions of A, b, and x, are denoted by
+
+         A ≡ Ā(i−1) + pi A(i) (mod pi+1 ), Ā(i−1) ∈ (Z/(pi ))n×n , A(i) ∈ (Z/(p))n×n ,
+         b ≡ b̄(i−1) + pi b(i) (mod pi+1 ), b̄(i−1) ∈ (Z/(pi ))n ,   b(i) ∈ (Z/(p))n ,
+                (i−1)    i (i)                 (i−1)
+         x ≡ x̄                       i+1
+                      + p x (mod p ), x̄                    i n
+                                                     ∈ (Z/(p )) ,    x(i) ∈ (Z/(p))n .
+
+At this point we have x̄(i−1) and we find x(i) from
+
+                                 A(x̄(i−1) + pi x(i) ) ≡ b (mod pi+1 ).
+
+Compute over the integers
+                                                (i)
+                                   bb(i) ← b̄         − Ā(i) x̄(i−1)
+                                                                      ∈ Zn ,
+                                                         pi
+and set eb(i) ← bb(i) mod p.
+
+                                                          5
+Step 4: We have x(i) = (A mod p)−1 be(i) over Z/(p). The mod p solution is determined from
+the current estimate f for f A mod p , which is normalized as
+          f (λ) =: 1 − c1 λ − · · · − cm−1 λm−1 − cm λm ∈ Z/(p)[λ],   cm 6≡ 0 (mod p).
+Compute
+                 x(i) ← c1eb(i) + c2 (A mod p) be(i) + · · · + cm (A mod p)m eb(i) .
+If b0 (i) ← (A mod p)x(i) 6= eb(i) , call algorithm Minimum Polynomial with A mod p, b0 (i) ,
+                                                          0 (i)
+n − m, over the field K = Z/(p). Set f (λ) ← f A mod p,b (λ)f (λ) and repeat Step 4, unless
+f (0) = 0, in which case the prime p divides the determinant of A and must be changed.
+Step 5: We now convert x̄(k) ∈ (Z/(pk ))n to a rational vector x. Since the least common
+denominator of all components xj is a divisor of Det(A), we may incrementally find that
+denominator from the denominators of initially converted xj ’s. Set ∆ ← 1.
+For j ← 1, . . . , n Do {
+     First, we divide out the current common denominator and adjust the modulus bound.
+                                                 0                               (k0 )        (k)
+     Determine the smallest k 0 such that pk ≥ B0 /∆ (see Step 2). Set x̄j ← ∆−1 x̄j
+               0       (k0 )                                         0         0
+     (mod pk ). If x̄j , represented as an integer between −pk /2 and pk /2, is in absolute
+                                             (k0 )
+     value no larger than B2 , then xj ← x̄j /∆ ∈ Q. Otherwise, compute that convergent
+                                                                                        (k0 )   0
+     ul /vl of the continued fraction approximations (Hardy and Wright 1979, §10) of x̄ j /pk
+                                                 (k0 )   0
+     that satisfies vl ≤ B1 /∆ < vl−1 ; xj ← (x̄j vl − pk ul )/vl ; ∆ ← ∆vl .} 
+    The advantage of this algorithm lies in the fact that one only needs the minimum poly-
+nomial of A mod p. The number of applications of the black box for A now depends also on
+the length of the entries in A and b, but those multiplications are modular ones and therefore
+computationally more efficient than the ones arising in the method of §2.
+
+                                   4. The Singular Case
+The problem at hand is to solve Ax = b in case where the matrix A is singular. We give a
+randomized algorithm that returns a random vector in the solution manifold, provided one
+exists. First, we give a perturbation scheme that makes the leading principal submatrices of
+dimension up to the rank of A non-singular.
+Theorem 2. Let A ∈ Kn×n , and let S ⊂ K. Consider the matrix
+                                                                                             
+                      1 u 2 u3 . . . u n                 1
+                         1 u2 . . . un−1             w2   1                                  
+                                  .     .                                                    
+  Ae := U A L, U :=           1     ..  ..  , L :=  w3    w2                  1              ,
+                                                     .                       ...   ...       
+                                  ...                 .
+                                                         .                                      
+                                        u2
+                                         1              wn wn−1                 ...   w2    1
+where the elements of the unit upper triangular Toeplitz matrix U and the elements of the
+unit lower triangular Toeplitz matrix L are randomly and uniformly selected from the set S.
+                                ei denote the leading principal i × i submatrix of A.
+Let r be the rank of A, and let A                                                  e Then
+
+                              ei ) 6= 0 for all 1 ≤ i ≤ r) ≥ 1 −   r(r + 1)
+                     Prob(Det(A                                             .
+                                                                   card(S)
+
+                                                6
+Proof. For an n × n matrix B, denote by BI,J the determinant of the submatrix of B
+that is formed by removing from B all rows not contained in the set I and all columns not
+contained in the set J. First, assume that U is a generic unit upper triangular Toeplitz
+matrix whose entries are new variables υ2 , . . . , υn replacing u2 , . . . , un , and assume that L is
+a generic unit lower triangular Toeplitz matrix whose entries are new variables ω 2 , . . . , ωn .
+Let Ae = UA L ∈ Ln×n , where L := K(υ2 , . . . , ωn ). For K = {1, . . . , k} the Cauchy-Binet
+formula yields                     X                X
+                        AeK,K =                             UK,I AI,J LJ,K .                        (3)
+                                      I={i1 ,...,ik } J={j1 ,...,jk }
+                                     1≤i1 <···<ik ≤n 1≤j1 <···<jk ≤n
+
+
+We claim that for k ≤ r the determinant AeK,K , which is the kth principal minor of A,           e is
+non-zero in L. To prove this we consider the minor expansions of UK,I and LJ,K . For a given
+set I = {i1 , . . . , ik } with 1 ≤ i1 < · · · < ik ≤ n, consider all terms in the minor expansion of
+UK,I . The matrix U restricted to rows 1, . . . , k and columns in I has the form, for instance,
+                                       i1          i2                     ik
+                                                                              
+                                 1    υ i1        υ i2      ...          υ ik
+                                 2  υi1 −1      υi2 −1                 υik −1 
+                                    .              ..                     ..  
+                                    ..              .                      .  .
+                                                                              
+                                    1                                         
+                                 k       0          1       . . . υik −k+1
+If we write the terms in the minor expansion in descending order of the variables, using the
+variable order υ2 < υ3 < · · · < υn , then the diagonal term,
+                              υik −k+1 υik−1 −k+2 · · · υi1 ,      with υ1 = 1,                    (4)
+is the lexicographically smallest term of all non-zero monomials in that minor expansion.
+Moreover, this term uniquely identifies each minor of U under the sum (3). The latter is
+most easily seen from the fact that the set I can be reconstructed from (4) by observing that
+υiκ −κ+1 = 1 forces iκ = κ and all lower indices iµ = µ, µ < κ. Similarly, the diagonal terms
+in the minor expansions of LJ,K ,
+                             ωjk −k+1 ωjk−1 −k+2 · · · ωj1 ,       with ω1 = 1,                    (5)
+are the lexicographically smallest among all terms of non-zero monomials in the expan-
+sions, and uniquely correspond to an index set J. Therefore, the polynomials UK,I LJ,K ∈
+K[υ2 , . . . , ωn ] have unique lexicographically lowest terms, namely the product of (4) and (5)
+with the prescribed variable ordering, hence are linearly independent over K. Moreover,
+since for k ≤ r there exist sets I0 and J0 with AI0 ,J0 6= 0, the linear sum (3) of the linearly
+independent polynomials cannot be zero, which establishes the claim.
+    Set                                         r
+                                               Y
+                               0 6= σ(U, L) :=     AeK,K ∈ K[υ2 , . . . , ωn ].
+                                                  k=1
+
+It is clear that all those U and L, for which σ(U, L) 6= 0, satisfy the lemma. By the
+Schwartz (1980) / Zippel (1979) lemma, that probability
+                                               Pr       is no less than 1 − deg(σ)/card(S).
+The probability estimate follows from deg(σ) ≤ k=1 2k. 
+
+                                                        7
+    We remark that applying A e to a vector costs one application of A to a vector and
+two polynomial multiplications, since the Toeplitz matrix times vector products can be
+accomplished by polynomial multiplication. For example, for
+                                                        
+                      y1          w1                          v1
+                     y2       w2                             
+                                     w 1
+                                                            v2 
+                     y3  :=  w3                              
+                     .        .      w2   w1
+                                             .    .         v.3 
+                     ..       ..            .. ..        .. 
+                      yn          wn wn−1 . . . w2 w1         vn
+
+we have
+
+          (w1 + · · · + wn z n−1 )(v1 + · · · + vn z n−1 ) ≡ y1 + y2 z + · · · + yn z n−1 (mod z n ).
+
+Thus applying A  e to a vector consumes an additional O(n log(n) loglog(n)) arithmetic op-
+erations in K (Cantor and Kaltofen 1987). Note that Wiedemann (1986, §V) proposes a
+different perturbation scheme with the same effect, which is based on rearrangable permu-
+tation networks (Beneš 1964). That scheme requires O(n log(n)) random field elements, but
+only costs an additional O(n log(n)) arithmetic operations.
+     We may determine the rank of A by performing a binary search for the largest non-
+                                        e However, that strategy adds a log(n) factor to all
+singular leading principal submatrix of A.
+timings, and we have found the following alternate way to determine the rank without that
+problem.
+Lemma 2. Let A ∈ Kn×n have leading principal minors nonzero up to Ar , where r is the
+(unknown) rank of A, and suppose that r < n. Let S ⊂ K and let X = diag(x1 , . . . , xn ), xi
+chosen uniformly from S. Then r = deg(f AX ) − 1 with probability at least
+
+                                        1 − n(n − 1)/(2 card(S)).
+
+Proof. Consider the conformal partitioning
+                                                                                 
+                              Ar B        Y               0               Ar Y   BZ
+                      AX =                                        =                       .
+                              C D          0              Z               CY     DZ
+
+Provided the xi ’s are nonzero, this matrix has the same rank as A and also has leading
+principal minors nonzero up to the r-th. Now consider the following matrix similar to AX,
+                                                                     
+                       I Y −1 A−1r BZ     Ar Y BZ       I −Y −1 A−1 r BZ
+              M :=
+                       0        I          CY DZ        0         I
+                               −1 −1
+                                                 
+                       Ar Y + Y Ar BZCY 0
+                   =                               .
+                                 CY            0
+
+Of course this matrix has the same minimal polynomial and characteristic polynomial as AX.
+                                                                                       0
+Let cM (λ) denote the characteristic polynomial of matrix M . We have cAX (λ) = λn−r cA Y (λ),
+where A0 Y is the upper left corner, i.e., A0 denotes Ar + Y −1 A−1            0
+                                                                  r BZC. If A has leading
+principal minors nonsingular, then Wiedemann’s lemma applies (loc. cit., Section V), and
+
+                                                      8
+  0           0                                                 0
+f A Y (λ) = cA Y (λ). It follows that f AX (λ) = f M (λ) = λcA Y (λ) is a polynomial of degree
+r + 1. To see this, note that on the one hand the right hand polynomial is clearly a factor
+of f M (λ), while on the other hand there is a relation among M i , i = 1, . . . , r + 1, given the
+relation among (A0 Y )i , i = 1, . . . , r and that
+                                                              
+                                          i       (A0 Y )i   0
+                                      M =                        .
+                                               CY (A0 Y )i−1 0
+
+    It remains to show A0 has leading principal minors nonsingular. This is so if xr+1 , . . . , xn
+(the entries of Z) are indeterminates. For then the ith leading principal minor of A 0 is a
+polynomial of degree no more than i in these variables with a constant term which is the
+ith leading principal minor of Ar . The product of these minors is a polynomial of degree
+r(r+1)/2, hence if the entries of Z are randomly chosen, the probability of a leading principal
+minor being zero is, by the Schwartz/Zippel lemma, bounded by r(r + 1)/(2 card(S)). 
+    We may compute f AeX = fuAeX,b , for random u, b as in §2. Thus we have the following
+result.
+Theorem 3. Let A ∈ Kn×n , and let S ⊂ K. Using 5n − 2 random elements from S (the
+entries of U , L, X, u, and b), we may probabilistically determine the rank of A by O(n)
+multiplications of A by vectors and O(n2 log(n) loglog(n)) arithmetic operations in K. The
+algorithm returns an integer that is with probability no less than
+
+                                              3 n(n + 1)
+                                         1−
+                                              2 card(S)
+
+the rank of A.
+    Once we have determined the rank of A, it is relatively easy to compute a random
+solution to Ax = b. Clearly, it suffices to compute a random solution to A   exe = U b, since
+then x = Lex solves Ax = b. Hence we may restrict
+                                                  ourselves
+                                                            to the case where the coefficient
+                             e namely A =      A r  B
+matrix has the properties of A,                          where r is the rank of A and Ar is
+                                               C D
+nonsingular. The equivalent matrix
+                                                                  
+                      Ar B       I −A−1  r B        Ar          0
+                                               =
+                      C D        0       I           C D − CA−1   r B
+
+
+has the same rank, hence D = CA−1
+                                r B.
+    Now for any x2 ,
+                                                   
+                       Ar B    x1      Ar x1 + Bx2       b1
+                                   =                   =
+                       C D     x2    Cx1 + CA−1r Bx 2    b2
+
+if and only if Ar x1 = b1 − Bx2 and b2 = CA−1r b1 . The latter condition, independent of x2 is
+a necessary and sufficient condition for the existence of a solution to Ax = b and the first
+equation describes the solution space. For the case x2 = 0 we solve for x1 as described above.
+Finally, we show how to find a random element of the solution manifold.
+
+                                                9
+Lemma 3. Let A ∈ Kn×n be of rank r, and suppose that Ar , the r × r leading principal
+submatrix of A, is non-singular. For any column vector w ∈ Kn , there exists a unique vector
+yw ∈ Kn such that                0 
+                                  yw
+                                 0 
+                            A×                        0    r
+                                 ...  n − r = Aw, yw ∈ K .
+                                   0
+                                | {z }
+                                 =: yw
+Furthermore the map `: K −→ Kn defined by `(w) := w − yw is linear with range the right
+                          n
+
+null space of A.
+Proof. The existence of yw with the bottom n − r entries equal to 0 easily follows from the
+fact that Aw is a linear combination of the column vectors of A, which by the assumption
+on A can be also expressed as a linear combination of the first r column vectors. Since
+                            r×n
+yw0 = A−1   0           0
+        r A w, where A ∈ K      is the matrix formed by the first r rows of A, ` is a linear
+map. Clearly, A × `(w) = 0, so range(`) is a subspace of the right nullspace of A. Now
+`(w) = 0 iff w − yw = 0, which means that
+                                0
+                                  w
+                                0 
+                           w=                         0     0
+                                ...  n − r and thus yw = w .
+                                   0
+Hence the kernel of the map ` has dimension r, which implies that range(`) has the dimension
+n − r and is therefore the full right nullspace of A. 
+Theorem 4. Let A ∈ Kn×n be of rank r with the leading principal r × r submatrix non-
+singular, and let b ∈ Kn be such that Ax = b is solvable in x ∈ Kn . Then for a random
+column vector v ∈ Kn there exists a unique vector yb,v ∈ Kn such that
+                                    0 
+                                     yb,v
+                                    0 
+                              A×         
+                                    ...  n − r = b + Av.
+                                      0
+                                   | {z }
+                                    =: yb,v
+Furthermore, yb,v − v uniformly samples the solution manifold of Ax = b.
+Proof. The existence of the special vector yb,v follows as in Lemma 3. Let x0 ∈ Kn be a
+solution Ax0 = b and let w := v + x0 . Then Ayb,v = Aw, which by Lemma 2 means that
+yb,v − w samples the right nullspace of A. Thus yb,v − v samples the solution manifold of
+Ax = b. 
+    Therefore, once we know the rank r of A, a random solution can be obtained with an
+                                                      0
+additional n random field elements. Note that yb,v       can be obtained from a nonsingular
+subsystem, which has a black box coefficient matrix by setting the bottom n − r components
+of the input vector to full black box matrix to 0. Taking the randomization of Theorem 2 into
+account, we need O(r) applications of A and an additional O(rn log(n) loglog(n)) arithmetic
+operations.
+
+                                             10
+                                           Literature Cited
+Abdali, S. K. and Wise, D. S., “Experiments with quadtree representation of matrices,” Proc. ISSAC ’88,
+    Springer Lect. Notes Comput. Sci. 358, pp. 467–474 (1988).
+Beneš, V. E., “Optimal rearrangeable multistage connecting networks,” Bell System Tech. J. 43, pp. 1641–
+    1656 (1964).
+Canny, J., Kaltofen, E., and Lakshman Yagati, “Solving systems of non-linear polynomial equations faster,”
+    Proc. ACM-SIGSAM 1989 Internat. Symp. Symbolic Algebraic Comput., pp. 121–128 (1989).
+Cantor, D. G. and Kaltofen, E., “On fast multiplication of polynomials over arbitrary rings,” Acta Inform.
+    28/7, pp. 693–701 (1991).
+Golub, G. H. and van Loan, C. F., Matrix Computations; Johns Hopkins University Press, Baltimore,
+    Maryland, 1987.
+Hardy, G. H. and Wright, E. M., An Introduction to the Theory of Numbers; Oxford Univ. Press, Oxford,
+    1979.
+Kaltofen, E. and Pan, V., “Processor efficient parallel solution of linear systems over an abstract field,” in
+    Proc. 3rd Ann. ACM Symp. Parallel Algor. Architecture; ACM Press, pp. 180–191, 1991.
+Kaltofen, E. and Rolletschek, H., “Computing greatest common divisors and factorizations in quadratic
+    number fields,” Math. Comp. 53/188, pp. 697–720 (1989).
+Kaminski, M., Kirkpatrick, D. G., and Bshouty, N. H., “Addition requirements for matrix and transposed
+    matrix products,” J. Algorithms 9, pp. 354–364 (1988).
+LaMacchia, B. A. and Odlyzko, A. M., “Solving large sparse linear systems over finite fields,” in Advances
+    in Cryptology: CRYPTO ’90, Lect. Notes Comput. Sci. 537, edited by A. J. Menezes and S. Vanstone;
+    Springer Verlag, 1991.
+Lipton, R., Rose, D., and Tarjan, R. E., “Generalized nested dissection,” SIAM J. Numer. Anal. 16, pp.
+    346–358 (1979).
+Massey, J. L., “Shift-register synthesis and BCH decoding,” IEEE Trans. Inf. Theory IT-15, pp. 122–127
+    (1969).
+Schwartz, J. T., “Fast probabilistic algorithms for verification of polynomial identities,” J. ACM 27, pp.
+    701–717 (1980).
+Wiedemann, D., “Solving sparse linear equations over finite fields,” IEEE Trans. Inf. Theory IT-32, pp.
+    54–62 (1986).
+Wise, D. S. and Franco, J., “Costs of quadtree representation of non-dense matrices,” J. Parallel Distributed
+    Comput. 9, pp. 282–296 (1990).
+Zippel, R., “Probabilistic algorithms for sparse polynomials,” Proc. EUROSAM ’79, Springer Lec. Notes
+    Comp. Sci. 72, pp. 216–226 (1979).
+
+
+
+
+                                                     11
+

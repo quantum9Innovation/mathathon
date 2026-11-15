@@ -1,0 +1,178 @@
+RAW NEAR-REAL RESOLVENTS CONTROLLED BY AN INTRINSIC BAND POPULATION
+================================================================
+
+Coordinator composition, 2026-11-15 UTC. Independent review pending.
+This combines the independently reviewed certified coarse split and
+shared coupling-series solver. It removes a supplied eigenbasis and
+replaces the coarse-dependent dimension condition by a sufficient
+condition on the actual physical spectrum. It is a resolver theorem,
+not the original rank-one LRA or full matrix-product theorem.
+
+1. RAW INPUT, INTRINSIC PROMISE, AND GUARANTEE
+--------------------------------------------
+Let X be an arbitrary real N-by-m factor, N>=m, and let J be the
+supplied symmetric involution in the existing raw-factor model. Its
+actions are charged as there. Define S=X J X^T without forming S or
+the true Gram X^T X, and write I_X=Nm. Fix a positive real center t,
+q>=1 supplied poles w_j=t+i*y_j with y_j!=0, and q supplied physical
+RHS columns h_j. They are all available together for each block action.
+
+Let 0<epsilon<=1, 0<delta<1, and mu=max_j |w_j|/|y_j|. Supply an
+integer cap 0<=kappa<=m with the INTRINSIC spectral promise
+
+  #{lambda in spec(S): t/4<=lambda<=4t}<=kappa.       (1)
+
+Eigenvalues are counted with multiplicity, and the endpoints are closed.
+No positive/negative gap or separation of neighboring eigenvalues is
+assumed. Let J_s,L>=1 be the explicit integer parameters of the
+shared-series proof at delta_s=epsilon/(100mu^2), so
+
+  (3/5)^L<=delta_s/100, (3/4)^J_s<=delta_s/100,
+  J_s,L=O(log(2mu/epsilon)).                         (2)
+
+Suppose R_cap=q+kappa*J_s<=m. There is an algorithm returning columns
+a_j with probability at least 1-delta such that simultaneously
+
+  ||a_j-w_j(S-w_j I)^-1 h_j||<=epsilon||h_j||.       (3)
+
+Including preprocessing, every input action and every output column,
+its arithmetic work is bounded on all outcomes, with the usual fixed
+matrix-multiplication exponent slack, by
+
+  ~O(I_X+m^omega)
+   +O(I_X R_cap^(omega-2)*L)
+   +O(m kappa^2 J_s+q kappa^2 J_s
+                       +m kappa q J_s+q kappa^omega). (4)
+
+Tildes include dimension and confidence logarithms and the polylogarithmic
+scalar/Frobenius preparation overheads. They hide no ||S||/t, factor
+condition number, or input-magnitude logarithm. The arithmetic model is
+exact real/complex field operations, comparisons, positive square roots
+and paid discrete randomness as in the component proofs. No stable
+finite-word or bit-complexity theorem is asserted.
+
+For a spectral action guarantee on an orthonormal q-column input basis,
+use epsilon/sqrt(q) in the construction. This adds logarithms; per-column
+accuracy is not silently treated as a spectral-block bound.
+
+2. THE COARSE REPRESENTATION IS CONSTRUCTED FROM THE RAW FACTOR
+-------------------------------------------------------------
+Use the checked constant-distortion sparse embedding from
+raw-factor-fresh-search.txt, Sections 1--3, with eta=1/8 and failure
+at most delta/4. Its formation and coarse factorization cost
+~O(I_X+m^omega). On the embedding event a full-row-rank coarse factor
+L_0 satisfies
+
+  (1-eta)L_0^T L_0 <= X^T X <= (1+eta)L_0^T L_0.
+
+Set Z=X L_0^dagger and K=L_0 J L_0^T. These are represented by thin
+raw products and explicit coarse matrices; they satisfy EXACTLY
+
+  S=ZKZ^T, T=Z^T Z, ||T-I||<=eta.                   (5)
+
+The equality follows from X=X L_0^dagger L_0 on the common row support.
+The mass inequalities give the bound on T by congruence. Remove zero
+coarse directions using exact orthogonal support reduction on K,
+preserving (5) and its Gram bound. No true Gram is formed by this step.
+The remaining supported dimension is at most m.
+
+On failed sketch outcomes the algorithm still follows the finite
+operation caps and the guards below; (5) is needed for correctness,
+not assumed to hold on those outcomes. The zero raw factor returns
+the exact actions -h_j. If a zero coarse core is produced, the same
+answer is valid on the embedding event, and is an allowed arbitrary
+answer off that event.
+
+3. WHY THE ACTUAL SPECTRAL PROMISE BOUNDS THE COARSE BAND
+--------------------------------------------------------
+On (5), let H=T^(1/2) K T^(1/2), used only for analysis. Its nonzero
+spectrum equals that of physical S, and congruence preserves the positive
+inertia of K. For s>0,
+
+ K-[s/(1-eta)]I <= K-s T^-1 <= K-[s/(1+eta)]I.       (6)
+
+Moreover H-sI is congruent to K-s T^-1. Comparing positive inertias
+and then ordered positive eigenvalues therefore gives, for every
+positive-eigenvalue index j,
+
+ (1-eta)lambda_j^+(K)<=lambda_j^+(H)
+                         <=(1+eta)lambda_j^+(K).    (7)
+
+This argument is valid when K is INDEFINITE; no PSD commutation
+assumption is used. Every coarse positive eigenvalue in [t/3,3t]
+maps, by its ordered index, to a distinct physical positive eigenvalue
+in [7t/24,27t/8], contained strictly in [t/4,4t]. Hence
+
+ #{lambda(K):t/3<=lambda<=3t}<=kappa.               (8)
+
+Endpoint multiplicities cause no difficulty because all intervals
+in (7),(8) are closed and the final enlargement has strict room.
+
+4. ACTUAL PREPARATION, POLE SHARING, AND ALL-OUTCOMES GUARDS
+-----------------------------------------------------------
+Apply certified-buffered-coarse-split.txt to the explicit supported
+K and center t. Use at most ceil(log_2(4/delta)) independent certifying
+attempts, found by doubling and comparisons. Every accepted output meets
+its exact residual-based theorem;
+the probability that no attempt is accepted is at most delta/4. Its
+bounded per-attempt operation guards give the first term of (4).
+
+For B=tK^-1, the computed P,Q split has
+
+  spec(B_QQ) outside [1/2,2], ||B_PQ||<=1e-5<1/16,
+  k=dim(P)<=#{lambda(K):t/3<=lambda<=3t}.             (9)
+
+If k>kappa, abort BEFORE querying the k true-band columns. By (8),
+this abort cannot occur on the embedding event. Otherwise apply the
+shared coupling-series algorithm. It needs raw width q+kJ_s<=R_cap;
+all its affine couplings, actual true-band queries, formal-series
+actions, Schur products and output reconstruction are charged in (4).
+
+Every small inversion tests for singularity and aborts on an undefined
+operation. On the embedding event and an accepted split, the proved
+error/perturbation bounds ensure that these aborts do not occur. Work
+uses the displayed fixed L,J_s even off that event; there is no
+unbounded inaccurate iteration or uncharged recovery branch.
+
+An abort returns arbitrary zero columns (or an equivalent failure flag).
+The bad embedding and exhausted split attempts have total probability
+at most delta/2, leaving slack in the stated 1-delta guarantee. All
+other steps are deterministic exact arithmetic on those successful
+events. The constants and proof in near-real-shared-coupling-series.txt
+then give (3). Formula (4) follows from its complete cost and k<=kappa.
+
+5. ORIGINAL EXPONENT BUDGET AND ITS LIMITS
+-----------------------------------------
+For N=m^(9/8), the research direction's feasible omega=9/4 convention,
+q,kappa<=~sqrt(m), polynomial mu and epsilon^-1, and constant/inverse-
+polynomial confidence, (4) is m^(9/4+o(1))=N^(2+o(1)). The postprocessing
+terms are at most ~m^2 except q*kappa^omega, which is ~m^(13/8).
+The raw term is Nm*(sqrt(m))^(1/4)=m^(9/4) up to logarithms. Every
+normalized resolver-output entry is included. This is not an assertion
+that an N-by-N matrix product has been formed at that cost.
+
+For arbitrary product factors A,B use the fixed swap dilation
+S=[[0,AB],[(AB)^T,0]] and X=diag(A,B^T), as in the imported raw model.
+Its positive eigenvalues are the singular values of AB. Thus (1) has
+an intrinsic product interpretation: at most kappa singular values
+lie in [t/4,4t]. Constants in the doubled dimensions do not change the
+exponents. The conclusion remains about supplied resolvent actions.
+
+The intrinsic band may have size Theta(m). No unrestricted sublinear
+bound is proved or assumed away. A sharp final filter, threshold
+selection and rank-one extraction are also separate obligations.
+Classical block Krylov may already exploit a small multiplicative band
+for LRA, so this resolver theorem alone is not a new LRA SOTA claim.
+The concrete improvement is a fully charged raw-access near-real solver
+with an actual certified split and q+kJ_s shared work. Classical EVD,
+Frobenius, Cauchy, series and Schur mechanisms are credited; historical
+priority remains unverified. The full arbitrary-factor goal stays ACTIVE.
+
+Reviewed component hashes at composition
+----------------------------------------
+  certified-buffered-coarse-split.txt
+    095f67929ec82c003dedb9ffaa46637ce449ba84d52861add0e7d84ef638ddee
+  near-real-shared-coupling-series.txt
+    913f2e86b3b27bb4c0e9882c7ad29845e2bca6e2d2d553ce3d5bedb40243628a
+  raw-factor-fresh-search.txt
+    61c5fa973bc32cd6151d64f5ba3078f096bcf8c94a135f5df1b7fcc14f6494a8

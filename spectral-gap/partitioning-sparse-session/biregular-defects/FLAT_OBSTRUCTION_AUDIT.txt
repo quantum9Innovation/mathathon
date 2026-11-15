@@ -1,0 +1,253 @@
+Independent actual-source audit: flat-outlier obstruction
+2026-11-15
+=======================================================
+
+Verdict: PASS for the revised frozen source below, with the independent
+random-lift corollary using the existing uniform random-lift tail theorem
+as its expressly identified input. No unresolved mathematical error was
+found. This is a proof/scope audit, not formal verification or a priority
+certificate. It does not prove the separately proposed recovery algorithm.
+
+Audited source:
+  ../lift-partition/flat-outlier-obstruction.tex
+  SHA256 e6334216c0d9af47bb9829ca9d4f900830cba11eb230914ec634309d42a5fbde
+Audited source's eight-page PDF:
+  SHA256 112241abed741f096295fd6412cb3659f4b8958d2703ca233b273c8f3c7630f3
+
+I read the entire initial source at SHA577dba20de813d43f2a1fe01a9cff1d1055ea3b78490eefcafee456ce69960ff,
+reported the degenerate r=0 issue, and then reread the ENTIRE revised
+source at the final e6334216... hash. The author added r>=1 and q>=1.
+That repair makes R,F nontrivial connected graphs, ensures their second
+eigenvalues are defined, and excludes the disconnected two-copy r=0
+construction. It does not change either explicit family.
+
+External input inspected for the corollary:
+  ../../independent-random-session/sharp-cubic-threshold.tex
+  SHA256 679b4fb6906e8f18e0e4382a2ace304d3c267dbc2da925c0ea1418b1ff2d6cf6
+  ../../independent-random-session/prior/generator-free-tail-proof.md
+  SHA256 4af2c98dfc597f04fde122f88f16b4cfe1192ae2bdf3adfb6bb4c4cc221b7908
+I read the complete retained derivation and its independent-review file,
+and reconstructed the application to the degree29 base family. I have
+not freshly reaudited the original published first-order support theorem
+in this audit. The existing bound is an authorized theorem input here,
+not a new conclusion of this child audit.
+
+1. Graph construction and complete adjacency spectrum
+----------------------------------------------------
+The construction has no loops or repeated edges: its F edges stay inside
+one(i,s) copy, while its R edges join different i copies and preserve a.
+Each vertex has q internal neighbors and two neighbors per R neighbor,
+hence degree d=q+2r. Because F and R are connected and r>=1, the graph
+is connected: one can move within F, along R, and can change the s
+coordinate by going to an R neighbor and returning through the other
+matching choice. The sum-mod2 coloring from the two factor colors proves
+bipartiteness whenever both factors are bipartite.
+
+I reconstructed the tensor identity
+  A = I_k tensor I_2 tensor A_F + A_R tensor J_2 tensor I_h.
+The s-antisymmetric sector has dimension kh and eigenvalues lambda_j(F),
+each repeated k times. The symmetric sector has dimension kh and has
+eigenvalues lambda_j(F)+2 theta_i(R). These two sectors exhaust N=2hk
+dimensions and prove the displayed full spectrum with multiplicities.
+
+The vectors e_i have disjoint supports of size2h and are normalized.
+They are q-eigenvectors because J_2 annihilates the antisymmetric sign
+and F's constant vector has eigenvalue q. Their projector's diagonal is
+1/(2h)=k/N everywhere, giving exactly mu=1. Trace(P)=k proves mu>=1
+for any rank-k projector under this normalization. A normalized real
+Hadamard rotation gives entries +/-1/sqrtN and IPR1/N, the exact minimum
+by Cauchy--Schwarz. This concerns a displayed basis, not every possible
+basis of the repeated eigenspace; the source correctly distinguishes this.
+
+For F=K_{q,q}, q>2r and nonsingular A_R, no symmetric-sector eigenvalue
+can equal q: the three cases would require theta=0,theta=q,theta=q/2.
+The first is excluded by nonsingularity and the others by |theta|<=r.
+Only the simple top F eigenvalue in each antisymmetric cell contributes.
+Thus the ENTIRE q-eigenspace is exactly E of rank k, as claimed.
+
+Since the graph is d-regular its universal cover is the d-regular tree.
+The outlier and BH calculation is exact:
+  H(sqrt(d-1))|E = [2(d-1)-q sqrt(d-1)]I.
+It is strictly negative when q>2sqrt(d-1). No random-graph threshold is
+being inferred from this deterministic observation.
+
+2. Expansion formula
+--------------------
+The top antisymmetric eigenvalue is q. The unique top symmetric eigenvalue
+is q+2r=d. Its next-largest value is
+  max{q+2 lambda_2(R), lambda_2(F)+2r}.
+Therefore d minus the largest nonprincipal adjacency eigenvalue equals
+  min{2r,2 gamma_R,gamma_F}.
+This proves the exact ordinary Laplacian gap. Bipartite negative endpoints
+do not interfere: the ordinary gap uses the largest nonprincipal adjacency
+eigenvalue, not the maximum absolute value. The source does not claim an
+absolute adjacency gap for the bipartite family.
+
+3. Statistical ambiguity and exact Bayes overlap
+-----------------------------------------------
+For x_sigma(i,s,a)=s sigma_i, each neighboring R cell supplies exactly one
+same-label and one opposite-label neighbor, while all q F neighbors have
+the same label. Thus every hidden labeling is balanced and has exact
+within/across degrees(q+r,r), independent of sigma. There are2^(k-1)
+distinct unordered bisections. These statements hold pointwise, before
+any random permutation.
+
+Conditioning on the final permutation, observed graph, covering coordinates
+when present, and the estimator's independent random seed leaves all k
+signs independent and uniform. Their graph was sampled independently of
+these signs. The overlap numerator has the form sum_i w_i sigma_i with
+|w_i|<=2h. The expected absolute sum is separately convex in each w_i.
+Moving coordinates to endpoints cannot decrease its maximum; every box
+vertex has the same distribution, namely2h times an unweighted Rademacher
+sum. Hence the exact oracle optimum is E|sum sigma_i|/k and is attained
+by the canonical orientation estimate. An estimator without the oracle
+cannot do better. This also covers randomized estimators by conditioning.
+
+For even k, independently summing the binomial law yields
+  E|sum sigma_i|/k = 2^-k binomial(k,k/2).
+Stirling gives sqrt(2/(pi k)), while Cauchy--Schwarz gives the simpler
+upper bound1/sqrtk. The two-sided Hoeffding bound with sum w_i^2<=4h^2 k
+is exactly2exp(-k delta^2/2). Thus the stated weak-recovery impossibility
+is valid as k tends to infinity, even with the stronger oracle.
+
+The uniformly permuted prior is uniform on balanced vertex labelings:
+every fixed x_sigma is balanced and uniform permutation acts transitively
+on such vectors. Conditional on a balanced labeling, the graph law is
+invariant under permutations within each label class; the deterministic
+degrees then give the exact one-edge marginals a/(N/2-1),b/(N/2).
+The model nevertheless has strong edge correlations. It is not the
+independent-edge SBM or uniform RSBM, and the source explicitly says so.
+
+4. Explicit nonsingular degree29 expander family
+----------------------------------------------
+For cubic S_m, the lexicographic graph B_m=S_m[K_2] has degree7. Splitting
+into symmetric and antisymmetric pair sectors gives eigenvalues2theta+1
+and -1, with the latter repeated|S_m| times. A zero would force the
+integer adjacency matrix of S_m to have rational eigenvalue-1/2, impossible
+by the rational-root theorem for its monic characteristic polynomial.
+Thus B_m is nonsingular. Its minimum eigenvalue is at least-5, and its
+largest nonprincipal eigenvalue is at most7-2gamma; the repeated-1 sector
+is harmless because0<gamma<=1.
+
+B_m is connected and contains a triangle: use one doubled internal edge
+and a vertex in a neighboring doubled cell. Its bipartite double cover
+R_m is therefore connected, simple,7-regular and nonsingular. Its spectrum
+is +/- the spectrum of B_m. Its largest eigenvalue apart from7 is at most
+max{7-2gamma,5}, proving gamma_R>=min{2gamma,2}. The sizes are
+  |S_m|=2^m, |B_m|=2^(m+1), k=|R_m|=2^(m+2).
+The cubic expander family is an existing existence input, chosen before
+the lift permutations; the proof does not require an efficient explicit
+construction of that family. As usual the index m starts sufficiently
+large that a simple cubic graph on2^m vertices exists.
+
+For F=K_15,15, q=15,h=30,r=7,d=29,N=60k. We have q>2r and
+15>2sqrt28, so the full15-eigenspace is precisely E. Both factors are
+bipartite; Hadamard matrices exist since k is a power of two. The gap is
+bounded below by min{14,2min(2gamma,2),15}, a positive constant independent
+of m. The BH eigenvalue56-15sqrt28 is strictly negative.
+
+5. Exact nonbacktracking map, norms and numerical constants
+----------------------------------------------------------
+For beta+(d-1)/beta=q, direct substitution gives
+  B z_f=beta z_f, z_f(u,v)=f(v)-beta^-1 f(u).
+Summing over all dN directed edges gives
+  ||z_f||² = [d(1+beta^-2)-2q/beta]||f||²
+            =(d-2)(1-beta^-2)||f||².
+Polarization gives the same scalar multiple of the inner product for any
+two q-eigenvectors. Thus a real orthonormal vertex basis maps, after the
+one common normalization, to an orthonormal basis of right NB modes.
+Nonnormality of B does not prevent orthogonality inside this repeated
+eigenvalue's right eigenspace. Beta>sqrt(d-1)>1 ensures a positive norm.
+
+For a flat sign vector, each vertex has q+r same-sign neighbors and r
+opposite-sign neighbors. The unnormalized edge magnitudes are respectively
+(1-beta^-1)/sqrtN and(1+beta^-1)/sqrtN. Counting directed edges proves the
+displayed participation-ratio formula without an omitted factor d.
+
+For cube R and F=K_7,7: k8,h14,d13,N224, beta4. Cube adjacency eigenvalues
+3,1,-1,-3 have no zero, so the entire7-eigenspace has rank8. The gap formula
+gives min{6,4,7}=4. The exact NB norm scalar is165/16. The fourth-power
+numerator is2685/256 and its squared normalization is27225/256, yielding
+IPR=179/(1815N). The maximum normalized entry is5/sqrt(165N). The edge
+space has13N=2912 directed edges, as stated.
+
+An independent in-memory JavaScript diagnostic constructed the ACTUAL224
+vertex graph, not merely its tensor spectrum. It found every degree13,
+2912 directed edges, and nullity8 of A-7I over F_1000003. For one explicit
+Hadamard sign column it found adjacency residual<1.2e-16, NB residual
+<6e-17, norm²10.312500000000153 versus165/16, N*IPR0.09862258953167403
+versus179/1815, and sqrtN*infinity-norm0.3892494720807586 versus5/sqrt165.
+Exhaustive enumeration of the256 hidden sign choices gave oracle overlap
+0.2734375=70/256. These diagnostics corroborate the exact proofs above;
+they are not premises of those proofs or an asymptotic simulation.
+
+6. Growing-base independent random-lift corollary
+-----------------------------------------------
+The existing input has coefficient/base dimension D, lift degree n, and
+maximum degree d, with no dependence on the number of permutations:
+  Pr{||A_new||>=rho(T)+epsilon} <= C(D/n)(d/epsilon)^9.
+It is uniform for each deterministic connected loopless base selected
+BEFORE the independent permutations. The present bases satisfy all these
+hypotheses: simple connected bipartite29-regular, D_m=60k_m=o(n_m).
+The generator-independent feature is essential since the number of base
+edges grows with k_m. No fixed-base result alone is substituted here.
+
+Choose epsilon0=(15-2sqrt28)/2>0. This lies within the input's admissible
+range epsilon<29-2sqrt28. Since both d and epsilon0 are fixed, the failure
+bound becomes C'k_m/n_m. Its complement has ||A_new||<15. All old adjacency
+eigenvalues are exactly those of the base, so the previously proved entire
+base15-eigenspace remains the ENTIRE lifted15-eigenspace; no new mode at15
+is possible. Each normalized old vector is divided by sqrt(n_m) on each
+fiber, giving rank k_m, diagonal1/(60n_m)=k_m/M_m, incoherence one and a
+flat Hadamard eigenbasis with entries +/-1/sqrt(M_m).
+
+Exact equitable neighbor counts are preserved by every covering, with
+within/across degrees(22,7). The hidden k_m signs are independent of all
+lift matchings. Conditional on the entire sampled graph and oracle data,
+the previous Bayes argument applies with half-cell size30n_m. Thus its
+exact optimum and Hoeffding tail survive independent lifting unchanged.
+
+The base29 eigenvalue is simple and its other old eigenvalues are at most
+29-c for uniform c>0. On the same fixed-epsilon0 event, all new eigenvalues
+are<15. The lifted Laplacian gap is therefore at least min{c,14}>0.
+An extra component would create an additional29 eigenvalue, impossible on
+that event. Simplicity and bipartiteness hold for EVERY lift of a simple
+bipartite base. For each fixed epsilon>0, the same uniform tail bound tends
+to zero, proving new-space almost-Ramanujan convergence in probability.
+The O(k_m/n_m) rate is for the fixed cutoff<15; the source does not assert
+that rate for an unspecified vanishing spectral error. Conditioning on
+the fixed-cutoff event does not affect the convergence-in-probability claim
+since that event has probability tending to one.
+
+For a fixed-radius ball, only C_29,ell matching entries are exposed, and
+each fresh endpoint is uniform among at least n_m-C_29,ell unused sheets
+in its base fiber. There are at most C_29,ell previously exposed vertices,
+so the total collision probability is O(1/n_m), uniformly in base size.
+Averaging over roots and Markov's inequality give the claimed local weak
+limit, even though the base contains many short cycles. Because m grows,
+k_m tends to infinity, while k_m/M_m=1/(60n_m) tends to zero. Choosing n_m
+arbitrarily large permits the rank to diverge arbitrarily slowly relative
+to total size. The rank is NOT fixed, and the source expressly retains this
+limitation.
+
+7. Scope and freeze
+-------------------
+This is a valid obstruction to interpreting a far-out spectral mode,
+individually flat eigenvectors, rank-normalized projector incoherence,
+bounded degree, expansion and local tree likeness as a unique planted
+partition certificate. It does not establish non-identifiability for the
+SBM, the uniform RSBM, or any model with additional identifying assumptions.
+The full projector retains a local block decomposition, and its rank
+diverges. A method inspecting that structure or controlling rank is not
+refuted. The packet's explicit scope paragraph says precisely this.
+
+The antecedent/novelty comparison is not certified by this proof audit.
+The arithmetic and proofs rely on classical tensor, matrix, Rademacher,
+and independent-cover mechanisms plus the stated existing tail theorem.
+No new recovery theorem or basis-invariant decomposition algorithm is
+proved. No claim of a field-scale breakthrough is justified by this audit.
+
+I made NO change to the audited source, PDF, or any other frozen artifact.
+The separate embedded-mode-proof.tex remains frozen at
+6efb95a93a83971f7f0097bd92cab127ebe8299b8abefe0e1df3d55b9cd8f18b.
+Only this FLAT_OBSTRUCTION_AUDIT.txt was written for the resumed audit task.

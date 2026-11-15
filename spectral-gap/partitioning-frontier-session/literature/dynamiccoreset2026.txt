@@ -1,0 +1,1031 @@
+                               Fully Dynamic Coreset Spectral Clustering
+
+
+                                 Ben Jourdan 1 Peter Macgregor 2 Gregory Schwartzman 3
+
+
+                           Abstract                                   strengths of spectral clustering.
+       We present a fully dynamic data structure that                 Among the many approaches to graph clustering, spectral
+       supports edge and node updates and cluster mem-                clustering has stood out for its ability to uncover complex,
+       bership queries for the Normalised Cut problem                 non-linear structures in data. Closely related methods such
+       with strong theoretical guarantees. Furthermore,               as kernel k-means share this strength, and together they
+       our data structure outperforms the state of the art            have found wide application across domains ranging from
+       significantly on real world datasets. At the heart             medical research to network science (Gönen & Margolin,
+       of our data structure is the novel notion of Just-             2014; Kuo et al., 2014; White & Smyth, 2005). These suc-
+       in-Time Sampling Trees. The worst-case edge up-                cesses make spectral methods a natural starting point when
+       date time of our data structure is O(log n) where              extending clustering algorithms to the dynamic setting.
+       n is the number of nodes in the current graph.
+       Let dmax be the maximum degree of the current                  Given a Euclidean dataset X, both kernel k-means and
+       graph, let TN C (n′ , k ′ ) be the running time of an          spectral clustering rely on a kernel similarity function
+       α-approximation algorithm for the Normalised                   K : X × X → R≥0 , often represented as an n × n ma-
+       Cut problem on n′ vertices and k ′ clusters, and               trix, where n = |X|. Spectral clustering interprets this
+       let vol(Y ) be the sum of the unweighted degrees               matrix as the adjacency matrix of a similarity graph and
+       of all nodes in a set Y . The worst-case query time            seeks to minimise the normalised cut objective (defined in
+                                                                      Appendix A) (Von Luxburg, 2007). In contrast, kernel k-
+                           to label all nodes in Y is
+       of our data structure
+                                                                      means leverages the fact that the kernel implicitly defines
+       O kd2max log(n) + γ(n, ε, k, Y ), with approxi-
+                       1+ε
+       mation ratio α 1−ε  , where γ(n, ε, k, Y ) is defined          an embedding ϕ : X → H into a Hilbert space, with
+       to be O(log(n) log⋆ (n)ε−4 k 2 +TN C (ε−4 k 2 , k)+                       ⟨ϕ(x), ϕ(y)⟩ = K(x, y),         ∀x, y ∈ X.           (1)
+       ε−8 k 4 + min{|Y | k 2 ε−4 , vol(Y )}). Assuming
+       dmax is polylogarithmic, as is the case with many              The clustering problem is then to minimise the k-means
+       sparse real-world graphs, our method achieves                  objective in this space, typically solved using a kernelized
+       the best known trade-off between query time and                version of Lloyd’s algorithm (Dhillon et al., 2004).
+       update time.
+                                                                      A key observation, due to Dhillon et al. (2004), is that the
+                                                                      normalised cut and kernel k-means objectives are equivalent
+1. Introduction                                                       up to constant factors when written as trace minimisation
+                                                                      optimisation problems. In particular, optimising the nor-
+Clustering large-scale graphs is central to understanding the         malised cut on a graph G(V, E), the average conductance
+structure of modern data, but real-world graphs are rarely            of a k-partition, can be reformulated as an instance of ker-
+static. Social interactions, communication patterns, and              nel k-means with a suitable kernel, which we refer to as
+information flows evolve continuously, rendering static clus-         the graph kernel (Definition 3). The other direction also
+tering methods inadequate. To capture these changing struc-           holds; any kernel k-means instance can be reformulated as
+tures, we need algorithms that can efficiently adapt to dy-           a normalised cut instance. This duality establishes a deep
+namic graphs while preserving the theoretical and practical           connection between the two approaches.
+   1
+    Department of Informatics, University of Edinburgh, United        Despite this equivalence, the two methods have historically
+Kingdom 2 School of Computer Science, University of St Andrews,       been studied in isolation, with algorithmic advances devel-
+United Kingdom 3 Graduate School of Advanced Science and Tech-        oped separately for each. A recent result by Jourdan et al.
+nology, JAIST, Ishikawa, Japan. Correspondence to: Ben Jourdan
+<ben@jourdan.me>.                                                     (2025) showed how to bridge this gap: they introduced the
+                                                                      first coreset1 spectral clustering algorithm. This algorithm
+Proceedings of the 43 rd International Conference on Machine             1
+Learning, Seoul, South Korea. PMLR 306, 2026. Copyright 2026              A coreset is a small, weighted subset of the input that approxi-
+by the author(s).                                                     mates the original dataset with respect to a given objective up to a
+
+
+                                                                  1
+                                             Fully Dynamic Coreset Spectral Clustering
+
+clusters a coreset graph (an edge reweighted induced sub-                 gorithm of Jourdan et al. (2025). We briefly outline their
+graph) to infer a good labelling of the original graph by                 results. The heart of the static coreset algorithm repeatedly
+exploiting the equivalence with kernel k-means. Their anal-               samples a subset of nodes according to two adaptive distribu-
+ysis moves between graph space and kernel space, yielding                 tions. By adaptive, we mean that the sampling distribution
+a framework where a coreset for kernel k-means can be                     changes during sampling. To construct the coreset, they first
+used to accelerate spectral clustering—achieving signifi-                 sample an auxiliary set of nodes according to one adaptive
+cant speed-up when the coreset is small. We summarize                     distribution. Then, they sample the final coreset according
+their result informally below (with full details deferred to              to the other distribution, derived from the sampled auxiliary
+Appendix A).                                                              set. To allow for efficient sampling, a sampling tree is used.
+Theorem 1 (Jourdan et al. (2025) (informal version of The-                This is a data structure that is constructed once before the
+orem 3)). Given a weighted graph G and a coreset S for                    coreset algorithm is executed, and is updated throughout the
+the graph kernel of G, normalised cut on G with k clusters                execution of the algorithm (to support the adaptive nature of
+can be approximately solved in time O(TN C (|S|, k) + k 4 +               the sampling). The initial construction time of the sampling
+vol(G)).                                                                  tree is linear in the size of the input; rebuilding a sampling
+                                                                          tree from scratch in the dynamic setting is prohibitive.
+Dynamic Clustering Before we state our results, let us                    Our Approach Adapting this algorithm directly to the
+intuitively define the dynamic clustering problem. Given a                dynamic setting would require reconstructing the sampling
+dynamic weighted graph G = G1 , G2 , ... (this sequence can               tree for every change in the input graph, taking linear time.
+be either finite or infinite) where Gi , Gi+1 only differ by at           Instead, we design a dynamic data structure to maintain
+most a single edge, our goal is to maintain a data structure              the sampling tree under edge insertions and deletions. This
+that supports the following operations: edge insertions and               allows us to achieve a logarithmic update time per edge
+deletions2 , and querying the cluster memberships of a set of             update. To query clusters, we 1) use the tree to quickly
+points; given a set Y ⊆ X and parameter k, we return for                  sample a coreset, recall that the coreset is tiny compared to
+every x ∈ Y a cluster in {1, . . . , k}. The goal is to design            the full graph, 2) cluster the coreset, and 3) use the coreset
+a data structure where both the edge updates and cluster                  clusters to determine the cluster memberships of the query
+queries are as fast as possible while maintaining a good                  nodes. Jourdan et al. (2025) maintain the probabilities in the
+quality of clustering (see Section 5 for details of how this is           sampling trees explicitly, which does not allow for efficient
+measured). Note that graph parameters such as the number                  updates when the graph changes. A naive attempt would
+of nodes, number of edges, average degree and maximum                     require updating all the nodes in the sampling tree after
+degree are not fixed throughout the evolution of the graph.               every update, which takes linear time.
+When stating these values, they always refer to a specific
+Gi , and this i should be clear from context. For example, if             Instead of maintaining the probabilities directly in the sam-
+an edge update time is O(log n) then n refers to the number               pling tree, our data structure has each node maintain aux-
+of nodes at the time of the update.                                       iliary quantities which allows it to quickly compute the
+                                                                          sampling probabilities on demand. Our approach is sig-
+We note that Theorem 1 implies a framework for dynamic                    nificantly faster both in theory and in practice on sparse
+spectral clustering. Given a dynamic graph, if we can dy-                 graphs. We compare our data structure to other dynamic
+namically maintain a coreset, S, for the graph kernel, we                 approaches and naive baselines in Table 1. When queried,
+would have a natural dynamic algorithm for spectral cluster-              Naive simply runs the full spectral clustering algorithm on
+                                         2
+ing with query time O(TSC (|S|, k) + |S| + vol(Y )) for a                 the entire graph and returns the node cluster. Static uses
+node set Y . While we present the results of Jourdan et al.               coreset spectral clustering instead (Jourdan et al., 2025). We
+(2025) in Appendix A for completeness, in the main body                   also compare to the dynamic spectral clustering data struc-
+of the paper we focus on dynamically maintaining a coreset                ture of Laenen & Sun (2024), which only supports edge
+for the graph kernel.                                                     additions, but not deletions, and the Merge&Reduce data
+                                                                          structure that combines the merge and reduce framework of
+1.1. Our Results                                                          Henzinger & Kale (2020) with the static coreset algorithm
+We present a fully dynamic data structure for spectral clus-              of Jourdan et al. (2025). The Naive and Static approaches
+tering, which is significantly faster compared to existing                achieve very fast edge update times, but their node query
+approaches. Our data structure builds upon the static al-                 time is prohibitively slow. Merge&Reduce is the only data
+                                                                          structure to achieve a competitive query time compared to
+multiplicative factor close to 1.                                         our approach, however its edge update time is prohibitively
+    2
+      Node insertions and deletions are also supported implicitly;        slow in practice. We observe experimentally that our edge
+inserting (u, v) will add a node if either u or v is not already in
+the graph, and removing all edges adjacent to a node v removes it
+                                                                          update time is much faster than Merge&Reduce while the
+from the graph.                                                           query time is similar for large graphs.
+
+                                                                      2
+                                             Fully Dynamic Coreset Spectral Clustering
+
+Algorithms        Edge Update Time Query Time for           Approx.       of Jourdan et al. (2025), setting the groundwork for our dy-
+                                   set Y ⊆ V                              namic data structure. In Section 4 we present our dynamic
+Ours              O(log n)            O kd2max log n α 1−ε
+                                                      1+ε                coreset spectral clustering data structure. In Section 5 we
+                                                                          experimentally evaluate our data structure against all data
+                                         + γ(n, ε, k, Y )
+Laenen                                                                    structure in Table 1. A formal version of Theorem 2 appears
+                  O(1) amortised      O(n/ log n)           N/A           in Appendix F.
+& Sun
+                                      amortised
+Merge&Reduce O(ε−4 k3 log5 n)                                 1+ε
+                                                            α 1−ε
+                                      TN C (ε−4 k2 , k)                   1.2. Related Work
+                                              −8 4
+                                       + O(ε     k                        Prior dynamic spectral clustering methods (Dhanjal et al.,
+                                      + min{|Y | k2 ε−4 , vol(Y )})       2014; Martin et al., 2018; Ning et al., 2007) largely track
+Naive             O(1) amortised      TN C (n, k)        α                changes of approximate eigenvectors under perturbations,
+                                                           1+ε
+Static            O(1) amortised                         α 1−ε            typically without explicit approximation guarantees for the
+                                      O(nk log n)                         returned clusters and often with a fixed vertex set. The state
+                                        + γ(n, ε, k, Y )                  of the art for the incremental setting is due to Laenen & Sun
+Table 1. Comparison of data structures in terms of edge                   (2024): it considers insertions only (edges and possibly new
+update and node set query time. We define γ(n, ε, k, Y )                  vertices), and assumes a dynamic gap / cluster-structure
+to be O(log(n) log⋆ (n)ε−4 k2 + TN C (ε−4 k2 , k) + ε−8 k4 +
+min{|Y | k2 ε−4 , vol(Y )}). Unless stated otherwise, running
+                                                                          condition—roughly, that at designated times the graph ad-
+times are worst-case. The method of Laenen & Sun (2024) tar-              mits well-separated k ′ clusters while each update is an edge
+gets a different objective (k-way expansion) to the others so it is       insertion introducing at most one new vertex. Under these
+not possible to compare approximation ratios. They also do not            assumptions, they achieve O(1) amortised update and near
+provide the effect of k on update and query times. The values             linear3 amortised query time with provable approximation
+n, dmax , davg , vol(Y ) are the number of nodes, maximum degree,
+average degree and volume of Y w.r.t the dynamic graph at the
+                                                                          guarantees for the output clusters.
+time of edge update / node set query. TN C (n, k) is the running          In (Henzinger & Kale, 2020) a generic approach for turning
+time of an α-approximation algorithm for the normalised cut prob-
+lem 16 on an n-vertex graph with k clusters. See Appendix E for
+                                                                          static coresets into dynamic coresets is presented. This is ap-
+a derivation of these running times.                                      plied to k-means, followed by both practical and theoretical
+                                                                          improvements (Henzinger et al., 2024; la Tour et al., 2024).
+                                                                          Recently, Jourdan et al. (2025) showed how to use core-
+                                                                          sets together with the equivalence between Kernel k-means
+Our result is significant because we are able to efficiently
+                                                                          and spectral clustering (Dhillon et al., 2004) to design a
+maintain a dynamic coreset whose size doesn’t depend on
+                                                                          Coreset Spectral Clustering algorithm—achieving the same
+even logarithmic factors of n, while achieving superior
+                                                                          approximation guarantees as spectral clustering (up to a
+worst-case running times compared to existing dynamic data
+                                                                          small multiplicative error). This combined with the results
+structures. By the nature of the Merge&Reduce method, the
+                                                                          of Henzinger & Kale (2020) gives rise to a dynamic spectral
+update time for Merge&Reduce must incur a polynomial de-
+                                                                          clustering data structure that supports both edge additions
+pendence on k. Our method avoids this dependence and as
+                                                                          and deletions. This results in a polylogarithmic update time
+a consequence, k can be chosen at query time. This makes
+                                                                          and a sublinear query time, while maintaining the approxi-
+it much more flexible in practice where it is typical for the
+                                                                          mation guarantees of Jourdan et al. (2025).
+number of clusters to change over time.
+Theorem 2 (Main result (informal version of Theorem 6)).
+There exists a dynamic data structure that maintains an
+                                                                          2. Preliminaries
+  1+ε
+α 1−ε -approximate normalised cut that supports edge inser-               Let X be a set of n objects, and K : X × X → R≥0 be a
+tions and deletions and has an edge update time of O(log n)               function measuring the pairwise similarity of data points in
+and a set query time of O(kd2max log(n) + γ(n, ε, k, Y ))                 X. Let ϕ : X → H be the function implicitly defined by K
+when queried with a node set Y and number of clusters k.                  that maps data points in X to the unique Hilbert space such
+                                                                          that ⟨ϕ(x), ϕ(y)⟩ = K(x, y) for all x, y ∈ X. The function
+In the analysis of Theorem 6, we require an algorithm that                K is usually represented as a positive semi-definite matrix:
+achieves an α−approximation algorithm for the Normalised                  if Φ = [ϕ(x1 ), . . . , ϕ(xn )], then K = ΦT Φ ∈ Rn×n with
+Cut problem. We focus on spectral clustering because of                   Kij = ⟨ϕ(xi ), ϕ(xj )⟩. Let ∆(x, y) ≜ ∥ϕ(x) − ϕ(y)∥
+                                                                                                                                     2
+its relationship to the normalised cut problem; in practice,              denote the squared distance in feature space for all x, y ∈
+other clustering algorithms may be preferred.                             X, and ∆(x, C) = minc∈C ∆(x, c) denote the smallest
+Paper Structure We review related work in Section 1.2.                       3
+                                                                               Strictly speaking, the amortised query time is O(n/ log n)
+In Section 2 we define notation and provide formal defini-                where n is the number of nodes at query time.
+tions. In Section 3 we overview the static coreset algorithm
+
+                                                                      3
+                                           Fully Dynamic Coreset Spectral Clustering
+
+squared distance from x ∈ X to a set C ⊆ X. We refer                   by an intuitive illustration (Figure 3), appears in Appendix A.
+to the diagonal elements of K as self similarities and say             Going forward we focus on the coreset construction at the
+x is a neighbour of (or incident to) y, written x ∼ y, iff             heart of their algorithm.
+⟨ϕ(x), ϕ(y)⟩ ̸= 0. If x ∈ X and S ⊂ X, we say x is
+                                                                       The algorithms of Jourdan et al. (2025) use the following
+incident to S if and only if x is incident to at least one
+                                                                       notation. For dataset X and seed set C ⊆ X, for x ∈ X,
+element of S.
+                                                                       and S ⊆ X, we define the following:
+We make use of the following concepts in our analysis.                                                                X
+Definition 1 (kernel k-means objective). Given a weighted              f (x, C) ≜ w(x)∆(x, C),             f (S, C) ≜     f (z, C),
+dataset X with weights w : X → R+ and feature map                                                                         z∈S
+
+ϕ : X → H satisfying equation 1 for some kernel func-                            f (x, C)   w(x)                          X
+                                                                       g(x, C) ≜          +       ,           g(S, C) ≜         g(z, C).
+tion K, the weighted kernel k-means objective with respect                       f (X, C) w(C(x))
+                                                                                                                          z∈S
+P an arbitrary set of points C ⊆ H is COSTw (X, C) =
+to
+    x∈X w(x)∆(x, C).                                                   Intuitively, f (x, C) is the weighted distance between x and
+Definition 2 (ε-coresets). For 0 < ε < 1, an ε-coreset for             C in feature space, g(x,  C) is the
+                                                                                                           sum of the relative weight
+                                                                                                   w(x)
+kernel k-means on a weighted dataset X with weights w :                of x w.r.t. its seed set   w(C(x))  and the relative weighted
+X → R+ is a reweighted subset S ⊆ X such that for the                                                               
+Hilbert space H and map ϕ : X → H satisfying Equation 1,               distance of x to C w.r.t. all points ff(X,C)
+                                                                                                               (x,C)
+                                                                                                                       .
+we have COSTw′ (S, C) ∈ (1 ± ε) · COSTw (X, C), ∀C ⊂                   Constructing Coresets The ε-coreset Algorithm of Jour-
+H with |C| = k. where w′ : S → R+ gives the weight for                 dan et al. (2025) is based on the algorithm of Jiang et al.
+each element in the coreset.                                           (2024), augmented for sparse graphs (Algorithm 1). It con-
+Definition 3 (Graph kernel, (Dhillon et al., 2007)). Given             sists of multiple rounds of importance sampling that pro-
+a graph with positive edge weights, graph G = (V, E), k                gressively reduce the size of the input. Each round seeds
+with adjacency matrix A and degree matrix D let K =                    the importance of each point using the distribution given by
+D−1 AD−1 + σD−1 and W = D, where σ is chosen such                      running D2 -sampling (Algorithm 3), and then smoothing
+that K is positive definite. We call (K, W ) the graph kernel          this distribution according to the weight of the point, nor-
+for G. We say that a reweighted subset V ′ ⊆ V is an ε-                malised by the weight of its seed set (line 4 of Algorithm
+coreset for the graph kernel of G if its an ε-coreset for kernel       2).
+matrix K and weight matrix W . The diagonal entries of
+W correspond to the values of w in Definition 1. We refer              Each round approximately reduces the number of unique
+to the edge weight between two nodes in G as w(x, y). If               elements to be logarithmic in the number of unique elements
+x ∼ y then w(x, y) > 0, otherwise w(x, y) = 0.                         in the previous round until the number of unique elements
+                                                                       does not decrease. In practice, one round is usually enough.
+Definition 4 (Seed sets and seed set weight). Let X be a
+set of points with weights w : X → R≥0 and C ⊆ X                       Sampling Trees To implement the sampling in Algo-
+be a set of seeds. Then for any x ∈ X, we define the                   rithm 3 efficiently for a graph kernel, Jourdan et al. (2025)
+seed set of x with respect to C to be the points in X                  make use of sampling trees (Wong & Easton, 1980). Sam-
+that share the same closest seed as x. That is, we define              pling trees provide an efficient way to sample elements from
+the seed set of x with respect to C to be C(x) ≜ {y ∈                  a set X according to some unnormalised distribution as well
+X| arg minc∈C ∆(x, c) = arg minc∈C ∆(y, c)} where ties                 as updating the distribution. A sampling tree is a balanced
+are broken arbitrarily. We define the weight of a seed set to          tree where the leaves correspond to elements of X and in-
+be the sum of the                                                      ternal nodes correspond to the union of their children. For
+                 Pweight of the points in the seed set. That
+is, w(C(x)) ≜ y∈C(x) w(y).                                             sampling, leaves store unnormalised probabilities and inter-
+                                                                       nal nodes store the sums of their children’s unnormalised
+                                                                       probabilities. For more details, refer to Appendix B.
+3. Static Coreset Spectral Clustering
+                                                                       Algorithm 1 ε-coreset for kernel k-means on dataset X
+Given an input graph, the algorithm of Jourdan et al. (2025)           with kernel K (Jiang et al., 2024)
+first extracts the corresponding weighted kernel k-means
+                                                                        1: Input: X0 ← X, i ← 0
+problem via the equivalence to the normalised cut problem,
+                                                                        2: repeat
+and then constructs an ε-coreset. Following this, again via
+                                                                        3:   i ← i + 1 and εi ← ε/(log(i) ∥X0 ∥0 )1/4 ▷ log(i) (·)
+the equivalence, they solve the corresponding normalised
+                                                                             is the ith iterated logarithm.
+cut problem on the coreset graph to get the coreset partition.
+                                                                        4:   Xi ← I MPORTANCE -S AMPLING(Xi−1 , εi ) ▷ Alg. 2
+Finally, they label the rest of the data by considering kernel
+                                                                        5: until ∥Xi ∥0 does not decrease compared to ∥Xi−1 ∥0
+distances to the implied centers induced by the coreset graph
+                                                                        6: return Xi
+partition. A full description of their algorithm, accompanied
+
+                                                                   4
+                                                   Fully Dynamic Coreset Spectral Clustering
+
+Algorithm 2 Importance-Sampling(X, ε)                                        internal nodes store the sum of their children. Then, when
+            ∗      2
+ 1: Let C ← D -Sampling(X)                                    ▷ Alg. 3       we need to compute a coreset, we simulate D2 -sampling by
+ 2: ∀x ∈ X, σx ← g(x, C ∗ )                                                  updating the tree to compute intermediate values of f (S, C)
+ 3: ∀x ∈ X, px ← P σx σy                                                     and g(S, C). However, as seeds are added to the set C in
+                        2y∈X2                                              Algorithm 3 or edges are added or removed from the graph,
+                        k log (k) log(∥X∥0 )
+ 4: Draw N ← O                  ε4                 i.i.d. samples from       a linear number of values in the sampling tree may need
+    X, using (px )x∈X                                                        to be changed. For example, after a series of edge updates,
+ 5: Let D be the sampled set; for each x ∈ D let wD (x) ←                    the node with highest degree x∗ may change, which would
+     w(x)                                                                    require a contribution update for every leaf in the tree.
+     px N
+ 6: return weighted set D                                                    Instead of storing and updating f (x, {x∗ }) or g(x, {x∗ })
+                                                                             directly, each node maintains values that can be used indi-
+Algorithm 3 Modified D2 -Sampling(X)                                         rectly to compute them in a just-in-time manner. Only when
+ 1: x∗ ← arg minx∈X ⟨ϕ(x), ϕ(x)⟩                                             actually sampling from the tree will the values of internal
+ 2: C ← {x∗ }                                                                nodes be computed. Of the values that we do store, only
+ 3: Draw x ∈ X uniformly at random                                           O(log n) updates to the sampling tree are required under
+ 4: C ← C ∪ {x}                                                              graph updates and only (d2max log n) updates are required
+ 5: for i = 1, . . . , k − 1 do                                              to simulate a single iteration of D2 -sampling.
+ 6:   Draw x ∈ X, using probabilities ff(X,C)
+                                        (x,C)                                Maintaining f (S, {x∗ }) And g(S, {x∗ })          Let G =
+ 7:   C ← C ∪ {x}                                                            (V, E, w) be an undirected graph on n vertices after a se-
+ 8: end for                                                                  quence of edge insertions/deletions and let the (dynamic)
+ 9: return C                                                                 kernel matrix be K = D−1 AD−1 + σD−1 and W = D
+                                                                             where σ is a parameter set to make sure K is positive definite
+As written, it appears that sampling proportional to σx on                   (Definition 3). Accordingly, for any x, y ∈ X,
+line 2 of Algorithm 2 requires us to recompute a full sam-
+pling tree every time we build a coreset, since σx depends                                                      σ
+                                                                                     ⟨ϕ(x), ϕ(x)⟩ = K(x, x) =        ,
+on C ∗ which is the output of Algorithm 3. To overcome                                                        deg(x)
+this, we build a unified data structure that fuses Algorithm 2                                                   w(x, y)
+and Algorithm 3 so that we can quickly sample proportional                           ⟨ϕ(x), ϕ(y)⟩ = K(x, y) =               .
+                                                                                                              deg(x) deg(y)
+to σx , under updates to the graph. This will correspond
+to maintaining a single sampling tree for f (x, {x∗ }) and                   To quickly run a fused version of Algorithms 2 and 3 in
+g(x, {x∗ }) where x∗ is the node in the graph with highest                   the presence of edge updates, we maintain a sampling tree
+degree. Sampling the rest of C in Algorithm 3 can then                       whose nodes, each representing a set S ⊆ X, can quickly
+be performed quickly. As we sample the rest of C, we ef-                     compute f (S, {x∗ }) and g(S, {x∗ }). This can be thought
+ficiently update the sampling tree to respect f (x, C) and                   of as maintaining f (S, {x∗ }) and g(S, {x∗ }) up to line 3
+g(x, C) after every new point is added to C. We use times-                   in Algorithm 3. To maintain x∗ itself, we use a max-heap
+tamps to lazily reset the state of the sampling tree when we                 over the degrees of the vertices in G since x∗ corresponds
+begin each query.                                                            to a node with maximal degree, regardless of the value of σ.
+                                                                             In Sections 4.1 and 4.2, we will see what each node in the
+4. Just-in-Time Sampling Trees for Dynamic                                   sampling tree actually needs to maintain to compute f (S, C)
+   Graph Kernel Coresets                                                     and g(S, C) just-in-time as C grows with each iteration of
+Our goal is to maintain a sampling tree and associated data                  Algorithm 3, starting with C = {x∗ }.
+structures so that we can quickly run a fused version of Al-
+                                                                             4.1. Computing f (S, C) Just-In-Time.
+gorithm 2 and Algorithm 3. In this section, we present such
+                                                                             Now assume that x∗ has been added to the seed set C in
+an algorithm that runs in time O(d2max log(n)) time. Under
+                                                                             line 3 of Algorithm 3. Then, for any x ∈ X, we can derive
+edge updates, updating the associated data structures takes
+                                                                             the following expression for f (x, C) in terms of C.
+O(log(n)) time. Combined with the running time analysis
+in Appendix E and Theorem 3, this immediately implies
+Theorem 6. We must be able to efficiently sample from                        f (x, C)
+and update the sampling tree according to the following un-
+                                                                                   w(x)⟨ϕ(x), ϕ(x)⟩ + w(x)⟨ϕ(x∗ ), ϕ(x∗ )⟩   x ̸∼ C,
+                                                                                 
+normalised distributions: 1) f (x, C) = w(x) · ∆(x, C), line                     
+                                                                                                              
+                                                ∗                                
+3 of Algorithm 3, 2) g(x, C ∗ ) = w(x)·∆(x,C      )
+                                    COST w (X,C ∗ )
+                                                        w(x)
+                                                    + w(C ∗ (x)) ,            = w(x)⟨ϕ(x), ϕ(x)⟩ + w(x) min     ⟨ϕ(c), ϕ(c)⟩ x ∼ C,
+                                                                                                           c∈C
+line 2 of Algorithm 2.                                                           
+                                                                                                                          
+                                                                                                           −2⟨ϕ(x), ϕ(c)⟩
+Naively, we could try to build and maintain a sampling
+tree where leaf nodes store f (x, {x∗ }) or g(x, {x∗ }) and
+
+
+                                                                         5
+                                           Fully Dynamic Coreset Spectral Clustering
+              σ       
+  σ + deg(x)                           x ̸∼ C,                      Accordingly, we need to store and update fδ (S, C) for every
+               deg(x∗
+  
+  
+                     )                                              internal node of the sampling tree.
+  
+                          σ
+=      σ + deg(x) min                   x ∼ C,            (2)        Maintaining fδ (S, C). When we begin Algorithm 3, all
+                  c∈C   deg(c)
+  
+  
+                  w(x, c)                                          the delta terms will initially be zero. Every time we add
+            −2
+  
+                                                                    a node y to the seed set C, from (3), it suffices to check
+               deg(x) deg(c)
+  
+                                                                     whether f (x, {y}) < f (x, C) for any neighbour in {x ∈
+with the relation that for all x ∈ X and C ⊂ X where                 X|x ∼ y}. For those neighbours where f (x, y) < f (x, C),
+x∗ ∈ C it holds that                                                 we update their respective delta terms in the leaves of the
+                  (                                                  sampling tree:
+f (x, C ∪ {y}) =
+                    f (x,C)                  x ̸∼ y
+                    min f (x, C), w(x)∆(x, y)  x∼y                              fδ (x, C ∪ {y}) = f b (x) − f (x, y),         (6)
+                                                          (3)        and we add the difference in delta term to every internal
+Easy Case. Suppose S ⊂ X is a set such that for all x ∈              node’s delta term along the path from the leaf node repre-
+S, we have x ̸∼ C. That is, none of the nodes represented            senting x to the root of the sampling tree:
+by S have any edges to nodes in C. This corresponds to
+                                                                           fδ (S, C ∪ {y})
+every point being in the first case of (2). Accordingly, we                                                         
+get the following expression for f (S, C):                                  = fδ (S, C) + fδ (x, C ∪ {y}) − fδ (x, C) .       (7)
+             X                Xh               σ        i
+ f (S, C) =      f (x, C) =       σ + deg(x)                         Since we sample k seeds in Algorithm 3, each with
+                                                deg(x∗ )
+             x∈S             x∈S                                     at most dmax neighbours, the running time to maintain
+                         σ     X
+          = σ |S| +                deg(x)                (4)         f (x, C) while simulating a single round of Algorithm 3 is
+                     deg(x )∗
+                                x∈S                                  O(k · dmax log n).
+                                                                     Logical Timestamps For Stale Delta Terms. As stated,
+From (4), it’s clear thatP   each node in the sampling tree
+                                                                     we will need to reset all the non-zero delta terms to zero
+should maintain |S| and x∈S deg(x). If each node main-
+                                                                     before running Algorithm 3 again for the next query. While
+tains this information, then given an arbitrary value of σ and
+                                                                     this would only incur a constant factor in the running time,
+choice of x∗ , it can successfully compute f (S, C) according
+                                                                     we can use a simple trick to avoid this. We maintain a
+to (4) in constant time. Crucially, both terms decompose
+                                                                     global logical timestamp T that we increment before starting
+linearly; suppose S ⊆ X is represented by a node L in the
+                                                                     Algorithm 3 and also store timestamps at every node in the
+sampling tree and U, V form a partition of S and are repre-
+                                                                     sampling tree. When we try to read a delta term, if that
+sented  by the child nodes of L. Then the values of |S| and
+P                                                                    node’s timestamp doesn’t match T , the delta term is stale so
+    x∈S deg(x) can be computed by summing these values               we reset it to zero and update the timestamp for that node.
+for U and V . As such, maintaining this information in the
+                                                                     Otherwise we read the value as is. This ensures that we
+sampling tree under edge updates can be accomplished in
+                                                                     forget about delta terms from previous calls to Algorithm 3.
+O(log n) time.
+General Case. For S ⊂ X which contain nodes with                     4.2. Computing g(S, C) Just-In-Time.
+edges to C, we track the difference between the expression           The difficulty with computing the g(x, C) terms is
+in (4) and the true value of f (S, C). To do this, we decom-                                                             w(x)
+                                                                     w(C(x)), Definition 4, in the denominator of w(C(x))       in
+pose f (S, C) into a base part, f b (S) corresponding to the         the definition of g(x, C). Recall that C(x) = {y ∈
+situation where there are no edges to C, and a delta term            X| arg minc∈C ∆(x, c) = arg minc∈C ∆(y,
+fδ (S, C), which stores the difference to the true value of                                                     P c)} is the seed
+                                                                     cluster that x belongs to, and w(C(x)) = y∈C(x) w(y) is
+f (S, C). For all x ∈ X and S ⊆ X, we define,                        the weight of the seed cluster that x belongs to. Initially,
+                         σ                     X                   after line 3 of Algorithm 3, for all x ∈ X, we have
+                                                                                                                     P C(x) =
+f b (x) ≜ σ + deg(x)                 , f b (S) ≜      f b (x),
+                                ∗
+                          deg(x )                                    C(x∗ ) = X and w(C(x)) = w(C(x∗ )) = y∈X w(y).
+                                                 x∈S
+                                                X                    This is because there is only one seed, x∗ in C. As more
+                b
+fδ (x, C) ≜ f (x) − f (x, C), fδ (S, C) ≜           fδ (x, C).       seeds are added to C, points in C(x∗ ) will move to differ-
+                                                x∈S                  ent seed clusters and so w(C(x∗ )) will decrease. Likewise,
+From the definitions, we have that for any S ⊆ X                     vertices in other seed sets may also move to newer seed sets.
+                                                                     As a result, the addition of a new seed may affect the de-
+                                                                                      w(x)
+                        X                              
+  f b (S) − fδ (S, C) =    f b (x) − f b (x) − f (x, C)              nominator of w(C(x))    for potentially Ω(n) terms. We need
+                         x∈S                                         a way of managing this efficiently, similarly to the case for
+                         X                                           the f (x, C) terms. We do this by having every node in the
+                     =         f (x, C) = f (S, C).       (5)                                                 P w(x)
+                         x∈S
+                                                                     sampling tree track a decomposition of      w(C(x)) over the
+
+
+                                                                 6
+                                            Fully Dynamic Coreset Spectral Clustering
+
+vertices that they represent. To aid our decomposition, we              update hb (x, C) and hs (x, C) for the leaves correspond-
+use the following notation. For any x ∈ X and S ⊆ X,                    ing to these vertices as well as hb (S, C) and hs (S, C)
+define                                                                  for every internal node along the paths from these leaves
+                  w(x)                                                  to the root. Moreover, let D be the set of seeds which
+    h(x, C) ≜             ,                             (8)             lose at least one point to the new seed set. That is, let
+                w(C(x))
+                X w(y)                                                  D = {c ∈ C| |C(c)| > |(C ∪ {y})(c)| , c ̸= x∗ }. Since
+    h(S, C) ≜                 ,                         (9)             the weight of the corresponding seed sets decrease, for ev-
+                     w(C(y))                                            ery c ∈ D, for every x ∈ C(c), we will need to update
+                y∈S
+                                                                        hs (x, C), and propagate the difference through the inter-
+                (
+                  w(x) x ∈ C(x∗ )
+  hb (x, C) ≜                                         (10)              nal nodes along the path to the root. Since the number of
+                  0       x ̸∈ C(x∗ ),                                  points in a seed set other than C(x∗ ) is at most dmax and
+                X                   X
+  hb (S, C) ≜       hb (x, C) =            w(x),      (11)              each seed has at most dmax neighbours, after adding a seed
+                x∈S               x∈S∩C(x∗ )                            to C, the time to update the hb and hs values in the tree
+                (                                                       is O(d2max log n). We give pseudocode for our dynamic
+                    0   x ∈ C(x∗ )                                      coreset data structure, Data Structure 2, in Appendix C. It
+  hs (x, C) ≜        w(x)                                   (12)
+                        x ̸∈ C(x∗ ),
+                    w(C(x))                                                edge update time of O(log n) and coreset
+                                                                        has                                         query time of
+              X                  X                  w(x)                O kd2max log(n) + log(n) log⋆ (n)k 2 ε−4 time. Appendix
+  hs (S, C) ≜   hs (x, C) =
+                                                   w(C(x))              E derives the full running times for this data structure and
+                x∈S               x∈S∩(X\C(x∗ ))
+                                                                        our dynamic coreset spectral clustering data structure, Data
+                                                            (13)
+                                                                        Structure 1. The factor of d2max k in our query time is very
+                                           b
+                                      h (x,C)                           conservative. It assumes that all the neighbours of all the
+The decomposition is then h(x, C) = w(C(x  ∗ )) + hs (x, C),
+
+so that                                                                 seeds that we sample belong to different seed sets. For many
+               f (x, C)                                                 graphs, this is likely impossible.
+     g(x, C) =           + h(x, C)
+               f (X, C)                                                 5. Experiments
+               f (x, C)     hb (x, C)                                   We perform extensive experiments on a system with an
+             =           +            + hs (x, C),
+               f (X, C) w(C(x∗ ))                                       AMD Ryzen 9 7950X 16-Core Processor and 128GB of
+               f (S, C)                                                 DDR5 4800MHz RAM. We compare our dynamic CSC data
+    g(S, C) =            + h(S, C)                      (14)            structure against the following baselines: 1) Naive spectral
+               f (X, C)
+                                                                        clustering, 2) the static CSC algorithm (Jourdan et al., 2025),
+               f (S, C)     hb (S, C)
+             =           +            + hs (S, C)       (15)            3) LS24 (Laenen & Sun, 2024), 4) Merge&Reduce (Hen-
+               f (X, C) w(C(x∗ ))
+                                                                        zinger & Kale, 2020). Following the experiments of Laenen
+Given this decomposition of g(S, C), it suffices to maintain            & Sun (2024), we compare these algorithms on real-world
+w(C(x∗ )) outside of the sampling tree and have every node              and synthetic workloads. Every workload consists of a num-
+maintain hb (S, C) and hs (S, C). We additionally maintain              ber of batches of edge insertions or deletions, each followed
+a hashmap that maps vertices to their seed set and a hashmap            by a query to get the current partition of the full graph. The
+mapping seeds to their seed cluster weight. Here, logical               details of each workload can be found in Appendix D. In
+timestamps will be crucial to efficiently update these terms            the interest of fairness, we disable any internal buffering so
+and the hashmap. By decoupling w(C(x∗ )) from hb (S, C),                that each edge insertion/deletion is handled one at a time.
+we avoid the large number of sampling tree updates that                 We record the quality of each query with ARI (Rand, 1971),
+would have been required when each seed is added to C                   the time taken to process each batch, and the time taken to
+without the decoupling.                                                 process the query and label the current graph. Following
+Maintaining hb (S, C) And hs (S, C). After Algorithm                    Jiang et al. (2024), we use a single round of importance
+3Pselects x∗ in line 3, all the hb (S, C) terms will initially be       sampling for the coreset algorithms (ours, static CSC, and
+    x∈S deg(x), which we already track to compute f (S, C),             Merge&Reduce). The full details of each data structure’s
+ and all the hs (S, C) terms will be zero. Additionally, we             parameters can be found in the supplementary material.
+ maintain a hashmap from X to seeds which starts with every             Discussion Figure 1 shows the results on our workloads.
+ node in X mapped to x∗ . Again we can use timestamps to                Data structures were omitted from experiments if runs took
+ avoid having to reset this map across queries. Finally we              longer than 20,000 seconds. Figure 2 shows a running time
+ maintain a hashmap from seeds  P to seed set weights which             comparison between static CSC and ours. All data struc-
+ initially just contains x∗ → x∈X w(x).                                 tures achieve similar ARIs but the edge update and query
+ From (3), when we add a seed point y to C, the only                    times vary wildly. With respect to edge update time, LS24
+ points which can change seed cluster are y and its neigh-              and Merge&Reduce were orders of magnitude slower com-
+ bours, {y} ∪ {x ∈ X|x ∼ y}. Therefore, we need to
+
+                                                                    7
+                                          Fully Dynamic Coreset Spectral Clustering
+
+
+
+
+Figure 1. Results on mixed workloads. Shaded regions show standard deviation over 10 runs. Log scales are used when values cross
+multiple magnitudes.
+
+
+
+
+Figure 2. Runtime comparison between the static CSC algorithm and ours on an instance of SPLIT_CLUSTERS with k = 50 and
+n = 2500. Sampling from the same distribution, our dynamic data structure achieves the same ARI as the static algorithm. Shaded
+regions show standard deviation over 10 runs.
+
+
+pared to the other data structures, and could not be run on         of the graph, or be given oracle access to it, for example
+the larger experiments without taking longer than 20,000            via a graph database driver. For very large graphs, which
+seconds. With respect to query time, our data structure             have to be stored in graph databases, the former is likely im-
+was orders of magnitude faster than the Naive data struc-           practical. Consider the oracle access setting where our data
+ture on larger experiments such as EMNIST while being               structure does not store the topology of the graph itself. Our
+competitive with LS24 and Merge&Reduce on the smaller               data structure can process edge updates without requiring
+experiments. In the comparison against the static algorithm,        information about the topology of the graph, only degree
+the query time of the static algorithm increases at a much          information. Indeed, only weighted and unweighted degree
+greater rate compared to our data structure as the experiment       information is modified by updates. Conversely, queries do
+progresses, taking ten times longer per query by the end.           require access to the topology of the graph to sample and
+                                                                    extract the coreset graph. This suggests that for very large
+6. Topology Free Updates With Graph Oracles                         graphs, instead of consuming a sequence of edge updates
+We present a version of the dynamic graph clustering prob-          and maintining the graph itself, our data structure could
+lem where edge updates arrive sequentially and our data             instead consume a sequence of degree updates and be given
+structure implicitly maintains the topology of the underly-         oracle access to the graph. This also reduces the space
+ing graph using KG ( Definition 3). Implementations of              required by our data structure to O(n).
+our data structure either need to maintain their own copy
+
+
+                                                                8
+                                         Fully Dynamic Coreset Spectral Clustering
+
+Impact Statement                                                    la Tour, M. D., Henzinger, M., and Saulpic, D. Fully dy-
+This paper presents work whose goal is to advance the field            namic k-means coreset in near-optimal update time. In
+of Machine Learning. There are many potential societal                 ESA, volume 308 of LIPIcs, pp. 100:1–100:16. Schloss
+consequences of our work, none which we feel must be                   Dagstuhl - Leibniz-Zentrum für Informatik, 2024.
+specifically highlighted here.
+                                                                    Laenen, S. and Sun, H. Dynamic spectral clustering with
+Acknowledgements                                                      provable approximation guarantee. In ICML. OpenRe-
+                                                                      view.net, 2024.
+Gregory Schwartzman was supported by the follow-
+ing research grants: KAKENHI 21K17703, KAKENHI                      Lecun, Y., Bottou, L., Bengio, Y., and Haffner, P. Gradient-
+25K00370, JST ASPIRE JPMJAP2302, and JST CRONOS                       based learning applied to document recognition. Proceed-
+JPMJCS24K2.                                                           ings of the IEEE, 86(11):2278–2324, 1998.
+
+References                                                          Martin, L., Loukas, A., and Vandergheynst, P. Fast approxi-
+Cohen, G., Afshar, S., Tapson, J., and van Schaik, A. Emnist:        mate spectral clustering for dynamic networks. In ICML,
+  Extending mnist to handwritten letters. In 2017 Interna-           volume 80 of Proceedings of Machine Learning Research,
+  tional Joint Conference on Neural Networks (IJCNN), pp.            pp. 3420–3429. PMLR, 2018.
+  2921–2926, 2017. doi: 10.1109/IJCNN.2017.7966217.
+                                                                    Ning, H., Xu, W., Chi, Y., Gong, Y., and Huang, T. S. Incre-
+Dhanjal, C., Gaudel, R., and Clémençon, S. Efficient eigen-           mental spectral clustering with application to monitoring
+  updating for spectral graph clustering. Neurocomputing,             of evolving blog communities. In SDM, pp. 261–272.
+ 131:440–452, 2014.                                                   SIAM, 2007.
+
+Dhillon, I. S., Guan, Y., and Kulis, B. Kernel k-means:             Rand, W. M. Objective criteria for the evaluation of cluster-
+  spectral clustering and normalized cuts. In 10th ACM                ing methods. Journal of the American Statistical associa-
+ SIGKDD International Conference on Knowledge Dis-                    tion, 66(336):846–850, 1971.
+  covery and Data Mining (KDD’04), pp. 551–556, 2004.
+                                                                    Von Luxburg, U. A tutorial on spectral clustering. Statistics
+Dhillon, I. S., Guan, Y., and Kulis, B. Weighted graph cuts           and computing, 17:395–416, 2007.
+ without eigenvectors a multilevel approach. IEEE Trans-
+                                                                    White, S. and Smyth, P. A spectral clustering approach to
+  actions on Pattern Analysis and Machine Intelligence, 29
+                                                                     finding communities in graphs. In 2005 SIAM Interna-
+ (11):1944–1957, 2007.
+                                                                     tional Conference on Data Mining (SDM), pp. 274–285,
+Gönen, M. and Margolin, A. A. Localized data fusion for              2005.
+  kernel k-means clustering with application to cancer biol-
+                                                                    Wong, C.-K. and Easton, M. C. An efficient method for
+  ogy. In 27th Advances in Neural Information Processing
+                                                                     weighted sampling without replacement. SIAM Journal
+ Systems (NeurIPS’14), 2014.
+                                                                     on Computing, 9(1):111–113, 1980.
+Henzinger, M. and Kale, S. Fully-dynamic coresets. In ESA,
+  volume 173 of LIPIcs, pp. 57:1–57:21. Schloss Dagstuhl
+ - Leibniz-Zentrum für Informatik, 2020.
+Henzinger, M., Saulpic, D., and Sidl, L. Experimental
+  evaluation of fully dynamic k-means via coresets. In
+ ALENEX, pp. 220–233. SIAM, 2024.
+Jiang, S. H., Krauthgamer, R., Lou, J., and Zhang, Y. Core-
+   sets for kernel clustering. Machine Learning, 113(8):
+   5891–5906, 2024.
+Jourdan, B., Schwartzman, G., Macgregor, P., and Sun, H.
+  Coreset spectral clustering. In The Thirteenth Interna-
+  tional Conference on Learning Representations, 2025.
+
+Kuo, C.-T., Walker, P. B., Carmichael, O., and Davidson, I.
+  Spectral clustering for medical imaging. In 2014 IEEE
+  International Conference on Data Mining, pp. 887–892,
+  2014.
+
+                                                                9
+                                            Fully Dynamic Coreset Spectral Clustering
+
+A. Full CSC Algorithm
+In this section we give the full details of the algorithm of (Jourdan et al., 2025). We start with some definitions and notations.
+Given a weighted graph G = (V, E, w), the conductance of a set S of vertices is defined as ΦG (S) ≜ w(E(S, V \S))/vol(S)
+where w(E(S, V \ S)) is the total weight of edges crossing the cut between S and V \ S and vol(S) is the total weight
+of edges incident to S. We define a k-partition of X to be a collection of sets Π = {πj }kj=1 such that each element of X
+appears in exactly one member of Π.
+Definition 5 (centroids). Given a k-partition Π = {πj }kj=1 of a set X, a map ϕ : X → H for some Hilbert space
+H, and a weight function w : X → R+ , define the set of centroids of Π as cϕw (Π) ≜ {cϕw (πj )}kj=1 where cϕw (πj ) =
+P                  P            
+    x∈πj w(x)ϕ(x) /       x∈πj w(x) .
+
+Definition 6 (Normalised cut objective). Given a graph G = (V, E), the normalised cut problem is to minimise the average
+                                                                                               Pk
+conductance over all k-partitions of the vertices:   min    NC(G, Π), where NC(G, Π) = k1 j=1 ΦG (πj ).
+                                                            Π={π1 ,...,πk }
+
+Recall that the normalised cut problem and the kernel k-means problem can both be written as the following trace
+optimisation problems up to a constant (Dhillon et al., 2004):
+
+    Normalised Cut                                                                Weighted Kernel k-means
+                                         − 12        − 12
+        min    Tr(D−1 A) − Tr(Z T D             AD          Z)                         min    Tr(W K) − Tr(Y T W 2 KW 2 Y )
+                                                                                                                              1       1
+
+
+
+        s.t.   X ∈ {0, 1}n×k ,                                                         s.t.   X ∈ {0, 1}n×k ,
+                                                                                                                                          (16)
+               X 1k = 1n ,                                                                    X 1k = 1n ,
+                        1               1
+               Z = D 2 X (X T DX )− 2                                                                      1
+                                                                                              Y = W 2 X (X T W X )− 2
+                                                                                                                                  1
+
+
+
+
+The full Coreset Spectral Clustering algorithm is given in Algorithm 4. Followed by an intuitive explanation in Figure 3.
+Algorithm 4 C ORESET S PECTRAL C LUSTERING
+ 1: Input: Graph G = (V, E), k, adjacency AG , degree DG
+                 −1      −1
+ 2: KG , WG ← DG    AG DG   , DG
+      ′
+ 3: V , WH ← an ε-coreset for kernel k-means on (V, KG , WG )
+ 4: AH ← WH KG (V ′ ) WH                                          ▷ KG (V ′ ) is the principal submatrix of KG indexed by V ′ .
+ 5: Π ← S PECTRAL C LUSTERING(AH , k)                                                    ▷ Π = {πj }kj=1 is a k-partition of V ′ .
+      ′                                                                 ϕ
+ 6: Π ← partition of V assigning each x ∈ V to the closest centroid in cwH (Π)
+ 7: return Π′
+                                      Input graph                             Coreset graph                    Coreset partition Π
+
+
+                                                                                               Spectral
+                                                                                              clustering
+               Graph space
+
+
+
+
+               Kernel space
+                                                             Construct
+                                                              coreset
+                                                                                                               +             +
+                                                                                                                     +
+                                        Equivalent                            Reweighted                        Implied centers
+                                 kernel k-means problem                       coreset V ′
+
+                  Figure 3. Sketch of the Coreset Spectral Clustering Algorithm, taken from (Jourdan et al., 2025).
+Now let us state formally the results of (Jourdan et al., 2025).
+
+
+                                                                         10
+                                           Fully Dynamic Coreset Spectral Clustering
+
+Theorem 3. Given a graph G = (V, E) and an α-approximation algorithm for the normalised cut problem with k clusters
+                                                       1+ε
+(16), Algorithm 4 returns a k-partition of V that is a 1−ε α-approximation to the optimal normalised cut value for G.
+The running time of Algorithm 4 is the sum of the running time of the ε-coreset algorithm, S PECTRAL C LUSTERING, and
+labelling V .
+
+A.1. Full Dynamic CSC Data Structure
+Here we list the pseudocode for our dynamic coreset spectral clustering data structure, that uses our dynamic coreset data
+structure, Data Structure 2, as a building block.
+  Data Structure 1: DYNAMIC CSC Data Structure
+   1: Fields:
+   2:   coreset: an instance of Data Structure 2
+   3:   alg: an α-approx. algorithm for Normalised Cut (input: adjacency matrix, k)
+    4:
+    5: Update(self, mode, u, v, w)
+    6: if mode == "insert" then
+    7:      self.coreset.InsertEdge(u, v, w)
+    8: else
+    9:      self.coreset.DeleteEdge(u, v, w)
+   10: end if
+   11:
+   12: Query(self, k, ε, σ, Y )
+                                   −1      −1       −1
+   13:  G = (V, E), DG , KG = DG      AG D G  + σDG    , WG = DG                                    ▷ Implicitly maintained
+          ′
+   14:  V , WH ← self.coreset.ExtractCoreset(k, σ, ε)                      ▷ ε-coreset for kernel k-means on (V, KG , WG ).
+   15:  AH ← WH KG (V ′ ) WH
+   16:  Π ← self.alg(AH , k)
+   17:  Π′ ← partition assigning each x ∈ Y to the closest centroid in cϕwH (Π)
+   18:  return Π′
+
+A.2. Labelling Y
+To compute Π′ , line 17 of Data Structure 1, we must fist compute the self inner products of the centroids in cϕwH (Π). That is,
+for every cϕw (πj ) in cϕw (Π), we need to compute ⟨cϕw (πj ), cϕw (πj )⟩. Since the coreset graph has at most O(k 2 ε−4 ) vertices,
+the largest component of Π may contain O(k 2 ε−4 ) vertices. Thus the time to compute the self inner products takes at most
+O(k 4 ε−8 ) time.
+Then for each x ∈ Y , we must find the closest centroid. Due to the nature of the graph kernel, it suffices to check which
+centroids x’s neighbours contribute to. In particular, we only need to check neighbours which are in the coreset graph. This
+can be achieved in two ways: 1) Iterate over the neighbours of x and check if they are in the coreset graph, or 2) For each
+vertex y in the coreset graph, check if y is a neighbour of x. Using the first approach to label Y takes O(vol(Y ) time and
+the second approach takes |Y | k 2 ε−4 time. Thus the total time to label Y is O(k 4 ε−8 + min{|Y | k 2 ε−4 , vol(Y )}).
+
+B. Sampling Trees
+Suppose we have a set of n objects X with associated probability distribution p(x) = P l(x)l(x) for all x ∈ X, where
+                                      P                                                 x∈X
+l : X → R≥0 . Further define l(S) = x∈S l(x) for all S ⊆ X. We refer to l(x) as the contribution of x and l(S) as
+the contribution of S. Sampling trees provide an efficient way to sample from p(x), and an efficient way to update the
+contribution of a point (Wong & Easton, 1980). Suppose we have nested sets S1 ⊂ S2 ⊂ S3 ⊂ · · · ⊂ Sm ⊆ X. For any
+x ∈ S1 , we have that
+                                                           l(x)   l(Sm ) l(Sm−1 )      l(x)
+                                   Pr [x is sampled] =          =                 ...        .                                 (17)
+                                                          l(X)     l(X) l(Sm )        l(S1 )
+
+Following this decomposition, sampling trees maintain the contribution of points in X as leaves and internal nodes maintain
+the contribution corresponding to the sum of their children, in the form of a balanced binary tree.
+Let T be a sampling tree for sampling elements of X from distribution p(x). To sample a data point according to p(x), we
+start at the root node of T and recursively sample a child node with probability equal to the child’s contribution divided by
+
+                                                                11
+                                          Fully Dynamic Coreset Spectral Clustering
+
+the parent’s contribution until we reach a leaf, and return the element of x stored there. From equation 17, this is equivalent
+to sampling points according to p(x) while taking time O(log n).
+To update the contribution of a point, the contribution at the leaf is overwritten and the difference is subtracted from every
+internal node in the path from the target leaf node to the root. Alternatively, the contribution of the leaf is overwritten and
+every internal node in the path to the root recomputes its contribution as the sum of its children. Both approaches take
+O(log n) time with the former being faster and the latter being more numerically stable. As such, sampling and updating a
+contribution takes O(log n) time while building a sampling tree from scratch takes time O(n).
+
+C. Our Data Structure
+In this Section we give the pseudocode for our data structure, Data Structure 2.
+  Data Structure 2: DYNAMIC CSC Data Structure
+   1: Fields:
+   2:   T: global logical timestamp                                                        ▷ Used to invalidate stale query data.
+   3:   G: dynamic graph G = (V, E, w) as hashmap-of-hashmaps
+   4:   MaxDeg: max-heap of node degrees
+   5:   Tree: sampling tree with vertices as leaves; each node stores:
+   6:      Node.T: logical
+                         P timestamp
+   7:      Node.vol: x∈S deg(x)                                                    ▷ S is the vertex set represented by the node.
+   8:      Node.size:  P |S|
+   9:      Node.fδ : x∈S fδ (x, C)                                                              ▷ Reset to 0 if Node.T is stale.
+           Node.hb : Px∈S hb (x)
+                       P
+  10:                                                                                            ▷ Reset to Node.vol if stale.
+  11:      Node.hs : x∈S hs (x)                                                                             ▷ Reset to 0 if stale.
+  12:   SeedMap: map x 7→ (t, seed)
+  13:      t: logical timestamp
+  14:      seed: seed vertex                                                                  ▷ Reset to current x∗ if t is stale.
+  15:
+  16: Init(self)
+  17:   self.T ← 0
+  18:   self.G ← empty graph
+  19:   self.MaxDeg ← empty max-heap
+  20:   self.Tree ← empty sampling tree
+  21:   self.SeedMap ← empty hashmap
+  22:
+  23: InsertEdge(self, u, v, w)
+  24:   Insert edge {u, v} with weight w into self.G
+  25:   Increment degrees of u and v in self.MaxDeg
+  26:   Ensure u, v exist as leaves in self.Tree; promote as required                             ▷ All node fields default to 0.
+  27:   Update leaf fields for u and v to reflect the insertion
+  28:   Propagate field deltas up to the root of self.Tree
+  29:
+  30: DeleteEdge(self, u, v, w)
+  31:   Delete edge {u, v} with weight w from self.G
+  32:   Decrement degrees of u and v in self.MaxDeg
+  33:   Update leaf fields for u and v to reflect the deletion
+  34:   Propagate field deltas up to the root of self.Tree
+  35:   If u becomes disconnected: swap its leaf with last leaf, delete it,
+  36:      then propagate; demote internal nodes to leaves as needed. Repeat for v.
+  37:
+  38: F(Node, σ, x∗ , T )                                                                                            ▷ From (5).
+  39: if Node.T < T then
+  40:      Node.T ← T
+  41:      Node.fδ ← 0
+
+
+                                                              12
+                                          Fully Dynamic Coreset Spectral Clustering
+
+42: end if
+                                σ
+43:   return Node.size · σ + deg(x ∗ ) · Node.vol − Node.fδ
+
+44:
+45: G(self, Node, σ, x∗ , wx∗ )
+46:    fS ← self.F(Node, σ, x∗ , self.T)
+47:    fX ← self.F(self.Tree.root, σ, x∗ , self.T)
+48: if Node.T < self.T then
+49:      Node.T ← self.T
+50:      Node.hb ← Node.vol
+51:      Node.hs ← 0
+52: end if
+                            b
+53:    return ffXS + Node.h
+                       w ∗
+                        x
+                              + Node.hs                                          ▷ wx∗ corresponds to w(C(x∗ )); from (15).
+54:
+55: ExtractCoreset(self, k, σ, ε)
+56:   self.T ← self.T + 1
+57:   x∗ ← argmax degree from self.MaxDeg
+58:   SeedWeight ← { x∗ 7→ self.Tree.root.vol }              ▷ SeedWeight maps seeds to seed-weights (degrees).
+59:   self.Repair(x∗ , σ, x∗ , SeedWeight)
+60:   Draw x uniformly at random from V
+61:   self.Repair(x, σ, x∗ , SeedWeight)
+62: for i = 1, . . . , k − 1 do
+63:       Sample x from self.Tree using self.F to compute contributions
+64:       self.Repair(x, σ, x∗ , SeedWeight)
+65: end for
+66:   D←∅                       
+                     2   2
+67:   N ← O k log (k)ε4log(∥V ∥)                                      ▷ ∥V ∥ is the number of nodes in the graph.
+68: for j = 1, . . . , N do
+69:      (x, p) ← sample and its probability from self.Tree
+70:      D ← D ∪ {(x, deg(x)/(pN ))}
+71: end for
+72:   X1 ← weighted dataset D                           ▷ In practice we stop after a single round of importance sampling.
+73:   i←1
+74: repeat
+75:      i ← i + 1 and εi ← ε/(log(i) ∥X1 ∥0 )1/4
+76:      Xi ← I MPORTANCE -S AMPLING(Xi−1 , εi )                                                                  ▷ Alg. 2
+77: until ∥Xi ∥0 does not decrease compared to ∥Xi−1 ∥0
+78:   return Xi
+79:
+80: Repair(self, x, σ, x∗ , SeedWeight)
+81:   Lx ← leaf in self.Tree for vertex x        ▷ Maintain maps between graph vertices and tree leaves.
+82:   wx ← deg(x)
+83:   OldSeed ← self.SeedMap[x]                                              ▷ Overwrite to x∗ if stale.
+84:   SeedWeight[OldSeed] ← SeedWeight[OldSeed] − wx
+85:   SeedWeight[x] ← wx
+86:   f ′ ← Lx .fδ              
+                                  σ
+87:   Lx .fδ ← σ + deg(x)      deg(x∗ )                                               ▷ Sets f (x, C) to 0 via fδ ← f b ; see (5).
+88:   Add (Lx .fδ − f ′ ) to L.fδ along path Lx ⇝ root
+89:   self.SeedMap[x] ← x                                                                             ▷ Also update timestamp.
+90:   OldSeeds ← {OldSeed}
+91:   Sx ← { y ∼ x | w(y)∆(y, x) < self.F(Ly , σ, x∗ , self.T) }
+92: for z ∈ Sx do
+93:      Lz ← leaf in self.Tree for z
+
+
+                                                             13
+                                         Fully Dynamic Coreset Spectral Clustering
+
+  94:       f ′ ← Lz .fδ                
+                                   σ
+  95:       Lz .fδ ← σ + deg(z) deg(x ∗)   − ∆(z, x)                                                               ▷ From (6).
+                            ′
+  96:      Add (Lz .fδ − f ) to L.fδ along path Lz ⇝ root
+  97:      wz ← deg(z)
+  98:      OldSeed ← self.SeedMap[z]                                                                 ▷ Overwrite to x∗ if stale.
+  99:      OldSeeds ← OldSeeds ∪ {OldSeed}
+  100:      SeedWeight[OldSeed] ← SeedWeight[OldSeed] − wz
+  101:      SeedWeight[x] ← SeedWeight[x] + wz
+  102:      self.SeedMap[z] ← x                                                                      ▷ Also update timestamp.
+  103: end for
+  104:   Sx′ ← {x} ∪ Sx
+  105: for z ∈ Sx′ do
+  106:      Lz ← leaf in self.Tree for z
+  107:      h′b ← Lz .hb                                                                            ▷ Reset to Lz .vol if stale.
+  108:      h′s ← Lz .hs                                                                                  ▷ Reset to 0 if stale.
+  109:      Lz .hb ← 0
+  110:      Lz .hs ← deg(z)/SeedWeight[x]                                                                     ▷ Case 2 of (12).
+  111:      Subtract h′b from L.hb along path Lz ⇝ root
+  112:      Add (Lz .hs − h′s ) to L.hs along path Lz ⇝ root
+  113: end for
+  114: for s ∈ OldSeeds \ {x∗ } do
+  115:      (Update hs for vertices assigned to s)                                   ▷ Seed-sets that shrank, excluding C(x∗ ).
+  116:   for z ∈ { y ∼ s | self.SeedMap[y] = s } do
+  117:         Lz ← leaf in self.Tree for z
+  118:         h′s ← Lz .hs                                                                            ▷ Should never be stale.
+  119:         Lz .hs ← deg(z)/SeedWeight[s]
+  120:         Add (Lz .hs − h′s ) to L.hs along path Lz ⇝ root
+  121:   end for
+  122: end for
+
+D. Experiment Workloads
+Our experiments are dividing into real-world and synthetic dynamic graph workloads, which are fully described in this
+section.
+Real-World Workloads. For our real-world workloads, we consider the MNIST and EMNIST datasets (Lecun et al.,
+1998; Cohen et al., 2017). For each dataset we define a workload based on the k-nearest neighbours graph, with k = 300.
+We begin with an empty graph, and then the nodes (and associated edges) in the k-nearest neighbour graph are added in
+batches of 1000. The nodes are inserted in order of cluster id, and the order within clusters is randomized. After every node
+has been inserted, they are removed again in the reverse order to which they were inserted.
+Synthetic Workloads. Our synthetic workloads are all based on the stochastic block model (SBM) for generating random
+graphs. We use two insertion-only workloads which were originally defined by Laenen and Sun (Laenen & Sun, 2024), and
+a new fully-dynamic workload.
+In the SPLIT_CLUSTERS workload, we initially add a graph drawn from the standard SBM with the number of clusters
+set to k = 30, and with n = 300 vertices in each cluster. We include each edge inside a cluster with probability p = 0.5 and
+we include edges between clusters with probability q = (nk)−1 . Then, we perform 10 phases in which we select a subset of
+300 vertices in the graph, and add a clique on those vertices so that they effectively become a new cluster. We ensure that
+sets of vertices chosen at each update are disjoint. After each phase, the cluster structure is queried from the dynamic data
+structure.
+In the MERGE_CLUSTERS workload, we again begin with a graph drawn from the standard SBM. We set the number of
+clusters to be 20, each containing 100 vertices. We set the SBM parameters to be p = 0.5, and q = (nk)−1 . We then
+perform 10 phases in which we select two clusters, and add each edge connecting those clusters with probability 0.95,
+effectively merging those two clusters into one larger cluster. After each phase, the cluster structure is queried from the
+dynamic data structure.
+The third synthetic workload, referred to as CHANGE_CLUSTERS is fully-dynamic. We begin with a graph drawn from the
+
+
+                                                             14
+                                               Fully Dynamic Coreset Spectral Clustering
+
+standard SBM, with 10 clusters each containing 1000 nodes. The parameters of the SBM are p = 0.5 and q = 10−4 . We
+proceed in 5 phases. In each phase, two clusters C1 and C2 of the currently maintained graph are chosen, and every edge
+incident to these clusters is removed. Then, C1 and C2 are each split in half into vertex sets {C1,1 , C1,2 } and {C2,1 , C2,2 }
+and we create two new clusters: C1′ = C1,1 ∪ C2,1 and C2′ = C1,2 ∪ C2,2 , adding internal and outgoing edges with
+probabilities p and q respectively. After each phase, the cluster structure is queried from the dynamic data structure.
+
+E. Running Time Calculations new section
+In this Appendix, we derive the running times given in Table 1.
+Theorem 4 (Theorem 3.1 (Jiang et al., 2024)). Given an n-point weighted dataset X, oracle access to a kernel K :
+X × X → R, 0 < ε < 1, and integer k ≥ 1, Algorithm 1 constructs a reweighted subset S ⊆ X of size
+
+                                                           ∥S∥0 = O(ε−4 k 2 ),
+
+that with high constant probability 4 is an ε-coreset for kernel (k, 2)-C LUSTERING with respect to X and K. The running
+time is O(nk + log(n) log⋆ (n)k 2 ε−4 ).
+Remark 1. The factor of nk in the running time of Theorem 4 is due to the use of naive D2 -sampling in Algorithm 2.
+In our data structure, the corresponding running time is only O(kd2max log(n)) ( Section 4). Thus, the running time of
+ExtractCoreset in Data Structure 2 is O(kd2max log(n) + log(n) log⋆ (n)k 2 ε−4 ).
+Remark 2. Given the running time of ExtractCoreset, the time required for Data Structure 1 to perform Query(k, ε, σ, Y )
+is O(kd2max log(n) + log(n) log⋆ (n)k 2 ε−4 + TN C (ε−4 k 2 ) + ε−8 k 4 + min{|Y | k 2 ε−4 , vol(Y )}), where TN C (n, k ′ ) is an
+α−approximation algorithm for the normalised cut problem with k ′ clusters (16) and vol(Y ) is the sum of unweighted
+degrees of all nodes in Y . The final two terms in the running time are the cost of computing the norms of each coreset
+centroid in kernel space, and then using them to label everything in Y ; Section A.2 gives the derivation. The running time of
+Update is O(log(n)).
+Theorem 5 ((Henzinger & Kale, 2020)). Assume that there is a static coreset construction algorithm for a problem P with
+linear cost function that a) runs in time tP (ns , εs , λs ), b) always outputs a set of cardinality at most sP (εs , λs ), and c) has
+the guarantee that the output is an εs -coreset with probability at least 1 − λs , where ns is the number of input points.
+Then there is a fully-dynamic coreset-construction algorithm for P that, a) always maintains an output set of cardinality at
+most sP (ε, λ), b) has the guarantee that the output is an ε-coreset with probability at least 1 − λ, and c) has worst-case
+update time                                                                    
+                                                O (log n) · tP s∗P , logε n , nλ ,
+
+where s∗P = sP logε n , nλ , and n is the current number of points.
+                          
+
+Remark 3. Using the algorithm of (Jiang et al., 2024) (Theorem 4) as the static coreset algorithm for Theorem 5, with high
+constant probability, Merge&Reduce maintains a coreset of size O(ε−4 k 2 ) after every update. To compute the update time,
+notice that s⋆P = O(ε−4 k 2 log4 (n)) and so the update time is
+                                                                                                      
+                    O log(n) · ε−4 k 2 log4 (n)k + log⋆ (ε−4 k 2 log4 (n)) · (k 2 log2 (k)ε−4 log4 (n))
+                                         
+                    = O ε−4 k 3 log5 (n)
+
+                                                                         −4 2
+Remark
+        4. Given Merge&Reduce maintains a coreset           of size O(ε k ), the query time of merge & reduce is
+O TN C (ε−4 k 2 , k) + ε−8 k 4 + min{|Y | k 2 ε−4 , vol(Y )} .
+
+F. Formal Statement Of Main Results
+As our data structure supports set queries, let us define what does it mean for a subset of the nodes to be properly labelled
+with respect to the normalised cut objective.
+Definition 7. (α-consistent labelling) Given a graph G(V, E), we say that a labelling c for Y ⊆ V is α-consistent for the
+normalised cut problem if there exists a labelling c′ for V that agrees with c on Y and c′ corresponds to and α-approximation
+to the normalised cut objective for V .
+   4
+       That is, for any constant λ the algorithm succeeds with probability 1 − λ.
+
+
+                                                                     15
+                                           Fully Dynamic Coreset Spectral Clustering
+
+Before we state the formal version of Theorem 2. Recall that a dynamic weighted graph G = G1 (V1 , E1 ), G2 (V2 , E2 ), ... is
+either a finite or infinite sequence of graphs where Gi , Gi+1 only differ by at most a single edge corresponding to an edge
+insertion or deletion. We assume that when all edges incident to a node are removed, that node is removed. When (u, v) is
+added at step i, we have u, v ∈ Vi . Let ni = |Vi |, dimax = maxv∈Vi {d(v)}.
+Theorem 6 (Main result (Formal)). Given a dynamic weighted graph G and an α-approximation algorithm for the
+normalised cut problem with k ′ clusters (16) running in time TN C (n, k ′ ), upon the i-th change, Data Structure 2 can be
+updated in time O(log ni ). When queried with Y ⊆ Vi , k ∈ [ni ], ε ∈ (0, 1) between the i-th and (i + 1)-th change it runs
+in time O(k(dimax )2 log(ni ) + log(ni ) log⋆ (ni )k 2 ε−4 + TN C (ε−4 k 2 ) + ε−8 k 4 + min{|Y | k 2 ε−4 , vol(Y )}) and returns a
+labelling of Y that is α(1 + ε)/(1 − ε)-consistent for the normalised cut problem, with high constant probability.
+
+
+
+
+                                                                16
+

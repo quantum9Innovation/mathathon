@@ -1,0 +1,136 @@
+NEW END-TO-END REGULAR-LIFT CHECK: K4, KNOWN QUOTIENT
+15 November 2026
+
+Outcome
+=======
+
+The new check PASSES the complete pipeline on a nontrivial 3-lift of
+K4, with hidden vertex labels:
+  adjacency + R -> full certified intertwiner kernel -> complete
+  base-field enumeration -> integer one-hot maps -> planted fibers.
+
+No frozen solver, manuscript, or existing fixture is edited. No old
+regression suite is rerun. This is a known-R verification, not a run
+over the potentially huge constant family of all unknown quotient frames.
+
+New files
+=========
+
+  regular_lift_k4_check.py
+  regular-lift-k4-checks.json
+  regular-lift-k4-certificate.json
+  regular-lift-k4-output.txt
+  regular-lift-k4-independent-audit.txt
+
+Run only this new check:
+  uv run python regular_lift_k4_check.py
+
+The new script imports the frozen full-kernel solver without modifying
+it and disables bytecode writes. It makes exactly ONE kernel-recovery
+call. Dense reference elimination is used only afterward to validate
+the returned span, never by the recovery path.
+
+Fixture and exact operator
+==========================
+
+Base H=K4: connected, simple, 3-regular on four vertices. Its quotient
+matrix R has zero diagonal and ones off the diagonal. Lift size N=3,
+so the observed graph has n=12 vertices. The six independently generated
+matching permutations (deterministic fixture seed2) are:
+  0-1: (1,2,0)
+  0-2: (2,1,0)
+  0-3: (2,1,0)
+  1-2: (2,0,1)
+  1-3: (1,0,2)
+  2-3: (1,0,2).
+The subsequent hidden vertex relabeling is recorded in the JSON.
+The script checks that the resulting graph is simple, connected,
+undirected and 3-regular.
+
+The graph fixture was selected to have the minimal manageable
+intertwiner dimension. This is a deterministic correctness fixture,
+not a statistical sampling or runtime study.
+
+Work over F3 and form the SPARSE operator
+  K=I4 tensor A - R^T tensor I12.
+Its dimension is48, with288 nonzero entries. Because R is symmetric,
+K itself is symmetric; no doubled linearization is needed for this
+fixture. Column-stacked vectorization is used throughout.
+
+Note that the prime3 divides BOTH the graph degree3 and fiber size3.
+No division by either number, quotient eigenvalue separation, or
+nondegenerate fiber-mass inner product is used.
+
+Results
+=======
+
+* Certified base-field kernel dimension:10, hence rank38.
+* All3^10=59049 kernel vectors enumerated incrementally.
+* Exactly24 vectors pass the one-hot, size-three-per-cell and INTEGER
+  neighbor-count checks.
+* Those24 maps are precisely the4! automorphism relabelings of the
+  planted K4 fiber map.
+* They represent exactly ONE unlabeled partition of the12 vertices
+  into the four planted fibers.
+* Every local count is verified in integer arithmetic: every vertex
+  has zero neighbors in its own cell and one in each other cell.
+* The planted map appears, and all accepted maps induce its partition.
+
+The recovery function uses only A, R, the supplied fiber size, and the
+computed full kernel. Hidden plant labels enter only the validation
+code after candidate generation. There is no planted-label oracle.
+
+Independent checks beyond the certificate
+==========================================
+
+An independent Gaussian calculation confirms the FULL F3 kernel span
+and rank38. A second small calculation computes the K4 commutant
+  {Z in Mat4(F3): RZ=ZR},
+which has dimension10. Lifting these matrices by the planted indicator
+J gives exactly the entire recovered kernel: Y=JZ.
+
+Therefore every finite-field intertwiner is fiber-constant in this
+fixture. Any balanced one-hot Y=JZ must give a permutation matrix Z;
+all24 permutations commute with R=A_K4. This independently explains
+the complete24-map/one-partition output, without a16-million-assignment
+brute-force search.
+
+The recovered kernel is totally isotropic in the ordinary F3 dot
+product. Indeed its vectors are fiber-constant and every fiber size
+is0 modulo3, so every pairwise kernel inner product vanishes. A fresh
+read-only check of the saved basis confirms this. This is an actual
+small-characteristic degeneracy, not an omitted case of the solver.
+
+The full kernel certificate can be deterministically reverified from
+regular-lift-k4-certificate.json and the adjacency lists. It certifies
+the kernel computation without trusting the independent reference
+elimination or hidden labels.
+
+Scope relative to the new all-lift moment
+=========================================
+
+The root has separately approved the uniform bounded intertwiner
+moment for every fixed connected simple regular base of degree>=3,
+including bipartite bases, every fixed field/vector dimension/R and
+all lift sizes. This supplies the moment input to the already audited
+full-kernel/intertwiner algorithm composition. The present file adds
+an end-to-end implementation check; it does not re-prove that moment
+theorem or infer an asymptotic bound from one small example.
+
+The full unknown bounded-frame matrix search has NOT been executed
+here. Its finite but potentially large constants remain visible in
+the theoretical enumeration. This new test exercises one known K4
+matrix and complete kernel-vector enumeration for that matrix.
+
+Frozen-artifact checks
+=====================
+
+Protected before/after hashes agree for the solver, manuscript and
+all previous full-kernel fixtures. In particular:
+  full_kernel.py:
+  d57957a6d4c5535513ce700609ed5336a15e60284c578053c86f56a7c501b3ed
+  certified-full-kernel.tex:
+  bb6ec1086a2d46f4a1d0b66c69aadc2d120b07157ba8e95f3c08ffb187843473
+
+All new verification artifacts are confined to this existing session
+directory. No main-paper rewrite or performance claim is made.

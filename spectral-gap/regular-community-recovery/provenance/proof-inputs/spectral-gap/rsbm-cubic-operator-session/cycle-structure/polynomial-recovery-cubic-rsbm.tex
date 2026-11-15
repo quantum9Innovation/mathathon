@@ -1,0 +1,627 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[hidelinks]{hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+\newcommand{\F}{\mathbb F}
+\newcommand{\E}{\mathbb E}
+\newcommand{\PP}{\mathbb P}
+\newcommand{\1}{\mathbf 1}
+\newcommand{\Law}{\mathcal L}
+\DeclareMathOperator{\rank}{rank}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\im}{im}
+\title{Polynomial Recovery in the Cubic Regular Stochastic Block Model}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We consider the regular stochastic block model with two planted classes
+of size $N$, independent uniform simple $2$-regular graphs inside the
+classes, and an independent uniform perfect matching between them.
+There is a deterministic algorithm with running time bounded by a fixed
+polynomial that recovers the planted partition, up to exchange of its
+classes, with probability $1-O(N^{-2})$. The main estimate is the coarse
+finite-field moment bound
+$\E 2^{\dim_{\F_2}\ker(A-I)}=O(N^{24})$.
+An exact configuration-model type formula and a short entropy
+symmetrization prove this estimate. Binary linear algebra then reduces
+recovery to a polynomial number of candidate checks with high probability.
+We include a complete first-moment proof of the Boolean partition
+rigidity needed to identify the planted candidate. The argument does
+not require the real eigenspace at eigenvalue $1$ to be one-dimensional.
+\end{abstract}
+
+\section{Model and recovery theorem}
+
+Let $V=V_+\sqcup V_-$, with $|V_+|=|V_-|=N$ and $N\geq3$.
+Independently choose a uniform simple $2$-regular graph in each class
+and a uniform perfect matching between the classes. Their union is a
+simple cubic graph $G$, with adjacency matrix $A$ of order $n=2N$.
+All asymptotic statements below are along the integers $N\geq3$; there
+is no further parity restriction on $N$.
+The planted sign vector $\sigma$ equals $1$ on $V_+$ and $-1$ on $V_-$.
+It satisfies $A\sigma=\sigma$.
+
+An \emph{equitable $(2,1)$ assignment} is a vector
+$\tau\in\{1,-1\}^{n}$ for which every vertex has two neighbors with
+its own sign and one with the opposite sign. On a cubic graph this is
+equivalent to $A\tau=\tau$. Every such assignment is balanced:
+symmetry and $A\1=3\1$ imply
+\[
+ 3\langle\1,\tau\rangle
+ =\langle\1,A\tau\rangle=\langle\1,\tau\rangle,
+ \qquad\text{so}\qquad \langle\1,\tau\rangle=0.
+\]
+The assignments $\tau$ and $-\tau$ represent the same partition.
+
+\begin{theorem}\label{thm:main}
+In the model above there is a deterministic algorithm, given only $G$,
+whose running time is bounded by a fixed polynomial in $n$ on every
+input and which recovers the planted partition with probability
+$1-O(N^{-2})$.
+There is also a deterministic algorithm that lists all equitable
+$(2,1)$ partitions on every input and has expected running time
+bounded by a fixed polynomial under this model.
+\end{theorem}
+
+The proof separates two estimates. A finite-field first moment bounds
+the number of candidates examined by the algorithm. A Boolean rigidity
+estimate says that all passing candidates represent the planted
+partition with high probability. The latter estimate is proved in
+Appendix~\ref{app:rigidity}.
+
+\section{An exact configuration-model moment}
+
+First replace each internal graph by the degree-two configuration
+model. Every vertex has two distinguished stubs, and a uniform perfect
+pairing of the $2N$ stubs determines the internal multigraph.
+Its adjacency matrix counts a loop twice on the diagonal. The two
+internal pairings and the cross perfect matching are independent.
+
+Relabel the second class using the cross matching. Relabeling
+invariance and independence leave the two internal configuration
+matrices $C_+,C_-$ independent with their original laws, and give
+\[
+ A=\begin{pmatrix}C_+&I\\I&C_-\end{pmatrix}.
+\]
+Conjugating $A-I$ by $\diag(I,-I)$ gives
+\begin{equation}\label{eq:M}
+ M=\begin{pmatrix}C_+-I&-I\\-I&C_--I\end{pmatrix}.
+\end{equation}
+This conjugation is invertible over every prime field. The relabeling
+and conjugation are for analysis only; the algorithms will not need
+the planted classes, matching, or signs.
+
+Fix a prime $p$. A vector $(x,z)\in\F_p^N\times\F_p^N$ lies in
+$\ker M$ precisely when
+\begin{equation}\label{eq:local-equations}
+ C_+x=x+z,\qquad C_-z=x+z.
+\end{equation}
+At coordinate $i$, let $a=x_i$ and $d=z_i$. Let $b,c$ be the $x$
+labels at the partners of the two distinguished plus stubs at $i$,
+and let $e,f$ be the $z$ labels at the partners of the two minus
+stubs. The equations require
+\[
+ b+c=a+d=e+f.
+\]
+Thus an ordered local profile is determined by
+$(a,d,b,e)\in\F_p^4$, with $c=a+d-b$ and $f=a+d-e$.
+Let $n_{a,d,b,e}$ count the coordinates with each profile. Define
+ordinary nonnegative integer tables
+\begin{align*}
+ m^+_{uv}
+ &=\sum_{a,d,b,e}n_{a,d,b,e}\,
+       \boldsymbol{1}_{a=u}
+       \bigl(\boldsymbol{1}_{b=v}+\boldsymbol{1}_{a+d-b=v}\bigr),\\
+ m^-_{uv}
+ &=\sum_{a,d,b,e}n_{a,d,b,e}\,
+       \boldsymbol{1}_{d=u}
+       \bigl(\boldsymbol{1}_{e=v}+\boldsymbol{1}_{a+d-e=v}\bigr).
+\end{align*}
+The arithmetic in the subscripts is in $\F_p$; the indicator values
+and table entries are integers. Call a table \emph{valid} if it is
+symmetric and its diagonal entries are even. For such a table put
+\[
+ W(m)=\prod_{u<v}m_{uv}!\prod_u(m_{uu}-1)!!,
+ \qquad (-1)!!=1,
+\]
+where any fixed ordering of $\F_p$ can be used in the first product.
+
+\begin{proposition}\label{prop:exact}
+In the degree-two configuration model,
+\begin{equation}\label{eq:exact}
+ \E|\ker_{\F_p}M|
+ =\sum_{\substack{(n_{a,d,b,e}):\ \sum n_{a,d,b,e}=N\\
+                         m^+,m^-\ \mathrm{valid}}}
+   \frac{N!}{\prod_{a,d,b,e}n_{a,d,b,e}!}
+   \frac{W(m^+)W(m^-)}{((2N-1)!!)^2}.
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Fix an assignment of profiles to the $N$ labeled coordinates. A plus
+stub in class $(u,v)$ has host label $u$ and requests a partner whose
+host label is $v$. For $u\ne v$, the stubs in class $(u,v)$ must be
+matched bijectively to those in class $(v,u)$, giving $m_{uv}!$
+choices if their sizes agree. The class $(u,u)$ must be paired
+internally, giving $(m_{uu}-1)!!$ choices if its size is even. These
+conditions are necessary and sufficient, so the compatible plus
+pairings number $W(m^+)$. The independent minus count is $W(m^-)$.
+
+There are $N!/\prod n_{a,d,b,e}!$ assignments of a fixed profile type.
+Every pair of stub pairings and every kernel vector determine exactly
+one ordered profile assignment. Conversely, a compatible pair of
+pairings and a profile assignment give the kernel equations
+\eqref{eq:local-equations}. Distinguished stubs ensure that no
+additional factors of two are needed. Dividing the total count by
+the number $((2N-1)!!)^2$ of pairing pairs proves the formula.
+Loops and parallel edges are included by this count.
+\end{proof}
+
+\section{Entropy symmetrization and a polynomial moment}
+
+Use natural logarithms and the convention $0\log0=0$. For a type in
+\eqref{eq:exact}, put
+\[
+ T=\frac nN,\qquad Q^+=\frac{m^+}{2N},\qquad
+ Q^-=\frac{m^-}{2N}.
+\]
+Regard $T$ as the law of random variables $(a,d,b,e)$, with
+$c=a+d-b$ and $f=a+d-e$. Then
+\[
+ Q^+=\tfrac12\Law(a,b)+\tfrac12\Law(a,c),\qquad
+ Q^-=\tfrac12\Law(d,e)+\tfrac12\Law(d,f).
+\]
+For a finite probability law $R$, denote its Shannon entropy by $H(R)$.
+
+\begin{lemma}\label{lem:entropy}
+Every law $T$ of $(a,d,b,e)\in\F_p^4$ satisfies
+\begin{equation}\label{eq:entropy}
+ \Phi(T):=H(T)-H(Q^+)-H(Q^-)\leq0.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Consider the commuting involutions
+\[
+ s(a,d,b,e)=(a,d,a+d-b,e),\qquad
+ t(a,d,b,e)=(a,d,b,a+d-e).
+\]
+Each is a bijection of the local profile space and leaves the two
+averaged pair laws $Q^+,Q^-$ unchanged. Let $\overline T$ be the
+average of $T,sT,tT,stT$. Entropy concavity and invariance under
+bijections give $H(T)\leq H(\overline T)$. Under $\overline T$ the
+two stubs in each class are exchangeable, so
+\[
+ Q^+=\Law_{\overline T}(a,b),\qquad
+ Q^-=\Law_{\overline T}(d,e).
+\]
+Subadditivity for the two random pairs $(a,b)$ and $(d,e)$ now gives
+\[
+ \Phi(T)\leq H(\overline T)-H_{\overline T}(a,b)
+                   -H_{\overline T}(d,e)
+ =-I_{\overline T}\bigl((a,b);(d,e)\bigr)\leq0.
+\]
+The argument works in characteristic two and does not use the
+pairing-validity conditions on $Q^+,Q^-$.
+\end{proof}
+
+\begin{proposition}\label{prop:moment-config}
+For a fixed prime $p$, the configuration model satisfies
+\begin{equation}\label{eq:moment-general}
+ \E|\ker_{\F_p}M|
+ \leq e^{p(p+1)+2}(2N+1)^{p(p+1)+2}(N+1)^{p^4}.
+\end{equation}
+In particular,
+\begin{equation}\label{eq:moment-two-config}
+ \E\,2^{\dim_{\F_2}\ker(A-I)}
+ \leq e^8(2N+1)^8(N+1)^{16}=O(N^{24}).
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+For every integer $r\geq0$, elementary factorial bounds give
+\begin{equation}\label{eq:factorial}
+ r\log r-r\leq\log(r!)
+ \leq r\log r-r+1+\log(r+1).
+\end{equation}
+For positive $r$ these follow by comparing the sum of logarithms with
+its integral; $r=0$ satisfies the displayed inequalities as well.
+For even $r\geq0$, use
+$(r-1)!!=r!/(2^{r/2}(r/2)!)$ to obtain
+\[
+ \log((r-1)!!)
+ \leq\frac r2\log r-\frac r2+1+\log(r+1).
+\]
+Set $q=p(p+1)/2$. For a valid symmetric table $m$, with
+$Q=m/(2N)$, summing these bounds gives
+\begin{align*}
+ \log W(m)
+ &\leq\frac12\sum_{u,v}m_{uv}\log m_{uv}-N
+                         +q\bigl(1+\log(2N+1)\bigr)\\
+ &=N\log(2N)-N-NH(Q)+q\bigl(1+\log(2N+1)\bigr).
+\end{align*}
+Using \eqref{eq:factorial} in the opposite directions in
+$(2N-1)!!=(2N)!/(2^NN!)$ gives
+\[
+ \log((2N-1)!!)
+ \geq N\log(2N)-N-1-\log(N+1).
+\]
+Consequently
+\begin{equation}\label{eq:pair-ratio}
+ \frac{W(m)}{(2N-1)!!}
+ \leq e^{q+1}(2N+1)^{q+1}e^{-NH(Q)}.
+\end{equation}
+The multinomial entropy bound is
+$N!/\prod n!\leq e^{NH(T)}$. Combining it with
+\eqref{eq:pair-ratio} and Lemma~\ref{lem:entropy}, every summand in
+\eqref{eq:exact} is at most
+$e^{2(q+1)}(2N+1)^{2(q+1)}$.
+There are at most $(N+1)^{p^4}$ nonnegative profile-count tables.
+This proves \eqref{eq:moment-general}. Taking $p=2$ and using the
+invertible conjugation \eqref{eq:M} proves
+\eqref{eq:moment-two-config}.
+\end{proof}
+
+\section{Conditioning to the uniform simple model}
+
+\begin{lemma}\label{lem:simple}
+A degree-two configuration on $N$ labeled vertices is simple with
+probability tending to $e^{-3/4}$. Conditional on simplicity, its graph
+is uniform among all simple labeled $2$-regular graphs.
+\end{lemma}
+
+\begin{proof}
+Every simple $2$-regular graph has exactly $2^N$ distinguished-stub
+realizations: at every vertex choose which of its two stubs is assigned
+to each of its two incident edges. Thus conditioning gives the uniform
+simple law.
+
+For completeness, a simple $2$-regular graph is a collection of
+undirected cycles of lengths at least three. The number of labeled
+graphs divided by $N!$ is the coefficient of $z^N$ in
+\[
+ \exp\left(\sum_{\ell\geq3}\frac{z^\ell}{2\ell}\right)
+ =(1-z)^{-1/2}e^{-z/2-z^2/4}.
+\]
+On the other hand,
+\[
+ \frac{(2N-1)!!}{2^NN!}
+ =\frac{\binom{2N}{N}}{4^N}
+ =[z^N](1-z)^{-1/2}\sim\frac1{\sqrt{\pi N}}.
+\]
+Multiplying $(1-z)^{-1/2}$ by the entire function
+$g(z)=e^{-z/2-z^2/4}$ multiplies this coefficient asymptotic by
+$g(1)=e^{-3/4}$. One can see this directly by writing the coefficient
+as a convolution: for each fixed $j$, the ratio of the coefficients
+at $N-j$ and $N$ tends to one; the coefficients of $g$ decay
+exponentially, and the tail of the convolution is negligible.
+Taking the ratio of the two counts proves the limit.
+\end{proof}
+
+\begin{corollary}\label{cor:simple-moment}
+For the uniform simple model of Theorem~\ref{thm:main},
+\begin{equation}\label{eq:simple-moment}
+ \E\,2^{k}=O(N^{24}),\qquad
+ k=\dim_{\F_2}\ker(A-I).
+\end{equation}
+In particular,
+\begin{equation}\label{eq:cutoff-failure}
+ \PP\{2^k>n^{27}\}=O(N^{-3}).
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+The two internal configurations are independent, so their joint
+simplicity probability tends to $e^{-3/2}>0$.
+For the nonnegative random variable $2^k$, conditioning can increase
+expectation by at most the reciprocal of this probability. Apply
+Proposition~\ref{prop:moment-config} and then Markov's inequality.
+\end{proof}
+
+\begin{remark}
+This conditioning step gives exactly the required uniform simple
+$2$-regular law. No replacement by the adjacency matrix $P+P^{\mathsf T}$
+of a single uniform permutation is used.
+\end{remark}
+
+\section{Recovery algorithms and complexity}
+
+\subsection{Binary affine enumeration}
+
+Write a candidate sign assignment as $\tau_i=(-1)^{z_i}$, with
+$z\in\F_2^n$. The parity of the number of opposite-sign neighbors at
+vertex $i$ is
+\[
+ \sum_{j\sim i}(z_i+z_j)=((A+I)z)_i\quad\text{in }\F_2,
+\]
+because the graph is cubic. Every equitable $(2,1)$ assignment therefore
+satisfies
+\begin{equation}\label{eq:affine}
+ (A+I)z=\1\quad\text{over }\F_2.
+\end{equation}
+The parity equation permits either one or three opposite neighbors, so
+its solutions must still be checked on the graph.
+
+The bounded-time algorithm is as follows.
+\begin{enumerate}
+\item Solve \eqref{eq:affine} by binary Gaussian elimination. If it is
+inconsistent, return failure. Otherwise write its solution set as
+$z_0+\ker(A+I)$, and let $k=\dim_{\F_2}\ker(A+I)$.
+\item If $2^k>n^{27}$, return failure.
+\item Enumerate the affine solutions. For each solution, check that
+every vertex has exactly one neighbor with a different label. Return
+the first passing assignment, with a fixed global orientation.
+If none passes, return failure.
+\end{enumerate}
+
+The planted assignment always satisfies \eqref{eq:affine}, so it is
+among the enumerated candidates unless the cutoff triggers.
+In fact the affine system is consistent for every simple cubic graph:
+if $L=A+I$ and $u\in\ker_{\F_2}L$, then symmetry and the unit diagonal
+give
+\[
+ 0=u^{\mathsf T}Lu=\sum_i u_i=\1^{\mathsf T}u.
+\]
+Thus $\1\in(\ker L)^\perp=\im L$.
+
+Elimination takes $O(n^3)$ binary operations using a dense matrix.
+Use a binary Gray-code order to enumerate the coefficient vectors of
+the affine space. Consecutive solutions differ by one kernel basis
+vector, so updating the candidate takes $O(n)$ binary operations.
+Checking it takes $O(n)$ operations on the cubic adjacency lists.
+Hence the work is $O(n^3+n2^k)$ elementary operations. With the cutoff
+this is $O(n^{28})$ in the usual RAM model, on every input. Accounting
+for vertex indices of $O(\log n)$ bits introduces at most a logarithmic
+factor in the corresponding indexed bit model. The memory use,
+excluding streamed output, is $O(n^2)$ bits up to index storage.
+
+Without the cutoff, the same enumeration always lists all equitable
+assignments, and \eqref{eq:simple-moment} bounds its expected work by
+\[
+ O\bigl(n^3+n\E2^k\bigr)=O(n^{25})
+\]
+elementary operations. Keeping only assignments whose first vertex
+has label zero removes the twofold duplication of partitions.
+
+\begin{proof}[Proof of Theorem~\ref{thm:main}]
+By Corollary~\ref{cor:simple-moment}, the cutoff triggers with
+probability $O(N^{-3})$. By Proposition~\ref{prop:rigidity} in
+Appendix~\ref{app:rigidity}, with probability $1-O(N^{-2})$ all passing
+assignments are $\sigma$ and $-\sigma$. On the intersection of these
+events the algorithm returns the planted partition. The complexity
+claims follow from the bounds just established.
+\end{proof}
+
+\subsection{An exact spectral version}
+
+There is also a direct rational eigenspace algorithm. Put
+$r=\dim_{\mathbb Q}\ker(A-I)$. Reduction of integer minors modulo two
+gives
+\[
+ \rank_{\F_2}(A-I)\leq\rank_{\mathbb Q}(A-I),\qquad r\leq k.
+\]
+Thus $\E2^r=O(N^{24})$ as well. Compute a rational basis matrix
+$U\in\mathbb Q^{n\times r}$ and choose a set $J$ of $r$ rows for which
+$U_J$ is invertible. For every $\varepsilon\in\{1,-1\}^r$, form
+\[
+ v=UU_J^{-1}\varepsilon.
+\]
+Keep exactly those $v$ all of whose coordinates belong to $\{1,-1\}$.
+This lists precisely all Boolean eigenvectors at eigenvalue $1$:
+every vector in the eigenspace is uniquely determined by its
+coordinates on $J$. Apply the cutoff $2^r\leq n^{27}$ to obtain a
+bounded-time recovery algorithm with the same probability estimate.
+
+This is a polynomial algorithm in the bit model, not just in a unit-cost
+rational arithmetic model. Every row of $A-I$ has four entries of
+magnitude one, so every minor has absolute value at most $2^n$ by
+Hadamard's inequality. Fraction-free elimination therefore constructs
+a basis with polynomial bit length. More explicitly, Cramer's rule
+gives a basis with a common denominator and numerators having $O(n)$
+bits. Writing that basis as $U=V/\Delta$, the reconstruction matrix is
+$VV_J^{-1}$. Its entries have numerator and denominator bit lengths
+$O(n^2+n\log n)$, again by determinant bounds. Basis construction,
+each reconstruction, and each sign check consequently take polynomial
+bit complexity. The cutoff bounds the number of reconstructions by a
+fixed polynomial; without it, their expected number is polynomial.
+
+The spectral version needs only logarithmic real multiplicity with
+high probability. Neither version asserts that
+$\dim_{\mathbb R}\ker(A-I)=1$ with high probability, and the polynomial
+exponents here are coarse existence bounds rather than practical
+running-time estimates.
+
+\appendix
+\section{A complete Boolean rigidity bound}\label{app:rigidity}
+
+\begin{proposition}\label{prop:rigidity}
+In the uniform simple model, the probability that there is an equitable
+$(2,1)$ partition different from the planted partition is $O(N^{-2})$.
+Equivalently, with probability $1-O(N^{-2})$, the only vectors in
+$\{1,-1\}^{2N}$ satisfying $A\tau=\tau$ are $\sigma$ and $-\sigma$.
+\end{proposition}
+
+\subsection{Marked vertices and an exact first moment}
+
+Given an alternative assignment, mark precisely the vertices where its
+sign differs from $\sigma$. Let $S_+\subseteq V_+$ and
+$S_-\subseteq V_-$ be the marked sets. At a vertex let $r$ be the
+number of its two internal edges whose endpoints have different marks,
+and let $m\in\{0,1\}$ indicate whether its original cross-matching
+edge has differently marked endpoints. In the alternative assignment,
+the number of opposite-sign neighbors is
+\[
+ r+1-m.
+\]
+Consequently the alternative is equitable precisely when
+\begin{equation}\label{eq:r-m}
+ r=m\quad\text{at every vertex}.
+\end{equation}
+In particular, the internal edges crossing a marked/unmarked cut form
+a matching. A vertex belongs to this internal boundary matching exactly
+when its cross-matching edge joins different marks.
+
+Balance of the alternative assignment implies
+$|S_+|=|S_-|=k$. Replacing the alternative by its negative replaces $k$
+by $N-k$, so any alternative partition has a representative with
+$1\leq k\leq N/2$. In a simple internal graph $k=1$ is impossible:
+the sole marked vertex has two distinct unmarked internal neighbors,
+which contradicts $r=m\leq1$.
+
+Work temporarily in the unconditioned degree-two configuration model,
+retaining an independent uniform cross perfect matching. Fix marked
+sets of size $k$ in both classes. In one internal block, the probability
+that the boundary is a matching with exactly $t$ edges is
+\begin{equation}\label{eq:Pt}
+ P_t=\binom kt\binom{N-k}t 2^{2t}t!
+ \frac{(2k-t-1)!!\,(2(N-k)-t-1)!!}{(2N-1)!!},
+\end{equation}
+where $t$ is even and $0\leq t\leq k$.
+Indeed, choose $t$ boundary vertices on each side, select one of their
+two stubs at each vertex, pair those stubs across the cut, and pair
+the remaining stubs within their sides. This gives exactly the
+numerator in \eqref{eq:Pt}.
+
+For \eqref{eq:r-m} to hold, the two internal boundary sizes must agree.
+Conditional on their common size $t$, the probability that the cross
+matching is compatible is
+\begin{equation}\label{eq:Qt}
+ Q_t=\frac{(t!)^2(k-t)!(N-k-t)!}{N!}.
+\end{equation}
+The four types in each block are marked boundary, unmarked boundary,
+marked interior, and unmarked interior. The cross matching must
+interchange the two boundary types and preserve the two interior types,
+which proves \eqref{eq:Qt}.
+
+Thus the expected number of alternatives with overlap size $k$ is
+\begin{equation}\label{eq:Ek}
+ E_k=\binom Nk^2\sum_{\substack{0\leq t\leq k\\t\ \mathrm{even}}}
+                         P_t^2Q_t.
+\end{equation}
+The formula is an exact first-moment count before conditioning on
+simplicity. We will prove
+\begin{equation}\label{eq:rigidity-sum}
+ \sum_{k=2}^{\lfloor N/2\rfloor}E_k=O(N^{-2}).
+\end{equation}
+
+\subsection{Small overlaps}
+
+For $2\leq k\leq N/8$, cancel
+$(2(N-k)-t-1)!!$ against the denominator in \eqref{eq:Pt}.
+There are $k+t/2$ removed denominator factors, each at least $N$.
+Using
+\[
+ \binom kt\leq2^k,\qquad
+ \binom{N-k}t t!\leq N^t,\qquad
+ (2k-t-1)!!\leq(2k)^{k-t/2}
+\]
+gives
+\begin{equation}\label{eq:Pt-small}
+ P_t\leq16^k(k/N)^{k-t/2}.
+\end{equation}
+Also $N-k-t\geq N/2$, so
+\begin{equation}\label{eq:Qt-small}
+ Q_t\leq4^k k^{k+t}N^{-k-t}.
+\end{equation}
+For example, bound the numerator factorials in \eqref{eq:Qt} by
+$k^{2t}k^{k-t}$ and the quotient $N!/(N-k-t)!$ below by
+$(N/2)^{k+t}$. Combining \eqref{eq:Pt-small},
+\eqref{eq:Qt-small}, and $\binom Nk\leq(eN/k)^k$ gives, for each
+summand $E_{k,t}=\binom Nk^2P_t^2Q_t$,
+\[
+ E_{k,t}\leq(C_0k/N)^k,\qquad C_0=1024e^2.
+\]
+Set $\delta=1/(100C_0)$. There are at most $k+1$ values of $t$, and
+the ratio between consecutive quantities
+$(k+1)(C_0k/N)^k$ is at most
+\[
+ \frac32 e C_0\frac{k+1}{N}.
+\]
+For all sufficiently large $N$ this is less than $1/2$ throughout
+$2\leq k\leq\delta N$. The first term is $O(N^{-2})$, so
+\begin{equation}\label{eq:small-overlaps}
+ \sum_{k=2}^{\lfloor\delta N\rfloor}E_k=O(N^{-2}).
+\end{equation}
+
+\subsection{Macroscopic overlaps}
+
+Write $\alpha=k/N$, $\beta=t/N$, and $s(x)=x\log x$, with $s(0)=0$.
+Substitution of the factorial formulas into $E_{k,t}$, using
+\eqref{eq:factorial} and the double-factorial identity, gives uniformly
+for $\delta\leq\alpha\leq1/2$ and $0\leq\beta\leq\alpha$,
+\begin{equation}\label{eq:F-approx}
+ \log E_{k,t}=NF(\alpha,\beta)+O(\log(N+1)),
+\end{equation}
+where
+\begin{align}
+ F(\alpha,\beta)
+ ={}&-s(\alpha-\beta)-s(1-\alpha-\beta)
+      +s(2\alpha-\beta)+s(2-2\alpha-\beta)
+      +(4\beta-2)\log2.\label{eq:F}
+\end{align}
+The error is uniform even when factorial arguments vanish, since
+\eqref{eq:factorial} is uniform down to zero and only a fixed number of
+factorials occur.
+
+We prove that the maximum of $F$ on this range is strictly negative.
+For fixed $\alpha\in(0,1/2]$, in the interior of the $\beta$ interval,
+\[
+ \frac{\partial F}{\partial\beta}
+ =\log\frac{16(\alpha-\beta)(1-\alpha-\beta)}
+                {(2\alpha-\beta)(2-2\alpha-\beta)}.
+\]
+Its derivative is strictly negative, because
+\[
+ -\frac1{\alpha-\beta}-\frac1{1-\alpha-\beta}
+ +\frac1{2\alpha-\beta}+\frac1{2-2\alpha-\beta}<0.
+\]
+The first derivative is $\log4>0$ at $\beta=0$ and tends to
+$-\infty$ at the other endpoint. The unique maximizer is therefore
+\[
+ b(\alpha)=\frac{7-\sqrt{49-180\alpha(1-\alpha)}}{15},
+ \qquad 0<b(\alpha)\leq\frac13,
+\]
+with equality in the upper bound only at $\alpha=1/2$.
+Let $f(\alpha)=F(\alpha,b(\alpha))$. Put
+\[
+ u=\alpha-b,\quad v=1-\alpha-b,\quad
+ x=2u+b,\quad y=2v+b.
+\]
+The stationarity equation is $xy=16uv$, and the envelope derivative is
+$f'(\alpha)=\log(x^2v/(y^2u))$.
+The difference determining its sign factors as
+\[
+ x^2v-y^2u=(u-v)(4uv-b^2),\qquad
+ 4uv-b^2=2b(1/3-b),
+\]
+where the second identity follows by expanding $xy=16uv$ and using
+$u+v=1-2b$. For $0<\alpha<1/2$, one has $u-v=2\alpha-1<0$ and
+$0<b<1/3$. Thus $f'(\alpha)<0$. Finally $f(\alpha)\to0$ as
+$\alpha\downarrow0$, by \eqref{eq:F}. Consequently
+\[
+ F(\alpha,\beta)\leq f(\alpha)\leq f(\delta)<0
+ \quad\text{for}\quad
+ \delta\leq\alpha\leq1/2,\quad0\leq\beta\leq\alpha.
+\]
+Equation \eqref{eq:F-approx}, followed by a sum over at most $N^2$
+pairs $(k,t)$, proves an exponentially small upper bound for all
+macroscopic overlaps. Together with \eqref{eq:small-overlaps}, this
+proves \eqref{eq:rigidity-sum}.
+
+Finally, $k=1$ is impossible in the simple model, and conditioning both
+internal configurations to be simple costs a bounded factor by
+Lemma~\ref{lem:simple}. Thus \eqref{eq:rigidity-sum} also bounds the
+probability of an alternative partition in the simple model, proving
+Proposition~\ref{prop:rigidity}.
+
+\end{document}

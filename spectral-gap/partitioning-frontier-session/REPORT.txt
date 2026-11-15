@@ -1,0 +1,309 @@
+PARTITIONING FRONTIER SESSION -- 2026-11-15
+=========================================
+
+Outcome
+-------
+Two field-scale algorithm targets survive the inspected CURRENT primary
+literature. The stronger recommended target is nearly-linear-time
+flow-expander decomposition with the almost-optimal overhead already
+achieved in polynomial time by Bansal--Jambulapati--Saranurak (2026).
+The second is nearly-linear-time O(sqrt(log n)) multiplicative balanced
+edge cutting, without an eigengap promise.
+
+No such algorithm is proved here. We did prove an exact normalization-aware
+one-edge response theorem and several explicit barriers to using the
+repository's fractional response machinery for partitioning. These are
+useful research results, with classical ingredients and unverified
+historical novelty; they are not a field-scale breakthrough claim.
+
+All new writes are in spectral-gap/partitioning-frontier-session/.
+The existing RESEARCH_SESSION_2026-11-15.txt was read in full. No frozen
+paper, root coordination file, README, or persistent goal was modified.
+
+What the repository actually supplies
+-------------------------------------
+The relevant input is the gap-free, expected-nearly-linear exact-real
+construction of a PSD thin factor approximating
+
+    (L + delta bb^T)^alpha - L^alpha
+
+relative to L^alpha, after one edge increase, with rank controlled by
+alpha log(1+delta R_uv). That theorem may rebuild graph-solver data and
+scan the graph on EACH edit. It is not a polylogarithmic dynamic-update
+theorem. Its latest degree theorem is a sharp relative-mode count, not
+a cut-rounding theorem. The matrix work supplies rational/resolvent and
+cluster-sensitive numerical machinery, not a separation oracle or an
+unrestricted quadratic-time matrix-product algorithm.
+
+For alpha>0, L and L^alpha have exactly the same eigenvectors and spectral
+order. Fractional powering alone cannot repair Fiedler localization or
+improve a sweep's quality. A PSD correction also need not be a positive
+graph-edge correction. Both distinctions matter below.
+
+The two BIG IF TRUE problems
+---------------------------
+1. STRONGEST FIELD TARGET: near-linear almost-optimal FLOW decomposition.
+
+   Input: an n-vertex m-edge undirected unit-capacity graph and
+   n^(-C) <= phi <= 1, for any fixed C. Output an edge set Q such that
+   every component of G-Q is a phi-FLOW-expander and
+
+       |Q| <= C0 phi m log n exp(C1 sqrt(log log n)).
+
+   Desired total work: expected O(m polylog n), with no 1/phi factor
+   hidden outside logarithms. A flow-expander means every multicommodity
+   demand respecting the component's degrees is routable with congestion
+   at most 1/phi. It is stronger than a cut-expansion certificate.
+
+   Bansal--Jambulapati--Saranurak already prove this quality in POLYNOMIAL
+   time, Theorem 1.1 (v2, 28 Apr 2026):
+     https://arxiv.org/abs/2602.15015v2
+   Their concurrent-flow LP / dual-metric clustering is the actual
+   benchmark. The problem here is runtime with that quality preserved,
+   not inventing log^(1+o(1)) overhead. General overhead o(log n) is
+   impossible; the hypercube already forces the logarithm.
+
+   Possible role for our tools: recycling a small response certificate
+   through recursive reweighting and restriction might reduce repeated
+   global work. Required missing theorem: such a certificate must support
+   the ACTUAL concurrent-flow dual and total recursive cut charge.
+   An electrical energy bound does not alone certify multicommodity
+   congestion. Induced restriction is not a PSD single-edge increase;
+   Schur complements do not commute with fractional powers. No reduction
+   overcoming these issues is supplied here.
+
+2. SECOND FIELD TARGET: near-linear optimal-quality balanced EDGE cut.
+
+   Fix b in (0,1/2). OPT_b is the minimum conductance over cuts having
+   at least b times the total degree volume on each side. On every
+   connected undirected graph with polynomially bounded integer
+   capacities, return an Omega(b)-balanced cut S with
+
+       Phi(S) <= C_b sqrt(log n) OPT_b
+
+   in expected O(m polylog n) work, without an eigengap promise.
+
+   This is a MULTIPLICATIVE guarantee, not O(sqrt(OPT_b)). The latter
+   spectral guarantee, with gap-free tilde O(m) work, is already given
+   by Orecchia--Sachdeva--Vishnoi, STOC 2012:
+     https://arxiv.org/abs/1111.1491
+   The inspected current chaining tradeoff has O(sqrt(log n/epsilon))
+   quality and n^epsilon polylog(n) maxflow calls; its parallel span does
+   not imply nearly-linear sequential work:
+     https://arxiv.org/abs/2307.00115v5
+
+   Possible role: compress matrix-function updates in an SDP/chaining
+   implementation. Missing obligations are metric triangle inequalities,
+   violating-path discovery, adaptive accumulated error, and the total
+   work for multi-edge weight changes. A one-edge factor routine does
+   not settle any of these by itself.
+
+Neither target is contradicted by the inspected conditional hardness.
+RST's SSE-hardness distinguishes a small-conductance bisection from
+graphs whose moderately balanced cuts have conductance Omega(sqrt(eps)).
+It is not an unconditional NP-hardness result, and it does not forbid a
+sqrt(log n) multiplicative factor growing with n:
+  https://arxiv.org/abs/1011.2586
+
+Concrete missing algorithmic bridge
+----------------------------------
+This is a precise enabling problem, not a third claimed field-scale
+advance. For fixed alpha in (0,1), define
+
+    H = D^(1/2) (D^(-1/2) L D^(-1/2))^alpha D^(1/2).
+
+For an existing weighted edge doubled, with L',D',H' updated, construct
+X with columns orthogonal to constants such that, on one success event,
+
+    -eps H <= H' - H - XX^T <= eps H,
+    rank X < B_alpha / log(1+(1-rho)eps)       if rank X > 0,
+
+in expected (m+n) polylog(n,1/eps,1/rho,1/failure_probability) exact-real
+work. Require all factor entries, preprocessing, solve tolerances and
+small-core work charged, with no hidden spectral gap or conductance-ratio
+dependence. Arithmetic and positive square roots suffice as the natural
+model at alpha=1/2. The exact budget B_alpha is proved below. The same
+quantifiers for arbitrary positive insertions can allow logarithmic
+dependence on 1+tau. Finite-word stability is an additional question.
+
+This would extend the repository's fixed-mass algorithm to the canonical
+degree-normalized energy. It still needs a separate partitioning/rounding
+theorem. The four-vertex obstruction below identifies why merely copying
+the existing quadrature proof does not establish it.
+
+Proved in this session
+----------------------
+A. Exact normalized fractional response budget.
+
+   H is the classical geometric mean D #_alpha L, has common kernel
+   span{1}, and increases in PSD order after a positive edge edit even
+   though the ordinary normalized Laplacian has a moving kernel.
+
+   If the edit adds weight delta on uv, tau=delta R_uv, and v=Tr D,
+
+     B_alpha = log[pdet(H')/pdet(H)]
+       = alpha log(1+tau)
+         +(1-alpha) log[(1+delta/d_u)(1+delta/d_v)/(1+2delta/v)].
+
+   Hence relative eigenvalues above eps number strictly less than
+   B_alpha/log(1+eps), when positive. Also
+   B_alpha <= (2-alpha)log(1+tau). This is a rank UPPER BOUND; no sharp
+   relative-mode count or attainability classification is asserted.
+
+   The exact congruence identity is
+
+     pdet H = (pdet L)^alpha (n det D / Tr D)^(1-alpha).
+
+   Proof: singular-safe parallel-sum monotonicity, pseudodeterminant
+   congruence, matrix-tree theorem, and determinant lemma. These are
+   classical ingredients. Full source and PDF:
+     higher-cheeger/markov-form-budget.tex / .pdf  (3 pages).
+
+   A separate exact extremum: on connected simple unweighted graphs
+   with m>=2, an existing unit-edge doubling has
+
+     B_alpha <= alpha log2 +(1-alpha)log[3m/(m+1)],
+
+   with equality precisely for a bridge of endpoint degrees {1,2}.
+   For m=1 the budget is log2. This is sharp TOTAL BUDGET only, not
+   a sharp count: see dynamic-target/independent-normalized-audit.md.
+
+B. Positive rank-three shifted response.
+
+   For K_t=L+tD and F_t=D-tD K_t^(-1)D,
+
+     H = (sin(pi alpha)/pi) integral_0^infty t^(alpha-1) F_t dt.
+
+   A physical edit adds three edges to a two-layer electrical network
+   whose terminal Schur complement is F_t. The resulting exact response
+   has a PSD three-column Woodbury factor at each t. This does NOT mean
+   the integrated response has rank at most three. Its factor columns
+   all sum to zero. The elementary Schur-update proof and exact matrices
+   are in normalized-resolvent-barrier.tex / .pdf (4 pages).
+
+C. Four weighted vertices defeat the inherited low-shift cutoff.
+
+   On the weighted path with edge weights (1,h,1), double the first edge
+   and take x=(1,1,-1,-1). Here n=4 and tau=1, independently of h. Yet
+
+     lim_(h->0) x^T(H'-H)x / x^THx = (4/3)^(1-alpha)-1 > 0.
+
+   For every fixed cutoff a>0, retaining ONLY shifts t>=a in the exact
+   positive response integral gives x-energy at most
+
+     [8 sin(pi alpha)/(pi(2-alpha))] h^2 a^(alpha-2),
+
+   whereas x^THx ~ 4 h^alpha. The retained relative response tends to
+   zero. Thus an n,tau,accuracy-only positive low cutoff cannot simply
+   be inherited from the old fixed-mass theorem. This is a proof about
+   that truncation method, not a computational impossibility theorem.
+   The explicit host is weighted; no unweighted analogue is inferred.
+
+   Source: normalized-resolvent-barrier.tex. Entire actual source passed
+   an independent audit recorded in dynamic-target/ACTUAL_SOURCE_AUDIT.txt.
+
+D. Even an unweighted host has a response that is not a graph Laplacian.
+
+   On unweighted P4, double the first edge. For EVERY alpha in (0,1),
+
+     Delta H is PSD, Delta H 1=0, but (Delta H)_34 > 0.
+
+   An explicit strictly positive scalar integral certifies the entry.
+   Every nonnegative graph-edge insertion has nonpositive offdiagonals,
+   so their sums cannot realize or arbitrarily closely approximate this
+   response. Each full H remains a graph Laplacian; its UPDATE need not
+   be one. General PSD factors are not ruled out.
+   Source: dynamic-target/positive-offdiagonal-obstruction.tex / .pdf
+   (2 pages). The scalar check and dense powers agree below 1e-14 for
+   alpha=.25,.5,.8 on the stated examples.
+
+E. Relative positive-kernel cost is not relative normalized-cut cost.
+
+   For a k-partition Pi, the standard positive graph-kernel construction
+   K_sigma=D^(-1) A D^(-1)+sigma D^(-1) has weighted kernel-means cost
+
+     J_sigma(Pi)=k NC(Pi)+Tr(D^(-1)A)-k+sigma(n-k),
+
+   where NC is AVERAGE normalized cut. Exact optimizers agree, but the
+   large additive constant invalidates a generic multiplicative transfer.
+
+   On even cycles C_n, k=2, sigma=2, a balanced contiguous partition has
+   NC=2/n and a parity partition has NC=1. Their positive-kernel costs
+   differ by only the factor n/(n-1). Thus arbitrarily accurate relative
+   kernel optimization alone can be Theta(n)-wrong for true NC, even on
+   connected, regular, exactly balanced, degree-two hosts.
+
+   This independently derived obstruction applies to the conversion,
+   not to every execution or formulation of a published data structure.
+   We have NOT proved an execution of the ICML2026 algorithm outputs
+   the bad partition. Read literature/NORMALIZED_CUT_SHIFT_AUDIT.md
+   before using its quoted approximation ratio as a black box.
+
+F. Boundary and locality barriers for multiway repair.
+
+   An explicit eight-vertex path with an inserted unit edge has an old
+   good three-partition and a new good three-partition, but retaining the
+   remote old cluster and changing only the two endpoint clusters forces
+   conductance >=1/3 while lambda_3 tends to zero. Its insertion leverage
+   is 4+3/eta, so this is NOT a bounded-leverage instability theorem.
+   In fact bounded leverage already preserves any fixed-family old
+   conductance approximation within (1+tau)^2 by elementary comparisons.
+   Source: higher-cheeger/local-repair-obstruction.tex / .pdf (2 pages).
+
+   A rank-one residual on cycles also shows eps H-relative error does
+   not uniformly imply any fixed multiple of L-relative error as the
+   normalized gap tends to zero. This concerns the allowed residual
+   guarantee alone, not every structured rounding algorithm.
+
+Current-literature exclusions and scope corrections
+-------------------------------------------------
+* Log^(1+o(1)) flow-decomposition overhead in polynomial time is already
+  BJS2026. Near-linear cut decomposition with log^2 overhead and arbitrary
+  vertex measures is Agassy--Dorfman--Kaplan v3 (29 Oct 2026).
+* Warm-starting weak expander decomposition is already explicit in
+  Fleischmann--George Z. Li--Jason Li, ICALP2026. A qualitative warm-start
+  proposal is not a new result.
+* Li's 2609.35369v2 (5 Oct 2026) freshly claims sharp same-index EXACT-k
+  higher-order Cheeger. Its complete proof was not independently audited
+  here; nevertheless proposing precisely that inequality as unexplored
+  would be inappropriate.
+* Reweighted spectral separators for minor-free/genus/geometric classes,
+  deterministic linear-time minor-free separators with poly(h) constants,
+  and fresh O(h sqrt n) minor-free size claims are all in current primary
+  literature. Vertex separators are not balanced edge cuts.
+* Jourdan--Macgregor--Schwartzman ICML2026 already has O(log n) worst-case
+  dynamic edge updates, with material degree-dependent/query/static-solver
+  terms. It does not supply small recourse or a fixed global labeling over
+  queries. Its positive-kernel-to-NC multiplicative conversion needs the
+  shift check in item E.
+* Peng--Yoshida's average-sensitivity theorem concerns random deletions
+  under explicit assumptions; it is not adversarial one-edge recourse.
+* A tempting additional target -- k disjoint low-conductance sets after
+  merging two old clusters, with O(h+sqrt(lambda_k)) quality -- is already
+  supplied by a specialization of the classical core machinery in Lau's
+  current Advanced Spectral Graph Theory notes, Section 7.7. It should
+  not be advertised as a fresh Cheeger frontier. The coverage/algorithmic
+  distinction is documented in the follow-up source notes.
+
+The complete source-by-source statements, dates, models, exclusions,
+PDF hashes and exact reading coverage are in literature/CURRENT_FRONTIER.md
+and literature/SOURCE_MANIFEST.json. 21 primary PDFs were retained;
+these were targeted theorem/scope reads, not full-proof certifications.
+
+Validation and practical next step
+----------------------------------
+The root diagnostics independently compare the direct fractional form,
+the determinant formula, and the explicit rank-three response:
+27 graph/exponent budget cases, 45 shifted factor cases, and 12 four-path
+limits pass. Other agents retain independent checks and exact rational
+cycle calculations. These are corroboration, not proofs or near-linear
+timing measurements. The TeX arguments, actual-source audits and scope
+qualifications carry the claims.
+
+The useful immediate project is the missing normalized compressor,
+explicitly handling arbitrarily low-scale component-mass changes and
+signed effective-edge changes. In parallel, a serious attempt at the
+strongest field target must work inside BJS's actual product-demand LP
+and recursive charge, not substitute a generic spectral certificate.
+No proved bridge from the current low-rank response to that LP is known
+from this session. That missing bridge is the central research risk.

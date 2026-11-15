@@ -1,0 +1,1840 @@
+                                                Multi-way spectral partitioning and higher-order
+                                                             Cheeger inequalities
+                                                           James R. Lee∗             Shayan Oveis Gharan†               Luca Trevisan‡
+
+
+
+
+arXiv:1111.1055v6 [math.MG] 21 Nov 2014
+                                                                                             Abstract
+                                                    A basic fact in spectral graph theory is that the number of connected components in an
+                                                undirected graph is equal to the multiplicity of the eigenvalue zero in the Laplacian matrix
+                                                of the graph. In particular, the graph is disconnected if and only if there are at least two
+                                                eigenvalues equal to zero. Cheeger’s inequality and its variants provide an approximate version
+                                                of the latter fact; they state that a graph has a sparse cut if and only if there are at least two
+                                                eigenvalues that are close to zero.
+                                                    It has been conjectured that an analogous characterization holds for higher multiplicities:
+                                                There are k eigenvalues close to zero if and only if the vertex set can be partitioned into k
+                                                subsets, each defining a sparse cut. We resolve this conjecture positively. Our result provides a
+                                                theoretical justification for clustering algorithms that use the bottom k eigenvectors to embed
+                                                the vertices into Rk , and then apply geometric considerations to the embedding.
+                                                    We also show that these techniques yield a nearly optimal quantitative connection between
+                                                the expansion of sets of size ≈ n/k and λk , the kth smallest eigenvalue of the normalized
+                                                Laplacian, where n is the number of vertices. In particular, we show that in every graph there
+                                                are at least√k/2 disjoint sets (one of which will have size at most 2n/k), each having expansion
+                                                at most O( λk log k). Louis, Raghavendra, Tetali,√    and Vempala have independently proved a
+                                                slightly weaker version of this last result. The log k bound is tight, up to constant factors, for
+                                                the “noisy hypercube” graphs.
+
+
+
+
+                                            ∗
+                                               Department of Computer Science & Engineering, University of Washington. Partially supported by NSF grants
+                                          CCF-0644037, CCF-0915251, and a Sloan Research Fellowship. Email:jrl@cs.washington.edu.
+                                             †
+                                               Department of Management Science and Engineering, Stanford University. Supported by a Stanford Graduate
+                                          Research Fellowship. Part of this work was done while the author was a summer intern at Microsoft Research New
+                                          England. Email:shayan@stanford.edu.
+                                             ‡
+                                               Department of Computer Science, Stanford University. This material is based on work supported by the National
+                                          Science Foundation under grant CCF-1017403. Email:trevisan@stanford.edu.
+
+
+                                                                                                  1
+Contents
+1 Introduction                                                                                        3
+  1.1 High-dimensional spectral partitioning . . . . . . . . . . . . . . . . . . . . . . . . . .      6
+  1.2 A general algorithm . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .     9
+
+2 Preliminaries                                                                                      10
+  2.1 Spectral theory of the weighted Laplacian . . . . . . . . . . . . . . . . . . . . . . . .      10
+  2.2 Cheeger’s inequality with Dirichlet boundary conditions . . . . . . . . . . . . . . . .        11
+  2.3 Random partitions of metric spaces . . . . . . . . . . . . . . . . . . . . . . . . . . . .     12
+
+3 Localizing eigenfunctions                                                                          13
+  3.1 The radial projection distance . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .   13
+  3.2 Smooth localization . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    14
+  3.3 Random partitioning . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    16
+  3.4 Higher-order Cheeger inequalities . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    17
+
+4 Improved quantitative bounds                                                                       19
+  4.1 Dimension reduction . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    19
+  4.2 A multi-way Cheeger inequality . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .     24
+  4.3 Gaps in the spectrum . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .     27
+  4.4 Noisy hypercubes . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .   29
+
+5 Conclusion                                                                                        30
+  5.1 Description of our algorithm . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 30
+  5.2 Future directions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 31
+
+
+
+
+                                                  2
+1    Introduction
+Let G = (V, E) be an undirected, d-regular graph. Its normalized Laplacian matrix L ∈ RV ×V is
+given by L = I − d1 A, where A is the adjacency matrix of G. For the moment, we confine ourselves
+to unweighted, regular graphs, while the results in the paper are presented for arbitrary weighted
+graphs, with suitable changes to L. It is easy to see that L is a positive semi-definite matrix, and
+its eigenvalues satisfy 0 = λ1 ≤ λ2 ≤ · · · ≤ λ|V | . Elementary arguments show that the number of
+connected components of G is precisely the multiplicity of the eigenvalue zero, that is, λk = 0 if
+and only if the graph has at least k connected components.
+    Cheeger’s inequality for graphs [AM85, Alo86, SJ89] yields a robust version of this fact for
+k = 2. To state it, we introduce some notation. For any subset S ⊆ V , define the expansion of S
+to be the quantity
+                                                     |E(S, S)|
+                                        φG (S) =               ,
+                                                       d |S|
+where E(S, S) denotes the set of edges of G crossing from S to its complement. We may also define,
+for every k ∈ N, the k-way expansion constant,
+
+                          ρG (k) =       min          max{φG (Si ) : i = 1, 2, . . . , k},
+                                     S1 ,S2 ,...,Sk
+
+where the minimum is over all collections of k non-empty, disjoint subsets S1 , S2 , . . . , Sk ⊆ V . It
+is an easily verifiable fact that ρG (k) = 0 if and only if λk = 0. Cheeger’s inequality offers the
+following quantitative connection betwen ρG (2) and λ2 ,
+
+                                            λ2           p
+                                               ≤ ρG (2) ≤ 2λ2 .                                     (1)
+                                            2
+We remark that the left-hand side follows easily, and the non-trivial content of the connection is
+contained in the right-hand side inequality.
+    The discrete version of Cheeger’s inequality is proved via a simple spectral partitioning algo-
+rithm. Besides being an important theoretical tool, since their inception spectral methods have
+been used for solving a wide range of optimization problems, from graph coloring [AG83, AK97] to
+image segmentation [SM00, TM06] to web search [Kle99, BP98].
+Higher-order Cheeger inequalities. In general, we study higher-order analogs of (1), and
+develop new multi-way spectral partitioning algorithms. A special case of one of our main theorems
+(see Section 3.4 and Theorem 4.9) follows. It offers a strong quantitative version of the fact that
+ρG (k) = 0 ⇐⇒ λk = 0.
+
+Theorem 1.1. For every graph G, and every k ∈ N, we have
+                                        λk                  p
+                                           ≤ ρG (k) ≤ O(k2 ) λk .                                   (2)
+                                        2
+   This resolves a conjecture of Miclo [Mic08]; see also [DJM12], where some special cases are
+considered. Moreover, Miclo [Mic13] has used Theorem 1.1 as the key step in establishing a 40-
+year-old conjecture of Simon and Høegh-Krohn [SHK72]. We discuss this connection briefly at the
+end of the present section.
+
+
+
+                                                            3
+    We remark that from Theorem 1.1, it is easy to find a partition of √the vertex set into k non-
+                                                                     3
+empty pieces such that every piece in the partition has expansion O(k ) λk (see Theorem 3.8). It
+is known that a dependence on k in the right-hand side of (2) is necessary; see Section 4.4.
+    Moreover, our proof is algorithmic and leads to new algorithms for k-way spectral partitioning.
+This provides a theoretical justification for clustering algorithms that use the bottom k eigenvectors
+of the Laplacian1 to embed the vertices into Rk , and then apply geometric considerations to the
+embedding. See [VM03] for a survey of such approaches. As a particular example, consider the work
+of Jordan, Ng and Weiss [NJW02] which applies a k-means clustering algorithm to the embedding
+in order to achieve a k-way partitioning. Our proof of Theorem 1.1 employs a similar algorithm,
+where the k-means step is replaced by a random geometric partitioning. It remains an interesting
+open problem whether k-means itself can be analyzed in this setting. See the discussion at the end
+of Section 4.3 for some results in this direction.
+Finding many sets and small-set expansion. If one is interested in finding slightly fewer sets,
+our approach performs significantly better.
+Theorem 1.2. For every graph G, and every k ∈ N, we have
+                                            p
+                                 ρG (k) ≤ O( λ2k log k) .                                         (3)
+If G is planar then, the bound improves to,
+                                                           p
+                                                ρG (k) ≤ O( λ2k ) .                               (4)
+More generally, if G excludes Kh as a minor, then
+                                                               p
+                                               ρG (k) ≤ O(h2       λ2k ) .
+    We remark that the bound (3) holds with 2k replaced by (1 + δ)k for any δ > 0, but where
+the leading constant now becomes δ−3 ; see Corollary 4.2. Louis, Raghavendra, Tetali and Vempala
+[LRTV12] have independently proved a somewhat weaker version of the bound (3), using rather
+different techniques.
+             √        Specifically, they show that there exists an absolute constant C > 1 such that
+ρG (k) ≤ O( λCk log k).
+    In particular, Theorem 1.2 has applications to the small-set expansion problem in graphs,
+which is fundamentally connected to the Unique Games Conjecture and many other problems in
+approximation algorithms (see [RS10, RST10]). To capture the expansion of small sets in graphs,
+we define the value,
+                                        ϕG (k) = min φG (S) .
+                                                        S≤|V |/k
+
+Clearly ϕG (k) ≤ ρG (k) for every k ∈ N.
+      Arora, Barak and Steurer [ABS10] prove the bound,
+                                                    p
+                                   ϕG (k1/100 ) ≤ O( λk logk n),
+                                                                                             √
+where n = |V |. Note that for k = nε and ǫ ∈ (0, 1), one achieves an upper bound of O( λk ),
+and this small loss in the expansion constant is crucial for applications to approximating small-set
+expansion. This was improved further in Steurer’s thesis [Ste10] by showing that for every α > 0,
+                                                 p
+                                 ϕG (k1−α ) ≤ O( (λk /α) log k n) .
+  1
+      Equivalently, algorithms that use the top k eigenvectors of the adjacency matrix.
+
+
+                                                           4
+Such a bound is also obtained in the works [OT12, OW12]. These bounds work fairly well for large
+values of k, but give less satisfactory results when k is smaller.
+   Louis, Raghavendra, Tetali and Vempala [LRTV11] proved that
+                                       √       p
+                                   ϕG ( k) ≤ O( λk log k),
+                    √
+and conjectured that k could be replaced by k. Theorem 1.2 immediately yields,
+                                                p
+                                   ϕG (k/2) ≤ O( λk log k)                                        (5)
+
+resolving their conjecture up to a factor of 2 (and actually, as discussed earlier, up to a factor of
+1 + δ for every δ > 0).
+    Moreover, (5) is quantitatively optimal for the noisy hypercube graphs (see Section 4.4), yielding
+an optimal connection between the kth Laplacian eigenvalue and expansion of sets of size ≈ n/k.
+    It is interesting to note that in [KLPT11], it is shown that for n-vertex, bounded-degree planar
+graphs, one has λk = O(k/n). Thus the spectral algorithm     p guaranteeing (4) partitions such a
+planar graph into k disjoint pieces, each of expansion O( k/n). This is tight, up to a constant
+                                       √   √
+factor, as one can easilyp          p n × n planar grid, in which case the set of size ≈ n/k with
+                           see for an
+minimal expansion is a n/k × n/k subgrid.
+Large gaps in the spectrum. We recall that in the practice of spectral clustering, it is often
+observed that the correct number of clusters is indicated by a large gap between adjacent eigen-
+values, i.e., if λk+1 ≫ λk , then one expects the input graph can be more easily partitioned into k
+pieces than k + 1. In Section 4.3, we prove a result supporting this phenomenon.
+
+Theorem 1.3. There is a constant C > 0 such that for every graph G and k ∈ N, the following
+holds. If λ4k ≥ C(log k)2 λ2k , then            p
+                                     ρG (k) ≤ O( λ2k ) .
+
+   The key point is that the implicit constant in the upper bound is independent of k, unlike the
+bound (3).
+The relation to hyperboundedness and spectral gaps of Markov operators. Consider a
+probability space (Ω, F, µ). A self-adjoint operator M : L2 (µ) → L2 (µ) is said to be Markovian if,
+whenever f ∈ L2 (µ), we have f ≥ 0 =⇒ M f ≥ 0 and M 1 = 1. One says that M is ergodic if
+M f = f implies that f is a multiple of 1.
+   Such an operator M may not have any eigenvectors other than 1, but one defines its spectrum
+σ(M ) to be the set of λ ∈ [−1, 1] such that λI − M fails to be invertible. An ergodic Markov
+operator M is said to have a spectral gap if there is a δ > 0 such that σ(M ) ⊆ {1} ∪ [−1, 1 − δ].
+Finally, say that M is hyperbounded if there exists a p > 2 such that
+
+                                       kM kL2 (µ)→Lp (µ) < ∞ .
+
+In [Mic13], the following theorem is proved.
+
+Theorem 1.4 (Miclo). If a self-adjoint, ergodic Markov operator is hyperbounded, then it has a
+spectral gap.
+
+
+
+                                                  5
+    This was conjectured by Simon and Høegh-Krohn [SHK72] for the special case of Markov semi-
+groups. They actually indicated that the conjecture was probably false even in this specialized
+setting. Miclo uses Theorem 1.1 as a fundamental step in the proof of Theorem 1.4. The basic idea
+is to relate the operator 2 → p norm to expansion of small sets in a graph (or, more generally, in the
+underlying probability space (Ω, µ)). Then one uses Theorem 1.1 to relate expansion of small sets
+to the spectrum of the operator. One can consult [BBH+ 12] for a detailed discussion of operator
+norms and small-set expansion from a computational perspective.
+
+1.1   High-dimensional spectral partitioning
+We now present an overview of the proofs of our main theorems, as well as explain our general
+approach to multi-way spectral partitioning. Let G = (V, E) be an undirected, d-regular graph. To
+begin, for any f : V → ℓ2 , we recall the Rayleigh quotient,
+                                           P                        2
+                                        .    {u,v}∈E kf (u) − f (v)k
+                                RG (f ) .=       P                    .
+                                               d u∈V kf (u)k2
+
+   Cheeger’s inequality (see Lemma 2.2) proves that for any fp : V → ℓ2 , it is possible to find
+a subset S ⊆ {v ∈ V : f (v) 6= 0} such that that φG (S) ≤ 2RG (f ). Thus in order to find
+k disjoint, non-expanding subsets S1 , S2 , . . . , Sk ⊆ V , it suffices to find k disjointly supported
+functions ψ1 , ψ2 , . . . , ψk : V → ℓ2 such that RG (ψi ) is small for each i = 1, 2, . . . , k.
+   In fact, in the same paper that Miclo conjectured the validity of Theorem 1.1, he conjectured
+that finding such a family {ψi } should be possible [Mic08, DJM12]. We resolve this conjecture and
+prove the following theorem in Section 3.4.
+
+Theorem 1.5. For any graph G = (V, E) and any k ∈ N, there exist disjointly supported functions
+ψ1 , ψ2 , . . . , ψk : V → R such that for each i = 1, 2, . . . , k, we have
+
+                                          RG (ψi ) ≤ O(k6 ) λk .
+
+   To prove this, we start with an orthonormal system of eigenfunctions of the Laplacian,
+
+                                         f1 , f2 , . . . , fk : V → R ,
+
+where fi has eigenvalue λi . We then construct the embedding F : V → Rk given by
+
+                                   F (v) = (f1 (v), f2 (v), . . . , fk (v)) .                         (6)
+
+Observe that RG (F ) ≤ λk .
+    Thus our goal is now to “localize” F on k disjoint regions to produce disjointly supported
+functions ψ1 , ψ2 , . . . , ψk : V → Rk , each with small Rayleigh quotient. (It is elementary to see that
+for any map ψ : V → Rk , there exists some coordinate j ∈ {1, 2, . . . , k} such that the R-valued
+map ψ̃(v) = ψ(v)j has RG (ψ̃) ≤ RG (ψ).) In order to ensure that RG (ψi ) is small for each i, we
+must ensure that each region captures a large fraction of the ℓ2 mass of F , and that our localization
+process is sufficiently smooth.
+Isotropy and spreading. The first problem we face is that, in order to find k disjoint regions
+each with large ℓ2 mass, it should be that the ℓ2 mass of F is sufficiently well-spread. This follows
+
+
+                                                       6
+                                                   f3
+
+
+
+
+                                                                      f2
+
+
+
+
+                        Figure 1: Partitioning according to the radial distance.
+
+
+
+
+from the following isotropy property of F (see Lemma 3.2): For any vector x ∈ S k−1 (the unit
+sphere of Rk ),                        X
+                                          hx, F (v)i2 = 1 .                               (7)
+                                            v∈V
+
+On the other hand, it straightforward to check that,
+                                        X
+                                            kF (v)k2 = k ,
+                                             v∈V
+
+thus it is impossible for the ℓ2 mass of F to “concentrate” along fewer than k directions x1 , x2 , . . . , xk ∈
+S k−1 .
+    A natural approach would be to find (at least) k such directions, and then define,
+                                    (
+                                     F (v) if F (v) has large projection on xi
+                           ψi (v) =
+                                     0       otherwise.
+
+Unfortunately, this sharp cutoff could make the value
+                                       X
+                                            kψi (u) − ψi (v)k2 ,
+                                         {u,v}∈E
+
+much larger than the corresponding quantity for F . Thus we must pursue a smoother approach for
+localizing F .
+The radial projection distance. Our method of smooth localization depends crucially on defin-
+ing a proper notion of distance between vertices, based on the map F . We would like to think of
+two vertices u, v ∈ V as close if their Euclidean distance kF (u) − F (v)k is small compared to their
+norms kF (u)k, kF (v)k. To capture this, we define the radial projection distance via,
+
+                                                    F (u)   F (v)
+                                    dF (u, v) =           −             .
+                                                   kF (u)k kF (v)k
+
+                                                        7
+Note that a ball in dF corresponds to a cone in Rk ; see Figure 1.
+    Our goal now becomes to find separated regions S1 , . . . , Sk ⊆ V in dF , each of which contains
+a large fraction of the ℓ2 mass of F . If these regions are far enough apart, then there is a way to
+allow ψi to degrade gracefully off of Si , ensuring that RG (ψi ) remains small; see Lemma 3.3.
+    The isotropy condition (7) gives us the following spreading property of dF : If S ⊆ V , then
+                                        1    X            2X
+                       diam(S, dF ) ≤     =⇒   kF (v)k2 ≤    kF (v)k2 .                            (8)
+                                        2                 k
+                                               v∈S               v∈V
+
+In other words, sets of small dF -diameter cannot contain a large fraction of the ℓ2 mass. This will
+be essential in finding regions {Si }.
+Finding separated regions: Random space partitions. In order to find many separated
+regions, we rely on the theory of random partitions discussed in Section 2.3. Roughly speaking,
+this partitions Rk (and thus our set of points) randomly into pieces of diameter at most 1/2 so
+that the expected fraction of ℓ2 mass which is close to the boundary of the partition is small. Thus
+we can take unions of the interiors of the pieces to find separated sets. Furthermore, no set in the
+partition can contain a large fraction of the ℓ2 mass, due to the spreading property of dF (8). This is
+carried out in Section 3.3. We use these separated sets as the supports of our family {ψi }, allowing
+us to complete the proof of Theorem 1.5. Our use of random partitions to construct disjoint bump
+functions is similar to the approach in [BLR08, KLPT11].
+    The notion of “close to the boundary” depends on the dimension k, and thus the smoothness
+of our maps {ψi } will degrade as the dimension grows. For many families of graphs, however, we
+can appeal to special properties of their intrinsic geometry.
+Exploiting the intrinsic geometry. It is well-known that the shortest-path metric on a planar
+graph has many nice properties, but dF is, in general, not a shortest-path geometry. Thus it is
+initially unclear how one might prove a bound like (4) using our approach. The answer is to combine
+information from the spectral embedding with the intrinsic geometry of the graph.
+    We define dˆF as the shortest-path pseudometric on G, where the length of an edge {u, v} ∈ E
+is precisely dF (u, v). In Sections 3.2 and 3.3, we show that it is possible to do the partitioning
+in the metric dˆF , and thus for planar graphs (and other generalizations), we are able to achieve
+dimension-independent bounds in Theorem 1.2.
+    This technique also addresses a common shortcoming of spectral methods: The spectral em-
+bedding can lose auxiliary information about the input data that could help with clustering. Our
+“hybrid” technique for planar graphs suggests that such information (in this case, planarity) can
+be fruitfully combined with the spectral computations.
+Dimension reduction. In order to obtain the tight bound (3) for general graphs, we have to im-
+prove the quantitative parameters of our construction. The main loss in our preceding construction
+comes from the ambient dimension k.
+    Thus our first step is to apply dimension-reduction techniques: We randomly project our points
+from Rk into RO(log k) . Let F ′ : V → RO(log k) be the resulting map. While it is easy to see that
+RG (F ′ ) ≍ RG (F ) with high probability, it is not, a priori, clear why O(log k) dimensions suffices
+for maintaining the spreading properties of F . Indeed, the isotropy condition (7) will generally fail
+for F ′ . Although the proof is delicate (see Lemma 4.3), the basic idea is this: If dF satisfies (8),
+but dF ′ fails to satisfy a related property, then a ≫ k1 fraction of the ℓ2 mass has to have moved
+
+
+                                                  8
+significantly in the dimension reduction step, and such an event is unlikely for a random mapping
+into O(log k) dimensions.
+A new multi-way Cheeger inequality.     √    Dimension reduction only yields a loss of O(log k) in
+(3). In order to get the bound down to log k, we abandon our goal of localizing eigenfunctions. In
+Section 4.2, we give a new multi-way Cheeger rounding algorithm that combines random partitions
+of the radial projection distance dF , and random thresholding based on kF (·)k (as in Cheeger’s
+inequality). By analyzing these two processes simultaneously, we are able to achieve (3). In
+addition, we use this method to achieve the stated bound in (2).
+
+1.2   A general algorithm
+Given a graph G = (V, E) and any embedding F : V → Rk (in particular, the spectral embedding
+(6)), our approach yields a general algorithmic paradigm for finding many non-expanding sets. For
+some r ∈ N, do the following:
+
+   i) (Radial decomposition)
+      Find disjoint subsets S1 , S2 , . . . , Sr ⊆ V using the values {F (v)/kF (v)k : v ∈ V }.
+
+  ii) (Cheeger sweep)
+      For each i = 1, 2, . . . , r,
+
+            Sort the vertices Si = {v1 , v2 , . . . , vni } so that
+
+                                      kF (v1 )k ≥ kF (v2 )k ≥ · · · ≥ kF (vni )k .
+
+            Output the least-expanding set among the ni − 1 sets of the form,
+
+                                                    {v1 , v2 , . . . , vj }
+
+            for 1 ≤ j ≤ ni − 1.
+
+     As discussed in the preceding section, each of our main theorems is proved using an instantiation
+of this schema. For instance, the proof of Theorem 1.1 partitions using the radial projection distance
+dF . The proof of (4) uses the induced shortest-path metric dˆF . And the proof of (3) uses dF ′ where
+F ′ : V → RO(log k) is obtained from random projection. The details of the scheme for equation (3)
+is provided in Section 5.1. A practical algorithm might use r-means to cluster according to the
+radial projection distance.
+     We remark that partitioning the normalized vectors as in step (i) is used in the approach of
+[NJW02], but not in some other methods of spectral partitioning (see [VM03] for alternatives).
+Unlike [NJW02], our spectral partitioning algorithm does not use directly the eigenvectors of the
+normalized Laplacian; the vectors we use are multiplied by D 1/2 where D is the diagonal degree
+matrix (see Section 2.1). In other words, we use the right eigenvectors of the associated random
+walk matrix. This is similar to [SM00], except that they do not normalize the spectral embedding
+as in our step (i).
+
+
+
+
+                                                          9
+2     Preliminaries
+Let G = (V, E, w) be a finite, undirected graph, with positive weights w : E → (0, ∞) on the edges.
+For a pair of vertices u, v ∈ V , we sometimes write w(u, v) for w({u, v}). For a subset of vertices
+S ⊆ V , we Pwrite E(S, S) := {{u, v} ∈ E : |{u, v} ∩ S| = 1}. For a subset of edges F ⊆ E, we write
+w(F ) = e∈F w(e). We use x ∼ y to denote         P {x, y} ∈ E. We extend the weight to vertices by
+defining, for a single vertex v ∈ V , w(v) := u∼v w(u, v). We can think of w(v) as the weighted
+degree ofPvertex v. We will assume throughout that w(v) > 0 for every v ∈ V . For S ⊆ V , we write
+w(S) = v∈S w(v).
+    Let X be a set and d : X × X → [0, ∞] is a symmetric non-negative function which may take
+the value ∞. We refer to d as an extended pseudo-metric on X if it satisfies the triangle inequality.
+For a subset S ⊆ X, we write diam(S, d) ..= supx,y∈S d(x, y), and for two sets S, T ⊆ X, we write
+d(S, T ) ..= inf x∈S,y∈T d(x, y). We also define the ball Bd (x, R) ..= {y ∈ X : d(x, y) ≤ R}.
+    For two expressions A and B, we write A . B for A ≤ O(B) and A ≍ B for the conjunction of
+A . B and A & B.
+
+2.1   Spectral theory of the weighted Laplacian
+We write ℓ2 (V, w) for the Hilbert space of functions f : V → R with inner product
+                                                     X
+                                  hf, giℓ2 (V,w) ..=   w(v)f (v)g(v),
+                                                     v∈V
+
+and norm kf k2ℓ2 (V,w) = hf, f iℓ2 (V,w) . We reserve h·, ·i and k · k for the standard inner product and
+norm on Rk , k ∈ N and ℓ2 (V ).
+                                          2
+P We now discuss some operators on ℓ (V, w). The adjacency operator is defined by Af (v) =
+  u∼v w(u, v)f (u), and the diagonal degree operator by Df (v) = w(v)f (v). Then the combinatorial
+Laplacian is defined by L = D − A, and the normalized Laplacian is given by
+
+                                       LG ..= I − D −1/2 AD −1/2 .
+
+Observe that for an unweighted, d-regular graph, we have LG = 1d L.
+   Now, if g : V → R is a non-zero function and f = D −1/2 g, then
+
+                         hg, LG gi       hg, D −1/2 LD −1/2 gi
+                                     =
+                           hg, gi                hg, gi
+                                             hf, Lf i
+                                     =
+                                         hD 1/2 f, D 1/2 f i
+                                         X
+                                             w(u, v)|f (u) − f (v)|2
+                                         u∼v
+                                     =         X                       =.. RG (f ),
+                                                             2
+                                                     w(v)f (v)
+                                               v∈V
+
+where the latter value is referred to as the Rayleigh quotient of f (with respect to G).
+   In particular, one sees that LG is a positive-definite operator with eigenvalues
+
+                                     0 = λ1 ≤ λ2 ≤ · · · ≤ λn ≤ 2 .
+
+                                                     10
+For a connected graph, the first eigenvalue corresponds to the eigenfunctions g = D 1/2 f , where f
+is any non-zero constant function. Furthermore, by standard variational principles,
+                                                                                           
+                                                      hg, LG gi
+                   λk =           min         max               : g ∈ span{g1 , . . . , gk }
+                           g1 ,...,gk ∈ℓ2 (V ) g6=0     hg, gi
+                                                     n                                     o
+                       =            min          max RG (f ) : f ∈ span{f1 , . . . , fk } ,     (9)
+                              f1 ,...,fk ∈ℓ2 (V,w) f 6=0
+
+where both minimums are over sets of k non-zero orthogonal functions in the Hilbert spaces ℓ2 (V )
+and ℓ2 (V, w), respectively. We refer to [Chu97] for more background on the spectral theory of the
+normalized Laplacian.
+   In particular, one can use (9) to easily prove the left-hand side of (2) using the following standard
+observation.
+Lemma 2.1. Suppose ψ1 , ψ2 , . . . , ψk : V → R are disjointly-supported functions with RG (ψi ) ≤ c
+for each i = 1, 2, . . . , k. Then, λk ≤ 2c.
+                               P
+Proof. Consider any f = ki=1 αi ψi . Then, for any u, v ∈ V , we have
+                                                            k
+                                                            X
+                               |f (u) − f (v)|2 ≤ 2               α2i |ψi (u) − ψi (v)|2 ,
+                                                            i=1
+
+using the fact the ψi ’s are disjointly supported. Therefore,
+                                    P
+                                      u∼vPw(u, v)|f (u) − f (v)|2
+                    RG (f ) =                            2
+                                           v∈V w(v)f (v)
+                                     Pk      P
+                                    2 i=1 α2i u∼v w(u, v)|ψi (u) − ψi (v)|2
+                               ≤          Pk        P                       ≤ 2c .
+                                                  2                 2
+                                            i=1 αi    v∈V w(v)ψi (v)
+
+But now (9) implies that λk ≤ minf ∈span(ψ1 ,...,ψk ) maxf 6=0 RG (f ) ≤ 2c.
+
+    Applying the preceding lemma with ψi = 1Si as the indicator functions of disjoint sets S1 , S2 , . . . , Sk
+yields the left-hand side of (2), observing that φG (Si ) = RG (1Si ).
+
+2.2    Cheeger’s inequality with Dirichlet boundary conditions
+Given a subset S ⊆ V by, we denote the Dirichlet conductance of S by,
+                                                             w(E(S, S))
+                                             φG (S) ..=                 .
+                                                               w(S)
+For convenience, we take φG (∅) = ∞. If H is a Hilbert space, we extend the notion of Rayleigh
+quotients to arbitrary maps ψ : V → H via,
+                                      X
+                                           w(u, v)kψ(u) − ψ(v)k2H
+                                 RG (ψ) ..= u∼v X                                      .               (10)
+                                                                 w(v)kψ(v)k2H
+                                                           v∈V
+
+In what follows, we use supp(ψ) ..= {v ∈ V : ψ(v) 6= 0}.
+   Many variants of the following lemma are known; see, e.g. [Chu96].
+
+                                                             11
+Lemma 2.2. For any ψ : V → H, there exists a subset S ⊆ supp(ψ) with
+                                           p
+                                 φG (S) ≤ 2 RG (ψ) .
+Proof. Let k · k = k · kH . We may assume that supp(ψ) 6= V , else taking S = V finishes the
+argument. For t ∈ [0, ∞), define a subset St = {u ∈ V : kψ(u)k2 > t}. Observe that for every
+t ≥ 0, the inclusion St ⊆ supp(ψ) holds by construction.
+   Then we have the estimate,
+                                Z ∞              X
+                                     w(St ) dt =    w(u)kψ(u)k2 ,
+                                     0                 u∈V
+
+as well as,
+         Z ∞                         X
+               w(E(St , St )) dt =         w(u, v) kψ(u)k2 − kψ(v)k2
+         0                           u∼v
+                                     X
+                                ≤          w(u, v)kψ(u) − ψ(v)k · kψ(u) + ψ(v)k
+                                     u∼v
+                                     s                                 s
+                                         X                                 X
+                                ≤              w(u, v)kψ(u) − ψ(v)k2             w(u, v)kψ(u) + ψ(v)k2
+                                         u∼v                               u∼v
+                                     s                               s X
+                                         X
+                                ≤                                  2
+                                               w(u, v)kψ(u) − ψ(v)k 2    w(u)kψ(u)k2 .
+                                         u∼v                                u∈V
+
+Combining these two inequalities yields,
+                                R∞
+                                                       p
+                                 0 Rw(E(St , St )) dt
+                                     ∞                ≤ 2 RG (ψ),
+                                     0 w(St ) dt
+
+implying there exists a t ∈ [0, ∞] for which St satisfies the statement of the lemma.
+
+2.3   Random partitions of metric spaces
+We now discuss some of the theory of random partitions of metric spaces. Let (X, d) be a finite
+metric space. We use B(x, R) = {y ∈ X : d(x, y) ≤ R} to denote the closed ball of radius R about
+x. We will write a partition P of X as a function P : X → 2X mapping a point x ∈ X to the
+unique set in P that contains x.
+    For ∆ > 0, we say that P is ∆-bounded if diam(S) ≤ ∆ for every S ∈ P . We will also consider
+distributions over random partitions. If P is a random partition of X, we say that P is ∆-bounded
+if this property holds with probability one.
+    A random partition P is (∆, α, δ)-padded if P is ∆-bounded, and for every x ∈ X, we have
+                                         P[B(x, ∆/α) ⊆ P(x)] ≥ δ.
+A random partition is (∆, L)-Lipschitz if P is ∆-bounded, and, for every pair x, y ∈ X, we have
+                                                          d(x, y)
+                                     P[P(x) 6= P(y)] ≤ L ·        .
+                                                            ∆
+   Here are some results that we will need. The first theorem is known, more generally, for doubling
+spaces [GKL03], but here we only need its application to Rk . See also [LN05, Lem 3.11].
+
+                                                       12
+Theorem 2.3. If X ⊆ Rk , then for every ∆ > 0 and δ > 0, X admits a (∆, O(k/δ), 1 − δ)-padded
+random partition.
+    The next result is proved in [CCG+ 98]. See also [LN05, Lem 3.16].
+                                                                √
+Theorem 2.4. If X ⊆ Rk , then for every ∆ > 0, X admits a (∆, O( k))-Lipschitz random
+partition.
+   A partitioning theorem for excluded-minor graphs is presented in [KPR93], with an improved
+quantitative dependence coming from [FT03].
+Theorem 2.5. If X is the shortest-path metric on a graph excluding Kh as a minor, then for
+every ∆ > 0 and δ > 0, X admits a (∆, O(h2 /δ), 1 − δ)-padded random partition and a (∆, O(h2 ))-
+Lipschitz random partition.
+    Finally, for the special case of bounded-genus graphs, a better bound is known [LS10].
+Theorem 2.6. If X is the shortest-path metric on a graph of genus g, for every ∆ > 0 and δ > 0,
+X admits a (∆, O((log g)/δ), 1 − δ)-padded random partition, and a (∆, O(log g))-Lipschitz random
+partition.
+
+
+3     Localizing eigenfunctions
+Let G = (V, E, w) be a weighted graph. In the present section, we show how to find, for every
+k ∈ N, disjointly supported functions ψ1 , ψ2 , . . . , ψk : V → R with RG (ψi ) ≤ kO(1) λk , where λk is
+the kth smallest eigenvalue of LG .
+
+3.1   The radial projection distance
+For h ∈ N, consider a mapping F : V → Rh . A central role will be played by the radial projection
+distance, which is an extended pseudo-metric on V : If kF (u)k, kF (v)k > 0, then
+                                                   F (u)   F (v)
+                                  dF (u, v) ..=          −           .
+                                                  kF (u)k kF (v)k
+Otherwise, if F (u) = F (v) = 0, we put dF (u, v) ..= 0, else dF (u, v) ..= ∞.
+   In order to find many disjointly supported functions from a geometric representation F : V →
+R , it should be that the ℓ2 mass of F is not too concentrated. To this end, we say that F is
+ h
+
+(∆, η)-spreading (with respect to G) if, for all subsets S ⊆ V , we have
+                                           X                       X
+                  diam(S, dF ) ≤ ∆ =⇒          w(u)kF (u)k2 ≤ η         w(u)kF (u)k2 .
+                                            u∈S                   u∈V
+
+    First, we record the following simple fact.
+Lemma 3.1. For any F : V → Rh , and for all u, v ∈ V , we have dF (u, v)kF (u)k ≤ 2 kF (u)−F (v)k.
+Proof. For any non-zero vectors x, y ∈ Rk , we have
+                     x   y       kxk                   kxk
+              kxk      −    = x−     y ≤ kx − yk + y −     y ≤ 2 kx − yk .
+                    kxk kyk      kyk                   kyk
+
+
+
+                                                    13
+   We now show that systems of ℓ2 (V, w)-orthonormal functions give rise to spreading maps.
+
+Lemma 3.2. Suppose that f1 , f2 , . . . , fk : V → R is an ℓ2 (V, w)-orthonormal system        and that
+                                                                                                       
+          k                                                                                       1
+F : V → R is given by F (v) = (f1 (v), f2 (v), . . . , fk (v)). Then, for every ∆ > 0, F is ∆, k(1−∆ 2) -
+
+spreading with respect to G.
+
+Proof. Let x ∈ Rk be any unit vector, and let U : Rk → ℓ2 (V, w) be defined by
+                                                            k
+                                                            X          p
+                                             (U x)(v) ..=         xi       w(v)fi (v) .
+                                                            i=1
+
+Observe that (U T U )i,j = hfi , fj iℓ2 (V,w) , hence U T U = I. Thus,
+                              X
+                                    w(v)hx, F (v)i2 = hU x, U xi = hx, U T U xi = 1.                                        (11)
+                              v∈V
+
+   Now, let S ⊆ V satisfy diam(S, dF ) ≤ ∆. Fix any u ∈ S and use (11) to write,
+
+      X                            2       X                                           2                 X
+                         F (u)                                    2          dF (u, v)2
+1=          w(v) F (v),                  =         w(v)kF (v)k            1−                   ≥ (1 − ∆2 )         w(v)kF (v)k2 .
+                        kF (u)k                                                  2
+      v∈V                                    v∈V                                                             v∈S
+
+The lemma now follows by noting that,
+
+                     X                           k
+                                                XX                               k
+                                                                                XX
+                           w(v)kF (v)k2 =                w(v)fi (v)2 =                    kfi k2ℓ2 (V,w) = k .
+                     v∈V                       v∈V i=1                          v∈V i=1
+
+
+
+
+3.2     Smooth localization
+Given a map F : V → Rh and a subset S ⊆ V , we now show how to construct a function supported
+on a small-neighborhood S, which retains the ℓ2 mass of F on S, and which doesn’t stretch edges
+by too much.
+    For future applications, it will be useful to consider the largest metric on G which agrees with
+dF on edges. This is the induced shortest-path (extended pesudo-) metric on G, where the length
+of an edge {u, v} ∈ E is given by dF (u, v). We will use the notation dˆF for this metric. Observe
+that dˆF ≥ dF since dF is a pseudo-metric. We will write
+
+                                         Nε (S, dˆF ) ..= {v ∈ V : dˆF (v, S) < ε}
+
+for the open ε-neighborhood of S in the metric dˆF .
+
+Lemma 3.3 (Localization). For any F : V → Rh , the following holds. For every subset S ⊆ V and
+number ε > 0, there exists a mapping ψ : V → Rh which satisfies the following three properties:
+
+   i) ψ|S = F |S ,
+
+  ii) supp(ψ) ⊆ Nε (S, dˆF ), and
+
+                                                              14
+ iii) if {u, v} ∈ E, then |ψ(u) − ψ(v)| ≤ (1 + 2ε )kF (u) − F (v)k.
+Proof. First, define                                                      !
+                                                           dˆF (v, S)
+                                       θ(v) ..= max 0, 1 −                     .
+                                                                ε
+
+In particular, observe that θ is (1/ε)-Lipschitz with respect to dˆF , so since dˆF and dF agree on
+edges, we have for every {u, v} ∈ E,
+                                                              1
+                                          |θ(u) − θ(v)| ≤       dF (u, v) .                                     (12)
+                                                              ε
+Finally, set ψ(v) ..= θ(v)F (v).
+    Properties (i) and (ii) are immediate from the definition, thus we turn to property (iii). Fix
+{u, v} ∈ E. We have,
+
+                   |ψ(u) − ψ(v)| =        θ(u)F (u) − θ(v)F (v)
+                                     ≤ |θ(v)| · kF (u) − F (v)k + kF (u)k · |θ(u) − θ(v)| .
+Since θ ≤ 1, the first term is at most kF (u) − F (v)k. Now, using (12), and Lemma 3.1, we have
+                                                1                        2
+                   kF (u)k · |θ(u) − θ(v)| ≤      · kF (u)k · dF (u, v) ≤ · kF (u) − F (v)k,
+                                                ε                        ε
+completing the proof of (iii).
+
+    The preceding construction reduces the problem of finding disjointly supported set functions to
+finding separated regions in (V, dˆF ), each of which contains a large fraction of the ℓ2 mass of F .
+Lemma 3.4. Let F : V → Rh be given, and suppose that for some β, δ > 0 and r ∈ N, there exist r
+disjoint subsets T1 , T2 , . . . , Tr ⊆ V such that dˆF (Ti , Tj ) ≥ β for i 6= j, and for every i = 1, 2, . . . , r,
+we have                               X                       X
+                                         w(v)kF (v)k2 ≥ δ          w(v)kF (v)k2 .                              (13)
+                                   v∈Ti                       v∈V
+
+Then there exist disjointly supported functions ψ1 , ψ2 , . . . , ψr : V → R such that for i = 1, 2, . . . , r,
+we have                                                          
+                                             2                  4 2
+                             RG (ψi ) ≤                1+             RG (F ) .                          (14)
+                                        δ(r − i + 1)            β
+Proof. For each i ∈ [r], let ψi : V → Rh be the result of applying Lemma 3.3 to the domain Ti with
+parameter ε = β/2. Since dˆF (Ti , Tj ) ≥ β for i 6= j, property (ii) of Lemma 3.3 ensures that the
+functions {ψi }ri=1 are disjointly supported.
+   Additionally property (i) implies that for each i ∈ [r],
+                      X                   X                     X
+                          w(v)kψi (v)k2 ≥     w(v)kF (v)k2 ≥ δ      w(v)kF (v)k2 ,
+                         v∈V                   v∈Ti                      v∈V
+
+and by property (iii) of Lemma 3.3, and since the supports are disjoint,
+                r                                     
+           XX                                        4 2X
+                                            2
+                    w(u, v)kψi (u) − ψi (v)k ≤ 2 1 +         w(u, v)kF (u) − F (v)k2 .
+           u∼v
+                                                     β   u∼v
+                   i=1
+
+
+                                                         15
+In particular, if we reorder the maps so that RG (ψ1 ) ≤ RG (ψ2 ) ≤ · · · ≤ RG (ψr ), then the preceding
+two inequalities imply (14).
+      These maps {ψi } take values in Rh , but it is easy to see that for any ψ : V → Rh , there
+exists a coordinate j ∈ {1, 2, . . . , h} such that the map ψ̃ : V → R defined by ψ̃(v) ..= ψ(v)j has
+RG (ψ̃) ≤ RG (ψ). This follows from the general inequality ab11+a     2 +···+ak          ai
+                                                                   +b2 +···+bk ≥ mini bi , valid for all
+a1 , . . . , ak , b1 , . . . , bk ≥ 0 with some bi > 0.
+
+3.3    Random partitioning
+From Lemma 3.4, to find many disjointly supported functions with small Rayleigh quotient, it
+suffices to partition (V, dˆF ) into well separated regions, each of which contains a large fraction of
+the ℓ2 mass of F . We will use a suitable distribution over random partitions and argue that at
+least one partition in the support of the distribution is good for this purpose.
+
+Lemma 3.5. Let r, k ∈ N be given with k/2 ≤ r ≤ k, and suppose that the map F : V → Rh is
+(∆, k1 + k−r+1
+          8kr )-spreading for some ∆ > 0. Suppose additionally there is a random partition P with
+the properties that
+
+   i) For every S ∈ P, diam(S, dF ) ≤ ∆, and
+
+  ii) For every v ∈ V , P[BdˆF (v, ∆/α) ⊆ P(v)] ≥ 1 − k−r+1
+                                                        4r  .
+
+Then there exist r disjoint subsets T1 , T2 , . . . , Tr ⊆ V such that for each i 6= j, we have dˆF (Ti , Tj ) ≥
+2∆/α, and for every i = 1, 2, . . . , k,
+                                X                         1 X
+                                       w(v)kF (v)k2 ≥         w(v)kF (v)k2 .
+                                                         2k
+                                v∈Ti                         v∈V
+
+Proof. For a subset S ⊆ V , define
+
+                                       S̃ ..= {x ∈ S : BdˆF (x, ∆/α) ⊆ S} .
+          P
+Let M = v∈V w(v)kF (v)k2 > 0. By linearity of expectation, there exists a partition P such that
+for every S ∈ P , diam(S, dF ) ≤ ∆, and also
+                            XX                               
+                                              2      k−r+1
+                                   w(v)kF (v)k ≥ 1 −            M.                         (15)
+                                                        4r
+                              S∈P v∈S̃
+
+    Furthermore, by the spreading property of F , we have, for each S ∈ P ,
+                           X                                    
+                                          2   1        k−r+1
+                               w(v)kF (v)k ≤       1+              M.
+                                              k           8r
+                               x∈S
+
+Therefore we may take disjoint unions of the sets {S̃ : S ∈ P } to form at least r disjoint sets
+T1 , T2 , . . . , Tr with the property that for every i = 1, 2, . . . , r, we have
+                                           X                        1
+                                                  w(v)kF (v)k2 ≥      M
+                                                                   2k
+                                           v∈Ti
+
+
+                                                        16
+because the first r − 1 pieces will have total mass at most
+                                                                  
+                       r−1          k−r+1                 k−r+1    1
+                               1+              M ≤ 1−           −      E,
+                         k             8r                   4r    2k
+
+for all r ∈ [k/2, k], leaving at least M
+                                       2k mass left over from (15).
+
+   We mention a representative corollary that follows from the conjunction of Lemmas 3.4 and 3.5.
+
+Corollary 3.6. Let k ∈ N and δ ∈ (0, 1) be given. Suppose the map F : V → Rh is (∆, k1 + 48k
+                                                                                          δ
+                                                                                             )-
+spreading for some ∆ ≤ 1, and there is a random partition P with the properties that
+
+   i) For every S ∈ P, diam(S, dF ) ≤ ∆, and
+                                                       δ
+  ii) For every v ∈ V , P[BdˆF (v, ∆/α) ⊆ P(v)] ≥ 1 − 24 .
+
+Then there are at least r ≥ ⌈(1 − δ)k⌉ disjointly supported functions ψ1 , ψ2 , . . . , ψr : V → R such
+that
+                                                  α2
+                                     RG (ψi ) .      RG (F ) .
+                                                 δ∆2
+Proof. In this case, we set r = ⌈(1 − δ/2)k⌉ in our application of Lemma 3.5. After extracting
+at least ⌈(1 − δ/2)k⌉ sets, we apply Lemma 3.4, but only take the first r ′ = ⌈(1 − δ)k⌉ functions
+ψ1 , ψ2 , . . . , ψr′ .
+                                                                            1
+   Note, in particular, that we can apply the preceding corollary with δ = 2k to obtain r = k.
+
+3.4    Higher-order Cheeger inequalities
+We now present some theorems applying our machinery to embeddings which come from the eigen-
+functions of LG .
+
+Theorem 3.7. For any δ ∈ (0, 1), and any weighted graph G = (V, E, w), there exist r ≥ ⌈(1− δ)k⌉
+disjointly supported functions ψ1 , ψ2 , . . . , ψr : V → R such that
+
+                                                          k2
+                                             RG (ψi ) .      λk .                                        (16)
+                                                          δ4
+where λk is the kth smallest eigenvalue of LG . If G excludes Kh as a minor, then the bound
+improves to
+                                                  h4
+                                        RG (ψi ) . 4 λk ,                               (17)
+                                                  δ
+and if G has genus at most g ≥ 1, then one gets
+
+                                                     log2 (g + 1)
+                                        RG (ψi ) .                λk .                                   (18)
+                                                          δ4
+Proof. Let f1 , f2 , . . . , fk : V → R be an ℓ2 (V, w)-orthonormal system of eigenfunctions correspond-
+ing to the first k eigenvalues
+                     √              of LG , and define F : V → Rk by F (v) = (f1 (v), f2 (v), . . . , fk (v)).
+                                                          δ
+    Choose ∆ ≍ δ so that (1 − ∆2 )−1 ≤ 1 + 48               . In this case, Lemma 3.2 implies that F is
+    1     δ
+(∆, k + 48k )-spreading. Now, for general graphs, since dF is Euclidean, we can use Theorem 2.3
+
+                                                     17
+applied to dF to achieve α ≍ k/δ in the assumptions of Corollary 3.6. Observe that dˆF ≥ dF , so
+that BdˆF (v, ∆/α) ⊆ BdF (v, ∆/α), meaning that we can satisfy both conditions (i) and (ii), verifying
+(16).
+    For (17) and (18), we use Theorems 2.5 and 2.6, respectively, applied to the shortest-path metric
+dF . Again, since dˆF ≥ dF , we have that diam(S, dˆF ) ≤ ∆ implies diam(S, dF ) ≤ ∆, so conditions
+ˆ
+(i) and (ii) are satisfied with α ≍ h2 /δ and α ≍ log(g + 1)/δ, respectively.
+   We remark that in Section 4.1, we will give an alternate bound of O(δ−7 log2 k) · λk for (16),
+which is better for moderate values of δ.
+   Finally, we can use the preceding theorems in conjunction with Lemma 2.2 to produce many
+non-expanding sets.
+Theorem 3.8. (Non-expanding k-partition) For any weighted graph G = (V, E, w), there exists a
+partition V = S1 ∪ S2 ∪ · · · ∪ Sk such that
+                                                       p
+                                          φG (Si ) . k4 λk .
+where λk is the kth smallest eigenvalue of LG . If G excludes Kh as a minor, then the bound
+improves to                                          p
+                                     φG (Si ) . h2 k3 λk ,
+and if G has genus at most g ≥ 1, then one gets
+                                                                  p
+                                        φG (Si ) . log(g + 1)k3    λk .
+                                                1
+Proof. First apply Theorem 3.7 with δ = 2k         to find disjointly supported functions ψ1 , ψ2 , . . . , ψk :
+V → R satisfying
+          p        (16). Now apply Lemma 2.2 to find sets S1 , S2 , . . . , Sk with Si ⊆ supp(ψi ) and
+φG (Si ) ≤ 2RG (ψi ) for each i = 1, 2, . . . , k.
+    Now reorder the sets so that w(S1 ) ≤ w(S2 ) ≤ · · · ≤ w(Sk ), and replace Sk with the larger set
+Sk = V \ (S1 ∪ S2 ∪ · · · ∪ Sk−1 ) so that V = S1 ∪ S2 ∪ · · · ∪ Sk−1 ∪ Sk′ forms a partition. One can
+ ′
+
+now easily check that
+                                          Pk−1
+                       w(E(Sk′ , Sk′ ))                                                     p
+                 ′                            i=1 w(E(Si , Si ))         k                4
+            φG (Sk ) =                  ≤                        ≤  k · max φG (S k ) . k     λk .
+                            w(Sk′ )                w(Sk′ )              i=1
+
+A similar argument yields the other two bounds.
+    Using Theorem 3.7 in conjunction with Lemma 2.2 again yields the following.
+Theorem 3.9. For every δ ∈ (0, 1) and any weighted graph G = (V, E, w), there exist r ≥ ⌈(1−δ)k⌉
+disjoint sets S1 , S2 , . . . , Sr ⊆ V such that,
+                                                          kp
+                                               φG (Si ) . 2 λk .                            (19)
+                                                          δ
+where λk is the kth smallest eigenvalue of LG . If G excludes Kh as a minor, then the bound
+improves to
+                                                          h2 p
+                                               φG (Si ) . 2 λk ,
+                                                          δ
+and if G has genus at most g ≥ 1, then one gets
+                                                      log(g + 1) p
+                                           φG (Si ) .              λk .
+                                                          δ2
+    We remark that the bound (19) will be improved, in various ways, in Section 4.
+
+                                                      18
+4     Improved quantitative bounds
+A main result of this section is the following theorem.
+
+Theorem 4.1. Let G = (V, E, w) be a weighted graph and let k ∈ {1, 2, . . . , n} and δ ∈ (0, 1) be
+given. Suppose that f1 , f2 , . . . , fk : V → R forms an ℓ2 (V, w)-orthonormal system. Then there exist
+r ≥ ⌈(1 − δ)k⌉ disjoint sets S1 , S2 , . . . , Sr ⊆ V with
+                                         v
+                                         u Pk P
+                                       1u               w(u, v)(fi (u) − fi (v))2
+                     φG (Si ) . 3 t i=1 Pu∼v        k   P                         · log k
+                                      δ             i=1   v∈V w(v)fi (v)
+                                                                         2
+
+
+Corollary 4.2. For any weighted graph G = (V, E, w), k ∈ {1, 2, . . . , n}, and δ ∈ (0, 1), there exist
+r ≥ ⌈(1 − δ)k⌉ disjoint sets S1 , S2 , . . . , Sr ⊆ V with
+                                                        1p
+                                           φG (Si ) .      λk log k ,
+                                                        δ3
+where λk is the kth smallest eigenvalue of LG .
+
+4.1     Dimension reduction
+One should observe that in Theorems 3.7 and 3.9, the loss of k2 in (16) and k in (19) comes from the
+dimension of the eigenfunction embedding. To achieve somewhat better bounds for general graphs,
+we now show how to drastically reduce the dimension while preserving the Rayleigh quotient and
+spreading properties.
+    Let g1 , g2 , . . . , gh be i.i.d. k-dimensional Gaussians, and consider the random mapping Γk,h :
+Rk → Rh defined by Γk,h (x) = h−1/2 (hg1 , xi, hg2 , xi, . . . , hgh , xi). Then we have the following basic
+estimates (see, e.g. [Mat02, Ch. 15] or [LT11, Ch. 1]). For every x ∈ Rk ,
+                                                         
+                                             E kΓk,h (x)k2 = kxk2 ,                                     (20)
+
+and, for every δ ∈ (0, 12 ],
+                          h                                       i      2
+                      P kΓk,h (x)k2 ∈
+                                    / [(1 − δ)kxk2 , (1 + δ)kxk2 ] ≤ 2e−δ h/12 ,                       (21)
+
+and for every λ ≥ 2,               h                   i
+                                  P kΓk,h (x)k2 ≥ λkxk2 ≤ e−λh/12 .                                    (22)
+
+Lemma 4.3. Let G = (V, E, w) be a weighted graph. For every k ∈ N, ∆ ∈ [0, 1], and η ≥ 1/k,
+the following holds. Suppose that F : V → Rk is (∆, η)-spreading. Then for some value
+                                                          1
+                                                            
+                                        1 + log(k) + log ∆
+                                    h.                        ,
+                                                 ∆2
+with probability at least 1/2, the map Γk,h satisfies both of the following conditions:
+
+    i) RG (Γk,h ◦ F ) ≤ 8 · RG (F ), and
+
+    ii) Γk,h ◦ F is (∆/4, (1 + ∆)η)-spreading with respect to G.
+
+
+                                                        19
+                                                                                    1
+Proof. Let δ = ∆/16. We may assume that k ≥ 2. Choose h ≍ (1 + log k + log( ∆         ))/∆2 large
+                       2
+enough such that 2e−δ h/12 ≤ δ2 k−3 /128. Let Γ = Γk,h .
+   First, observe that (20) combined with Markov’s inequality implies that the following holds
+with probability at least 3/4,
+                X                                       X
+                    w(u, v)kΓ(F (u)) − Γ(F (v))k2 ≤ 4 ·   w(u, v)kF (u) − F (v)k2 .          (23)
+                   u∼v                                      u∼v
+   Now define,
+                     U := {v ∈ V : kΓ(F (v))k2 ∈ [(1 − δ)kF (v)k2 , (1 + δ)kF (v)k2 ],
+By (21), for each v ∈ V ,
+                                              / U ] ≤ δk −3 /128 .
+                                         P [v ∈                                              (24)
+Next, we bound the amount of ℓ2 mass that falls outside of U .
+   Therefore, by Markov’s inequality, with probability at least 31/32, we have
+                          X                   δk −3 X
+                              w(v)kF (v)k2 ≤            w(v)kF (v)k2 .                       (25)
+                                                4
+                               v/
+                                ∈U                        v∈V
+
+In particular, with probability at least 31/32, we have
+            X                              X                           X
+                w(v)kΓ(F (v))k2 ≥ (1 − δ)      w(v)kF (v)k2 ≥ (1 − 2δ)   w(v)kF (v)k2 .      (26)
+            v∈V                              v∈U                           v∈V
+
+Combining our estimates for (23) and (26), we conclude that (i) holds with probability at least
+23/32. Thus we can finish by showing that (ii) holds with probability at least 25/32. We first
+consider property (ii) for subsets of U .
+Claim 4.4. With probability at least 7/8, the following holds: Equation (26) implies that, for any
+subset S ⊆ U with diam(S) ≤ ∆/4, we have
+                     X                                 X
+                        w(v)kΓ(F (v))k2 ≤ (1 + 6δ)η        w(v)kΓ(F (v))k2 .
+                         v∈S                               v∈V
+
+Proof. For every u, v ∈ V , define the event,
+                        
+                Au,v = dΓ(F ) (u, v) ∈ [dF (u, v)(1 − δ) − 2δ, dF (u, v)(1 + δ) + 2δ]
+and let Iu,v be the random variable indicating that Au,v does not occur.
+   We claim that for u, v ∈ V , Au,v occurs if u, v ∈ U , and
+                                        
+                          F (u)    F (v)
+                     Γ          −            ∈ [(1 − δ)dF (u, v), (1 + δ)dF (u, v)] .
+                         kF (u)k kF (v)k
+To see this, observe that,
+                       Γ(F (u))       Γ(F (v))
+  dΓ(F ) (u, v) =                 −
+                      kΓ(F (u))k kΓ(F (v))k
+                      Γ(F (u)) Γ(F (v))         Γ(F (u))    Γ(F (u))    Γ(F (v))    Γ(F (v))
+                  ≥            −            −             −          −            −
+                      kF (u)k      kF (v)k     kΓ(F (u))k   kF (u)k    kΓ(F (v))k   kF (v)k
+                                           
+                           F (u)      F (v)
+                  ≥ Γ             −            − 2δ
+                         kF (u)k kF (v)k
+                  ≥ (1 − δ)dF (u, v) − 2δ,
+
+                                                    20
+where we have used the fact that Γ is a linear operator. The other direction can be proved similarly.
+   Therefore, by (21), and a union bound, for any u, v ∈ V , P[Iu,v ] ≤ 3δk −3 /128. Let,
+                                   X
+                           MI :=       w(u)w(v)kF (u)k2 kF (v)k2 Iu,v .
+                                       u,v∈V
+
+By linearity of expectation, and Markov’s inequality, we conclude that
+                                                           !2 
+                                      δ     X                       1
+                            P MI ≥ 3          w(v)kF (v)k2  ≤ .                                                 (27)
+                                     4k                             8
+                                                     v∈V
+
+   Now suppose there exists a subset S ⊆ U with diam(S, dΓ(F ) ) ≤ ∆/4 and
+                       X                                         X
+                             w(v)kΓ(F (v))k2 ≥ (1 + 6δ)η                w(v)kΓ(F (v))k2 .
+                       v∈S                                       v∈V
+
+Fix a vertex u ∈ S. Since for every v ∈ S \BdF (u, ∆/2), we have dF (u, v) ≥ ∆/2, dΓ(F ) (u, v) ≤ ∆/4,
+and recalling that δ = ∆/16, it must be that Iu,v = 1. On the other hand, we have
+         X                             X                      X
+                  w(v)kF (v)k2 ≥           w(v)kF (v)k2 −              w(v)kF (v)k2
+   v∈S\BdF (u,∆/2)                       v∈S                          v∈BdF (u,∆/2)
+                                                     X                                X
+                                   ≥     (1 − δ)           w(v)kΓ(F (v))k2 − η              w(v)kF (v)k2
+                                                     v∈S                              v∈V
+                                                                X                                X
+                                   ≥     (1 − δ)(1 + 6δ)η              w(v)kΓ(F (v))k2 − η             w(v)kF (v)k2
+                                                                v∈V                              v∈V
+                                  (26)                                           X
+                                   ≥     [(1 − 2δ)(1 − δ)(1 + 6δ) − 1] η                w(v)kF (v)k2
+                                                                                 v∈V
+                                               X
+                                                                  2
+                                   ≥     δη          w(v)kF (v)k ,
+                                               v∈V
+
+where we have used the fact that S ⊆ U and also diam(BdF (u, ∆/2)) ≤ ∆ and the fact that F is
+(∆, η)-spreading. In the final line, we have used δ ≤ 1/16.
+
+
+
+
+                                                           21
+   Thus under our assumption on the existence of S and again using S ⊆ U , we have
+                     X                    X
+          MI ≥         w(u)kF (u)k2                w(v)kF (v)k2
+                         u∈S                      v∈S\BdF (u,∆/2)
+                                                      !
+                                X                         X
+                  ≥      δη          w(v)kF (v)k2                w(u)kF (u)k2
+                               v∈V                        u∈S
+                                                      !
+                                X                                    X
+                  ≥      δη          w(v)kF (v)k2         (1 − δ)            w(u)kΓ(F (u))k2
+                               v∈V                                   u∈S
+                                                                 !                                          !
+                                           X                                        X
+                  ≥      δ(1 − δ)η               w(v)kF (v)k2        (1 + 6δ)η            w(v)kΓ(F (v))k2
+                                           v∈V                                      v∈V
+                                                                                          !2
+                  (26)                                            X
+                  ≥      δ(1 − δ)(1 − 2δ)(1 + 6δ)η 2                    w(v)kF (v)k2
+                                                                  v∈V
+                                                        !2
+                          δ        X
+                  ≥                      w(v)kF (v)k2        ,
+                         4k3
+                                   v∈V
+
+where the last inequality follows from η ≥ 1/k and δ ≤ 1/16. Combining this with (27) yields the
+claim.
+
+   The preceding claim guarantees a spreading property for subsets S ⊆ U . Finally, we need to
+handle points outside U .
+Claim 4.5. With probability at least 15/16, we have
+                        X                           X
+                            w(v)kΓ(F (v))k2 ≤ δk −3   w(v)kF (v)k2 .
+                               v/
+                                ∈U                                      v∈V
+
+                                  / U , and let Hu := kΓ(F (u))k2 1Du . Then,
+Proof. Let Du be the event that u ∈
+                            "                      #
+                              X                       X
+                                                 2
+                          E      w(u)kΓ(F (u))k =        w(u)E [Hu ] .                                          (28)
+                                     u/
+                                      ∈U                                u∈V
+
+   Now we can estimate,
+                                                                                        
+    E[Hu ]                         kΓ(F (u))k2         kΓ(F (u))k2           2           2
+            ≤ 2 P(Du ) + P                     >2 ·E               kΓ(F (u))k > 2 kF (u)k .                     (29)
+   kF (u)k2                         kF (u)k2            kF (u)k2
+
+Using the inequality, valid for all non-negative X,
+                                                                     Z ∞
+                         P(X > λ0 ) · E[X | X > λ0 ] ≤                        λ · P(X > λ) dλ ,
+                                                                        λ0
+
+we can bound the latter term in (29) by,
+ Z ∞                                   Z ∞                      
+                      2           2            −λh/12        24 144 −h/6     δ
+      λ · P kΓ(F (u))k > λkF (u)k dλ ≤       λe       dλ =     + 2 e     ≤       ,
+   2                                      2                  h   h         128k3
+
+                                                           22
+where we have used (22) and the initial choice of h sufficiently large.
+   It follows from this, (29), and (24), that
+
+                                                      3δ
+                                         E[Hu ] ≤         kF (u)k2 .
+                                                    128k3
+      Therefore, by Markov’s inequality,
+                        "                                         #
+                          X                         X                 3
+                      P      w(v)kΓ(F (v))k2 > δk−3   w(v)kF (v)k2 ≤     ,
+                                                                     128
+                          v/
+                           ∈U                             v∈V
+
+completing the proof.
+
+   To conclude the proof of the lemma, we need to verify that (ii) holds with probability at least
+25/32. But observe that if (26) holds, then the conclusion of the preceding claim is,
+X                           X                         X                         X
+   w(v)kΓ(F (v))k2 ≤ δk −3      w(v)kF (v)k2 ≤ 2δk −3     w(v)kΓ(F (v))k2 ≤ δη      w(v)kΓ(F (v))k2 .
+v/
+ ∈U                             v∈V                         v∈V                         v∈V
+
+Combining this with Claim 4.4 shows that with probability at least 25/32, Γ ◦ F is (∆/4, (1 + 7δ)η)-
+spreading, completing the proof.
+
+    As an application of the preceding lemma, observe that we can improve (16) in Theorem 3.7
+to the following bound, which is sometimes stronger, using the essentially same proof, but first
+                                                 −2
+obtaining a spreading representation F : V → RO(δ log k) using Lemma 4.3.
+
+Theorem 4.6. For any weighted graph G = (V, E, w) and δ > 0 the following holds. For every
+k ∈ N, there exist r ≥ ⌈(1 − δ)k⌉ disjointly supported functions ψ1 , ψ2 , . . . , ψr : V → R such that
+
+                                      RG (ψi ) . δ−7 log2 (k + 1)λk .                                   (30)
+
+where λk is the kth smallest eigenvalue of LG .
+
+Proof. Let f1 , f2 , . . . , fk : V → R be an ℓ2 (V, w)-orthonormal system of eigenfunctions correspond-
+ing to the first k eigenvalues of LG , and define F : V → Rk by F (v) = (f1 (v), f2 (v), . . . , fk (v)).
+                                            1                                                          δ
+    We may clearly assume that δ ≥ 2k         . Choose ∆ ≍ δ so that (1 − 16∆2 )−1 (1 + 4∆) ≤ 1 + 48     . In
+this case, for some choice of
+                                                            1
+                                                              
+                                         1 + log(k) + log ∆       O(log k)
+                                     h.              2
+                                                                .          ,
+                                                   ∆                 δ2
+with probability at least 1/2, Γk,h satisfies the conclusions of Lemma 4.3. Assume that Γ : Rk → Rh
+is some map satisfying these conclusions.
+    Then combining (ii) from Lemma 4.3 with Lemma 3.2, we see that Γ◦F : V → Rh is (∆, k1 + 48k δ
+                                                                                                  )-
+                                                                                       −2
+spreading. Now we finish as in the proof of Theorem 3.7, using the fact that h = O(δ log k).
+
+
+
+
+                                                     23
+4.2   A multi-way Cheeger inequality
+Note that Theorem 4.6 combined with Lemma 2.2 is still not strong enough to prove Theorem
+4.1. To do that, we need to combine Lemma 4.3 with a strong Cheeger inequality for Lipschitz
+partitions.
+    Let G = (V, E, w) be a weighted graph, and F : V → Rh . Set M = max{kF (v)k2 : v ∈ V }. Let
+τ ∈ (0, M ) be chosen uniformly at random, and for any subset S ⊆ V , define
+
+                                      Ŝ = {v ∈ S : kF (v)k2 ≥ τ } .
+
+Lemma 4.7. For every ∆ > 0, there exists a partition V = S1 ∪ S2 ∪ · · · ∪ Sm such that for every
+i ∈ [m], diam(Si , dF ) ≤ ∆, and
+              h                                                              i
+             E w(E(Ŝ1 , Ŝ1 )) + w(E(Ŝ2 , Ŝ2 )) + · · · + w(E(Ŝm , Ŝm ))    √
+                                                                                  hp
+                                h                           i                  .     RG (F ) . (31)
+                              E w(Ŝ1 ) + · · · + w(Ŝm )                        ∆
+
+Proof. Since the statement of the lemma is homogeneous in F , we may assume that M = 1. By
+Theorem 2.4, there exists an ∆-bounded random partition P satisfying, for every u, v ∈ V ,
+                                                  √
+                                                    h
+                                P(P(u) 6= P(v)) .     · dF (u, v) .                        (32)
+                                                  ∆
+Let P = S1 ∪ S2 ∪ · · · ∪ Sm , where P
+                                     we recall that m is a random number.
+   First, observe that, E[w(Ŝi )] = v∈Si w(v)kF (v)k2 , thus,
+                             h                         i X
+                            E w(Ŝ1 ) + · · · + w(Ŝm ) =  w(v)kF (v)k2 .                             (33)
+                                                           v∈V
+
+   Next, if {u, v} ∈ E with kF (u)k2 ≤ kF (v)k2 , then we have
+    h                                              i
+   P {u, v} ∈ E(Ŝ1 , Ŝ1 ) ∪ · · · ∪ E(Ŝm , Ŝm )
+                                                                                       
+            ≤ P [P(u) 6= P(v)] · P kF (u)k2 ≥ τ or kF (v)k2 ≥ τ | P(u) 6= P(v)
+                   h                                               i
+               + P τ ∈ [kF (u)k2 , kF (v)k2 ] P(u) = P(v)
+               √
+                 h                                        
+            .      · dF (u, v) kF (u)k2 + kF (v)k2 + kF (v)k2 − kF (u)k2
+                ∆                                                                                 !
+                                          √
+                                            h
+            ≤ (kF (u)k + kF (v)k)               · dF (u, v)(kF (u)k + kF (v)k) + kF (v)k − kF (u)k
+                                          ∆
+                 √
+               5 h
+            ≤        (kF (u)k + kF (v)k) kF (u) − F (v)k,
+                 ∆
+where in the final line we have used Lemma 3.1.
+
+
+
+
+                                                    24
+   Thus, we can use Cauchy-Schwarz to write,
+ h                                           i   √
+                                                   hX
+E w(E(Ŝ1 , Ŝ1 )) + · · · + w(E(Ŝm , Ŝm )) .        w(u, v)(kF (u)k + kF (v)k)kF (u) − F (v)k
+                                                 ∆ u∼v
+                                                 √ s
+                                                   h X
+                                               ≤        w(u, v)(kF (u)k + kF (v)k)2
+                                                 ∆ u∼v
+                                                    sX
+                                                  ·     w(u, v)kF (u) − F (v)k2
+                                                           u∼v
+                                                    √ s                  s
+                                                     h    X                X
+                                               ≤        2   w(v)kF (v)k2       w(u, v)kF (u) − F (v)k2 .
+                                                    ∆                      u∼v
+                                                            v∈V
+
+Combining this with (33) yields,
+           h                                          i
+      EP E w(E(Ŝ1 , Ŝ1 )) + · · · + w(E(Ŝm , Ŝm ))    √ sP
+                                                           h   u∼vPw(u, v)kF (u) − F (v)k2
+                   h                        i           .                           2
+                                                                                           ,
+              EP E w(Ŝ1 ) + · · · + w(Ŝm )              ∆         v∈V w(v)kF (v)k
+
+where we use EP to denote expectation over the random choice of P. In particular, there must
+exist a single partition P satisfying the statement of the lemma.
+
+   We can use the preceding theorem to find many non-expanding sets, assuming that F : V → Rh
+has sufficiently good spreading properties.
+Lemma 4.8. Let G = (V, E, w) be a weighted graph and let k ∈ N and δ ∈ (0, 1) be given. If the
+                            δ
+map F : V → Rh is (∆, k1 + 4k )-spreading, then there exist r ≥ ⌈(1−δ)k⌉ disjoint sets T1∗ , T2∗ , . . . , Tr∗ ,
+such that                                        √
+                                            ∗      hp
+                                      φG (Ti ) .       RG (F ) .
+                                                 δ∆
+Proof. Since ⌈(1 − δ)k⌉ ≤ k, we may assume that
+                                                   1          δ2
+                                                        ≤δ+      .                                      (34)
+                                                   k           2
+Let V = S1 ∪ S2 ∪ · · · ∪P Sm be the partition guaranteed by applying Lemma 4.7 to the mapping
+                                                                          δ
+F : V → Rh . Set M ..= v∈V w(v)kF (v)k2 . Since F is (∆, k1 + 4k            )-spreading and each Si satisfies
+                                    ′
+diam(Si , dF ) ≤ ∆, we can form r ≥ ⌈(1 − δ/2)k⌉ sets T1 , T2 , . . . , Tr′ by taking disjoint unions of
+the sets {Si } so that for each i = 1, 2, . . . , r ′ , we have
+                                      X                                    
+                               M                             2     M      δ
+                                   ≤         w(v)kF (v)k ≤             1+      .                        (35)
+                               4k                                  k      4
+                                        v∈Ti
+
+
+P To see this, suppose  we start with the family {Si } and iteratively merge the two sets for which
+       w(v)kF (v)k2 is smallest subject to the constraint that no set has a sum which exceeds
+  v∈Si    
+M       δ
+ k 1 + 4 . At the end of this process, let T1 , T2 , . . . , Tr represent the sets constructed that satisfy
+                                                               ′
+
+(35). We will have
+                             X r′ X                                     
+                                                      2                1
+                                     w(v)kF (v)k > M 1 −                   .
+                                                                      4k
+                                  i=1 v∈Ti
+
+
+                                                      25
+Therefore,
+                                                               2            
+                                ′
+                                          1
+                                     1 − 4k         1 − 4δ − δ8          δ
+                              r >k             ≥k                  ≥k 1−         ,
+                                      1 + δ4          1 + δ4             2
+where in the second inequalityPwe have used (34).
+   In particular, E[w(T̂i )] = v∈Ti w(v)kF (v)k2 ∈ [ 41 M        δ M
+                                                        k , (1 + 4 ) k ].
+
+   Order the sets so that E[w(E(T̂i , T̂i ))] ≤ E[w(E(T̂i+1 , T̂i+1 ))] for i = 1, 2, . . . , r ′ − 1, and let
+r = ⌈(1 − δ)k⌉. Then from (31), it must be that each i = 1, 2, . . . , r satisfies
+                                                         
+                                      Xm
+                                1 
+         E[w(E(T̂i , T̂i ))] .    E       w(E(Ŝj , Ŝj ))
+                               δk
+                                      j=1
+                                 √                                      √
+                                        p                 m
+                                                          X
+                                   h                                      h p
+                             .         · RG (F ) · E        w(Ŝj ) .          · RG (F ) · M .
+                               δk · ∆                                   δk · ∆
+                                                            j=1
+
+But E[w(T̂i )] ≍ M/k for each i = 1, 2, . . . , r, showing that
+                                                        √
+                                E[w(E(T̂i , T̂i ))]       h p
+                                                      .     · RG (F ) .
+                                   E[w(T̂i )]           δ∆
+
+
+   We can already use this to improve (19) in Theorem 3.9.
+Theorem 4.9. For every δ ∈ (0, 1) and any weighted graph G = (V, E, w), there exist r ≥ ⌈(1−δ)k⌉
+disjoint, non-empty sets S1 , S2 , . . . , Sr ⊆ V such that,
+                                                         √
+                                                           kp
+                                              φG (Si ) . 3/2 λk .                                   (36)
+                                                        δ
+where λk is the kth smallest eigenvalue of LG .
+                √
+Proof. Let ∆ ≍ δ be such that (1 − ∆2 )−1 ≤ 1 + δ4 . If we take F : V → Rk to be the embedding
+coming from the first k eigenfunctions of LG , then Lemma 3.2 implies that F is (∆, k1 + 4k
+                                                                                          δ
+                                                                                            )-spreading.
+Now apply Lemma 4.8.
+                             1
+   Observe that setting δ = 2k in the preceding theorem yields Theorem 1.1.
+   And now we can complete the proof of Theorem 4.1.
+
+Proof of Theorem 4.1. Let F (v) = (f1 (v), f2 (v), . . . , fk (v)). Choose ∆ ≍ δ so that (1−16∆2 )−1 (1+
+4∆) ≤ 1 + 4δ . In this case, for some choice of
+                                                           1
+                                                             
+                                     1 + log(k) + log ∆            O(log k)
+                                 h.                             .           ,
+                                              ∆2                      δ2
+with probability at least 1/2, Γk,h satisfies the conclusions of Lemma 4.3. Assume that Γ : Rk → Rh
+is some map satisfying these conclusions.
+    Then combining the conclusions of Lemma 4.3 with Lemma 3.2, we see that F ∗ ..= Γ is (∆, k1 +
+ δ                                 h                       ∗
+4k )-spreading, takes values in R , and satisfies RG (F ) ≤ 8 · RG (F ). Now applying Lemma 4.8
+yields the desired result.
+
+                                                       26
+4.3    Gaps in the spectrum
+We now show that if there are significant gaps in the spectrum of G, one can obtain a higher-order
+Cheeger inequality with no dependence on k.
+Theorem 4.10. There is a constant c > 0 such that for any weighted graph G = (V, E, w) and
+                                                                                                      2
+k ∈ N, the following holds. Let δ ∈ (0, 31 ) be such that δk is an integer. If λ(1+δ)k > c (logδ9k) λk ,
+then there are at least r ≥ (1 − 3δ)k disjointly supported functions ψ1 , ψ2 , . . . , ψr : V → R such that
+                                                            λk
+                                               RG (ψi ) .      ,                                       (37)
+                                                            δ3
+where λk is the kth smallest eigenvalue of LG .
+Proof. Let f1 , f2 , . . . , fk : V → R be an ℓ2 (V, w)-orthonormal system of eigenfunctions correspond-
+ing to the first k eigenvalues of LG , and define F : V → Rk by F (v) = (f1 (v), f2 (v), . . . , fk (v)). We
+may assume that δ ≥ 1/k.
+    Using Lemma 4.3 (as in the proof of Theorem 4.6), there is a map Λ : V → Rh where h =
+   log k
+O( δ2 ), and the following hold:
+                                                         δ
+   i) Λ is (∆, η)-spreading for some ∆ ≍ δ and η = k1 + 16k ,
+
+  ii) RG (Λ) ≤ 8RG (F ) ≤ 8λk .
+    Since the radial projection distance dΛ is Euclidean, we can use Theorem 2.3 to achieve a
+(∆/4, α, 1 − δ/16)-padded random partition P of (V, dΛ ) with α ≍ hδ ≍ log
+                                                                        δ3
+                                                                           k
+                                                                             . For a subset S ⊆ V ,
+let
+                               S̃ ..= {v ∈ S : BdΛ (v, ∆/(4α)) ⊆ S} .
+Then by linearity of expectation applied to the random partition P, there must exist a fixed
+partition P of V such that for every S ∈ P , we have diam(S, dΛ ) ≤ ∆/4 and
+                                 X                     
+                                                      δ
+                                     MΛ (S̃) ≥ 1 −        MΛ (V )                       (38)
+                                                     16
+                                   S∈P
+                              P
+where we define MΛ (S) ..= v∈S w(v)kΛ(v)k2 for any S ⊆ V .
+   Order the sets of P as S̃1 , S̃2 , . . . so that MΛ (S̃i ) ≤ MΛ (S̃i+1 ) for each i. We consider two
+cases.
+Case I: MΛ (S̃(1−2δ)k ) > η · MΛ (V )/2.
+   In this case it must be that for 1 ≤ i, j ≤ (1 − 2δ)k and i 6= j, we have
+
+                                   BdΛ (S̃i , ∆/4) ∩ BdΛ (S̃j , ∆/4) = ∅ .
+
+Otherwise, one can put S ..= BdΛ (S̃i , ∆/4) ∪ BdΛ (S̃j , ∆/4) so that diam(S, dΛ ) ≤ ∆ but MΛ (S) >
+η · MΛ (V ), which contradicts that fact that Λ is (∆, η)-spreading.
+    Now by applying Lemma 3.4 to the (∆/4)-separated sets S̃1 , S̃2 , . . . , S̃(1−2δ)k , we obtain r ≥
+(1 − 3δ)k disjointly supported functions ψ1 , ψ2 , . . . , ψr : V → R such that for each i,
+                                                    1               λk
+                                  RG (ψi ) .              2
+                                                            RG (Λ) . 3 .
+                                               η · δk · ∆           δ
+
+                                                     27
+Case II: MΛ (S̃(1−2δ)k ) ≤ η · MΛ (V )/2.
+    Since Λ is (∆, η)-spreading, for any i ≤ (1 − 2δ)k, we have
+
+                                           MΛ (S̃i ) ≤ η · MΛ (V ) .
+
+Thus we can take disjoint unions of the sets {S̃ : S ∈ P } to form at least s disjoint sets T1 , T2 , . . . , Ts
+with s ≥ ⌈(1 + 3δ/2)k⌉ such that for each i,
+
+                                                          MΛ (V )
+                                            MΛ (Ti ) ≥            .
+                                                           8k
+This is because the first r − 1 pieces will have total mass at most
+   r−1
+   X                                                                 
+                                               7δk             η 1                                 δ
+         MΛ (S̃i ) ≤ (1 − 2δ)k · η · MΛ (V ) +     max          ,         MΛ (V ) ≤ (1 − 4δ )(1 + 16 )MΛ (V ) ,
+                                                2              2 2k
+   i=1
+
+                               1
+leaving at least 8δ MΛ (V ) ≥ 8k MΛ (V ) left over from (38).
+    Now applying Lemma 3.4 to the ∆/(4α)-separated sets T1 , . . . , Ts , we obtain s′ ≥ (1 + δ)k
+disjointly supported functions ψ1 , ψ2 , . . . , ψs′ : V → R such that for each i,
+
+                                                 α2            (log k)2
+                                  RG (ψi ) .          RG (Λ) .          λk .
+                                               δ · ∆2             δ9
+But now Lemma 2.1 implies that
+
+                                                          (log k)2
+                                           λ(1+δ)k ≤ c′            λk ,
+                                                             δ9
+for some constant c′ > 0, contradicting our initial assumption (for c = c′ ).
+
+    Lemma 2.2 immediately yields the following corollary.
+
+Corollary 4.11. Under the assumptions of Theorem 4.10,pthere are at least r ≥ (1 − 3δ)k non-
+empty, disjoint sets S1 , S2 , . . . , Sr ⊆ V such that φG (Si ) . λk /δ3 .
+
+    Let us conclude this section by describing the consequences of the above results for spectral
+clustering algorithms. The proof of Theorem 4.10 aligns with the folklore belief that, in spectral
+clustering, the number of clusters is best chosen based on a large gap in the spectrum of the un-
+derlying graph. Additionally, the proof provides a justification for the use of the k-means heuristic.
+Observe that in Case I (the only possible case under the assumptions of the theorem), the support
+of each of the functions ψi is a ball of radius at most ∆ with respect to the metric dΛ . In other
+words, the vertices are concentrated in ≍ k balls of small radius after the dimension reduction
+step. It seems plausible that the k-means heuristic could successfully locate a good partition of the
+vertices in such a scenario.
+
+
+
+
+                                                      28
+4.4   Noisy hypercubes
+In the present section, we review examples for which Corollary 4.2 is tight. For k ∈ N and ε ∈ (0, 1)
+let Hk,ε = (V, E) be the “noisy hypercube” graph, where V = {0, 1}k , and for any x, y ∈ V there
+is an edge of weight w(x, y) = εkx−yk1 . We put n = |V | = 2k .
+Theorem 4.12. For any 1 ≤ C < k and k ∈ N, and S ⊆ V with |S| ≤ Cn/k, we have
+                                         p
+                              φHk,ε (S) & λk log (k/C) ,
+            log(2)
+where ε = log(k/C) .
+Proof. Let H = Hk,ε. First, the weighted degree of every vertex is
+                                        X
+                                 w(x) =     εkx−yk1 = (1 + ε)k .
+                                               y∈V
+
+Therefore, if we define Fi : V → R by Fi (x) = (−1)xi , then
+                              P                               2
+                                {x,y} w(x, y)|Fi (x) − Fi (y)|    2εn(1 + ε)k−1
+                RHk,ε (Fi ) =         P                         =               ≤ 2ε .
+                                        x w(x)Fi (x)
+                                                     2              n(1 + ε)k
+
+Thus λk (H) ≤ 2ε. We will now show that for |S| ≤ Cn/k, one has φH (S) ≥ 12 , completing the
+proof of the theorem.
+   To bound φH (·), we need to recall some Fourier analysis. For f, g : {0, 1}k → R define the inner
+product:
+                                                  1 X
+                                hf, giL2 (V ) ..=       f (x)g(x).
+                                                  n   k  x∈{0,1}
+                                                                                                            P
+Given S ⊆ [k], the Walsh function WS : {0, 1}k → R is defined by WS (x) = (−1) i∈S xi . The
+Walsh functions form an orthonormal basis with respect to the above
+                                                                 P inner product. Therefore,
+any function f : {0, 1} → R has a unique representation as f = S⊆[n] f (S)WS , where fb(S) ..=
+                         k                                           b
+hf, WS iL2 (V ) .
+    For η ∈ [0, 1], the Bonami-Beckner operator Tη is defined as
+                                             X
+                                     Tη f :=     η |S| fb(S)WS .
+                                                  S⊆[n]
+
+The Bonami-Beckner inequality [Bon70, Bec75] states that
+                                                                                                2
+                  X                                                1        X                   1+η
+                         η |S| fb(S)2 = kT√η f k22 ≤ kf k21+η =                      f (x)1+η           .       (39)
+                                                                   n                           
+                 S⊆[n]                                                  x∈{0,1}k
+
+                                                             ε               |x⊕y|
+   Let A be the normalized adjacency matrix of H, i.e. Axy = (1+ε)k . It follows from an elementary
+
+calculation that WS is an eigenvector of A with eigenvalue ( 1−ε  |S|
+                                                             1+ε ) , i.e.
+                                                              |S|
+                                                         1−ε
+                                          AWS =                       WS .
+                                                         1+ε
+
+                                                         29
+     For S ⊆ [n], let 1S be the indicator function of S. Therefore,
+                                    X                |T |              1+ε
+                                       b      2 1−ε                2     |S|
+               h1S , A1S iL2 (V ) =    1S (T )              ≤ k1S k 2 =        ,
+                                                 1+ε               1+ε    n
+                                   T ⊆[n]
+
+where the one last inequality follows from (39).
+   Now, observe that for any S ⊆ V , we have
+                 w(E(S, S)) = w(S) − w(E(S, S)) = w(S) − (1 + ε)k nh1S , A1S iL2 (V )
+where we have written E(S, S) for edges with both endpoints in S.
+   Hence, for any subset S ⊆ V of size |S| ≤ Cn/k, we have
+                                                              ε
+                 w(E(S, S))    |S| − nh1S , A1S iL2 (V )      |S|                 1
+       φH (S) =              =                           ≥1−      ≥ 1 − (k/C)−ε ≥
+                    w(S)                 |S|                   n                  2
+where the last inequality follows by the choice of ε = log(2)/ log (k/C).
+                                                                                             √
+Remark 4.1. The preceding theorem shows that even if we only want to find a set S of size
+                                                                                       √  n/   k,
+then for values of k ≤ O(log n), we can still only achieve a bound of the form φH (S) . λk log k.
+The state of affairs for k ≫ log n is a fascinating open question.
+
+
+5      Conclusion
+5.1     Description of our algorithm
+In Section 1.2, we gave a generic outline of our spectral partitioning algorithm. We remark that
+our instantiations of this algorithm are simple to describe. As an example, suppose we are given
+a weighted graph G = (V, E, w) Let LG = I − D −1/2 AD −1/2 be the normalized Laplacian matrix
+of G where I is the identity matrix, A is the adjacency matrix and √   D is the diagonal matrix of
+vertex degrees. We want to find k disjoint sets, each of expansion O( λ2k log k) where λ2k is the
+2kth smallest eigenvalue of LG (recall Theorem 1.2). We specify a complete randomized algorithm.
+
+    i) (Spectral embedding) We start by computing 2k orthonormal vectors g1 , . . . , g2k (think of them
+       as functions, gi : V → R) such that
+                                    P2k P                                2
+                                      i=1   u∼v w(u, v)|gi (u) − gi (v)|
+                                          P2k P                            ≤ O(λ2k )
+                                                         w(v)g    (v)2
+                                            i=1   v∈V           i
+                                                                       p
+       Let fi = D −1/2 gi , i.e., for each v ∈ V , fi (v) = gi (v)/ w(v). Define the spectral embedding
+       F : V → R2k , by F (v) = (f1 (v), f2 (v), . . . , f2k (v)).
+ ii) (Random Projection) For some h = O(log k), we perform random projection into Rh . Let
+     Γ2k,h : R2k → Rh be the random linear map given by
+                                                  1
+                                     Γ2k,h (x) = √ (hg1 , xi, . . . , hgh , xi) ,
+                                                   h
+      where {g1 , . . . , gh } are i.i.d. standard Gaussians. Define F ∗ ..= Γ2k,h ◦ F : V → Rh so that for
+      each v ∈ V , F ∗ (v) = √1 (hg1 , F (v)i, . . . , hgh , F (v)i).
+                              h
+
+
+                                                      30
+iii) (Random partitioning) For some R = Θ(1), we perform the random space partitioning algo-
+     rithm from [CCGG98] as follows: Let B denotes the closed Euclidean unit ball in Rh . Consider
+     V ⊆ B by identifying each vertex with its image under the map v 7→ F ∗ (v)/kF ∗ (v)k. Choose
+     i.i.d. sequence of points {x1 , x2 , . . .} in B (chosen according to the Lebesgue measure) and
+     form a partition of V into the sets
+                                 ∞ h
+                                 [                                                      i
+                           V =         V ∩ B(xi , R) \ (B(x1 , R) ∪ · · · ∪ B(xi−1 , R))
+                                 i=1
+
+      Here, B(x, R) represents the closed Euclidean ball of radius R about x, and it is easy to see
+      that this induces a partition of V in a finite number of steps with probability one. In other
+      words, we assign each vertex v ∈ V to the first point xi such that
+
+                                                        F ∗ (v)
+                                                xi −             ≤ R.
+                                                       kF ∗ (v)k
+
+      Let V = S1 ∪ S2 ∪ · · · ∪ Sm be this partition.
+                                                             P             ∗    2
+iv) (Merging) For a subset S ⊆ V , let M(S) =                   v∈S w(v)kF (v)k . We sort the partition
+    {S1 , S2 , . . . , Sm } in decreasing order according to M(Si ). Let k = ⌈ 32 k⌉. Then for each
+                                                                              ′
+
+    i = k′ + 1, k′ + 2, . . . , m, we iteratively set Sℓ ..= Sℓ ∪ Si where
+
+                                           ℓ = argmin{M(Sj ) : j ≤ k} .
+
+      (Intuitively, we form k′ sets from our total of m ≥ k′ sets by balancing the M(·)-value among
+      them.) At the end, we are left with a partition V = S1 ∪ S2 ∪ · · · ∪ Sk′ of V into k′ ≥ 3k/2 sets.
+
+ v) (Cheeger Sweep) To complete the algorithm, for each i = 1, 2, . . . , k ′ , we choose a value τ such
+    that
+                                  Ŝi = {v ∈ Si : kF ∗ (v)k2 ≥ τ }
+      has the least expansion. We then output k of the sets Ŝ1 , Ŝ2 , . . . , Ŝk′ that have the smallest
+      expansion.
+
+      We emphasize that one can run the above algorithm using any set of orthonormal vectors with
+small Rayleigh quotient. One can employ the recent developments on fast Laplacian solvers to
+find such vectors in near-linear time [ST04, KMP11, KOSZ13, Vis13]. Given orthonormal vectors
+g1 , . . . , g2k , the above algorithms runs in time O(n·poly(k)). In particular every step except random
+partitioning runs in nearly linear time, and the random partitioning step runs in time O(n · 2h ).
+
+5.2     Future directions
+The preceding algorithm suggests some natural questions. First, does dimension reduction help to
+improve the quality of clusterings in practice? For instance, if one runs the k-means algorithm (as
+in [NJW02]) on the randomly projected points, does it yield better results? Another interesting
+question is whether, at least in certain circumstances, the quality of the k-means clustering can be
+rigorously analyzed when used in place of our random geometric partitioning.
+
+
+
+                                                       31
+   It would be interesting to find the right asymptotic dependence on k in Theorem 1.1. Recall
+that in Theorems 1.2 and 4.12, we showed that if one is√interested in finding, say, k/2 disjoint
+non-expanding sets, then the right dependence on k is Θ( log k).             √
+   One might hope that it is possible to achieve ρG (k) ≤ (log(k))O(1) λk . Such a bound is
+impossible if we instead try to find a k-partitioning of our graph. There are simple family of graphs
+where the sparsity of the best k-partitioning has a polynomial dependence on k [LRTV12].
+
+
+References
+[ABS10]    Sanjeev Arora, Boaz Barak, and David Steurer. Subexponential algorithms for Unique
+           Games and related problems. In FOCS, pages 563–572. IEEE Computer Society, 2010.
+           4
+
+[AG83]     Bengt Aspvall and John R. Gilbert. Graph coloring using eigenvalue decomposition.
+           Technical report, Ithaca, NY, USA, 1983. 3
+
+[AK97]     Noga Alon and Nabil Kahale. A spectral technique for coloring random 3-colorable
+           graphs. SIAM Journal on Computing, 26:1733–1748, 1997. 3
+
+[Alo86]    N Alon. Eigenvalues and expanders. Combinatorica, 6:83–96, January 1986. 3
+
+[AM85]     N. Alon and V. Milman. Isoperimetric inequalities for graphs, and superconcentrators.
+           Journal of Combinatorial Theory, Series B, 38(1):73–88, feb 1985. 3
+
+[BBH+ 12] Boaz Barak, Fernando G. S. L. Brandão, Aram W. Harrow, Jonathan A. Kelner, David
+          Steurer, and Yuan Zhou. Hypercontractivity, sum-of-squares proofs, and their applica-
+          tions. In STOC, pages 307–326, 2012. 6
+
+[Bec75]    William Beckner. Inequalities in Fourier analysis. Ann. of Math. (2), 102(1):159–182,
+           1975. 29
+
+[BLR08]    Punyashloka Biswal, James R. Lee, and Satish Rao. Eigenvalue bounds, spectral par-
+           titioning, and metrical deformations via flows. JACM, 57(3):751–760, 2008. 8
+
+[Bon70]    Aline Bonami. Étude des coefficients de Fourier des fonctions de Lp (G). Ann. Inst.
+           Fourier (Grenoble), 20(fasc. 2):335–402 (1971), 1970. 29
+
+[BP98]     Sergey Brin and Lawrence Page. The anatomy of a large-scale hypertextual web search
+           engine. Computer Networks, 30(1-7):107–117, 1998. 3
+
+[CCG+ 98] Moses Charikar, Chandra Chekuri, Ashish Goel, Sudipto Guha, and Serge A. Plotkin.
+          Approximating a finite metric by a small number of tree metrics. In FOCS, pages
+          379–388, 1998. 13
+
+[CCGG98] M. Charikar, C. Chekuri, A. Goel, and S. Guha. Rounding via trees: deterministic
+         approximation algorithms for group Steiner trees and k-median. In STOC, pages 114–
+         123. ACM, 1998. 31
+
+
+
+
+                                                 32
+[Chu96]    F. R. K. Chung. Laplacians of graphs and Cheeger’s inequalities. In Combinatorics,
+           Paul Erdős is eighty, Vol. 2 (Keszthely, 1993), volume 2 of Bolyai Soc. Math. Stud.,
+           pages 157–172. János Bolyai Math. Soc., Budapest, 1996. 11
+
+[Chu97]    Fan R. K. Chung. Spectral graph theory, volume 92 of CBMS Regional Conference Series
+           in Mathematics. Published for the Conference Board of the Mathematical Sciences,
+           Washington, DC, 1997. 11
+
+[DJM12]    Amir Daneshgar, Ramin Javadi, and Laurent Miclo. On nodal domains and higher-
+           order Cheeger inequalities of finite reversible markov processes. Stochastic Processes
+           and their Applications, 2012. 3, 6
+
+[FT03]     J. Fakcharoenphol and K. Talwar. An improved decomposition theorem for graphs
+           excluding a fixed minor. In Proceedings of 6th Workshop on Approximation, Random-
+           ization, and Combinatorial Optimization, volume 2764 of Lecture Notes in Computer
+           Science, pages 36–46. Springer, 2003. 13
+
+[GKL03]    Anupam Gupta, Robert Krauthgamer, and James R. Lee. Bounded geometries, fractals,
+           and low-distortion embeddings. In FOCS, pages 534–543, 2003. 12
+
+[Kle99]    Jon M. Kleinberg. Authoritative sources in a hyperlinked environment. JACM, 46:668–
+           677, 1999. 3
+
+[KLPT11] J. Kelner, J. R. Lee, G. Price, and S.-H. Teng. Metric uniformization and spectral
+         bounds for graphs. Geom. Funct. Anal., 21(5):1117–1143, 2011. 5, 8
+
+[KMP11]    Ioannis Koutis, Gary L. Miller, and Richard Peng. A nearly-m log n time solver for sdd
+           linear systems. In FOCS, pages 590–598, 2011. 31
+
+[KOSZ13] Jonathan A. Kelner, Lorenzo Orecchia, Aaron Sidford, and Zeyuan Allen Zhu. A simple,
+         combinatorial algorithm for solving sdd systems in nearly-linear time. In STOC, pages
+         911–920, 2013. 31
+
+[KPR93]    Philip N. Klein, Serge A. Plotkin, and Satish Rao. Excluded minors, network decompo-
+           sition, and multicommodity flow. In Proceedings of the 25th Annual ACM Symposium
+           on Theory of Computing, pages 682–690, 1993. 13
+
+[LN05]     James R. Lee and Assaf Naor. Extending Lipschitz functions via random metric parti-
+           tions. Invent. Math., 160(1):59–95, 2005. 12, 13
+
+[LRTV11] Anand Louis, Prasad Raghavendra, Prasad Tetali, and Santosh Vempala. Algorithmic
+         extensions of Cheeger’s inequality to higher eigenvalues and partitions. In APPROX-
+         RANDOM, pages 315–326, 2011. 5
+
+[LRTV12] Anand Louis, Prasad Raghavendra, Prasad Tetali, and Santosh Vempala. Many sparse
+         cuts via higher eigenvalues. In STOC, 2012. 4, 32
+
+[LS10]     J. R. Lee and A. Sidiropoulos. Genus and the geometry of the cut graph. In SODA,
+           pages 193–201, 2010. 13
+
+
+
+                                               33
+[LT11]    Michel Ledoux and Michel Talagrand. Probability in Banach spaces. Classics in Math-
+          ematics. Springer-Verlag, Berlin, 2011. Isoperimetry and processes, Reprint of the 1991
+          edition. 19
+
+[Mat02]   J. Matoušek. Lectures on discrete geometry, volume 212 of Graduate Texts in Mathe-
+          matics. Springer-Verlag, New York, 2002. 19
+
+[Mic08]   Laurent Miclo. On eigenfunctions of Markov processes on trees. Probability Theory and
+          Related Fields, 142(3-4):561–594, 2008. 3, 6
+
+[Mic13]   Laurent Miclo. On hyperboundedness and spectrum of Markov operators. Preprint,
+          2013. 3, 5
+
+[NJW02]   Andrew Ng, Michael Jordan, and Yair Weiss. On spectral clustering: Analysis and an
+          algorithm. In NIPS, 2002. 4, 9, 31
+
+[OT12]    Shayan Oveis Gharan and Luca Trevisan. Approximating the expansion profile and
+          almost optimal local graph clustering. In FOCS, pages 187–196, 2012. 5
+
+[OW12]    Ryan O’Donnell and David Witmer. Improved small-set expansion from higher eigen-
+          values. arXiv:1204.4688, 2012. 5
+
+[RS10]    Prasad Raghavendra and David Steurer. Graph expansion and the unique games con-
+          jecture. In STOC, pages 755–764, New York, NY, USA, 2010. ACM. 4
+
+[RST10]   Prasad Raghavendra, David Steurer, and Prasad Tetali. Approximations for the isoperi-
+          metric and spectral profile of graphs and related parameters. In STOC, pages 631–640.
+          ACM, 2010. 4
+
+[SHK72]   Barry Simon and Raphael Høegh-Krohn. Hypercontractive semigroups and two dimen-
+          sional self-coupled Bose fields. J. Functional Analysis, 9:121–180, 1972. 3, 6
+
+[SJ89]    Alistair J. Sinclair and Mark R. Jerrum. Approximative counting, uniform generation
+          and rapidly mixing Markov chains. Information and Computation, 82(1):93–133, 1989.
+          3
+
+[SM00]    Jianbo Shi and Jitendra Malik. Normalized cuts and image segmentation. IEEE Trans.
+          Pattern Anal. Mach. Intell., 22(8):888–905, 2000. 3, 9
+
+[ST04]    Daniel A. Spielman and Shang-Hua Teng. Nearly-linear time algorithms for graph
+          partitioning, graph sparsification, and solving linear systems. In STOC, pages 81–90,
+          2004. 31
+
+[Ste10]   David Steurer. On the complexity of unique games and graph expansion. 2010. 4
+
+[TM06]    David A. Tolliver and Gary L. Miller. Graph partitioning by spectral rounding: Ap-
+          plications in image segmentation and clustering. In CVPR, pages 1053–1060. IEEE
+          Computer Society, 2006. 3
+
+[Vis13]   Nisheeth K. Vishnoi. Lx = b. Foundations and Trends in Theoretical Computer Science,
+          8(1-2):1–141, 2013. 31
+
+                                              34
+[VM03]   Deepak Verma and Marina Meila. Comparison of spectral clustering methods. Technical
+         Report UW-CSE-03-05-01, Department of Computer Science, University of Washing-
+         ton, March 2003. 4, 9
+
+
+
+
+                                           35
+

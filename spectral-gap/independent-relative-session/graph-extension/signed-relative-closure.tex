@@ -1,0 +1,453 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[colorlinks=true]{hyperref}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\spec}{\operatorname{spec}}
+\newcommand{\R}{\mathbb R}
+\newcommand{\norm}[1]{\lVert#1\rVert}
+\title{Signed fractional updates: complete two-budget closure\\
+and an exact low-rank preconditioning obstruction on paths}
+\author{Independent audit and extension}
+\date{15 November 2026}
+\begin{document}
+\maketitle
+
+This note proves an extension of the candidate manuscript
+\texttt{relative-fractional-response.tex}. The extension is a mathematical
+statement, not a claim of historical novelty or a fast construction algorithm.
+The path lower bound below uses the candidate manuscript's proved one-edge
+positive-update path realization. Its transfer steps are independently
+checked in Section~\ref{sec:audit}.
+
+\section{Two rank-one edits: full closure with cancellation}
+
+Fix $0<\alpha<1$, $n\ge1$, and $D_+,D_-\ge1$. Consider triples
+\[
+ A\succ0,\qquad H=A+uu^T=B+vv^T,\qquad B\succ0,
+ \quad
+ \frac{\det H}{\det A}=D_+,\quad
+ \frac{\det H}{\det B}=D_-.
+\]
+Equivalently, $u^TA^{-1}u=D_+-1$ and $v^TB^{-1}v=D_--1$.
+The positive and negative edits can cancel. They need not be orthogonal.
+Put $Q=A^{-\alpha/2}B^\alpha A^{-\alpha/2}$, and write $x_+=\max(x,0)$.
+
+\begin{theorem}[Complete signed relative spectral closure]
+\label{thm:signed}
+The closure of the ordered spectra of $Q$ is precisely the set of
+$q_1\ge\cdots\ge q_n>0$ such that
+\begin{align}
+ \sum_i\log q_i&=\alpha\log(D_+/D_-),\label{eq:det}\\
+ \sum_i(\log q_i)_+&\le\alpha\log D_+,\label{eq:pos}\\
+ \sum_i(-\log q_i)_+&\le\alpha\log D_-.\label{eq:neg}
+\end{align}
+In particular two rank-one signed edits can spread their surviving positive
+and negative logarithmic budgets arbitrarily among the relative eigenvalues.
+\end{theorem}
+
+The last two inequalities have the same slack, by \eqref{eq:det}. A
+nonzero common slack measures cancellation invisible to the final determinant.
+For $n=1$ the sole eigenvalue is $(D_+/D_-)^\alpha$; the theorem includes
+this case. No assertion of finite-condition-number attainment is made.
+
+\paragraph{Precise classical subsumption.}
+For $n\ge2$, conditions \eqref{eq:det}--\eqref{eq:neg} are exactly
+\[
+ \log q\prec\alpha\log(D_+,1,\ldots,1,D_-^{-1}).
+\]
+Indeed all the nonfinal prefix bounds on the right have the same value
+$\alpha\log D_+$; their maximum on the left is controlled by the
+positive log sum and the final determinant constraint. The companion audit
+\texttt{araki-horn-relative-range.tex} proves that for any fixed ordinary
+relative input spectrum $r$, the fractional relative spectral closure is
+$\log q\prec\alpha\log r$. Its proof combines Araki log-majorization,
+the real Weyl--Horn triangular realization theorem, and classical
+separated-scale Schur asymptotics. Therefore Theorem~\ref{thm:signed}
+is a corollary of that general classical synthesis. In fact its
+sufficiency can be achieved while requiring $u^TA^{-1}v=0$: choose
+$S$ with eigenvalues $(D_+,1,\ldots,1,D_-^{-1})$, add its positive
+eigenvector correction to $I$, and subtract its negative eigenvector
+correction to obtain $S$. Scaling by $A^{1/2}$ preserves that
+$A^{-1}$ orthogonality and both exact budgets. The explicit proof below
+is useful for checking cancellation, but is not independent novelty.
+
+\begin{lemma}[General separated-scale power limit]\label{lem:scale}
+Let $M\succ0$ be fixed, $a_i=\delta^{n-i}$,
+$A_\delta=\diag(a_i)$, and
+$X_\delta=A_\delta^{1/2}MA_\delta^{1/2}$.
+Let $d_i$ be the reverse Schur pivots of $M$:
+\[
+ d_i=M_{ii}-M_{i,>i}M_{>i,>i}^{-1}M_{>i,i},\quad d_n=M_{nn}.
+\]
+Then
+\[
+ A_\delta^{-\alpha/2}X_\delta^\alpha A_\delta^{-\alpha/2}
+       \longrightarrow\diag(d_i^\alpha)
+ \quad\hbox{in norm as }\delta\downarrow0.
+\]
+\end{lemma}
+\begin{proof}
+Write $c_\alpha=\sin(\pi\alpha)/\pi$. On a diagonal entry, use
+$X^\alpha=c_\alpha\int_0^\infty t^{\alpha-1}X(X+tI)^{-1}\,dt$
+and substitute $t=a_i s$. Since
+\[
+ a_i(X_\delta+a_i sI)^{-1}_{ii}
+  =\bigl[M+s a_iA_\delta^{-1}\bigr]^{-1}_{ii},
+\]
+eliminating indices $j<i$ whose added diagonal tends to infinity, and then
+the $>i$ block, gives pointwise convergence of the diagonal integrand to
+$s^{\alpha-1}d_i/(d_i+s)$. The integrand is bounded by
+$s^{\alpha-1}\min(1,M_{ii}/s)$ because
+$0\preceq X(X+tI)^{-1}\preceq I$ and $X(X+tI)^{-1}\preceq X/t$.
+This is integrable at both endpoints. Dominated convergence and the scalar
+fractional-power integral prove the diagonal assertion.
+
+For off-diagonal entries choose $m>0$ with $M\succeq mI$ and put
+$C=M-mI\succeq0$. The Woodbury identity around $mA_\delta+tI$ gives,
+for $i\ne j$,
+\[
+ \left|(X_\delta+tI)^{-1}_{ij}\right|
+ \le \norm C\frac{\sqrt{a_i a_j}}{(ma_i+t)(ma_j+t)}.
+\]
+Indeed the middle Woodbury inverse is
+$[I+C^{1/2}A_\delta^{1/2}(mA_\delta+tI)^{-1}
+A_\delta^{1/2}C^{1/2}]^{-1}\preceq I$.
+The off-diagonal fractional integral therefore yields, for $i<j$ and
+$x=a_i/a_j$,
+\[
+ \left|a_i^{-\alpha/2}(X_\delta^\alpha)_{ij}a_j^{-\alpha/2}\right|
+ \le \norm C\,m^{\alpha-1}
+ x^{(1-\alpha)/2}\frac{1-x^\alpha}{1-x}\longrightarrow0.
+\]
+Here we used the scalar divided-difference integral. Symmetry handles the
+other entries, and the dimension is fixed.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:signed}]
+Since $B^\alpha\preceq H^\alpha$, the $i$th ordered generalized eigenvalue
+of $(B^\alpha,A^\alpha)$ is bounded by that of $(H^\alpha,A^\alpha)$.
+The latter are all at least one. Consequently
+\[
+ \sum_i(\log q_i)_+
+ \le\log\det(A^{-\alpha/2}H^\alpha A^{-\alpha/2})
+ =\alpha\log D_+.
+\]
+Interchanging $A,B$ proves the negative budget because the generalized
+eigenvalues are reciprocated. Determinants give \eqref{eq:det}. These
+conditions define a closed set bounded away from zero, since
+$q_i\ge D_-^{-\alpha}$.
+
+For sufficiency put $r_i=q_i^{1/\alpha}$. Choose
+\[
+ h_i\ge\max(1,r_i),\qquad \prod_i h_i=D_+.
+\]
+This is possible because $\prod_i\max(1,r_i)\le D_+$; for example
+multiply $h_1=\max(1,r_1)$ by the remaining product slack. Set
+\[
+ x_i^2=(h_i-1)\prod_{j>i}h_j,\qquad H_0=I+xx^T.
+\]
+The reverse pivots of $H_0$ are exactly $h_i$, by the rank-one Schur
+complement formula. Thus its reverse $LDL^T$ factorization is
+$H_0=U\diag(h_i)U^T$ with $U$ unit upper triangular.
+
+Let $l_i=r_i/h_i\in(0,1]$, and put
+\[
+ z_i^2=(1-l_i)\prod_{j>i}l_j,\quad
+ y=U\diag(\sqrt{h_i})z,\quad
+ M=H_0-yy^T
+   =U\diag(\sqrt{h_i})(I-zz^T)\diag(\sqrt{h_i})U^T.
+\]
+Telescoping gives $\norm z^2=1-\prod_i l_i=1-D_-^{-1}<1$, so
+$M\succ0$. The reverse pivots of $I-zz^T$ are $l_i$, hence those of
+$M$ are $h_i l_i=r_i$. To see the latter factorization statement
+directly, a unit upper triangular congruence preserves every trailing
+principal determinant, and a diagonal congruence multiplies its $i$th
+reverse pivot by $h_i$.
+
+Now take
+\[
+ A_\delta=\diag(\delta^{n-i}),\quad
+ u_\delta=A_\delta^{1/2}x,\quad
+ v_\delta=A_\delta^{1/2}y,\quad
+ H_\delta=A_\delta^{1/2}H_0A_\delta^{1/2},\quad
+ B_\delta=A_\delta^{1/2}MA_\delta^{1/2}.
+\]
+Both rank-one identities hold exactly. Also
+$\det H_\delta/\det A_\delta=\prod h_i=D_+$ and
+$\det H_\delta/\det B_\delta=\prod l_i^{-1}=D_-$ at every
+$\delta$. Lemma~\ref{lem:scale} gives the prescribed limiting spectrum.
+\end{proof}
+
+\section{Exact rank of a signed correction preconditioner}
+
+\begin{lemma}[Minimum preconditioner correction rank]\label{lem:rank}
+Let $S,T\succ0$ and $0<\ell<1<u$. Write $q_i$ for the generalized
+eigenvalues of $(T,S)$. The minimum rank of a symmetric $F$ for which
+$P=S+F\succ0$ and
+\[
+                  \ell P\preceq T\preceq uP
+\]
+is
+\[
+       \#\{i:q_i>u\}+\#\{i:q_i<\ell\}.
+\]
+\end{lemma}
+\begin{proof}
+The upper inequality gives $T-uS\preceq uF$, hence $F$ has at least
+$\#\{q_i>u\}$ positive eigenvalues by eigenvalue monotonicity under
+Loewner order and Sylvester inertia. The lower inequality gives
+$\ell F\preceq T-\ell S$, so $F$ has at least
+$\#\{q_i<\ell\}$ negative eigenvalues. Their sum bounds its rank.
+For equality diagonalize $S^{-1/2}TS^{-1/2}=V\diag(q_i)V^T$ and retain
+$q_i-1$ only outside $[\ell,u]$ in
+$F=S^{1/2}V\diag(f_i)V^TS^{1/2}$. The retained ratios $T/P$ are one;
+the others equal $q_i$. Thus $P$ is positive and satisfies the bounds.
+\end{proof}
+
+For $x\ge0$, write
+\[
+       J(x)=\max\{0,\lceil x\rceil-1\}.
+\]
+The strict endpoint matters: a budget ratio equal to an integer does not
+permit that many eigenvalues strictly outside the interval.
+
+\begin{corollary}[Sharp two-budget rank law]\label{cor:twobudget}
+Over all finite dimensions and triples in Theorem~\ref{thm:signed}, the
+exact supremum of the minimum rank needed for
+\[
+ \ell(A^\alpha+F)\preceq B^\alpha\preceq u(A^\alpha+F),
+ \qquad A^\alpha+F\succ0,
+\]
+is
+\[
+ J\!\left(\frac{\alpha\log D_+}{\log u}\right)
+ +J\!\left(\frac{\alpha\log D_-}{-\log\ell}\right).
+\]
+Both extreme counts can be attained simultaneously. The assertion is over
+unrestricted dimensions; the formula $\min(n,\hbox{displayed sum})$ is
+\emph{not} generally valid in a fixed dimension. For example $n=1$ and
+$D_+=D_-$ force $Q=1$.
+\end{corollary}
+\begin{proof}
+Apply the two logarithmic budgets to the strict thresholds, then
+Lemma~\ref{lem:rank}. For joint sharpness allocate the entire positive
+budget among $m_+=J(\alpha\log D_+/\log u)$ equal logarithms and the
+entire negative budget among $m_-=J(\alpha\log D_-/-\log\ell)$ equal
+negative logarithms. Each counted direction lies strictly outside the
+interval. If a count is zero but its budget is nonzero, allocate that
+budget to one additional direction; its eigenvalue can lie on or within
+the appropriate interval. These lists obey the determinant identity and
+both budgets with equality. Theorem~\ref{thm:signed} approximates them
+closely enough to preserve the counted strict inequalities. The universal
+upper bound excludes any excess count.
+\end{proof}
+
+With $\ell=1-\varepsilon$, $u=1+\varepsilon$, this gives a positive
+preconditioner with condition-number guarantee $(1+\varepsilon)/(1-\varepsilon)$.
+The rank is of order $\alpha(\log D_++\log D_-)/\varepsilon$ for
+fixed nontrivial budgets. No algorithm or finite-precision complexity
+claim is being made.
+
+\section{Two signed edge changes on one ordinary weighted path}
+
+Let an original connected unit-mass weighted path have one edge increased
+by factor $D_+$ and a different edge decreased by factor $D_-^{-1}$,
+where $D_+,D_->1$. Let $L,L'$ be its original and final Laplacians.
+Let $H$ be the envelope path Laplacian taking the larger conductance at
+each edited edge. Restrict all matrices to $\mathbf1^\perp$. The matrix
+tree theorem, or a direct path incidence calculation, gives exactly
+\[
+      \det H/\det L=D_+,\qquad \det H/\det L'=D_-.
+\]
+Thus the two-budget upper bound holds at every finite path length,
+independently of the conductances of its unedited edges.
+
+\begin{theorem}[Joint path sharpness]\label{thm:path}
+For the class of paths just described, the exact supremal minimum rank of
+a symmetric correction $F$ such that $P=L^\alpha+F$ is positive on
+$\mathbf1^\perp$ and
+\[
+                   \ell P\preceq L'^\alpha\preceq uP
+\]
+is the same two-budget expression in Corollary~\ref{cor:twobudget}.
+The path length and conductance ratio are unrestricted. The theorem
+concerns exactly two edited edges when both budgets are nontrivial.
+\end{theorem}
+
+The proof needs a continuity statement because joining two witnesses
+introduces a small positive eigenvalue and inverse powers then diverge.
+Ordinary continuity of the pseudoinverse is insufficient.
+
+\begin{lemma}[Weak path concatenation]\label{lem:glue}
+Take two fixed pairs of connected unit-mass path Laplacians
+$(L_1,L_1')$, $(L_2,L_2')$, each pair having the same vertex set. Join
+an end of the first path to an end of the second by an unedited edge of
+conductance $s>0$, in both original and updated graphs. Write their
+Laplacians as $L_s,L_s'$. Then for $0<\alpha<1$ the relative correction
+\[
+ (L_s^\dagger)^{\alpha/2}(L_s'^\alpha-L_s^\alpha)
+                  (L_s^\dagger)^{\alpha/2}
+\]
+converges in norm, as $s\downarrow0$, to the direct sum of the two
+component relative corrections and zero on their two-dimensional space
+of componentwise constants.
+\end{lemma}
+\begin{proof}
+The global constant vector is a common exact kernel and can be removed.
+In its orthogonal complement use the fixed decomposition consisting of
+the one-dimensional componentwise constant direction and the sum of the
+two component mean-zero spaces. The matrices have the form
+\[
+ A_s=\begin{pmatrix}s\mu&sa^T\\sa&A_0+sC\end{pmatrix},\quad
+ B_s=\begin{pmatrix}s\mu&sa^T\\sa&B_0+sC\end{pmatrix},
+ \quad A_0,B_0\succ0,\quad \mu>0.
+\]
+The coefficients $\mu,a,C$ are the same in both matrices because only
+the joining edge couples componentwise constants. In fact
+$\mu=|V_1|^{-1}+|V_2|^{-1}$.
+
+Spectral separation at $s=0$ gives an analytic orthogonal
+block diagonalization with the orthogonal matrix $I+O(s)$. The single
+small eigenvalues are both $s\mu+O(s^2)$; the high blocks are
+$A_0+O(s)$ and $B_0+O(s)$. Functional calculus in this diagonalization
+therefore gives, in the fixed decomposition,
+\[
+ B_s^\alpha-A_s^\alpha=
+ \begin{pmatrix}
+ O(s^{\alpha+1}+s^2)&O(s)\\
+ O(s)&B_0^\alpha-A_0^\alpha+O(s)
+ \end{pmatrix}
+\]
+and
+\[
+ A_s^{-\alpha/2}=
+ \begin{pmatrix}
+ O(s^{-\alpha/2})&O(s^{1-\alpha/2})\\
+ O(s^{1-\alpha/2})&A_0^{-\alpha/2}+o(1)
+ \end{pmatrix}.
+\]
+For the first display, the low eigenvalue powers differ by
+$O(s^{\alpha+1})$ because their first-order coefficient is the same;
+the high spectral subspace contributes $O(s^2)$ to the low diagonal.
+Multiplying these block estimates shows that the low diagonal of the
+relative correction is $O(s+s^{2-\alpha})$, its cross blocks tend to
+zero, and the high block tends to
+$A_0^{-\alpha/2}(B_0^\alpha-A_0^\alpha)A_0^{-\alpha/2}$.
+Restoring the common exact kernel proves the result.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:path}]
+The upper bound follows from the envelope budgets. For the lower bound,
+the candidate manuscript's one-edge path theorem supplies a positive
+update witness using factor $D_+$ with the maximal positive count above
+$u$. If that count is zero, take any single-edge path with this factor.
+It also supplies a positive update witness with factor $D_-$ with the
+maximal count above $1/\ell$; reversing its original and updated graphs
+gives a negative-update path with that many relative eigenvalues below
+$\ell$. The reciprocal-spectrum identity holds exactly for the reversed
+pair. Again use any single-edge witness if its count is zero.
+
+Join their ends by a sufficiently weak unedited edge. The result is one
+ordinary unit-mass path with exactly the two desired edited edges.
+Lemma~\ref{lem:glue} preserves both strict counts for sufficiently small
+positive joining conductance. Each edited edge is still a bridge, so
+both determinant budgets are exact for every joining conductance; no
+limiting renormalization is needed. The universal upper bound excludes
+additional out-of-interval eigenvalues. Apply Lemma~\ref{lem:rank}.
+\end{proof}
+
+\begin{corollary}[No compression bound from net tree-volume change]
+\label{cor:volume}
+Fix $D>1$, and increase one edge of a unit-mass weighted path by factor
+$D$ while decreasing another by factor $D^{-1}$. The product of the
+nonzero Laplacian eigenvalues is unchanged, and therefore
+$\det Q_\alpha=1$ exactly. Nevertheless the exact worst-case minimum
+correction rank for a $(1\pm\varepsilon)$ preconditioner, $0<\varepsilon<1$,
+is
+\[
+ J\!\left(\frac{\alpha\log D}{\log(1+\varepsilon)}\right)
+ +J\!\left(\frac{\alpha\log D}{-\log(1-\varepsilon)}\right)
+ =\frac{2\alpha\log D}{\varepsilon}+O_{\alpha,D}(1).
+\]
+Thus the net determinant change gives no dimension-independent bound on
+the correction rank in a signed dynamic update: for any fixed
+$\varepsilon\in(0,1)$ this rank is unbounded as $D\to\infty$, although
+the net determinant remains exactly one. The separate positive
+and negative budgets retain the required information.
+\end{corollary}
+\begin{proof}
+On a tree the nonzero Laplacian eigenvalue product is the vertex count
+times the product of its conductances. The reciprocal edge factors cancel.
+Apply Theorem~\ref{thm:path} with $D_+=D_-=D$ and use the scalar Taylor
+expansions of the two denominators.
+\end{proof}
+
+\section{Independent audit of the one-edge path transfer}\label{sec:audit}
+
+The candidate proof first uses cyclic Lanczos to obtain an SPD Jacobi
+matrix $T$ and a boundary update $\kappa e_1e_1^T$. Alternating signs
+make the off-diagonal entries negative. Then $d=T^{-1}e_1>0$ and
+$D T D\mathbf1=d_1e_1$ with $D=\diag(d)$, giving a grounded weighted
+path. A new ground vertex of mass $R^2$ produces
+\[
+ H_R=\begin{pmatrix}d_1/R^2&-e_1^T/R\\-e_1/R&T\end{pmatrix},\qquad
+ H_R'=H_R+\kappa(-d_1/R,e_1)(-d_1/R,e_1)^T.
+\]
+These formulas, the common kernel $(R,d)^T$, and the bridge leverage
+$\kappa d_1$ are correct. As $R\to\infty$, their sole kernel persists
+and every other eigenvalue stays away from zero, so the relative
+fractional calculus converges to the SPD witness with one extra zero.
+
+To remove masses, replacing each massive vertex by an integer block of
+unit vertices linked with conductance $T$ preserves the path topology.
+At a fixed block size the internal high eigenvalues diverge as $T$ grows,
+while the low compression is the appropriate mass-normalized quotient.
+For the fractional \emph{difference}, the bound
+\[
+ \norm{(L_T+tI)^{-1}-(L_T'+tI)^{-1}}
+       \le\min(2/t,\norm{L_T'-L_T}/t^2)
+\]
+dominates the $t^\alpha$ resolvent integral at zero and infinity.
+Thus no false convergence of $L_T^\alpha$ itself is used. Negative
+fractional powers converge by the persistent one-dimensional kernel,
+the positive low spectral gap, and suppression of the divergent high
+modes. Rounding masses and taking strong-edge limits sequentially is
+legitimate. Every edited edge is a bridge, so the leverage remains exactly
+its conductance-increase ratio throughout. No gap was found in this
+transfer under unrestricted dimension and conductance ratios.
+
+\section{Priority limits and source comparison}
+
+Signed low-rank matrix-function updates, Krylov approximation, and graph
+applications predate this note. The original paper of Beckermann,
+Kressner and Schweitzer explicitly treats $f(A+D)-f(A)$ for low-rank
+$D$ and graph insertion/removal applications
+\cite{BKS}; its abstract and introduction do not provide the present
+complete energy-relative spectral closure. Shmueli, Drineas and Avron
+also treat square-root updates and downdates, including repeated
+downdate/update applications \cite{SDA}. These are comparator papers,
+not evidence of novelty by omission. The general scale lemma and signed
+closure are consequences of classical multiplicative majorization,
+triangular-factor realizations, and separated-scale asymptotics, as made
+precise after Theorem~\ref{thm:signed}. The effective-resistance Gram
+matrix of distinct bridge edges on a tree is diagonal. Thus the ordinary
+relative spectrum for the signed two-edge path update is already exactly
+$(D_+,1,\ldots,1,D_-^{-1})$, consistent with that subsumption.
+The two-budget upper bound and the rank/inertia lemma are elementary.
+The potentially substantive graph conclusion is their simultaneous exact
+sharpness on unit-mass paths with only two signed edge edits.
+
+\begin{thebibliography}{9}
+\bibitem{BKS} B. Beckermann, D. Kressner, M. Schweitzer,
+Low-rank updates of matrix functions (2017).
+\url{https://arxiv.org/abs/1707.03045}.
+\bibitem{SDA} S. Shmueli, P. Drineas, H. Avron,
+Low-rank updates of matrix square roots (2023).
+\url{https://doi.org/10.1002/nla.2528}.
+\end{thebibliography}
+\end{document}

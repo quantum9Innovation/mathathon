@@ -1,0 +1,375 @@
+\section{Recovery of an unknown degree frame}\label{sec:unknown-frame}
+
+We first give the most general partition-recovery statement. The number
+of classes, their sizes, and their degree frame are unknown to the
+algorithm. Class sizes need not be equal. The conclusion identifies
+the planted partition among all bounded-class equitable partitions,
+rather than only among candidates with the same supplied frame.
+
+Fix constants $K\ge1$ and $D\ge3$. A true frame is a fixed matrix
+$Q=(d_{ij})\in\Z_{\ge0}^{k\times k}$, with $1\le k\le K$,
+$a_i=d_{ii}\ge0$, and $d_i=\sum_jd_{ij}\le D$.
+Its off-diagonal support is connected, with the one-type convention.
+Assume either of the following two conditions:
+\begin{enumerate}
+ \item Every row sum is the same $d$, with $3\le d\le D$.
+       Internal degrees may be zero or one.
+ \item $k\ge2$ and every internal degree $a_i\ge2$.
+       Total degrees may differ across classes.
+\end{enumerate}
+The nonempty planted classes
+$V_i$ have sizes $N_i$ satisfying
+\begin{equation}\label{eq:unknown-balance}
+ N_id_{ij}=N_jd_{ji},\qquad a_iN_i\text{ even},\qquad
+ n=\sum_iN_i.
+\end{equation}
+Independently sample a uniform simple $a_i$-regular graph in each
+class and a uniform simple $(d_{ij},d_{ji})$-biregular graph between
+each active pair. Zero-degree cross factors are omitted. Write $J$
+for the $n\times k$ planted indicator matrix. Always $AJ=JQ$.
+The graph need not be globally regular.
+
+A partition into $r$ classes is represented by a one-hot matrix
+$Y\in\{0,1\}^{n\times r}$: each row is a standard basis vector and
+each column is nonzero. It is equitable if $AY=YR$ for a nonnegative
+integer matrix $R$. A coarsening of the planted partition has the form
+$Y=JT$, where the $k\times r$ one-hot map $T$ is onto.
+
+\begin{theorem}[Unknown-frame recovery]\label{thm:unknown-frame}
+In this model, with probability $1-o(1)$ every equitable partition
+into at most $K$ nonempty classes is a coarsening of the planted
+partition. The plant is therefore the unique finest such partition,
+up to class names. A deterministic algorithm, given $A$ and only
+the fixed bounds $K,D$, recovers the planted partition, $k$, its
+class sizes, and $Q$, with high probability, in polynomial bit time.
+The algorithm has both an expected polynomial-time version and a
+worst-case polynomial truncation. No quotient eigenvalue, frame rank,
+spectral separation, or numerical gap is supplied or assumed.
+\end{theorem}
+
+The proof below also gives failure $O_{K,D}(n^{-(d_{\min}-2)})$
+for the rigidity assertion, where $d_{\min}=\min_i d_i\ge3$.
+The constants are uniform over the finite family of permitted frames.
+Connectedness and the balance identities compare sizes along a path:
+every adjacent ratio is a ratio of positive integers at most $D$.
+Thus
+\begin{equation}\label{eq:unknown-rho}
+ \alpha_i:=N_i/n\ge\rho:=\frac1{KD^{K-1}}.
+\end{equation}
+This supplies uniformly positive class proportions without requiring
+the algorithm to know them.
+
+\subsection{Vector intertwiners and aggregate fibers}
+For the counting argument, temporarily sample every independent typed
+factor by its uniform distinguished-stub configuration, allowing loops
+and repeated edges. We return to the simple law by conditioning below.
+For $r\le K$, fix an arbitrary matrix $R\in\F_2^{r\times r}$.
+Its entries need not be degree counts for this moment argument.
+Use the additive alphabet $\mathcal A=\F_2^r$ of size $q=2^r$,
+and let
+$Z_R(A)=|\{Y\in\F_2^{n\times r}:AY=YR\}|$.
+For each old class $i$, a profile records its root vector $x$ and
+the vector at the partner of every distinguished stub, retaining
+the stub's old neighbor type. Its local equation is
+\begin{equation}\label{eq:unknown-star}
+ \sum_{j=1}^k\sum_{\ell=1}^{d_{ij}}z_{j\ell}=xR.
+\end{equation}
+Deleting any one physical slot determines it uniquely, with coefficient
+one. There is no condition on the rank of $R$ or on field inverses.
+
+Let $m_{ii}(x,y)$ be internal directed-stub tables, symmetric with
+even diagonal; let $m_{ij}=m_{ji}^T$ be cross tables of total
+$M_{ij}=N_id_{ij}$. For each feasible collection of these tables,
+let $\Omega$ be the fiber of all ordered arrays of legal profiles
+at all labeled vertices. With
+$W(m)=\prod_{x<y}m_{xy}!\prod_x(m_{xx}-1)!!$, the exact count is
+\begin{equation}\label{eq:unknown-fiber}
+ \E Z_R(A)=\sum_{\text{table collections}}|\Omega|
+  \prod_{i:a_i>0}\frac{W(m_{ii})}{(a_iN_i-1)!!}
+  \prod_{i<j:d_{ij}>0}\frac{\prod_{x,y}m_{ij}(x,y)!}{M_{ij}!}.
+\end{equation}
+This is proved by assigning requested partner labels to ordered stubs
+and pairing each class to its reverse, as in the full factor count
+\eqref{eq:fmp-exact-types}. All root assignments and local types are
+already in $\Omega$.
+
+Choose uniformly from a nonempty fiber. Permuting vertex positions
+within an old block, and slots within each old neighbor type at each
+vertex, preserves the fiber. Let $P_i$ be its common class-$i$
+profile law, $\mu_i$ its root law, and $\nu_{ij}$ the one-slot
+root/neighbor pair law. These pair laws are exactly the normalized
+fixed tables. Their marginals are $\mu_i,\mu_j$, and
+$\nu_{ij}=\nu_{ji}^T$. Subadditivity gives
+\begin{equation}\label{eq:unknown-fiber-entropy}
+ \log|\Omega|\le\sum_iN_iH(P_i).
+\end{equation}
+Every old type has an active incident factor, since its total degree
+is at least three. Such a table determines its root marginal even
+when its internal factor is absent.
+Define the per-vertex entropy exponent
+\[
+ \Phi=\sum_i\alpha_iH(P_i)
+ -\sum_i\frac{\alpha_i a_i}{2}H(\nu_{ii})
+ -\sum_{i<j}\alpha_id_{ij}H(\nu_{ij}).
+\]
+All inactive terms are omitted. First use the second model condition,
+with $a_i\ge2$. Let $J_i\ge0$ be conditional total
+correlation of the retained neighbors after deleting one internal
+slot, and let $I_{ij}$ be mutual information in $\nu_{ij}$.
+Deleting the determined slot, expanding conditional entropies, and
+using $\alpha_id_{ij}=\alpha_jd_{ji}$ give exactly
+\begin{equation}\label{eq:unknown-entropy}
+ -\Phi=\sum_i\alpha_i(a_i/2-1)I_{ii}
+       +\sum_{i<j}\alpha_id_{ij}I_{ij}
+       +\sum_i\alpha_iJ_i\ge0.
+\end{equation}
+The root-entropy terms cancel with these unequal-size weights.
+This calculation works in characteristic two, at $a_i=2$, and for
+zero or rank-deficient $R$. For the first model condition,
+Section~\ref{sec:all-slot} proves the same modular nonpositivity
+by averaging over all omitted slots instead of choosing an internal one.
+
+For an alphabet of size $q$ put $t=q(q+1)/2$.
+The elementary zero-safe bounds
+\[
+ r\log r-r\le\log(r!)\le r\log r-r+1+\log(r+1)
+\]
+and $(r-1)!!=r!/[2^{r/2}(r/2)!]$ for even $r$ imply
+\begin{align*}
+ \frac{W(m)}{(T-1)!!}
+ &\le e^{t+1}(T+1)^{t+1}e^{-TH(m/T)/2},\\
+ \frac{\prod_{x,y}m(x,y)!}{T!}
+ &\le e^{q^2}(T+1)^{q^2}e^{-TH(m/T)}.
+\end{align*}
+For the first inequality, the off-diagonal factorial and diagonal
+double-factorial leading terms sum to
+$\frac12\sum_{x,y}m(x,y)\log m(x,y)-T/2$;
+subtract the denominator's leading term and bound the $t+1$
+remainders. The second follows by the same factorial estimate on
+the $q^2$ numerator entries and a lower bound on the denominator.
+Both bounds include zero entries and use only alphabet cardinality.
+
+Let $e_Q$ count active cross factors and
+$\ell_Q=|\{i:a_i>0\}|$. These bounds cost power at most $t+1$
+of $Dn+1$ for each internal factor and $q^2$ for each cross factor.
+Counting aggregate tables costs powers $\ell_Qq^2$ and $e_Qq^2$,
+respectively. The exponential factors cancel by the corresponding
+entropy identity and \eqref{eq:unknown-fiber-entropy}.
+Consequently
+\begin{equation}\label{eq:unknown-moment}
+ \E Z_R(A)\le C_{K,D}(n+1)^{H_K},\qquad
+ H_K=2K^2 4^K+K,
+\end{equation}
+since the actual power
+$\ell_Q(t+1+q^2)+2e_Qq^2$ is at most $H_K$ for $q\le2^K$,
+$k\le K$, and $e_Q\le k(k-1)/2$.
+The constant absorbs fixed degree coefficients and simplicity
+conditioning. This aggregation improves a bound obtained by counting
+all local profile types, whose exponent would depend exponentially
+on $D$.
+
+For completeness, fixed-degree ordinary and bipartite simplicity
+criteria give a positive limiting probability for all independent
+factors. Each simple internal factor has $(a_i!)^{N_i}$ stub
+realizations; each simple cross factor has
+$(d_{ij}!)^{N_i}(d_{ji}!)^{N_j}$. Conditioning therefore gives exactly
+the required independent uniform-simple laws. By
+\eqref{eq:unknown-rho} and finiteness of the frame family the
+conditioning cost is uniform. Thus \eqref{eq:unknown-moment} holds
+unconditionally over the target simple graph draw.
+
+\subsection{A strict one-hot gap with internal degree at least two}
+For integer equitable candidates use the real unit-vector alphabet
+$e_1,\ldots,e_r$, and the integer identity
+$\sum e_{\text{neighbor}}=R_{\text{root},*}$. The same exact fibers
+and entropy calculation apply. Let $\mu_i$ be the candidate-label
+law in old class $i$, and put
+\begin{equation}\label{eq:unknown-distance}
+ \epsilon=\sum_i\alpha_i(1-\max_x\mu_i(x)).
+\end{equation}
+This is precisely the least fraction of changed rows in replacing
+the candidate by any blockwise point map $JT$. The map may merge
+old blocks or leave candidate labels unused.
+
+Use the second model condition in this subsection.
+Write $L=-\Phi$. For a fixed class $i$, let $P_i^-$ be the retained
+star after deleting one internal slot. Define $T_i$ to keep its root
+law and conditional internal-neighbor laws, make retained internal
+slots independent given the root, and make each cross slot independent
+with root-independent neighboring law $\mu_j$.
+Then
+\begin{equation}\label{eq:unknown-KL}
+ \kappa_i:=\KL(P_i^-\Vert T_i)
+ =J_i+\sum_{j\ne i}d_{ij}I_{ij},\qquad
+ \alpha_i\kappa_i\le L.
+\end{equation}
+For this fixed $i$, incident cross edges occur once in the edge sum
+of \eqref{eq:unknown-entropy}; no sum of endpoint KL bounds is being
+charged against one edge twice.
+
+Let $m_i(X)$ be the conditional mean of an internal unit-vector
+neighbor given the root, and $v_i$ its expected conditional variance
+trace. Let $V_j=1-\|\mu_j\|_2^2$. Infer the omitted vector $U$ from
+the root row of $R$ minus the retained neighbor sum, and put
+$f=\|U-m_i(X)\|_2^2$. Under $P_i^-$, its expectation is $v_i$.
+Under $T_i$, conditional independence gives
+\begin{align}\label{eq:unknown-variance}
+ \E_{T_i}f-\E_{P_i^-}f
+ &=(a_i-2)v_i+\sum_{j\ne i}d_{ij}V_j\notag\\
+ &\quad+\E\left\|R_{X,*}-a_im_i(X)
+                   -\sum_{j\ne i}d_{ij}\E e_{X_j}\right\|_2^2
+ \ge\sum_{j\ne i}d_{ij}V_j.
+\end{align}
+An occupied row $R_{X,*}$ is nonnegative of total mass $d_i$.
+The retained neighbor sum plus $m_i(X)$ has that same mass.
+Thus $0\le f\le2d_i^2$ on both distributions, even if total degrees
+differ across old classes. Pinsker and \eqref{eq:unknown-KL} imply
+\begin{equation}\label{eq:unknown-local-gap}
+ L\ge\frac{\alpha_i}{2d_i^4}
+          \left(\sum_{j\ne i}d_{ij}V_j\right)^2.
+\end{equation}
+Since $V_j\ge1-\max_x\mu_j(x)$, some $j$ has $V_j\ge\epsilon$.
+Connectedness and $k\ge2$ supply a neighbor $i$ of that class.
+Using \eqref{eq:unknown-rho} yields
+\begin{equation}\label{eq:unknown-gap}
+ \Phi\le-\frac{\rho}{2D^4}\epsilon^2.
+\end{equation}
+The proof retains internal conditional dependence and therefore
+covers $a_i=2$. If $\Phi=0$, all root laws are points; matching
+consistency and the local integer equations give exactly $QT=TR$.
+Conversely every such compatible point map has deterministic legal
+stars and zero entropy.
+
+\input{draft-v2/regular-case}
+
+Restrict the fibers to fixed root-label counts in every old block.
+Their invariances survive. The common strict entropy bound supplies
+an exponential loss for candidates at distance at least any fixed
+$\eta>0$ from every point map. There are only polynomially many
+root-count collections and aggregate edge tables, and finitely many
+candidate integer frames with $r\le K$ and row sums at most $D$.
+Thus all such macroscopic candidates are absent except with
+exponentially small probability. There is no lower bound on the
+sizes of candidate classes in this argument.
+
+\subsection{Small row supports and exact compatibility}
+Let a set $S$ be bad if no exterior vertex has exactly one incident
+edge into $S$, counting multiplicities. In the typed configuration
+model, for $s=|S|\le\eta n$, a witness consists of $S$, its exterior
+neighbor set of size $w$, and all prescribed stub pairs incident to
+$S$. If $a$ edges lie in $S$ and $b$ leave it, put $e=a+b$.
+With $d_{\min}=\min_i d_i\ge3$,
+\[
+ 2a+b\ge d_{\min}s,\qquad 2w\le b,\qquad
+ e-s-w\ge\frac{d_{\min}-2}{2}s.
+\]
+Every relevant stub pool has size at least $\rho n$.
+For $s\le\rho n/(4D)$, a prescribed partial configuration with
+$e$ pairs has probability at most $(2/(\rho n))^e$.
+Choose $S,W$, stubs at $W$, and pairs in at most
+\[
+ \binom ns\binom nw\,2^{Dw}(2Ds)^e
+\]
+ways. Invalid types may be overcounted. Using
+$(s/w)^w\le e^{s/e_{\mathrm{Euler}}}$ when $w>0$, and the value one
+at $w=0$, gives
+\begin{equation}\label{eq:unknown-support}
+ \E\#\{\text{bad }S:|S|=s\}
+ \le C_{K,D}^s(s/n)^{\lceil(d_{\min}-2)s/2\rceil}.
+\end{equation}
+For sufficiently small fixed $\eta$, the sum from $s=2$ to $\eta n$
+is $O_{K,D}(n^{-(d_{\min}-2)})$, by the consecutive-term ratio
+$C e^{(d_{\min}-2)/2}((s+1)/n)^{(d_{\min}-2)/2}<1/2$.
+Singletons cannot be bad in a simple graph of positive degree.
+Conditioning on simplicity therefore proves this same probability
+bound for any nonempty small bad set in the target model.
+
+On the complementary graph event, simultaneously for every field,
+every finite square matrix $R$, and every matrix $V$, one has
+\begin{equation}\label{eq:unknown-no-support}
+ AV=VR,\quad |\supp_{\mathrm{row}}V|\le\eta n
+ \quad\Longrightarrow\quad V=0.
+\end{equation}
+Otherwise an exterior vertex with exactly one edge into the nonzero
+row support would give one nonzero row on the left and zero on the
+right. This statement requires no union over $R$ or matrix entries.
+
+Let an integer-verified one-hot $Y$ be within $\eta n$ rows of $JT$.
+Choose $\eta<\rho/[2(D+1)]$. Changed closed neighborhoods occupy at
+most $(D+1)\eta n$ vertices globally, so every old class has a vertex
+whose row and all neighbor rows agree with $JT$. At that vertex,
+\[
+ (QT)_i=(AJT)_v=(AY)_v=(YR)_v=(TR)_i.
+\]
+Hence $QT=TR$ as an integer identity. Thus $V=Y-JT$ satisfies
+$AV=VR$ and has precisely the changed rows as its nonzero support.
+Equation~\eqref{eq:unknown-no-support} forces $Y=JT$.
+Combining this with the macroscopic bound proves that every
+equitable candidate is exactly a coarsening. It also rules out tiny
+new candidate classes near point maps with unused labels.
+
+\subsection{Enumeration without knowing the frame}
+First check that the input is a simple graph of maximum degree at most
+$D$, or report failure. Enumerate $r=1,\ldots,K$ and all nonnegative integer $r\times r$
+matrices $R$ with row sums at most $D$. There are at most
+$\sum_{r=1}^K(D+1)^{r^2}$ candidates, a fixed constant.
+For each, solve the binary linear system
+\begin{equation}\label{eq:unknown-operator}
+ AY-YR=0,\qquad Y\in\F_2^{n\times r},
+\end{equation}
+whose matrix under column vectorization is
+$I_r\otimes A-R^T\otimes I_n$.
+Enumerate its kernel in Gray order. Check one-hot rows, nonempty
+columns, and the original integer equation. Keep an accepted
+partition with the largest number of classes. The vectors
+$e_1,\ldots,e_r$ are distinct over $\F_2^r$, including $r=1$, so
+every desired integer partition appears. Zero or rank-deficient
+candidate matrices create no exception to the moment proof.
+
+Binary elimination costs $O_K(n^3)$ and each update and exact check
+costs $O_{K,D}(n)$ elementary operations. Equation~\eqref{eq:unknown-moment}
+therefore gives expected work $O_{K,D}(n^{H_K+1}+n^3)$, unconditionally
+over the simple graph law, including rare large kernels.
+Cap each kernel's candidate count at $n^{H_K+3}$ and report failure
+if any cap is exceeded. The finite union and Markov give cap
+probability $O_{K,D}(n^{-3})$ and bounded work
+$O_{K,D}(n^{H_K+4})$. Memory is $O_K(n^2)$ plus a running candidate.
+These are theoretical bounds for fixed $K,D$.
+
+The planted pair $(J,Q)$ always appears at $r=k$.
+On the rigidity event, any accepted $Y=JT$ with nonempty columns
+has an onto map $T$, hence $r\le k$. The maximum is $k$, and an
+onto map between $k$ old and $k$ new classes is a permutation.
+The selected partition is planted, and exact neighbor counts recover
+its frame. This proves Theorem~\ref{thm:unknown-frame}.
+
+\begin{corollary}[Unknown base fibers in random lifts]\label{cor:random-lift}
+Let $H$ be any fixed connected simple $d$-regular graph with $d\ge3$
+and at most $K$ vertices. From its random $N$-lift, given only the
+lifted graph and fixed bounds $K,D\ge d$, the algorithm recovers the
+base fibers and the base graph up to isomorphism with high probability,
+in expected polynomial bit work and with a polynomial truncation.
+Every $N$ is admissible and no old/new eigenvalue gap is required.
+\end{corollary}
+\begin{proof}
+Take $Q=A_H$, equal sizes $N_i=N$, absent internal factors, and
+independent uniform perfect matchings for the base edges. These are
+exactly the lift model and are automatically simple. Theorem~\ref{thm:unknown-frame}
+applies. The finest partition is among those with at most $K$ classes;
+the unrestricted singleton partition is outside this bounded family.
+Coarse equitable partitions of the base lift to allowed coarsenings
+and do not contradict recovery of the base-fiber partition.
+\end{proof}
+
+The degree-three threshold has a real boundary: a uniform simple
+degree-two graph has many cycle components with high probability.
+Each component permits an equitable component split, so the one-class
+plant is not finest when two candidate classes are allowed. The
+all-slot mutual-information coefficient and small-support excess
+both vanish at degree two. Section~\ref{sec:lift-boundary} gives the
+exact statistical obstruction for lifts of a supplied cycle base.
+
+The independent random cross factors are essential to the exact count.
+The theorem does not inherit the prescribed-cross quantifiers of the
+separate strong-mixing theorem. Nor does it infer real spectral
+simple multiplicities from rigidity of integer partitions.

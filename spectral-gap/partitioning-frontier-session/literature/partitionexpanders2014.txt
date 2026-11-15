@@ -1,0 +1,879 @@
+                                                                        Partitioning into Expanders
+                                                                    Shayan Oveis Gharan∗                  Luca Trevisan†
+
+                                                                                    December 9, 2013
+
+
+
+
+arXiv:1309.3223v3 [cs.DS] 6 Dec 2013
+                                                                                          Abstract
+                                                 Let G = (V, E) be an undirected graph, λk be the k th smallest eigenvalue of the normalized
+                                             laplacian matrix of G. There is a basic fact in algebraic graph theory that λk > 0 if and only if
+                                             G has at most k − 1 connected components. We prove a robust version of this fact. If λk > 0,
+                                             then for some 1 ≤ ℓ ≤ k − 1, V can be partitioned into ℓ sets P1 , . . . , Pℓ such that each Pi is
+                                             a low-conductance
+                                                         √             set in G and induces a high conductance induced subgraph. In particular,
+                                             φ(Pi ) . ℓ3 λℓ and φ(G[Pi ]) & λk /k 2 .
+                                                 We make our results algorithmic by designing a simple polynomial time spectral algorithm
+                                             to find such partitioning of G with a quadratic loss in the inside conductance of Pi ’s. Unlike the
+                                             recent results on higher order Cheeger’s inequality [LOT12, LRTV12], our algorithmic results do
+                                             not use higher order eigenfunctions of G. In addition, if there is a sufficiently large gap between
+                                                                                                 1/4
+                                             λk and λk+1 , more precisely, if λk+1 & poly(k)λk then our algorithm finds a k partitioning of V
+                                             into sets P1 , . . . , Pk such that the induced subgraph G[Pi ] has a significantly larger conductance
+                                             than the conductance of Pi in G. Such a partitioning may represent the best k clustering of
+                                             G. Our algorithm is a simple local search that only uses the Spectral Partitioning algorithm
+                                             as a subroutine. We expect to see further applications of this simple algorithm in clustering
+                                             applications.
+                                                 Let ρ(k) = mindisjoint A1 ,...,Ak max1≤i≤k φ(Ai ) be the order k conductance constant of G, in
+                                             words, ρ(k) is the smallest value of the maximum conductance of any k disjoint subsets of V .
+                                             Our main technical lemma shows that if (1 + ǫ)ρ(k) < ρ(k + 1), then V can be partitioned into
+                                             k sets P1 , . . . , Pk such that for each 1 ≤ i ≤ k, φ(G[Pi ]) & ǫ · ρ(k + 1)/k and φ(Pi ) ≤ k · ρ(k).
+                                             This significantly improves a recent result of Tanaka [Tan12] who assumed an exponential (in
+                                             k) gap between ρ(k) and ρ(k + 1).
+
+
+
+
+                                          ∗
+                                            Computer Science Division, U.C. Berkeley. This material is supported by a Stanford graduate fellowship and a
+                                       Miller fellowship. Email:oveisgharan@berkeley.edu.
+                                          †
+                                            Department of Computer Science, Stanford University. This material is based upon work supported by the
+                                       National Science Foundation under grants No. CCF 1017403 and CCF 1216642. Email:trevisan@stanford.edu.
+Figure 1: In this example although both sets in the 2-partitioning are of small conductance, in a
+natural clustering the red vertex (middle vertex) will be merged with the left cluster
+
+
+
+1    Introduction
+Clustering is one of the fundamental primitives in machine learning and data analysis with a variety
+of applications in information retrieval, pattern recognition, recommendation systems, etc. Data
+clustering may be modeled as a graph partitioning problem, where one models each of the data
+points as a vertex of a graph and the weight of an edge connecting two vertices represents the
+similarity of the corresponding data points. We assume the weight is larger if the points are more
+similar (see e.g. [NJW02]). Let G = (V, E) be an undirected graph with n := |V | vertices. For
+all pair of vertices u, v ∈ V let w(u, v) ≥ 0 be the weight of the edge between u and v (we let
+w(u, v) = 0 if there is no edge between u and v).
+    There are several combinatorial measures for the quality of a k-way partitioning of a graph
+including diameter, k-center, k-median, conductance, etc. Kannan, Vempala and Vetta [KVV04]
+show that several of these measures fail to capture the natural clustering in simple examples.
+Kleinberg [Kle02] show that there is no unified clustering function satisfying three basic properties.
+Kannan et al. [KVV04] propose conductance as one of the best objective functions for measuring
+the quality of a cluster.                                  P                           P
+    For a subset S ⊆ V , let the volume of S be vol(S) := v∈S w(v), where w(v) := u∈V w(v, u)
+is the weighted degree of a vertex v ∈ V . The conductance of S is defined as
+
+                                                       w(S, S)
+                                         φG (S) :=             ,
+                                                       vol(S)
+                                    P
+where S = V − S, and w(S, S) = u∈S,v∈S w(u, v) is the sum of the weight of the edges in the
+cut (S, S). The subscript G in the above definition may be omitted. For example, if φ(S) = 0.1 it
+means that 0.9 fraction of the neighbors of a random vertex of S (chosen proportional to degree)
+are inside S in expectation. The conductance of G, φ(G) is the smallest conductance among all
+sets that have at most half of the total volume,
+
+                                   φ(G) :=         min            φ(S).
+                                             S:vol(S)≤vol(V )/2
+
+
+    One approach for constructing a k-clustering of G is to find k sets of small conductance. Shi
+and Malik [SM00] show that this method provides high quality solutions in image segmentation
+applications. Recently, Lee et al. [LOT12] and Louis et al. [LRTV12] designed spectral algorithms
+for finding a k-way partitioning where every set has a small conductance. It turns out that in many
+graphs just the fact that a set S has a small conductance is not enough to argue that it is a good
+
+                                                   1
+Figure 2: Two 4-partitioning of the cycle graph. In both of the partitionings the number of edges
+between the clusters are exactly 4, and the inside conductance of all components is at least 1/2 in
+both cases. But, the right clustering is a more natural clustering of cycle.
+
+
+cluster; this is because although φ(S) is small, S can be loosely-connected or even disconnected
+inside (see Figure 1).
+    Kannan, Vempala and Vetta [KVV04] proposed a bicriteria measure, where they measure the
+quality of a k-clustering based on the inside conductance of sets and the number of edges between
+the clusters. For P ⊆ V let φ(G[P ]) be the inside conductance of P , i.e., the conductance of
+the induced subgraph of G on the vertices of P . Kannan P           et al. [KVV04] suggested that a k-
+partitioning into P1 , . . . , Pk is good if φ(G[Pi ]) is large, and i6=j w(Pi , Pj ) is small. It turns out
+that an approximate solution for this objective function can be very different than the “correct”
+k-partitioning. Consider a 4-partitioning of a cycle as we illustrate in Figure 2. Although the inside
+conductance of every set in the left partitioning is within a factor 2 of the right partitioning, the
+left partitioning does not provide the “correct” 4-partitioning of a cycle.
+    In this paper we propose a third objective which uses both of the inside/outside conductance of
+the clusters. Roughly speaking, S ⊆ V represents a good cluster when φ(S) is small, but φ(G[S]) is
+large. In other words, although S doesn’t expand in G, the induced subgraph G[S] is an expander.
+
+
+Definition 1.1. We say k disjoint subsets A1 , . . . , Ak of V are a (φin , φout )-clustering, if for all
+1 ≤ i ≤ k,
+                           φ(G[Ai ]) ≥ φin and φG (Ai ) ≤ φout .
+    One of the main contributions of the paper is to study graphs that contain a k-partitioning
+such that φin ≫ φout . To the best of our knowledge, the only theoretical result that guarantees a
+(φin , φout ) partitioning of G is a recent result of Tanaka [Tan12]. For any k ≥ 2, let ρ(k) be the
+maximum conductance of any k disjoint subsets of G,
+                                   ρ(k) :=         min         max φ(Ai ).
+                                             disjoint A1 ,...,Ak 1≤i≤k
+
+For example, observe that ρ(2) = φ(G). Tanaka [Tan12] proved that if there is a large enough gap
+between ρ(k) and ρ(k + 1) then G has a k-partitioning that is a (exp(k)ρ(k), ρ(k + 1)/ exp(k))-
+clustering.
+Theorem 1.2 (Tanaka [Tan12]). If ρG (k + 1) > 3k+1 ρG (k) for some k, then G has a k-partitioning
+that is a (ρ(k + 1)/3k+1 , 3k ρ(k))-clustering.
+
+                                                       2
+   Unfortunately, Tanaka requires a very large gap (exponential in k) between ρ(k) and ρ(k + 1).
+Furthermore, the above result is not algorithmic, in the sense that he needs to find the optimum
+sparsest cut of G or its induced subgraphs to construct the k-partitioning.
+
+1.1   Related Works
+Let A be the adjacency matrix of G and L := I − D −1/2 AD −1/2 be the normalized laplacian of G
+with eigenvalues 0 = λ1 ≤ λ2 ≤ . . . λn ≤ 2. Cheeger’s inequality offers the following quantitative
+connection between ρ(2) and λ2 :
+Theorem 1.3 (Cheeger’s inequality). For any graph G,
+                                         λ2         p
+                                            ≤ φ(G) ≤ 2λ2 .
+                                         2
+Furthermore, there is a simple near-linear time algorithm
+                                                        p(the Spectral Partitioning algorithm) that
+finds a set S such that vol(S) ≤ vol(V )/2, and φ(S) ≤ 4φ(G).
+    The above inequality can be read as follows: a graph G is nearly disconnected if and only if λ2
+is very close to zero. The importance of Cheeger’s inequality is that it does not depend on the size
+of the graph G, and so it is applicable to massive graphs appearing in practical applications.
+    Very recently, Lee et al. [LOT12] proved higher order variants of Cheeger’s inequality (see also
+[LRTV12]). In particular, they show that for any graph G, ρ(k) very well characterizes λk .
+Theorem 1.4 (Lee et al. [LOT12]). For any graph G and k ≥ 2,
+
+                                λk /2 ≤ ρ(k) ≤ O(k 2 ) λk .
+                                                      p
+
+
+    Meka, Moitra and Srivastava [MMS13] studied existence of Θ(k) expander graphs covering most
+vertices of a graph where the conductance of each expander is a function of λk .
+    Kannan, Vempala and Vetta in [KVV04] designed an approximation algorithm to find a par-
+titioning of a graph that cuts very few edges and each set in the partitioning has a large inside
+conductance.
+      P        Comparing to Definition 1.1 instead of minimizing φ(Ai ) for each set Ai they mini-
+mize i φ(Ai ). Very recently, Zhu, Lattanzi and Mirrokni [ZLM13] designed a local algorithm to
+find a set S such that φ(S) is small and φ(G[S]) is large assuming that such a set exists. Both of
+these results do not argue about the existence of a partitioning with large inside conductance. Fur-
+thermore, unlike Cheeger type inequalities the quality of approximation factor of these algorithms
+depends on the size of the input graph (or the size of the cluster S).
+
+1.2   Our Contributions
+Partitioning into Expanders There is a basic fact in algebraic graph theory that for any graph
+G and any k ≥ 2, λk > 0 if and only if G has at most k − 1 connected components. It is a natural
+question to ask for a robust version of this fact. Our main existential theorem provides a robust
+version of this fact.
+Theorem 1.5. For any k ≥ 2 if λk > 0, then for some 1 ≤ ℓ ≤ k − 1 there         √ is a ℓ-partitioning of
+                                               2                       2      3
+V into sets P1 , . . . , Pℓ that is a (Ω(ρ(k)/k ), O(ℓρ(ℓ))) = (Ω(λk /k ), O(ℓ ) λℓ ) clustering.
+   The above theorem can be seen as a generalization of Theorem 1.4.
+
+                                                   3
+Algorithmic Results The above result is not algorithmic but with some loss in the parameters
+we can make them algorithmic.
+Theorem 1.6 (Algorithmic Theorem). There is a simple local search algorithm thatp           for any k ≥ 1
+if λk > 0 finds a ℓ-partitioning of V into sets P1 , . . . , Pℓ that is a (Ω(λ2k /k4 ), O(k6 λk−1 ) where
+1 ≤ ℓ < k. If G is unweighted the algorithm runs in a polynomial time in the size of G.
+The details of the above algorithm are described in Algorithm 3. We remark that the algorithm does
+not use any SDP or LP relaxation of the problem. It only uses the Spectral Partitioning algorithm
+as a subroutine. Furthermore, unlike the spectral clustering algorithms studied in [NJW02, LOT12],
+our algorithm does not use multiple eigenfunctions of the normalized laplacian matrix. It rather
+iteratively refines a partitioning of G by adding non-expanding sets that induce an expander.
+    Suppose that there is a large gap between λk and λk+1 . Then, the above theorem (together
+with 1.13) implies that there is a k partitioning of V such that inside conductance of each set is
+significantly larger than its outside conductance in G. Furthermore, such a partitioning can be
+found in polynomial time. This partitioning may represent one of the best k-clusterings of the
+graph G.                                                            √
+    If instead of the Spectral Partitioning algorithm we use the O( log n)-approximation algorithm
+for φ(G) developed in [ARV09] the same proof implies that P1 , . . . , Pℓ are a
+                                             λ      p         
+                                      Ω      pk        , k3 λk−1
+                                         k2 · log(n)
+clustering.
+    To the best of our knowledge, the above theorem provides the first polynomial time algorithm
+that establishes a Cheeger-type inequality for the inside/outside conductance of sets in a k-way
+partitioning.
+
+Main Technical Result The main technical result of this paper is the following theorem. We
+show that even if there is a very small gap between ρ(k) and ρ(k + 1) we can guarantee the
+existence of a (Ωk (ρ(k + 1)), Ok (ρ(k)))-clustering where we in Ωk (.), Ok (.) notations we dropped
+the dependency to k.
+Theorem 1.7 (Existential Theorem). If ρG (k + 1) > (1 + ǫ)ρG (k) for some 0 < ǫ < 1, then
+ i) There exists k disjoint subsets of V that are a (ǫ · ρ(k + 1)/7, ρ(k))-clustering.
+
+ ii) There exists a k-partitioning of V that is a (ǫ · ρ(k + 1)/(14k), kρ(k))-clustering.
+    The importance of the above theorem is that the gap is even independent of k and it can be
+made arbitrarily close to 0. Compared to Theorem 1.2, we require a very small gap between ρ(k)
+and ρ(k + 1) and the quality of our k-partitioning has a linear loss in terms of k. We show tightness
+of above theorem in Subsection 1.3.
+    Using the above theorem it is easy to prove Theorem 1.5.
+Proof of Theorem 1.5. Assume λk > 0 for some k ≥ 2. By Theorem 1.4 we can assume ρ(k) ≥
+λk /2 > 0. Since ρ(1) = 0 we have (1 + 1/k)ρ(ℓ) < ρ(ℓ + 1) at least for one index 1 ≤ ℓ < k. Let ℓ
+be the largest index such that (1 + 1/k)ρ(ℓ) < ρ(ℓ + 1); it follows that
+
+                            ρ(k) ≤ (1 + 1/k)k−ℓ−1 ρ(ℓ + 1) ≤ e · ρ(ℓ + 1).                           (1)
+
+                                                   4
+Therefore, by part (ii) of Theorem 1.7 there is a ℓ-partitioning of V into sets P1 , . . . , Pℓ such that
+for all 1 ≤ i ≤ ℓ,
+                                         ρ(ℓ + 1)    ρ(k)     λk
+                             φ(G[Pi ]) ≥           ≥     2
+                                                           ≥      , and
+                                           14k · ℓ   40k     80k2
+                                    φ(Pi ) ≤ ℓρ(ℓ) ≤ O(ℓ3 ) λℓ .
+                                                           p
+
+where we used (1) and Theorem 1.4. The following corollary follows.
+    Building on Theorem 1.4 we can also prove the existence of a good k-partitioning of G if there
+is a large enough gap between λk and λk+1 .
+                                                                                               √
+Corollary 1.8. There is a universal constant c > 0, such that for √any graph G if λk+1 ≥ c · k2 λk ,
+then there exists a k-partitioning of G that is a (Ω(λk+1 /k), O(k3 λk ))-clustering.
+
+1.3   Tightness of Existential Theorem
+In this part we provide several examples showing the tightness of Theorem 1.7. In the first example
+we show that if there is no gap between ρ(k) and ρ(k + 1) then G cannot be partitioned into
+expanders.
+Example 1.9. In the first example we construct a graph such that there is no gap between ρ(k)
+and ρ(k + 1) and we show that in any k-partitioning there is a set P such that φ(G[P ]) ≪ ρ(k + 1).
+Suppose G is a star. Then, for any k ≥ 2, ρ(k) = 1. But, among any k disjoint subsets of G there
+is a set P with φ(G[P ]) = 0. Therefore, for any k ≥ 2, there is a set P with φ(G[P ]) ≪ ρ(k + 1).
+In the next example we show that a linear loss in k is necessary in the quality of our k-partitioning
+in part (ii) of Theorem 1.7.
+Example 1.10. In this example we construct a graph such that in any k-partitioning there is a set
+P with φ(P ) ≥ Ω(k · ρ(k)). Furthermore, in any k partitioning where the conductance of every set
+is Ok (ρ(k)), there is a set P such that φ(G[P ]) ≤ O(ρ(k + 1)/k).
+    Let G be a union of k + 1 cliques C0 , C1 , . . . , Ck each with ≈ n/(k + 1) vertices where n ≫ k.
+Also, for any 1 ≤ i ≤ k, include an edge between C0 and Ci . In this graph ρ(k) = Θ(k2 /n2 ) by
+choosing the k disjoint sets C1 , . . . , Ck . Furthermore, ρ(k + 1) = Θ(k · ρ(k)).
+    Now consider a k partitioning of G. First of all if there is a set P in the partitioning that
+contains a proper subset of one the cliques, i.e., ∅ ⊂ (P ∩ Ci ) ⊂ Ci for some i, then φ(P ) ≥
+Ωk (1/n) = Ωk (n · ρ(k)). Otherwise, every clique is mapped to one of the sets in the partitioning.
+Now, let P be the set containing C0 (P may contain at most one other clique). It follows that
+φ(P ) = Ω(k · ρ(k)).
+    Now, suppose we have a partitioning of G into k sets such that the conductance of each set is
+Ok (ρ(k)). By the arguments in above paragraph none of the sets in the partitioning can have a
+proper subset of one cliques. Since we have k + 1 cliques there is a set P that contains exactly two
+cliques Ci , Cj , for i 6= j. It follows that φ(G[P ]) ≤ O(ρ(k)/k).
+
+1.4   Notations
+For a function f : V → R let
+                                                                              2
+                                         P
+                                             (u,v)∈E w(u, v) · |f (u) − f (v)|
+                              R(f ) :=             P                 2
+                                                     v∈V w(v)f (v)
+
+
+                                                      5
+The support of f is the set of vertices with non-zero value in f ,
+
+                                     supp(f ) := {v ∈ V : f (v) 6= 0}.
+
+We say two functions f, g : V → R are disjointly supported if supp(f ) ∩ supp(g) = ∅.
+   For S ⊆ P ⊆ V we use φG[P ] (S) to denote the conductance of S in the induced subgraph G[P ].
+For S, T ⊆ V we use                               X
+                                w(S → T ) :=            w(u, v).
+                                                   u∈S,v∈T −S
+
+We remark that in the above definition S and T are not necessarily disjoint, so w(S → T ) is not
+necessarily the same as w(T → S).
+   For S ⊆ Bi ⊆ V we define
+                                                      w(S → Bi )
+                                ϕ(S, Bi ) := vol(B −S)
+                                              vol(Bi ) · w(S → V − Bi )
+                                                  i
+
+
+
+
+Let us motivate the above definition. Suppose Bi ⊆ V such that φG (Bi ) is very small but φ(G[Bi ])
+is very large. Then, any S ⊆ Bi such that vol(S) ≤ vol(Bi )/2 satisfy the following properties.
+
+   • Since φG[Bi ] (S) is large, a large fraction of edges adjacent to vertices of S must leave this set.
+
+   • Since φG (Bi ) is small, a small fraction of edges adjacent to S may leave Bi .
+
+Putting above properties together we obtain that w(S → Bi ) & w(S → V − Bi ), thus ϕ(S, Bi ) is at
+least a constant. As we describe in the next section the converse of this argument is a crucial part of
+our proof. In particular, if for any S ⊆ Bi , ϕ(S, Bi ) is large, then Bi has large inside conductance,
+and it can be used as the “backbone” of our k-partitioning.
+
+1.5    Overview of the Proof
+We prove Theorem 1.7 in two steps. Let A1 , . . . , Ak be any k disjoint sets such that φ(Ai ) ≤
+(1 + ǫ)ρ(k + 1). In the first step we find B1 , . . . , Bk such that for 1 ≤ i ≤ k, φ(Bi ) ≤ φ(Ai ) with the
+crucial property that any subset of Bi has at least a constant fraction of its outgoing edges inside
+Bi . We then use B1 , . . . , Bk as the “backbone” of our k-partitioning. We merge the remaining
+vertices with B1 , . . . , Bk to obtain P1 , . . . , Pk making sure that for each S ⊆ Pi − Bi at least 1/k
+fraction of the outgoing edges of S go to Pi (i.e., w(S → Pi ) ≥ w(S → V )/k).
+    We show that if 2 max1≤i≤k φ(Ai ) < ρ(k + 1) then we can construct B1 , . . . , Bk such that every
+S ⊆ Bi satisfies ϕ(S, Bi ) ≥ Ω(1) (see Lemma 2.1). For example, if vol(S) ≤ vol(Bi )/2, we obtain
+that
+                                       w(S → Bi − S) & w(S → V ).
+This property shows that each Bi has an inside conductance of Ω(ρ(k + 1)) (see Lemma 2.3). In
+addition, it implies that any superset of Bi , Pi ⊇ Bi , has an inside conductance φ(G[Pi ]) & α·ρ(k+1)
+as long as for any S ⊆ Pi − Bi , w(S → Bi ) ≥ α · w(S → V ) (see Lemma 2.6). By latter observation
+we just need to merge the vertices in V − B1 − . . . − Bk with B1 , . . . , Bk and obtain a k-partitioning
+P1 , . . . , Pk such that for any S ⊆ Pi − Bi , w(S → Pi ) ≥ w(S → V )/k.
+
+
+
+
+                                                     6
+1.6    Background on Higher Order Cheeger’s Inequality
+In this short section we use the machinery developed in [LOT12] to show that for √     any partitioning
+of V into ℓ < k sets P1 , . . . , Pℓ the minimum inside conductance of Pi ’s is poly(k) λk .
+
+Theorem 1.11 (Lee et al.[LOT12]). There is a universal constant c0 > 0 such that for any graph
+G = (V, E) and 1 ≤ k ≤ n there exists k disjointly supported functions f1 , . . . , fk : V → R such
+that for each 1 ≤ i ≤ k,
+                                      R(fi ) ≤ c0 k6 λk .
+
+Proposition 1.12 (Kwok et al. [KLL+ 13]). For any graph G = (V, E), any k ≥ 1 and any k
+disjointly supported functions f1 , . . . , fk : V → R we have
+
+                                             λk ≤ 2 max R(fi ).
+                                                     1≤i≤k
+
+Lemma 1.13. There is a universal constant c0 > such that for any k ≥ 2 and any partitioning of
+V into ℓ sets P1 , . . . , Pℓ of V where ℓ ≤ k − 1, we have
+
+                                         min λ2 (G[Pi ]) ≤ 2c0 k6 λk .
+                                         1≤i≤ℓ
+
+where λ2 (G[Pi ]) is the second eigenvalue of the normalized laplacian matrix of the induced graph
+G[Pi ].
+
+Proof. Let f1 , . . . , fk be the first k eigenfunctions of L corresponding to λ1 , . . . , λk . By definition
+R(fi ) = λi .
+   By Theorem 1.11 there are k disjointly supported functions g1 , . . . , gk such that R(gi ) ≤ c0 k6 λk .
+For any 1 ≤ j ≤ ℓ, let gi,j be the restriction of gi to the induced subgraph G[Pj ]. It follows that
+            Pℓ      P                             2
+                                                             P                                 2
+              j=1   (u,v)∈E(Pj ) |gi (v) − gi (u)|               (u,v)∈E(Pj ) |gi (u) − gi (v)|
+ R(gi ) ≥           Pℓ P                            ≥ min              P              2
+                                                                                                 = min R(gi,j ).
+                                                                         v∈Pj gi (v)
+                                         2
+                            v∈Pj gi (v)
+                                                     1≤j≤ℓ                                        1≤j≤ℓ
+                      j=1
+                                                                                                       (2)
+For each 1 ≤ i ≤ k let j(i) := argmin1≤j≤ℓ R(gi,j ). Since ℓ < k, by the pigeon hole principle, there
+are two indices 1 ≤ i1 < i2 ≤ k such that j(i1 ) = j(i2 ) = j ∗ for some 1 ≤ j ∗ ≤ ℓ. Since g1 , . . . , gk
+are disjointly supported, by Proposition 1.12
+
+            λ2 (G[Pj ∗ ]) ≤ 2 max{R(gi1 ,j ∗ ), R(gi2 ,j ∗ )} ≤ 2 max{R(gi1 ), R(gi2 )} ≤ 2c0 k6 λk .
+
+where the second inequality follows by (2).
+
+    The above lemma is used in the proof of Theorem 1.6.
+
+
+2     Proof of Existential Theorem
+In this section we prove Theorem 1.7. Let A1 , . . . , Ak are k disjoint sets such that φ(Ai ) ≤ ρ(k) for
+all 1 ≤ i ≤ k. In the first lemma we construct k disjoint sets B1 , . . . , Bk such that their conductance
+in G is only better than A1 , . . . , Ak with the additional property that ϕ(S, Bi ) ≥ ǫ/3 for any S ⊆ Bi .
+
+
+
+                                                       7
+Lemma 2.1. Let A1 , . . . , Ak be k disjoint sets s.t. (1 + ǫ)φ(Ai ) ≤ ρ(k + 1) for 0 < ǫ < 1. For any
+1 ≤ i ≤ k, there exist a set Bi ⊆ Ai such that the following holds:
+  1. φ(Bi ) ≤ φ(Ai ).
+  2. For any S ⊆ Bi , ϕ(S, Bi ) ≥ ǫ/3.
+Proof. For each 1 ≤ i ≤ k we run Algorithm 1 to construct Bi from Ai . Note that although the
+algorithm is constructive, it may not run in polynomial time. The reason is that we don’t know
+any (constant factor approximation) algorithm for minS⊆Bi ϕ(S, Bi ).
+
+Algorithm 1 Construction of B1 , . . . , Bk from A1 , . . . , Ak
+ Bi = Ai .
+ loop
+    if ∃S ⊂ Bi such that ϕ(S, Bi ) ≤ ǫ/3 then,
+        Update Bi to either of S or Bi − S with the smallest conductance in G.
+    else
+        return Bi .
+    end if
+ end loop
+
+     First, observe that the algorithm always terminates after at most |Ai | iterations of the loop since
+|Bi | decreases in each iteration. The output of the algorithm always satisfies conclusion 2 of the
+lemma. So, we only need to bound the conductance of the output set. We show that throughout
+the algorithm we always have
+                                            φ(Bi ) ≤ φ(Ai ).                                          (3)
+In fact, we prove something stronger. That is, the conductance of Bi never increases in the entire
+run of the algorithm. We prove this by induction. At the beginning Bi = Ai , so (3) obviously
+holds. It remains to prove the inductive step.
+    Let S ⊆ Bi such that ϕ(S, Bi ) ≤ ǫ/3. Among the k + 1 disjoint sets
+
+                                  {A1 , . . . , Ai−1 , S, Bi − S, Ai+1 , Ak }
+
+there is one of conductance ρG (k + 1). So,
+
+                 max{φ(S), φ(Bi − S)} ≥ ρG (k + 1) ≥ (1 + ǫ)φ(Ai ) ≥ (1 + ǫ)φ(Bi ).
+
+The inductive step follows from the following lemma.
+Lemma 2.2. For any set Bi ⊆ V and S ⊂ Bi , if ϕ(S, Bi ) ≤ ǫ/3 and
+
+                                max{φ(S), φ(Bi − S)} ≥ (1 + ǫ)φ(Bi ),                                (4)
+
+then min{φ(S), φ(Bi − S)} ≤ φ(Bi ).
+
+Proof. Let T = Bi − S. Since ϕ(S, Bi ) ≤ ǫ/3,
+                                ǫ vol(T )                    ǫ
+                  w(S → T ) ≤    ·         · w(S → V − Bi ) ≤ · w(S → V − Bi ).                      (5)
+                                3 vol(Bi )                   3
+We consider two cases depending on whether φ(S) ≥ (1 + ǫ)φ(Bi ).
+
+                                                      8
+Case 1: φ(S) ≥ (1 + ǫ)φ(Bi ). First, by (5).
+                                  w(S → T ) + w(S → V − Bi )   (1 + ǫ/3)w(S → V − Bi )
+         (1 + ǫ)φ(Bi ) ≤ φ(S) =                              ≤                                   (6)
+                                            vol(S)                      vol(S)
+     Therefore,
+                                    w(Bi → V ) − w(S → V − Bi ) + w(S → T )
+                         φ(T ) =
+                                                        vol(T )
+                                    w(Bi → V ) − (1 − ǫ/3)w(S → V − Bi )
+                                ≤
+                                                      vol(T )
+                                    φ(Bi )(vol(Bi ) − vol(S)(1 + ǫ/2)(1 − ǫ/3))
+                                ≤
+                                                       vol(T )
+                                    φ(Bi ) vol(T )
+                                ≤                  = φ(Bi ).
+                                      vol(T )
+     where the first inequality follows by (5) and the second inequality follows by (6) and that
+     ǫ ≤ 1.
+Case 2: φ(T ) ≥ (1 + ǫ)φ(Bi ). First,
+                                                    w(S → T ) + w(T → V − Bi )
+                          (1 + ǫ)φ(Bi ) ≤ φ(T ) =                                                (7)
+                                                              vol(T )
+     Therefore,
+                                w(Bi → V ) − w(T → V − Bi ) + w(S → T )
+                     φ(S) =
+                                                    vol(S)
+                                w(Bi → V ) − (1 + ǫ)φ(Bi ) vol(T ) + 2w(S → T )
+                            ≤
+                                                      vol(S)
+                                φ(Bi )(vol(Bi ) − (1 + ǫ) vol(T )) + 2ǫ
+                                                                     3 · vol(T ) · φ(Bi )
+                            ≤
+                                                        vol(S)
+                                φ(Bi ) vol(S)
+                            ≤                 = φ(Bi ).
+                                  vol(S)
+     where the first inequality follows by (7), the second inequality follows by (5) and that
+     w(S → V − Bi ) ≤ w(Bi → V − Bi ). So we get φ(S) ≤ φ(Bi ).
+This completes the proof of Lemma 2.2.
+
+This completes the proof of Lemma 2.1.
+
+Note that sets that we construct in the above lemma do not necessarily define a partitioning of G.
+In the next lemma we show that the sets B1 , . . . , Bk that are constructed above have large inside
+conductance.
+Lemma 2.3. Let Bi ⊆ V , and S ⊆ Bi such that vol(S) ≤ vol(Bi )/2. If ϕ(S, Bi ), ϕ(Bi −S, Bi ) ≥ ǫ/3
+for ǫ ≤ 1, then
+                                 w(S → Bi )    ǫ
+                   φG[Bi ] (S) ≥            ≥ · max{φ(S), φ(Bi − S)},
+                                   vol(S)      7
+
+                                                    9
+Proof. Let T = Bi − S. First, we lower bound φG[Bi ] (S) by ǫ · φ(S)/7. Since ϕ(S, Bi ) ≥ ǫ/3,
+                                         vol(T )
+             w(S → Bi )   ϕ(S, Bi ) · vol(Bi ) · w(S → V − Bi )   ǫ · w(S → V − Bi )
+                        =                                       ≥
+               vol(S)                     vol(S)                        6 vol(S)
+where the first inequality follows by the assumption vol(S) ≤ vol(Bi )/2. Summing up both sides
+of the above inequality with ǫw(S→B     i)
+                                6 vol(S) and dividing by 1 + ǫ/6 we obtain
+
+                         w(S → Bi )      ǫ/6     ·w(S → V )   ǫ · φ(S)
+                                    ≥          ·            ≥          .
+                           vol(S)     (1 + ǫ/6     vol(S)         7
+where we used ǫ ≤ 1. It remains to φG[Bi ] (S) by ǫ · φ(Bi − S)/7. Since ϕ(T, Bi ) ≥ ǫ/3,
+
+                      w(S → Bi )   w(T → Bi )              ϕ(T, Bi ) · w(T → V − Bi )
+                                 =                    =
+                        vol(S)       vol(S)                           vol(Bi )
+                                                           ǫ w(T → V − Bi )
+                                                      ≥      ·
+                                                           3       vol(Bi )
+                                                           ǫ w(T → V − Bi )
+                                                      ≥      ·
+                                                           6        vol(T )
+where the last inequality follows by the assumption vol(S) ≤ vol(Bi )/2. Summing up both sides of
+the above inequality with ǫ·w(S→B    i)
+                             6 vol(S) we obtain,
+
+                                    w(S → Bi )  ǫ w(T → V )   ǫ · φ(T )
+                        (1 + ǫ/6)              ≥ ·          ≥           .
+                                      vol(S)    6  vol(T )        6
+where we used the assumption vol(S) ≤ vol(Bi )/2. The lemma follows using the fact that ǫ ≤ 1.
+
+   Let B1 , . . . , Bk be the sets constructed in Lemma 2.1. Then, for each Bi and S ⊆ Bi since
+φ(Bj ) < ρ(k + 1) for all 1 ≤ j ≤ k, we get
+
+                                       max(φ(S), φ(T )) ≥ ρ(k + 1).
+
+Therefore, by the above lemma, for all 1 ≤ i ≤ k,
+
+                     φ(G[Bi ]) ≥ ǫ · ρ(k + 1)/7, and φ(Bi ) ≤ max φ(Ai ) ≤ ρ(k).
+                                                                 1≤i≤k
+
+This completes the proof of part (i) of Theorem 1.7.
+    It remains to prove part (ii). To prove part (ii) we have to turn B1 , . . . , Bk into a k-partitioning.
+We run the following algorithm to merge the vertices that are not included in B1 , . . . , Bk . Again,
+although this algorithm is constructive, it may not run in polynomial time. The main difficulty is
+in finding a set S ⊂ Pi − Bi such that w(S → Pi ) < w(S → Pj ), if such a set exists.
+    First, observe that above algorithm always terminates in a finite number of steps. This is
+because in each iteration of the loop the weight of edges between the sets decreases. That is,
+                                            X
+                                                  w(Pi → Pj )
+                                            1≤i<j≤k
+
+decreases. The above algorithm has two important properties which are the key ideas of the proof.
+
+
+                                                      10
+Algorithm 2 Construction of P1 , . . . , Pk based on the B1 , . . . , Bk
+ Let Pi = Bi for all 1 ≤ i ≤ k − 1, and Pk = V − B1 − B2 − . . . − Bk−1 (note that Bk ⊆ Pk ).
+ while there is i 6= j and S ⊂ Pi − Bi , such that w(S → Pi ) < w(S → Pj ), do
+    Update Pi = Pi − S, and merge S with argmaxPj w(S → Pj ).
+ end while
+
+
+Fact 2.4. The output of the above algorithm satisfies the following.
+  1. For all 1 ≤ i ≤ k, Bi ⊆ Pi .
+
+  2. For any 1 ≤ i ≤ k, and any S ⊆ Pi − Bi , we have
+
+                                            w(S → Pi ) ≥ w(S → V )/k.
+
+   Next, we use the above properties to show that the resulting sets P1 , . . . , Pk are non-expanding
+in G
+Lemma 2.5. Let Bi ⊆ Pi ⊆ V such that w(Pi − Bi → Bi ) ≥ w(Pi − Bi → V )/k. Then
+
+                                              φ(Pi ) ≤ kφ(Bi ).
+
+Proof. Let S = Pi − Bi . Therefore,
+                          w(Pi → V )      w(Bi → V ) + w(S → V − Pi ) − w(S → Bi )
+               φ(Pi ) =                 ≤
+                           vol(Pi )                         vol(Bi )
+                                                   (k − 1)w(Bi → S)
+                                        ≤ φ(Bi ) +                   ≤ kφ(Bi ).
+                                                        vol(Bi )
+The second inequality uses conclusion 2 of Fact 2.4.
+
+   It remains to lower-bound the inside conductance of each Pi . This is proved in the next lemma.
+For a S ⊆ Pi we use the following notations in the next lemma (see Figure 3 for an illustration).
+
+                                     SB := Bi ∩ S,         S B := Bi ∩ S,
+                                     SP := S − Bi ,        S P := S − Bi .
+
+Lemma 2.6. Let Bi ⊆ Pi ⊆ V and let S ⊆ Pi such that vol(SB ) ≤ vol(Bi )/2. Let ρ ≤ φ(SP ) and
+ρ ≤ max{φ(SB ), φ(S B ))} and 0 < ǫ < 1. If the following conditions hold then φ(S) ≥ ǫ · ρ/14k.
+1) If SP 6= ∅, then w(SP → Pi ) ≥ w(SP → V )/k,
+
+2) If SB 6= ∅, then ϕ(SB , Bi ) ≥ ǫ/3 and ϕ(S B , Bi ) ≥ ǫ/3.
+Proof. We consider 2 cases.
+Case 1: vol(SB ) ≥ vol(SP ) : Because of assumption (2) and vol(SB ) ≤ vol(Bi )/2 we can apply
+    Lemma 2.3, and we obtain
+
+                              w(S → Pi )   w(SB → Bi )   ǫ · max{φ(SB ), φ(S B )}   ǫ·ρ
+              φG[Pi ] (S) ≥              ≥             ≥                          ≥     .
+                                vol(S)      2 vol(SB )             14                14
+
+                                                      11
+                                                     Bi
+
+
+                                                SB        SB
+                                                                S
+                                                SP        SP
+
+
+
+Figure 3: The circle represents Pi , the top (blue) semi-circle represents Bi and the right (red)
+semi-circle represents the set S.
+
+
+Case 2: vol(SP ) ≥ vol(SB ) :
+                                   w(S → Pi )         w(SP → Pi − S) + w(SB → Bi )
+                   φG[Pi ] (S) ≥                 ≥
+                                     vol(S)                        2 vol(SP )
+                                                      w(SP → Pi − S) + ǫ · w(SB → SP )/6
+                                                 ≥
+                                                                      2 vol(SP )
+                                                      ǫ · w(SP → Pi )
+                                                 ≥
+                                                          12 vol(SP )
+                                                      ǫ · w(SP → V )
+                                                 ≥
+                                                        12k vol(SP )
+                                                 ≥    ǫ · φ(SP )/12k ≥ ǫ · ρG (k + 1)/12k.
+
+      where the third inequality follows by the assumption that ϕ(SB , Bi ) ≥ ǫ/3 and vol(SB ) ≤
+      vol(Bi )/2, and the fifth inequality follows by assumption (1).
+    Let B1 , . . . , Bk be the sets constructed in Lemma 2.1 and P1 , . . . , Pk the sets constructed in
+Algorithm 2, First, observe that we can let ρ = ρ(k + 1). This is because among the k + 1 disjoint
+sets {B1 , . . . , Bi−1 , SB , S B , Bi+1 , Bk } there is a set of conductance ρ(k + 1). Similarly, among
+the sets {B1 , B2 , . . . , Bk , SP } there is a set of conductance ρ(k + 1). Since for all 1 ≤ i ≤ k,
+φ(Bi ) < ρ(k + 1), we have max{φ(SB ), φ(S B )} ≥ ρ(k + 1) and φ(PS ) ≥ ρ(k + 1). Therefore, by the
+above lemma,
+
+                 φ(G[Pi ]) = min max{φG[Pi ] (S), φG[Pi ] (Pi − S)} ≥ ǫ · ρ(k + 1)/14k.
+                             S⊂Pi
+
+This completes the proof of part (ii) of Theorem 1.7.
+
+
+3    Proof of Algorithmic Theorem
+In this section we prove Theorem 1.6. Let
+
+                                    ρ∗ := min{λk /10, 30c0 k5
+                                                                p
+                                                                    λk−1 }.                          (8)
+
+where c0 is thep  constant defined in Theorem 1.11. We use the notation φin := λk /140k2 and
+                6
+φout := 90c0 · k λk−1 .
+
+                                                      12
+    The idea of the algorithm is simple: we start with one partitioning of G, P1 = B1 = V . Each
+time we try to find a set S of small conductance in one Pi . Then, either we can use S to introduce a
+new set Bℓ+1 of small conductance, i.e., φ(Bℓ+1 ) ≤ 4ρ∗ , or we can improve the current ℓ-partitioning
+by refining Bi to one of its subsets (similar to Algorithm 1) or by moving parts of Pi to the other
+sets Pj (similar to Algorithm 2).
+    The details of our polynomial time algorithm are described in Algorithm 3. Our algorithm is a
+simple local search designed based on Algorithm 1 and Algorithm 2.
+
+Algorithm 3 A polynomial time algorithm for partitioning G into k expanders
+Input: k > 1 such that λk > 0.
+Output: A (φ2in /4, φout ) ℓ-partitioning of G for some 1 ≤ ℓ < k.
+ 1: Let ℓ = 1, P1 = B1 = V .
+ 2: while ∃ 1 ≤ i ≤ ℓ such that w(Pi − Bi → Bi ) < w(Pi − Bi → Pj ) for j 6= i, or Spectral
+    Partitioning finds S ⊆ Pi s.t. φG[Pi ] (S), φG[Pi ] (Pi − S) < φin do
+ 3:    Assume (after renaming) vol(S ∩ Bi ) ≤ vol(Bi )/2.
+ 4:    Let SB = S ∩ Bi , S B = Bi ∩ S, SP = (Pi − Bi ) ∩ S and S P = (Pi − Bi ) ∩ S (see Figure 3).
+ 5:    if max{φ(SB ), φ(S B )} ≤ (1 + 1/k)ℓ+1 ρ∗ then
+ 6:        Let Bi = SB , Pℓ+1 = Bℓ+1 = S B and Pi = Pi − S B . Set ℓ ← ℓ + 1 and goto step 2.
+ 7:    end if
+ 8:    if max{ϕ(SB , Bi ), ϕ(S B , Bi )} ≤ 1/3k, then
+ 9:        Update Bi to either of SB or S B with the smallest conductance, and goto step 2.
+10:    end if
+11:    if φ(SP ) ≤ (1 + 1/k)ℓ+1 ρ∗ then
+12:        Let Pℓ+1 = Bℓ+1 = SP , Pi = Pi − SP . Set ℓ ← ℓ + 1 and goto step 2.
+13:    end if
+14:    if w(Pi − Bi → Pi ) < w(Pi − Bi → Bj ) for j 6= i, then
+15:        Update Pj = Pj ∪ (Pi − Bi ), and let Pi = Bi and goto step 2.
+16:    end if
+17:    if w(SP → Pi ) < w(SP → Pj ) for j 6= i, then
+18:        Update Pi = Pi − SP and merge SP with argmaxPj w(SP → Pj ).
+19:    end if
+20: end while
+return P1 , . . . , Pℓ .
+
+     Observe that in the entire run of the algorithm B1 , . . . , Bℓ are always disjoint, Bi ⊆ Pi and
+P1 , . . . , Pℓ form an ℓ-partitioning of V . We prove Algorithm 3 by a sequence of steps.
+
+Claim 3.1. Throughout the algorithm we always have
+
+                                       max φ(Bi ) ≤ ρ∗ (1 + 1/k)ℓ .
+                                      1≤i≤ℓ
+
+Proof. We prove the claim inductively. By definition, at the beginning φ(B1 ) = 0. In each iteration
+of the algorithm, B1 , . . . , Bℓ only change in steps 6,9 and 12. It is straightforward that by executing
+either of steps 6 and 12 we satisfy induction claim, i.e., we obtain ℓ + 1 sets B1 , . . . , Bℓ+1 such that
+for all 1 ≤ i ≤ ℓ + 1,
+                                           φ(Bi ) ≤ ρ∗ (1 + 1/k)ℓ+1 .
+
+                                                    13
+   On the other hand, if step 9 is executed, then the condition of 5 is not satisfied, i.e.,
+
+                      max{φ(SB ), φ(S B )} > (1 + 1/k)ℓ+1 ρ∗ ≥ (1 + 1/k)φ(Bi ).
+
+where the last inequality follows by the induction hypothesis. Since min{ϕ(SB , Bi ), ϕ(S B , Bi )} ≤
+1/3k for ǫ = 1/k by Lemma 2.2 we get
+
+                             min{φ(SB ), φ(S B )} ≤ φ(Bi ) ≤ (1 + 1/k)ℓ ρ∗ ,
+
+which completes the proof.
+
+Claim 3.2. In the entire run of the algorithm we have ℓ < k.
+
+Proof. The follows from the previous claim. If ℓ = k, then by previous claim we have disjoint sets
+B1 , . . . , Bk such that
+
+                        max φ(Bi ) ≤ ρ∗ (1 + 1/k)k ≤ e · ρ∗ ≤ eλk /10 < λk /2.
+                        1≤i≤k
+
+where we used (8). But, the above inequality implies ρ(k) < λk /2 which contradicts Theorem 1.4.
+
+
+Claim 3.3. If the algorithm terminates, then it returns a ℓ-partitioning of V that is a (φ2in /4, φout )-
+clustering.
+
+Proof. Suppose the algorithm terminates with sets B1 , . . . , Bℓ and P1 , . . . , Pℓ . Since by the loop
+condition, for each 1 ≤ i ≤ ℓ,
+
+                                w(Pi − Bi → Bi ) ≥ w(Pi − Bi → V )/ℓ,
+
+by Lemma 2.5,
+                             φ(Pi ) ≤ ℓφ(Bi ) ≤ ℓ · e · ρ∗ ≤ 90c0 · k6
+                                                                         p
+                                                                             λk−1 .
+where the second inequality follows by Claim 3.1, and the last inequality follows by Claim 3.2 and
+(8).
+    On the other hand, by the condition of the loop and the performance of Spectral Partitioning
+algorithm as described in Theorem 1.3, for each 1 ≤ i ≤ k,
+
+                                     φ(G[Pi ]) ≥ φ2in /4 = Ω(λ2k /k4 ).
+
+
+
+    It remains to show that the algorithm indeed terminates. First, we show that in each iteration
+of the loop at least one of the conditions are satisfied.
+
+Claim 3.4. In each iteration of the loop at least one of the conditions hold.
+
+Proof. We use Lemma 2.6 to show that if none of the conditions in the loop are satisfied then
+φ(S) ≥ φin which is a contradiction. So, for the sake of contradiction assume in an iteration of the
+loop none of the conditions hold.
+
+
+
+                                                    14
+    First, since conditions of 8 and 17 do not hold, for ǫ = 1/k assumptions (1) and (2) of Lemma 2.6
+are satisfied. Furthermore, since condition of steps 5 and 11 do not hold
+
+max{φ(SB , S B )} = max{φ(B1 ), . . . , φ(Bi−1 ), φ(SB ), φ(S B ), φ(Bi+1 , . . . , φ(Bℓ )} ≥ max{ρ∗ , ρ(ℓ + 1)}.
+            φ(SP ) = max{φ(B1 ), . . . , , . . . , φ(Bℓ ), φ(SP )} ≥ max{ρ∗ , ρ(ℓ + 1)}.
+
+where we used Claim 3.1. So, for ρ = ρ∗ and ǫ = 1/k by Lemma 2.6 we get
+
+                                              ǫ·ρ   max{ρ∗ , ρ(ℓ + 1)}
+                                    φ(S) ≥        =                    .                                    (9)
+                                              14k        14k2
+Now, if ℓ = k − 1, then by Theorem 1.4 we get
+
+                                                 ρ(k)     λk
+                                        φ(S) ≥       2
+                                                       ≥      ≥ φin ,
+                                                 14k     28k2
+which is a contradiction and we are done. Otherwise, we must have ℓ < k−1. Then by Lemma 1.13,
+                                          p              p
+                             φ(S) ≤ min 2λ2 (G[Pi ]) ≤ 4c0 k6 λk−1 ,                      (10)
+                                         1≤i≤ℓ
+
+where the first inequality follows by the Cheeger’s inequality (Theorem 1.3), Putting (9) and (10)
+together we have
+                                       ρ∗ ≤ 14k2 4c0 k6 λk−1 .
+                                                p
+
+But, by definition of ρ∗ in equation (8)), we must have ρ∗ = λk /10. Therefore, by (9),
+
+                                                      λk
+                                            φ(S) ≥         = φin ,
+                                                     140k2
+which is a contradiction, and we are done.
+
+    It remains to show that the algorithm actually terminates and if G is unweighted it terminates
+in polynomial time.
+
+Claim 3.5. For any graph G the algorithm terminates in finite number of iterations of the loop.
+Furthermore, if G is unweighted, the algorithm terminates after at most O(kn · |E|) iterations of
+the loop.
+
+Proof. In each iteration of the loop at least one of conditions in lines 5,8,11,14 and 17 are satisfied.
+By Claim 3.2, Lines 5 and 11 can be satisfied at most k − 1 times. Line 8 can be satisfied at most n
+times (this is because each time the size of one Bi decreases by at least one vertex). Furthermore,
+for a fixed B1 , . . . , Bk , 14,17 may hold only finite number of iterations, because each time the total
+weight of the edges between P1 , . . . , Pk decreases. In particular, if G is unweighted, the latter can
+happen at most O(|E|) times. So, for undirected graphs the algorithm terminates after at most
+O(kn · |E|) iterations of the loop.
+
+This completes the proof of Theorem 1.6.
+
+
+
+
+                                                       15
+4    Concluding Remarks
+We propose a new model for measuring the quality of k-partitionings of graphs which involves
+both the inside and the outside conductance of the sets in the partitioning. We believe that this
+is often an accurate model of the quality of solutions in practical applications. Furthermore, the
+simple local search Algorithm 3 can be used as a pruning step at the end of any graph clustering
+algorithm.
+    From a theoretical point of view, there has been a long line of works on the sparsest cut problem
+and partitioning of a graph into sets of small outside conductance [LR99, LLR95, ARV09, ALN08]
+but none of these works study the inside conductance of the sets in the partitioning. We think
+it is a fascinating open problem to study efficient algorithms based on linear programming or
+semidefinite programming relaxations that provide a bicriteria approximation to the (φin , φout )-
+clustering problem.
+    Several of our results can be generalized or improved. In Theorem 1.7 we significantly improve
+Theorem 1.2 of Tanaka [Tan12] and we show that even if there is a small gap between ρ(k) and ρ(k+
+1), for some k ≥ 1, then the graph admits a k-partitioning that is a (poly(k)ρ(k + 1), poly(k)ρ(k))-
+clustering. Unfortunately, to carry-out this result to the domain of eigenvalues we need to look for
+a significantly larger gap between λk , λk+1 (see Corollary 1.8). It remains an open problem if such
+a partitionings of G exists under only a constant gap between λk , λk+1 .
+
+Acknowledgements
+We would like to thank anonymous reviewers for helpful comments. Also, we would like to thank
+Pavel Kolev for a careful reading of the paper and exclusive comments.
+
+
+References
+[ALN08]    Sanjeev Arora, James R. Lee, and Assaf Naor. Euclidean distortion and the Sparsest
+           Cut. J. Amer. Math. Soc., 21(1):1–21, 2008. 16
+
+[ARV09]    Sanjeev Arora, Satish Rao, and Umesh Vazirani. Expander flows, geometric embeddings
+           and graph partitioning. J. ACM, 56:5:1–5:37, April 2009. 4, 16
+
+[Kle02]    Jon Kleinberg. An impossibility theorem for clustering. pages 446–453. MIT Press,
+           2002. 1
+
+[KLL+ 13] Tsz Chiu Kwok, Lap Chi Lau, Yin Tat Lee, Shayan Oveis Gharan, and Luca Trevisan.
+          Improved cheeger’s inequality: analysis of spectral partitioning algorithms through
+          higher order spectral gap. In STOC, pages 11–20, 2013. 7
+
+[KVV04] Ravi Kannan, Santosh Vempala, and Adrian Vetta. On clusterings: Good, bad and
+        spectral. J. ACM, 51(3):497–515, May 2004. 1, 2, 3
+
+[LLR95]    Nathan Linial, Eran London, and Yuri Rabinovich. The geometry of graphs and some
+           of its algorithmic applications. Combinatorica, 15:577–591, 1995. 16
+
+[LOT12]    James R. Lee, Shayan Oveis Gharan, and Luca Trevisan. Multi-way spectral partitioning
+           and higher-order cheeger inequalities. In STOC, pages 1117–1130, 2012. 1, 3, 4, 7
+
+                                                 16
+[LR99]    Tom Leighton and Satish Rao. Multicommodity max-flow min-cut theorems and their
+          use in designing approximation algorithms. Journal of The ACM, 46:787–832, November
+          1999. 16
+
+[LRTV12] Anand Louis, Prasad Raghavendra, Prasad Tetali, and Santosh Vempala. Many sparse
+         cuts via higher eigenvalues. In STOC, pages 1131–1140, 2012. 1, 3
+
+[MMS13] Raghu Meka, Ankur Moitra, and Nikhil Srivastava, 2013. Personal Communication. 3
+
+[NJW02] Andrew Ng, Michael Jordan, and Yair Weiss. On spectral clustering: Analysis and an
+        algorithm. In NIPS, 2002. 1, 4
+
+[SM00]    Jianbo Shi and Jitendra Malik. Normalized Cuts and Image Segmentation. IEEE
+          Transactions on Pattern Analysis and Machine Intelligence, 22(8):888–905, 2000. 1
+
+[Tan12]   Mamoru Tanaka. Higher eigenvalues and partitions of a graph. arXiv:1112.3434, 2012.
+          1, 2, 16
+
+[ZLM13]   Zeyuan A. Zhu, Silvio Lattanzi, and Vahab Mirrokni. A local algorithm for finding
+          well-connected clusters. In ICML, 2013. 3
+
+
+
+
+                                             17
+

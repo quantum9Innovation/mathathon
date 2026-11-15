@@ -1,0 +1,124 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\newtheorem{proposition}{Proposition}
+\newcommand{\vol}{\operatorname{vol}}
+\title{One-edge multiway repair can require a remote split}
+\author{Working research note; no historical priority claim}
+\date{November 15, 2026}
+\begin{document}
+\maketitle
+For a nonempty vertex set $S$, use the one-sided conductance
+$\phi_G(S)=w(S,V\setminus S)/\vol_G(S)$, even when $S$ contains more
+than half of the volume. This note records an explicit obstruction to a
+particularly tempting locality claim: retaining all old clusters not
+incident to an edited edge and repairing only the endpoint clusters.
+It is not a lower bound for update time in an implicit data structure.
+
+\begin{proposition}[An eight-vertex counterexample]
+For every $0<\eta<1$, let $G_\eta$ be the weighted path whose vertex
+order is
+\[
+ u,a,s,r,q,p,b,v
+\]
+and whose successive edge weights are
+\[
+ 1,\eta,1,\eta,1,\eta,1.
+\]
+The partition
+\[
+ C_1=\{u,a\},\qquad C_2=\{b,v\},\qquad
+ C_3=\{p,q,r,s\}
+\]
+has maximum conductance $\eta/(2+\eta)$.
+Insert the unit-weight edge $uv$ to form $G'_\eta$, and put
+$U=C_1\cup C_2$. Then:
+\begin{enumerate}
+\item $G'_\eta$ has a three-way partition of maximum conductance
+at most $\eta/(1+\eta)$, and its normalized Laplacian satisfies
+$\lambda_3(G'_\eta)\le2\eta/(1+\eta)$;
+\item every pair of disjoint nonempty subsets of $U$ contains a set
+of conductance at least $1/3$ in $G'_\eta$.
+\end{enumerate}
+Consequently, no repair procedure retaining $C_3$ unchanged and
+partitioning only $U$ into two new clusters can guarantee maximum
+conductance tending to zero with $\eta$, although $\lambda_3(G'_\eta)$
+tends to zero and a suitable global three-way partition exists.
+\end{proposition}
+\begin{proof}
+In the old graph, the degrees give
+$\phi(C_1)=\phi(C_2)=\eta/(2+\eta)$ and
+$\phi(C_3)=2\eta/(4+4\eta)\le\eta/(2+\eta)$.
+
+In the new graph use the partition
+\[
+ U,\qquad A=\{p,q\},\qquad B=\{r,s\}.
+\]
+Its conductances are respectively
+$\eta/(3+\eta)$, $\eta/(1+\eta)$, and $\eta/(1+\eta)$.
+For completeness, the elementary variational implication
+$\lambda_k\le2\max_i\phi(S_i)$ follows by taking the span of the
+indicators of disjoint $S_i$: for coefficients $c_i$, the energy across
+each interset edge is at most $2w(c_i^2+c_j^2)$, and the mass is
+$\sum_i c_i^2\vol(S_i)$. This proves the stated eigenvalue bound.
+
+Of any two disjoint nonempty subsets of $U$, at least one omits $u$ or
+$v$; call it $S$. If it contains neither $u$ nor $v$, it is a nonempty
+subset of $\{a,b\}$, and $\phi(S)=1$.
+Otherwise, by symmetry assume it contains $u$ and omits $v$. The four
+possibilities and conductances are
+\[
+ \begin{array}{c|c}
+ S&\phi_{G'_\eta}(S)\\\hline
+ \{u\}&1\\
+ \{u,a\}&(1+\eta)/(3+\eta)\\
+ \{u,b\}&1\\
+ \{u,a,b\}&(2+2\eta)/(4+2\eta).
+ \end{array}
+\]
+All are at least $1/3$.
+\end{proof}
+
+\paragraph{Leverage scope.}
+The edit in this example has leverage
+$\tau=R_{uv}(G_\eta)=4+3/\eta$, which diverges as $\eta\downarrow0$.
+It therefore does not contradict the useful elementary stability
+principle below. A fixed-leverage obstruction of comparable strength
+for constant-factor approximate conductance would be impossible.
+
+\begin{proposition}[What bounded leverage already gives for free]
+Let $G'$ be obtained from a connected weighted graph $G$ by adding
+weight $w>0$ on $uv$, and put $\tau=wR_{uv}(G)$. For every nonempty
+$S$, one has
+\[
+ \frac{\phi_G(S)}{1+\tau}\le\phi_{G'}(S)
+ \le(1+\tau)\phi_G(S).
+\]
+Thus an $a$-approximate solution to any fixed family of feasible
+multiway conductance partitions in $G$ remains an
+$a(1+\tau)^2$-approximate solution in $G'$, without relabeling vertices.
+The same assertion applies when feasibility uses fixed vertex masses;
+changing-volume balance constraints need separate treatment.
+\end{proposition}
+\begin{proof}
+On the constants quotient,
+$wbb^T\preceq\tau L$, because
+$(b^Tx)^2\le R_{uv}x^TLx$. Hence
+$L\preceq L'\preceq(1+\tau)L$.
+Also $R_{uv}\ge1/d_u,1/d_v$, so
+$D\preceq D'\preceq(1+\tau)D$.
+Apply the two comparisons to the numerator and denominator of
+$\phi(S)=\mathbf1_S^TL\mathbf1_S/(\mathbf1_S^TD\mathbf1_S)$.
+Taking maxima and then minima over the same feasible family proves
+the approximation statement.
+\end{proof}
+
+\paragraph{Implication for a research target.}
+A meaningful dynamic theorem should improve on this automatic transfer
+by obtaining a $(1+\varepsilon)$ approximation to the desired objective,
+or by controlling many-update accumulation, query cost, or recourse
+under an explicit structural assumption. Constant-factor reuse after
+one bounded-leverage insertion is already a direct comparison argument.
+The eight-vertex obstruction shows that endpoint-only repair is too
+strong without such an assumption.
+\end{document}

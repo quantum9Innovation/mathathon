@@ -1,0 +1,2783 @@
+                                             Higher-Order Cheeger Inequality for Partitioning with Buffers
+                                                     Konstantin Makarychev∗                 Yury Makarychev†                Liren Shan‡
+                                                         Northwestern                            TTIC                      Northwestern
+                                                                               Aravindan Vijayaraghavan§
+                                                                                     Northwestern
+
+
+
+
+arXiv:2308.10160v1 [cs.DS] 20 Aug 2023
+                                                                                           Abstract
+                                                We prove a new generalization of the higher-order Cheeger inequality for partitioning with
+                                             buffers. Consider a graph G = (V, E). The buffered expansion of a set S ⊆ V with a buffer
+                                             B ⊆ V \ S is the edge expansion of S after removing all the edges from set S to its buffer B. An
+                                             ε-buffered k-partitioning is a partitioning of a graph into disjoint components Pi and buffers Bi ,
+                                             in which the size of buffer Bi for Pi is small relative to the size of Pi : |Bi | ≤ ε|Pi |. The buffered
+                                             expansion of a buffered partition is the maximum of buffered expansions of the k sets Pi with
+                                             buffers Bi . Let hk,ε
+                                                               G be the buffered expansion of the optimal ε-buffered k-partitioning, then for
+                                             every δ > 0,
+                                                                                                log k 
+                                                                              hk,ε
+                                                                               G   ≤  Oδ (1) ·           · λ⌊(1+δ)k⌋ ,
+                                                                                                   ε
+                                             where λ⌊(1+δ)k⌋ is the ⌊(1 + δ)k⌋-th smallest eigenvalue of the normalized Laplacian of G.
+                                                Our inequality is constructive and avoids the “square-root loss” that is present in the standard
+                                             Cheeger inequalities (even for k = 2). We also provide a complementary lower bound, and a
+                                             novel generalization to the setting with arbitrary vertex weights and edge costs. Moreover our
+                                             result implies and generalizes the standard higher-order Cheeger inequalities and another recent
+                                             Cheeger-type inequality by Kwok, Lau, and Lee (2017) involving robust vertex expansion.
+
+
+
+
+                                         ∗
+                                           The author was supported by the NSF Awards CCF-1955351, CCF-1934931, and EECS-2216970.
+                                         †
+                                           The author was supported by the NSF Awards CCF-1955173, CCF-1934843, and ECCS-2216899.
+                                         ‡
+                                           The author was supported by the NSF Awards CCF-1955351, CCF-1934931, and EECS-2216970.
+                                         §
+                                           The author was supported by the NSF Awards CCF-1934931, CCF-2154100, and EECS-2216970.
+1        Introduction
+Cheeger’s inequality is a fundamental result in spectral graph theory that relates the connectivity of
+a graph to the eigenvalues of the Laplacian matrix associated with the graph. Consider an undirected
+d-regular graph G = (V, E) on n vertices. Let LG be the normalized Laplacian of the graph defined
+by LG = I − d1 A, where A is the adjacency matrix of the graph G. Let 0 = λ1 ≤ λ2 ≤ λ3 · · · ≤ λn ≤ 2
+be the eigenvalues of LG . For every vector z ∈ RV with coordinates z(u) (where u ∈ V ),
+                                                         1 X
+                                         z T LG z =          (z(u) − z(v))2 .                                   (1)
+                                                         d
+                                                            (u,v)∈E
+
+For a set S ⊆ V , let δG (S, V \S) denote the number of edges in the graph crossing the cut (S, V \S).
+The Cheeger constant or expansion of the graph G is
+
+                                                                                   δG (S, V \ S)
+                           hG :=        min          ϕG (S), where ϕG (S) :=                     ,
+                                   S⊆V :|S|≤|V |/2                                      d|S|
+
+is called the expansion of the cut S, V \ S. Cheeger’s inequality by Alon and Milman [AM85, Alo86,
+Che69] states that
+                                           λ2          p
+                                              ≤ hG ≤ 2λ2 .                                       (2)
+                                            2
+Similar inequalities also hold for graph partitioning into k parts [LRTV12, LGT14]. Here is a higher
+order Cheeger inequality by Lee, Oveis-Gharan and Trevisan [LGT14] (see also the paper [LRTV12]
+by Louis, Raghavendra, Tetali and Vempala): For every δ > 0, 1
+
+                                       λk            p      q
+                                          ≤ hkG ≤ Oδ  log k · λ⌊(1+δ)k⌋ ,                                       (3)
+                                       2
+where λi is the i-th smallest eigenvalue of the normalized Laplacian LG , and
+
+                                           hkG =         min           max ϕG (Pi ).
+                                                      partitions       i∈[k]
+                                                     P1 ,...,Pk of V
+
+The upper bounds in (2) and (3) are constructive, which means that there is a polynomial-time
+algorithm that finds a partitioning P1 , . . . , Pk using a spectral embedding of G, an embedding
+                               ′
+of the graph vertices into Rk based on the first k ′ = ⌊(1 + δ)⌋k eigenvectors of the Laplacian.
+Similar spectral algorithms are commonly used in practice [NJW01, McS01]. We refer the reader to
+examples of applications of Cheeger’s inequality to spectral clustering [KVV04, ST07, Spi07], image
+segmentation [SM00], random sampling and approximate counting [SJ89]. Cheeger’s inequality
+is widely used in combinatorics and graph theory. Higher-order Cheeger inequalities also have
+connections to the small-set expansion conjecture [RS10, RST12], an important problem in the area
+of approximation algorithms.
+    The objective of abovementioned k-way graph partitioning algorithms is to find the Sparsest
+k-Partition of the graph i.e., a partition P1 , . . . , Pk that minimizes the value of maxi∈[k] ϕG (Pi ).
+Together the lower and upper bounds (3) give a bound           on the cost of the algorithmic solution in
+                                                          q                   
+                                                                      ⌊(1+δ)k⌋
+terms of the optimal solution: maxi∈[k] ϕG (Pi ) ≤ Oδ        log k · hG          . This bound may be good
+                           ⌊(1+δ)k⌋                                                                  ⌊(1+δ)k⌋
+for large values of hG      but can also be really bad for small values of hG      . In fact, the
+approximation factor of such k-way partitioning algorithm may be as large as Ω(n) even for k = 2.
+    1                                           √      √
+        The upper bound on hkG in [LRTV12] is O( log k) λck where c > 1 is an absolute constant.
+
+
+                                                                  1
+It can be so large because the upper bound is non-linear – it has a “square-root loss”. To address
+this problem, several improved Cheeger inequalities under additional structural assumptions on the
+graph G have been presented in the literature [KLL+ 13, KLL17].
+    In this work, we introduce a new type of graph partitioning – partitioning with buffers – and
+prove a higher-order Cheeger inequality for them. Our inequality avoids the “square-root loss” and
+provides a constant bi-criteria approximation algorithm for the problems (see below for details).
+While being a natural problem, in and of itself, our results for buffered partitioning also imply the
+standard higher-order Cheeger inequality (3) and a Cheeger-type inequality by Kwok, Lau, and
+Lee [KLL17] for robust vertex expansion (see Section 1.5). Finally, these Cheeger inequalities can
+also be extended to a more general setting with arbitrary vertex weights and edge costs: in contrast,
+we are not aware of such a generalization for the standard Cheeger inequalities i.e., without buffers.
+
+1.1    Cheeger inequality for Buffered Partitions
+To simplify the exposition, we first present and discuss the setting where G is a d-regular graph.
+Then, in Section 1.2, we consider non-regular graphs G with arbitrary positive vertex weights and
+edge costs.
+
+Multi-way Partitioning with Buffers. For every ε ∈ [0, 1), an ε-buffered k-partitioning of an
+undirected graph G = (V, E) is a collection of subsets P1 , P2 , . . . , Pk ⊂ V and B1 , B2 , . . . , Bk ⊂ V
+that satisfy the following conditions:
+   1. All sets Pi and Bj are pairwise disjoint (i.e., Pi ∩ Pj = ∅, Bi ∩ Bj = ∅, and Pi ∩ Bj = ∅ for
+      all i, j ∈ {1, . . . , k});
+   2. ki=1 (Pi ∪ Bi ) = V ;
+      S
+
+   3. Sets Pi are nonempty;
+   4. |Bi | ≤ ε|Pi | for all i ∈ {1, . . . , k}.
+We say that Bi is the buffer for Pi . We denote this buffered partition by (P1 , . . . , Pk ∥ B1 , . . . , Bk ).
+Now we define the buffered expansion of a set P with buffer B for d-regular graphs. Later, we
+will extend this definition to graphs with arbitrary vertex weights and edge costs. The buffered
+expansion of a set P with buffer B
+                                                                  
+                                               δG P, V \ (P ∪ B)
+                                 ϕG (P ∥ B) =                       .
+                                                       d|P |
+The definition is similar to that of the standard set expansion except we do not count edges from
+set S to its buffer B. Define the cost ϕG (P1 , . . . , Pk ∥ B1 , . . . , Bk ) of a buffered partition:
+                             ϕG (P1 , . . . , Pk ∥ B1 , . . . , Bk ) =      max ϕG (Pi ∥ Bi ).              (4)
+                                                                         i∈{1,...,k}
+
+    See Figure 5 on page 44 for an illustration of the edges that contribute towards the expansion
+ϕG (Pi ∥ Bi ). The ε-buffered expansion of the graph G = (V, E) is defined as the minimum value
+among all ε-buffered partitions:
+                           hk,ε
+                            G =               min                ϕG (P1 , . . . , Pk ∥ B1 , . . . , Bk ).   (5)
+                                    ε-buffered k−partition
+                                     (P1 ,...,Pk ∥B1 ,...,Bk )
+
+    Our main result is a new Cheeger-type inequality that relates buffered expansion to the eigen-
+values of the Laplacian. We first state it for regular graphs. Consider a d-regular graph G. Let LG
+be its normalized Laplacian and 0 = λ1 ≤ λ2 ≤ · · · ≤ λn be its eigenvalues.
+
+                                                                 2
+Theorem 1.1. For every δ ∈ (0, 1),
+
+                                                   c(δ) log k
+                                          hk,ε
+                                           G ≤                · λ⌊(1+δ)k⌋ ,                                       (6)
+                                                       ε
+where c(δ) is a function that depends only on δ. Furthermore, there is a randomized polynomial-time
+algorithm that given G finds an ε-buffered k-partitioning (P1 , . . . , Pk ∥ B1 , . . . , Bk ) with ϕG (P1 , . . . , Pk ∥
+B1 , . . . , Bk ) ≤ c(δ)εlog k λ⌊(1+δ)k⌋ .
+    As in the standard Cheeger-type inequality (3), we upper bound expansion for k-way partitioning
+in terms of λk′ , where k ′ = ⌊(1 + δ)k⌋ may be larger than k (depending on the value of δ > 0).
+However, for every fixed k, we can let δ = 1/(k + 1) and get the following result.
+
+Corollary 1.2. For every k, hk,ε                  ck
+                                           G ≤ ε · λk , where ck depends only on k. Furthermore, there is a
+randomized polynomial-time algorithm that given G finds an ε-buffered k-partitioning
+(P1 , . . . , Pk ∥ B1 , . . . , Bk ) with ϕG (P1 , . . . , Pk ∥ B1 , . . . , Bk ) ≤ cεk λk .
+   Theorem 1.3 presented later is a novel generalization of Theorem 1.1 to graphs with vertex
+weights and edge costs.
+
+Approximation results  1       The
+                                 spectral graph partitioning algorithm provided by Theorem 1.1
+can be seen as an Oδ       log k -pseudo-approximation algorithm for the k-way sparsest partitioning
+                         ε
+problem. It finds an ε-buffered k-partitioning (P1 , . . . , Pk , B1 , . . . , Bk ) with the maximum expansion
+bounded by Oε,δ (log k) times the cost of the true optimum solution of the non-buffered ⌊(1 + δ)k⌋-
+way partitioning problem. That is, the solution produced by our algorithm has an approximation
+factor of Oε,δ (log k) but (1) uses ε buffers around each set Pi , and (2) has fewer sets than the true
+optimal solution. This pseudo-approximation algorithm also works for non-regular graphs with
+vertex weights and edge costs. See Theorem C.2 for details. Applying this pseudo-approximation
+algorithm recursively, we get an O(1/ε)-pseudo-approximation algorithm for the Buffered Balanced
+Cut problem (see Theorem D.1) and an O(log2 k) pseudo-approximation algorithm for a buffered
+variant of the balanced k-partitioning problem (see Corollary D.2).
+    Let us examine some applications of buffered partitioning and our techniques.
+
+Applications Spectral algorithms are widely used across several application domains because
+they are very fast and scalable in practice [PSL90, vL07]. For example, a standard off-the-shelf
+package finds the first 100 eigenvectors of the Twitter graph [LM12] in less than half a minute.
+This graph has 81 thousand nodes and 1.3 million edges. In contrast, linear programming and
+semidefinite programming based methods do not scale well and cannot handle such large graphs
+at the present time. This motivates the design of spectral algorithms for graph partitioning with
+stronger guarantees. Our work demonstrates that one can achieve very good theoretical guarantees
+for Buffered Sparsest k-Partitioning.
+    As mentioned earlier, the algorithms we present in this paper give an Oε,δ (log k)-pseudo-appro-
+ximation for the Buffered Sparsest k-Partitioning problem, and a O(1/ε)-pseudo-approximation for
+the Buffered Balanced Cut problem (see Section D). For constant ε, this corresponds to a constant
+factor approximation with buffers. For comparison, the best known approximation guarantees for
+Balanced Cut or Sparsest k-Cut without buffers incur logarithmic factors in the√ number of vertices
+n.2 Similarly, the best known approximation for Sparsest k-Partitioning is Oδ ( log n log k) [LM14].
+   2
+    For Balanced Cut without
+                          √ buffers, the best true approximation factor is O(log n) [AR04, Räc08], and the best
+pseudo-approximation is O( log n) [ARV09].
+
+
+                                                          3
+The caveat is, of course, that our algorithm produces an ε-buffered partitioning but we compare its
+cost with the cost of the optimal non-buffered partitioning.
+    In applications of graph partitioning and clustering, relaxing the partitioning using buffers is
+often benign and even natural. Let us consider the following application of graph partitioning.
+Suppose we have a graph whose nodes represent user profiles in a social network (like the Twitter
+graph we mentioned earlier) and edges represent connections between them (friends, followers, etc).
+We would like to assign these profiles to two machines so that each machine is assigned about the
+same number of profiles and the number of separated connections is minimized. These are common
+requirement for graph processing systems. In other words, we need to solve the Balanced Cut
+problem for the given graph. If we run our algorithm on this graph, we will get two parts S, T and
+buffer B. We can store S and T on the first and second machines, respectively, and replicate nodes
+in B on both machines. This way we will separate only nodes located in S and T . Partitioning
+with buffers can be useful to obtain better solutions for several other applications such as resource
+allocation and scheduling, where graph partitioning is used.
+    Moreover, in applications like community detection, it is common for the communities to have
+small overlaps [YL14, YL12]. Vertices belonging to multiple communities may correspond to influ-
+ential or well-connected nodes, that would disproportionately affect the cost in a disjoint partition.
+While there has been much recent interest in detecting overlapping communities, it is challenging
+to obtain algorithmic guarantees in the overlapping setting (see [KBL16, OATT22] for different
+formulations and results on this problem); in particular, there are very few theoretical results for
+spectral algorithms even in average-case models. An ε-buffered partitioning with sets S, T and
+buffer B can be viewed as two overlapping communities S ′ = S ∪ B and T ′ = T ∪ B with small
+overlap |S ∩ T | ≤ ε min{|S|, |T |}. Hence ε-buffered partitions capture overlapping communities and
+allow us to reason about spectral methods even in the overlapping setting (see also footnote 5).
+    Finally, buffered partitioning is an interesting problem in its own right, it gives a common,
+versatile generalization that captures important results in spectral graph theory including higher-
+order Cheeger inequalities and robust vertex expansion as described in the next few sections.
+
+1.2    Graphs with vertex weights and edge costs
+In the standard Cheeger inequality, the weight of every vertex must be equal to the total weight
+of edges incident on it. For instance, in d-regular graphs, the weights of all vertices are equal to d.
+Surprisingly, we can generalize our variant of Cheeger’s inequality to vertex weighted graphs. We
+show that the Cheeger inequality for buffered partitions also holds when graph G = (V, E, w, c) has
+vertex weights wu > 0 and edge costs cuv > 0. In that case, we define the non-normalized Laplacian
+L̃G for G as follows. L̃G (u, u) is the total cost of all edges incident on u and L̃G (u, v) = −cuv for
+(u, v) ∈ E; all other entries are zero. Then, for any vector z ∈ Rn , we have
+                                               X
+                                   z T L̃G z =      cuv (z(u) − z(v))2 .                            (7)
+                                               (u,v)∈E
+
+Further, we define the weight matrix Dw as follows: Dw (u, u) = wu and Dw (u, v) = 0 if u ̸= v (Dw
+                                                                                       −1/2     −1/2
+is a diagonal matrix). Finally, we define the normalized Laplacian LG = Dw L̃G Dw . Note that
+                                                                              !2
+                                    T
+                                                 X               z(u)    z(v)
+                                 z LG z =                 cuv      1/2
+                                                                       − 1/2     .
+                                              (u,v)∈E            w u     w v
+                                                                        P
+    Denote the weight of a set of vertices A by w(A) = u∈A wu . We extend the definitions of
+δG (A, B), ϕG (P ∥ B), ϕG (P1 , . . . , Pk ∥ B1 , . . . , Bk ), and hk,ε
+                                                                       G to graphs with vertex weights and edge
+
+
+                                                         4
+costs:
+                                    X                                              δ(P, V \ (P ∪ B))
+                    δG (A, B) =              cuv      and       ϕG (P ∥ B) =
+                                                                                         w(P )
+                                  u∈A,v∈B
+                                   (u,v)∈E
+
+Quantities ϕG (P1 , . . . , Pk ∥ B1 , . . . , Bk ) and hk,ε
+                                                         G are given by formulas (4) and (5), respectively. We
+say that partition (P1 , . . . , Pk ∥ B1 , . . . , Bk ) is ε-buffered if w(Bi ) ≤ εw(Pi ) for every i ∈ [k].
+    Note that the definitions of LG , δG , ϕG , and hk,ε        G are consistent with those for regular graphs
+with unit vertex weights and unit edge costs. As a side note, we observe that the definition of
+LG coincides with the definition of the normalized Laplacian in the standard Cheeger inequality
+for non-regular
+      P         graphs with edge costs. Note that in that inequality, vertex weights are defined as
+wu = v:(u,v)∈E cuv . In contrast to the standard Cheeger inequality, our variant holds for arbitrary
+vertex weights and edge costs.
+
+Theorem 1.3. Let G = (V, E, w, c) be a graph with positive weights wu > 0 and edge costs cuv > 0,
+ε ∈ [0, 1), δ ∈ (0, 1), and k ≥ 2 be an integer. Assume that maxu wu ≤ εw(V )/(3k). Then
+
+                                                   κ(δ) log k
+                                        hk,ε
+                                         G ≤                  · λ⌊(1+δ)k⌋ (LG ),                                  (8)
+                                                       ε
+where κ(δ) is a function that depends only on δ. Furthermore, there is a randomized polynomial-time
+algorithm that given G finds an ε-buffered k-partitioning (P1 , . . . , Pk ∥ B1 , . . . , Bk ) with ϕG (P1 , . . . , Pk ∥
+B1 , . . . , Bk ) ≤ κ(δ)εlog k λ⌊(1+δ)k⌋ (LG ).
+
+   This new generalization with vertex weights and edge costs is crucial for the pseudoapproxi-
+mation guarantees for the buffered versions of Balanced Cut (Theorem D.1) and Balanced k-way
+partitioning (Theorem D.2) that were mentioned earlier.
+
+1.3       Buffered Cheeger’s inequality for k = 2
+For k = 2, we provide an alternative slightly simpler variant of buffered Cheeger’s inequality. We
+give a polynomial-time algorithm that partitions V into three disjoint sets: parts S, T , and buffer
+B, satisfying S ∪ T ∪ B = V and |B| ≤ ε min(|S|, |T |). The buffered expansion of S and T , defined
+as δ(S, T )/ min(w(S), w(T )) is at most O(λ2 /ε) (see Proposition 2.1 for details).
+    We provide a self-contained proof of this simpler result for k = 2 in Section 2. We remark
+that this result coupled with Lemma 5.1 from this paper and Theorem 4.6 from the paper by Lee,
+Oveis-Gharan, and Trevisan [LGT14] already yields weak versions of our main results (Theorems 1.1
+and 1.3) where O(log k) is replaced with O(log2 k). This extra logarithmic factor is a large loss in
+the context of graph partitioning problems, and this is analogous to the weaker higher order Cheeger
+inequality obtained in [LGT14] by combining Theorem 4.6 of [LGT14] with the standard Cheeger
+                                                   1
+inequality for k = 2.3 To get a tight bound of O( log k), we design a new algorithm (see the next
+                                                   ε
+section for why our result is tight in both k and ε). We give an overview of new techniques in
+Section 1.7.
+
+1.4       Our result generalizes higher-order Cheeger inequalities
+Our main result (Theorem 1.1) can be seen as a generalization of Cheeger’s inequality (2) and
+the higher-order Cheeger inequalitiy (3). To obtain these results, we apply Theorem 1.1 with
+   3
+       The stronger bound of Theorem 4.1 in [LGT14] avoids Theorem 4.6.
+
+
+
+                                                            5
+     p
+ε = λ⌊(1+δ)k⌋ log k. We find the largest set Pt among P1 , . . . , Pk . We may assume that Pt contains
+at least Ω(δn) vertices  S (see Section B for the details). Then we include all buffers in set Pt ; that
+              ′
+is, we let Pt = Pt ∪ i Bi . We obtain a non-buffered partition of G. Using that |Bi | ≤ ε|Pi | and
+δ(Pi , Bi ) ≤ d|Bi | (since the graph is d-regular), we get for i ̸= t (here k ′ = ⌊(1 + δ)k⌋),
+                                                                  √
+                                δ(Pi , Bi )  c(δ) log k        d · λk′ log k|Pi |             p
+    ϕG (Pi ) = ϕG (Pi ∥ Bi ) +              ≤√           λk′ +                    = (c(δ) + 1) λk′ log k.
+                                  d|Pi |       λk′ log k            d|Pi |
+
+We bound ϕG (Pt′ ) (the expansion of the updated set Pt′ ) as follows,
+         P             ′
+                             P                                      √
+   ′      i̸=t δ(Pi , Pt )    i̸=t ϕG (Pi ) · |Pi | · d   (c(δ) + 1) λk′ log k X         c(δ) + 1 p
+ϕ(Pt ) =         ′         ≤                            ≤                        |Pi | ≤           λk′ log k.
+             d|Pt |                 δn · d                       Ω(δn)                     Ω(δ)
+                                                                                  i̸=t
+
+Hence Theorem 1.1 provides an alternate proof of (3). Furthermore, this proof suggests that the
+            1
+factor of O( log k) in the upper bound of Theorem 1.1 cannot be improved. It also shows that
+             ε
+our inverse dependence on ε is tight even for k = 2 (as otherwise we would be able to strengthen
+Cheeger’s inequality, which is known to be tight).
+
+1.5    Connection to Robust Expansion
+Theorem 1.1 also generalizes the Cheeger-type inequality by Kwok, Lau, and Lee [KLL17] that gives
+a bound for λ2 in terms of robust expansion [KLM06]. Let η ∈ (0, 1). For S ⊆ V , define
+                               n                                                  o
+                 Nη (S) = min |T | : T ⊆ V \ S, δG (S, T ) ≥ (1 − η)δG (S, V \ S)             (9)
+                               Nη (S)
+                   ϕVη (S) =            and ϕVη (G) =       min         ϕVη (S)                        (10)
+                                |S|                      S:|S|≤|V |/2
+
+
+In other words, ϕVη (S) is the vertex expansion of set S after we remove an η fraction of the edges
+leaving S in the optimal way (which minimizes the vertex expansion of S in the remaining graph).
+Quantity ϕVη (S) is less sensitive to additions of a small number of edges to graph G than the standard
+vertex expansion. For that reason, ϕVη (S) is called the robust vertex expansion of G. Kwok, Lau,
+and Lee [KLL17] proved the following result for η = 1/2.
+                                                                     
+Theorem 1.4 (see Theorem 1 in [KLL17]). λ2 = Ω hG · ϕV1/2 (G) .
+
+The following generalization of Theorem 1.4 is an immediate corollary of Theorem 1.1 (see Ap-
+pendix A for a proof).
+                                                                  
+Corollary 1.5. For every η ∈ (0, 1) we have λ2 = Ω η · hG · ϕVη (G) .
+
+   We remark that Theorem 1.4 is related to the case k = 2 in Theorem 1.1.
+
+1.6    Lower Bounds
+We also prove a lower bound on hk,ε
+                                G , which is linear in λk .
+
+Theorem 1.6. For every d-regular graph G, integer k ≥ 2, and ε > 0, we have,
+                                                     λk − ε
+                                              hk,ε
+                                               G ≥          .
+                                                       2
+
+                                                     6
+    We remark that the additive dependence on ε in the above lower bound (Theorem 1.6) is
+unavoidable even when k = 2.4 This is useful to derive a lower bound on the optimal buffered
+expansion hk,ε                                                                        ′
+             G ; moreover in conjunction with the upper bound (applied with a larger ε ), one can
+also get a bicriteria approximation for buffered k-way partitioning.5
+
+
+
+1.7     Overview and Organization
+We start with proving a weaker version of our main result (Theorem 1.1) for k = 2 in Section 2.
+This proof is significantly simpler than the general proof but nevertheless illustrates why we get a
+linear dependence on λk rather than a square-root dependence in our Cheeger-type inequality. In
+the proof, we use the thresholding idea from the proof of the standard Cheeger inequality but add an
+extra twist – use two thresholds instead of one. First, we compute the eigenvector u corresponding
+to the second smallest eigenvalue λ2 of the normalized Laplacian LG of G. Let u(i) be the i-th
+coordinate of u. Recall that in the proof of Cheeger’s inequality, we put each vertex i either in S
+or in T , depending on whether u(i)2 ≥ τ or u(i)2 < τ for an appropriately chosen threshold τ . To
+prove our inequality for k = 2, we use two thresholds τ and (1 + ε)τ and, loosely speaking (see
+Section 2 for the precise description), put i in T , B, S depending on whether u(i)2 lies in (−∞, τ ],
+(τ, (1 + ε)τ ), or [(1 + ε)τ, ∞), respectively.
+     In the subsequent sections, we prove the main result i.e., Theorem 1.1 for arbitrary k. Recall
+the definition of the spectral embedding of graph G, which we use in our proof. Let x1 , . . . , xk′
+be the eigenvectors of LG corresponding to the k ′ = ⌊(1 + δ)k⌋ smallest eigenvalues. Note that
+the coordinates of vectors xi are indexed by vertices u; denote the coordinate with index u by
+                                                                  ′
+xi (u). The spectral embedding maps vertex u to vector ū ∈ Rk with coordinates x1 (u), . . . , xk′ (u).
+We compute the spectral embedding. And now our goal is to partition vectors ū (so that the
+corresponding buffered partition satisfies the desired properties). To do so, we introduce a new
+technical tool – orthogonal separators with buffers – for partitioning sets of vectors.
+     Given a set of unit vectors, the orthogonal separator procedure generates three (disjoint) random
+sets – set X (called an orthogonal separator) and its two buffers Y and Z – such that
+
+   1. if u ∈ X and v is close to u then v is in X ∪ Y ∪ Z with high probability
+
+   2. if vectors u and v are far apart, then it is unlikely that both of them are in X
+
+   3. |Y |, |Z| are at most ε|X| in expectation
+
+    (See Theorems 3.2 and 3.4 for details.) Orthogonal separators with buffers provide a basic
+building block for constructing buffered partitionings. We repeatedly apply the orthogonal separator
+                                           ū
+procedure to normalized vectors ψ(ū) = ∥ū∥  and obtain subsets Xt and their buffers Yt , Zt . Merging
+the obtained sets and filtering/thresholding them based on the lengths of vectors ū, we obtain a
+partial buffered partitioning. This partitioning has all the desired properties except that it does
+not necessarily cover the entire vertex set V . While we do not provide any details on how this step
+works in this overview, note that we use item 1 to argue that the buffered expansion of each set Pi
+is small, item 2 to argue that the obtained sets are not too large and thus there are at least k sets
+in the partitioning, and item 3 to argue that |Bi | ≤ ε|Pi |.
+   4
+     For the tight example, consider two cliques on vertex sets A and B of size (1 + ε)n/2 each, with overlap of
+|A ∩ B| = εn vertices and with no edges between A \ B and B \ A. Some of the edges incident on A ∩ B are resampled
+to ensure (approximate) regularity. While h2,ε        G = 0, it is easy to show that λ2 = Ω(ε).
+   5
+      Specifically, for any ε ∈ [0, 1), δ ∈ (0, 1), and ε′ > ε, our algorithm given a graph G finds an ε′ -buffered k-
+                                                                                                               ⌊k(1+δ)⌋,ε
+                                                                                                                          + ε /ε′ , where
+                                                                                                                             
+partitioning (P1 , . . . , Pk ∥ B1 , . . . , Bk ) with ϕG (P1 , . . . , Pk ∥ B1 , . . . , Bk ) ≤ c(δ) log k · hG
+c(δ) > 0 is a constant that only depends on δ.
+
+
+                                                                   7
+    Note that orthogonal separators with buffers generalize (non-buffered) orthogonal separators
+introduced by Chlamtac, Makarychev, and Makarychev [CMM06] and used in a number of SDP-
+based approximation algorithms for graph partitioning problems. An analog of Theorem 3.4 for
+(non-buffered) orthogonal separators was first proved by Bansal, Feige, Krauthgamer, Makarychev,
+Nagarajan, Naor, and Schwartz [BFK+ 14] (see also [LM14]). Our high level approach follows the
+paper by Louis and Makarychev [LM14]. However, our algorithm and its analysis substantially
+differ from theirs because we need to use orthogonal separators with buffers and keep track of the
+buffers between clusters. Also, our algorithm uses a spectral embedding while the algorithm by
+Louis and Makarychev [LM14] uses an embedding obtained from an SDP relaxation, which imposes
+additional constraints on vectors.
+    We prove some useful claims about the spectral embedding in Section 6. We define orthogonal
+separators with buffers and present the main theorem about them (Theorem 3.4) in Section 3. We
+prove Theorem 3.4 in Section 7. We show how to obtain a partial buffered clustering in Section 4.
+Finally, in Section 5, we show how to obtain a true buffered partitioning.
+    The proof of the Cheeger inequality for graphs with arbitrary vertex weights and edge costs
+(Theorem 1.3) is almost identical to that of Theorem 1.1. In order to simplify the exposition, we
+only present the proof of Theorem 1.1. The same proof with minimal changes works in the general
+case. Instead of presenting essentially the same proof again, we give a black box reduction from
+Theorem 1.1 to Theorem 1.3 in Appendix E. The reduction however may significantly increase the
+running time of the algorithm. We stress that the algorithm from Theorem 1.1 also works with
+weighted graphs.
+    The other sections and appendices are organized as follows. In Section A, we show that Theo-
+rem 1.1 implies Corollary 1.5, which we discussed in Section 1.5. In Section B, we prove a technical
+claim about ε-buffered partitions. In Section C, we prove a lower bound on hkG for unbuffered
+partitions of graphs G with vertex weights and edge costs. Combining this lower bound with The-
+orem 1.3, we get a pseudo-approximation algorithm for the Sparsest k-way Partitioning problem
+(Theorem C.2). In Section D, we present our pseudo-approximation algorithm for the Buffered Bal-
+anced Cut problem. In Section F, we prove Theorem 1.6 (a lower bound on hk,ε    G discussed above).
+In Section G, we give a few useful estimates on the Gaussian distribution, which we use throughout
+the paper.
+
+Other related work. Clustering with vertex deletion and duplication has been studied in other
+context as well. We refer the reader to the following recent results: Filtser and Le [FL21], Haeupler,
+Hershkowitz, and Zuzic [HHZ21], Filtser [Fil22].
+
+
+2    Warm up: Cheeger’s Inequality with a Buffer for k = 2
+As a warmup, we provide a self-contained proof of a weaker version of Theorem 1.1 for k = 2.
+Here, we will consider cuts (S, T ) with a common buffer B (instead of disjoint buffers for S and
+T ). Such cuts consist of three disjoint sets S, T , and B that partition the set of vertices V into
+three groups. We will refer to such a partition as (S, T ∥ B). While there are many new ideas
+needed to obtain Theorem 1.1 in full generality, this simpler setting already demonstrates how one
+can leverage buffers to obtain an improved upper bound.
+
+Proposition 2.1. Let ε ∈ (0, 1/4). Consider any graph G = (V, E) with positive vertex weights
+                                                                                 −1/2     −1/2
+wu > 0 and edge costs cuv > 0. Let λG be the second smallest eigenvalue of LG = Dw L̃G Dw ,
+the normalized Laplacian of G. Then, in polynomial time we can find three disjoint sets S, B, T
+
+
+                                                  8
+with S ∪ B ∪ T = V , w(S) ≤ w(T ) and w(B) ≤ εw(S) such that
+                                                 |δ(S, T )|      2
+                               ϕG (S, T ∥ B) =              ≤4 1+    λG .
+                                                   w(S)           ε
+Proof. The proof follows the same general strategy as the standard proof of the Cheeger inequal-
+ity. We show how to find a distribution over (buffered) partitions (S, B, T ) in the graph G, by
+thresholding the second eigenvector of LG , such that:
+
+             (I) E |δ(S, T )| ≤ (1 + 1/ε)λG · E[w(S)]        and    (II) E[w(B)] ≤ ε E[w(S)].
+
+The first condition gives an upper bound on the expected number of (non-buffered) edges crossing
+the cut, while the second condition gives a bound on the expected size of the buffer. A simple
+probabilistic argument (see Lemma 2.4) allows us to conclude that there exists a single buffered
+threshold cut that simultaneously satisfies both the properties (with some slack).
+                                                  −1/2      −1/2
+    Consider the spectrum of matrix LG = Dw L̃G Dw . The first eigenvector of the non-
+normalized Laplacian L̃G is the vector of all ones denoted by 1. Its eigenvalue is 0. In other words,
+                                  1/2        −1/2                      1/2
+L̃G 1 = 0. Consequently, LG (Dw 1) = Dw L̃G 1 = 0. Hence, Dw 1 is the first eigenvector of
+LG . Let y be an eigenvector of LG corresponding to the second eigenvalue λG = λ2 of LG . Then,
+      1/2
+y ⊥ Dw 1 and
+                                              −1/2      −1/2
+                             ⟨y, LG y⟩ = ⟨y, Dw    L̃G Dw    y⟩ = λG ∥y∥2 .                      (11)
+          −1/2                                                              1/2
+Let v = Dw       y. Then, we have v ⊥ Dw 1 (because ⟨v, Dw 1⟩ = ⟨y, Dw 1⟩ = 0) and
+                                     −1/2         −1/2
+                      ⟨v, L̃G v⟩ = ⟨Dw    y, L̃G Dw    y⟩ = λG ∥y∥2 = λG ∥Dw
+                                                                           1/2 2
+                                                                              v∥ .                       (12)
+
+Step 1. Splitting the vector. For technical reasons, we need to split vector v into two vectors
+v+ and v− such that the vertex weight of non-zero coordinates in each vector is at most w(V )/2,
+
+                     w({i : v+ (i) > 0}) ≤ w(V )/2;       w({i : v− (i) > 0}) ≤ w(V )/2.
+
+We do this by following a standard trick that is often used in the proof of Cheeger’s inequality. Let z
+denote the smallest coordinate value in the vector v such that the total vertex weight of coordinates
+with a value greater than z in vector v is at most w(V )/2, i.e.
+
+                      w({i : v(i) > z}) ≤ w(V )/2;        w({i : v(i) < z}) ≤ w(V )/2.
+
+   Then we shift the entire vector v by z and get v ′ = v − z1. Since L̃G 1 = 0 and v ⊥ Dw 1, we
+have
+                                                               by (12)
+        ⟨v ′ , L̃G v ′ ⟩ = ⟨v, L̃G v⟩ − 2z⟨v, L̃G 1⟩ + z 2 ⟨1, L̃G 1⟩ = λG ∥Dw
+                                                                             1/2 2        1/2 ′ 2
+                                                                                v∥ ≤ λG ∥Dw  v∥ .
+                                        | {z } | {z }
+                                      =0              =0
+
+The last inequality holds because
+  1/2 ′ 2    1/2 2
+∥Dw  v ∥ = ∥Dw  v∥ + z 2 ∥Dw
+                           1/2
+                               1∥2 − 2z⟨Dw
+                                         1/2     1/2
+                                             v, Dw          1/2 2
+                                                     1⟩ = ∥Dw  v∥ + z 2 ∥Dw
+                                                                          1/2
+                                                                              1∥2 −2z ⟨v, Dw 1⟩ .
+                                                                        | {z }        | {z }
+                                                                                     ≥0             =0
+
+We now split the vector v ′ into two vectors v+ , v− with disjoint supports as follows:
+                       (                                       (
+                         v(i) − z, if v(i) ≥ z;                 0,         if v(i) ≥ z;
+              v+ (i) =                                v− (i) =
+                         0,          otherwise,                 v(i) − z, otherwise.
+
+                                                      9
+                                                                                          1/2
+Claim 2.2. For u = v+ or u = v− , we have u ̸= 0 and ⟨u, L̃G u⟩ ≤ λG ∥Dw u∥2 .
+                   1/2             1/2                                                                              1/2
+Proof. Vectors Dw v+ and Dw v− are orthogonal because their supports are disjoint (note: Dw
+                                            1/2                                           1/2
+is a diagonal matrix). All coordinates of Dw v+ are non-negative, and all coordinates of Dw v−
+                           1/2          1/2         1/2                 1/2
+are non-positive. Thus, ∥Dw v+ ∥2 + ∥Dw v− ∥2 = ∥Dw (v+ + v− )∥2 = ∥Dw v ′ ∥2 and
+
+         ⟨v ′ , L̃G v ′ ⟩ = ⟨v+ , L̃G v+ ⟩ + ⟨v− , L̃G v− ⟩ + 2⟨v− , L̃G v+ ⟩ ≥ ⟨v+ , L̃G v+ ⟩ + ⟨v− , L̃G v− ⟩.
+                                                              |     {z     }
+                                                                  ≥0
+
+
+The last inequality holds because all off diagonal entries in L̃G are non-positive; v+ (i)v− (j) ≤ 0 for
+all i ̸= j; and v+ (i)v− (i) = 0. We have
+
+       ⟨v+ , L̃G v+ ⟩ + ⟨v− , L̃G v− ⟩ ≤ ⟨v ′ , L̃G v ′ ⟩ ≤ λG ∥Dw
+                                                                 1/2 ′ 2        1/2
+                                                                    v ∥ = λG (∥Dw   v+ ∥2 + ∥Dw
+                                                                                              1/2
+                                                                                                  v− ∥2 ).
+
+Thus, for u = v+ or u = v− the desired inequality holds.
+
+   Let u be as above. We assume without loss of generality that ∥u∥∞ = maxu |u(i)| = 1 (if
+∥u∥∞ ̸= 1, we divide u by ∥u∥∞ ). Next, we show that there exists an ε-buffered partition with
+small expansion by thresholding on this vector u.
+
+Step 2. Random Thresholding with Buffers. Pick a random threshold t ∈ [0, 1] uniformly
+distributed in [0, 1] and define sets S, T , and buffer B as follows:
+
+                                S = {i : u(i)2 > t}                                                                (13)
+                                T = i : u(i)2 ≤ t/(1 + ε) ,
+                                    
+                                                                                                                   (14)
+                                B = V \ (S ∪ T ) = i : t/(1 + ε) < u(i)2 ≤ t .
+                                                    
+                                                                                                                   (15)
+
+Note that B ∪ S = {i : u(i)2 > t/(1 + ε)}. Since t is picked uniformly from [0, 1] and ∥u∥∞ = 1, we
+have
+                                Xn                    Xn
+                   E[w(S)] =         wi Pr{i ∈ S} =       wi · u(i)2 = ∥Dw
+                                                                         1/2
+                                                                             u∥2 ,
+                                         i=1                    i=1
+
+and
+                                         n
+                                         X
+                   E[w(B ∪ S)] =               wi · min((1 + ε)|u(i)|2 , 1) ≤ (1 + ε)∥Dw
+                                                                                       1/2
+                                                                                           u∥2 .                   (16)
+                                         i=1
+
+                         1/2
+Thus, E[w(B)] ≤ ε∥Dw u∥2 = ε E[w(S)], as stated in Equation (II).
+   By our choice of z, the weight of vertices with positive values in u is at most w(V )/2. Since S
+contains a subset of vertices with positive values in u, we have w(S) ≤ w(V )/2.
+   Note that for every edge (i, j) from S to T , we have u(i)2 > t > t/(1 + ε) ≥ u(j)2 . Thus, for all
+edges (i, j) ∈ δ(S, T ), we have: (a) i ∈ S, j ∈ T if u(i)2 > u(j)2 and (b) i ∈ T, j ∈ S if u(i)2 < u(j)2 .
+Now consider an edge (i, j) ∈ E with u(i)2 > u(j)2 . The probability that (i, j) ∈ δ(S, T ) equals
+
+            Pr{(i, j) ∈ δ(S, T )} = Pr{i ∈ S; j ∈ T } = Pr{t ≤ u(i)2 & t ≥ (1 + ε)u(j)2 }
+                                     = max{u(i)2 − (1 + ε)u(j)2 , 0}.
+
+To bound the right side, we use the following simple claim.
+
+
+
+                                                           10
+Claim 2.3. For all ε > 0 and all real numbers a and b, we have
+                                        a2 − (1 + ε)b2 ≤ (1 + 1/ε)(a − b)2 .
+Proof. If b = 0, then the inequality holds. Assume, that b ̸= 0. Divide both sides by b2 and denote
+                                                2     2
+                                                                 
+λ = a/b. We need to show that (1 + 1/ε)(λ − 1) − λ − (1 + ε) ≥ 0. Write,
+                                                                         √       √
+               (1 + 1/ε)(λ − 1)2 − λ2 − (1 + ε) = 1/ελ2 − 2(1 + 1/ε)λ + ( ε + 1/ ε)2
+                                               
+                                                      √      √      √
+                                                 = (λ/ ε − ( ε + 1/ ε))2 ≥ 0.
+Hence from the above Claim 2.3, we have
+                                  Pr{i ∈ S; j ∈ T } ≤ (1 + 1/ε)(u(i) − u(j))2 .
+By linearity of expectation,
+                                                                     by (7)
+                                 X
+  E |δ(S, T )| ≤ (1 + 1/ε)                  cij (u(i) − u(j))2 = (1 + 1/ε)⟨u, L̃G u⟩ ≤
+                               (i,j)∈E
+                             u(i)2 >u(j)2
+                                                                                 1/2
+                                                                 ≤ (1 + 1/ε)λG ∥Dw   u∥2 ≤ (1 + 1/ε)λG · E[w(S)].
+
+We bounded ⟨u, L̃G u⟩ using Claim 2.2 (cf. Equation (12)). Thus, this distribution over buffered
+partitions (S, T ∥ B) satisfies Equation (I). Since (I) and (II) both hold, we can use Lemma 2.4 (see
+below) to conclude that there exists a cut (Ŝ, T̂ ) with buffer B̂ for which
+                        |δ(Ŝ, T̂ )| ≤ 2(1 + 1/ε)λG · w(Ŝ), and w(B̂) ≤ 2ε · w(Ŝ).
+For this cut (Ŝ, T̂ ) with buffer B̂, we have
+
+                               |δ(Ŝ, T̂ )|       2(1 + 1/ε)λG · w(Ŝ)
+                                              ≤                               = 2(1 + 1/ε)λG .
+                                 w(Ŝ)                     w(Ŝ)
+
+By (13) and (14), we have Ŝ ⊆ {i : u(i)2 > 0} and T̂ ⊇ {i : u(i)2 = 0}. Thus w(T̂ ) ≤ w({i : u(i)2 >
+0}) ≤ w(V )/2 and w(T̂ ) ≥ w({i : u(i)2 = 0}) = w(V ) − w({i : u(i)2 > 0}) ≥ w(V )/2. Therefore,
+w(T̂ ) ≤ w(Ŝ). We conclude that
+
+                                      |δ(Ŝ, T̂ )|       |δ(Ŝ, T̂ )|
+                                                     ≤                  ≤ 2(1 + 1/ε)λG .
+                                         w(T̂ )            w(Ŝ)
+We obtain the desired result for ε′ = 2ε. To finish the proof, it remains to show Lemma 2.4.
+
+
+Lemma 2.4. For any m ≥ 2, consider m arbitrary jointly distributed non-negative random variables
+X1 , . . . , Xm−1 and Y . Suppose that for every i = 1, . . . , m − 1, E[Xi ] ≤ αi E[Z]. Then,
+                                       Pr{Xi ≤ 2αi Y,            ∀i ∈ [m − 1]} > 0.                           (17)
+Proof. Consider a new random variable Z = m−1     Xi
+                                         P
+                                           i=1 (m−1)αi . By the linearity of expectation, we
+have
+                                          m−1
+                                       1 X E[Xi ]
+                             E[Y ] ≥                 = E[Z].
+                                      m−1      αi
+                                                               i=1
+This implies that Pr{Y ≥ Z} > 0; otherwise we would have E[Y ] < E[Z]. If Y ≥ Z, then we have
+for every i = 1, . . . , m − 1, Xi ≤ (m − 1)αi Y . Therefore, inequality (17) holds.
+
+                                                                11
+3     Orthogonal Separators with Buffers
+In this section, we introduce orthogonal separators with buffers. We will prove Theorems 3.2, 3.4,
+and 3.6 in Section 7. In these theorems, we provide randomized procedures to generate orthogonal
+separators with buffers in a set of unit vectors U in Rd . In the next section, we will use the procedure
+in Theorem 3.6 to create a partial partitioning. We first use spectral embedding to map each vertex
+u ∈ V to a vector ū ∈ Rk . We will run this procedure on normalized vectors ψ(ū) = ū/∥ū∥ for all
+vertices u ∈ V . We first give the definition of the orthogonal separator with one buffer.
+Definition 3.1. Consider a finite set U of unit vectors in Rd . A distribution over two disjoint
+subsets of U is an m-orthogonal separator with an ε-buffer, distortion D, separation radius R, and
+probability scale α if the following conditions hold for two subsets X, Y ⊆ U chosen according to
+this distribution:
+    1. For all ū ∈ U , Pr{ū ∈ X} = α.
+
+    2. For all ū ∈ U , Pr{ū ∈ Y } ≤ εα.
+                                                                    1
+    3. For all ū, v̄ ∈ U with ∥ū − v̄∥ ≥ R, Pr{v̄ ∈ X | ū ∈ X} ≤ m .
+
+                                  / X ∪ Y | ū ∈ X} ≤ D ∥ū − v̄∥2 .
+    4. For all ū, v̄ ∈ U , Pr{v̄ ∈
+We call X an orthogonal separator and Y its buffer.
+    In this definition, conditions 1 and 2 restrict the size of an orthogonal separator and its buffer
+respectively. Condition 3 requires that for every pair of vectors ū, v̄ ∈ U , if ū, v̄ are almost or-
+thogonal, then vectors ū, v̄ are separated by X with high probability. Condition 4 upper bounds
+the probability that vectors ū, v̄ are separated by the orthogonal separator X with a buffer Y . In
+the following theorem, we show there exists such an orthogonal separator with one buffer. The
+construction of the orthogonal separator with one buffer and its proof is in Section 7.
+Theorem 3.2. There exists a randomized polynomial-time procedure that given a finite set U of
+unit vectors in Rd and positive parameters ε ∈ (0, 1), m ≥ 3, R ∈ (0, 2), returns an m-orthogonal
+separator with an ε-buffer with distortion D = OR (1/ε log m), separation radius R, and probability
+scale α ≥ OR (1/poly(m)).
+    In the above theorem, we show that if vectors ū and v̄ are far apart, then they are both contained
+in X with a small probability. Suppose that every point ū has a certain weight or measure µ(ū). We
+now show that by slightly altering the distribution of X and Y , we can guarantee that the measure
+of every X is not much larger than the measure of the heaviest ball of radius R (see item 3 below
+for details).
+Definition 3.3. Consider a finite set U of unit vectors in Rd equipped with a measure µ. A
+distribution over two disjoint subsets of U is an δ-orthogonal separator with an ε-buffer, distortion
+D, separation radius R, and probability scale α if the following conditions hold for two subsets
+X, Y ⊆ U chosen according to this distribution:
+    1. For all ū ∈ U , Pr{ū ∈ X} = α.
+
+    2. For all ū ∈ U , Pr{ū ∈ Y } ≤ εα.
+
+    3. minū∈X µ(X \ Ball(ū, R)) ≤ δµ(U ) (always).
+
+                                  / X ∪ Y | ū ∈ X} ≤ D ∥ū − v̄∥2 .
+    4. For all ū, v̄ ∈ U , Pr{v̄ ∈
+
+                                                      12
+Theorem 3.4. There exists a randomized procedure that given a finite set U of unit vectors in
+Rd equipped with a measure µ and positive parameters ε ∈ (0, 1), δ ≤ 2/3, R ∈ (0, 2), returns an
+δ-orthogonal separator with an ε-buffer with distortion D = OR (1/ε log 1/δ), separation radius R,
+and probability scale α ≥ OR (1/poly(m)).
+
+    By using the orthogonal separator with one buffer above, we can find a buffered partitioning
+of the graph with buffered expansion in Theorem 1.1, but buffers Bi may overlap. To get disjoint
+buffers as in Theorem 1.1, we use the orthogonal separator with two buffers defined as follows.
+
+Definition 3.5. Consider a finite set U of unit vectors in Rd equipped with a measure µ. A dis-
+tribution over three disjoint subsets of U is an δ-orthogonal separator with two ε-buffers, distortion
+D, separation radius R, and probability scale α if the following conditions hold for three disjoint
+subsets X, Y, Z ⊆ U chosen according to this distribution:
+
+    1. For all ū ∈ U , Pr{ū ∈ X} = α.
+
+    2. For all ū ∈ U , Pr{ū ∈ Y } ≤ εα and Pr{ū ∈ Z} ≤ εα.
+
+    3. minū∈X µ(X \ Ball(ū, R)) ≤ δµ(U ) (always).
+
+                                  / X ∪ Y | ū ∈ X} ≤ D ∥ū − v̄∥2 , and
+    4. For all ū, v̄ ∈ U , Pr{v̄ ∈
+             / X ∪ Y ∪ Z | ū ∈ X ∪ Y } ≤ D ∥ū − v̄∥2 .
+       Pr{v̄ ∈
+
+   In the following theorem, we slightly modify the procedure above to get orthogonal separators
+with two buffers.
+
+Theorem 3.6. There exists a randomized procedure that given a finite set U of unit vectors in
+Rd equipped with a measure µ and positive parameters ε ∈ (0, 1), δ ≤ 2/3, R ∈ (0, 2), returns an
+δ-orthogonal separator with two ε-buffers with distortion D = OR (1/ε log 1/δ), separation radius R,
+and probability scale α ≥ OR (1/poly(m)).
+
+
+4     Partial Partitioning
+In this section, we give an algorithm for finding a partial ε-buffered partitioning (P1 , B1 ), . . . , (Pk′ , Bk′ )
+of G. This partitioning satisfies all the properties of the partitioning from Theorem 1.1 except the
+union of sets Pi does not necessarily cover the entire vertex set of G. For notational convenience,
+we will use k to denote the index of the eigenvalue that we compare the cost to. Eventually this
+theorem will be applied with k = (1 + O(δ))k̂, where k̂ is the desired number of clusters (which we
+denoted by k in Theorem 1.1). We obtain this partial partitioning using Algorithm 1 which consists
+of Steps 1, 2, 3, and 4 provided in Figures 1, 2, 3, and 4.
+      Algorithm 1 generates this partial partitioning      (P1 , B1 ), . . . , (Pk′ , Bk′ ) with k ′ ≥ (1 − 2δ)k and
+partitions the uncovered vertices V \ i∈[k′ ] Pi ∪ Bi into disjoint subsets A′i , A′′i for i ∈ [k ′ ] and
+                                             S
+
+RB′ , R′ . We prove that these subsets P , B , A′ , A′′ for i ∈ [k ′ ] and R′ , R′ satisfy six properties
+           P                                   i   i   i  i                            B     P
+given in Theorem 4.1 (see below). The first three properties show subsets Pi , Bi forms a partial
+ε-buffered partitioning. In Section 5, we show how to transform this partial partitioning with k ′
+clusters into a true buffered partitioning of G with k̂ clusters. We combine those additional sets
+A′i , A′′i , RP′ , RB
+                    ′ to get a true buffered partitioning. The properties 4, 5, and 6 in Theorem 4.1 are
+
+used in Section 5.
+
+
+
+
+                                                       13
+   Find a spectral embedding for graph G:
+
+       • Let LG be the normalized Laplacian matrix for G.
+
+       • Find the top k eigenvalues of LG and corresponding orthogonal unit eigenvectors
+         x1 , . . . , xk ∈ RV . Denote coordinate u ∈ V of xi by xi (u).
+
+       • Embed each vertex u ∈ V into k-dimensional vector ū defined as follows: the i-th
+         coodinate of ū is xi (u).
+
+
+Figure 1: Step 1 of Partial Partitioning. At this step, the algorithm maps vertices of G into vectors
+using the standard spectral embedding.
+
+
+
+
+   Let R = δ/6, δ ′ = δ/2k, and T = 2/α ln 1/δ.
+            p
+
+   Set Σ0 = ∅ and Γ0 = ∅.
+   For t = 1, . . . , T :
+
+       • Sample an orthogonal separator Xt with buffers Yt , Zt using Theorem 3.6 with param-
+         eters ε, R, and δ ′ . For convenience, we assume that Xt , Yt , and Zt contain not vectors
+         but the corresponding vertices of G.
+
+       • Let Pet = Xt \ ( i<t Xi ∪ Yi ∪ Zi ) and Σt = Σt−1 ∪ Pet .
+                         S
+
+       • Let B
+             et = (Xt ∪ Yt ) \ (Σt ∪ Γt−1 ) and Γt = Γt−1 ∪ B
+                                                            et .
+
+       • Let RP = V \ ( Tt=1 Xt ∪ Yt ∪ Zt ) and RB = V \ (ΣT ∪ ΓT ∪ RP ).
+                       S
+
+
+
+Figure 2: Step 2 of Partial Partitioning. At this step, the algorithm finds a crude partial partitioning
+{(Pet , B
+        et )}t of V .
+
+
+
+
+                                                  14
+   Let RP′ = RP and RB    ′ =R .
+                              B
+   For t = 1, · · · , T :
+
+       • Find rt that minimizes ϕG (Pt ∥ Bt ) subject to the constraints |Bt | ≤ C4.1         ′ (δ)ε|P |,
+                                                                                                         t
+            ′′                  ′             ′′ (δ)
+         |At | ≤ 10ε|Pt |, δ(At , Pt ∪Bt ) ≤ 4.1 /ε ·λk log k ·d|Pt | , and δG (Pt ∪Bt , (ΣT ∪RP )\ Pt ) ≤
+                                            C                                                       e
+          ′′ (δ)
+         C4.1   /ε λk log k · d|Pt | where
+
+                      Pt = {u ∈ Pet : ∥ū∥2 ≥ rt }
+                      Bt = {u ∈ Bet : ∥ū∥2 ≥ rt /(1 + ε)} ∪ {u ∈ Pet : ∥ū∥2 ∈ [rt /(1 + ε), rt ]}
+                      A′t = {u ∈ Pet : ∥ū∥2 ≤ rt /(1 + ε)2 }
+                      A′′ = {u ∈ Pet : ∥ū∥2 ∈ (rt /(1 + ε)2 , rt /(1 + ε))}
+                        t
+
+
+          Note that it suffices to consider r in {∥ū∥2 : u ∈ Pet ∪ B
+                                                                    et }. If no such rt exists, we let
+                              ′            ′′
+          Pt = ∅, Bt = ∅, At = ∅, and At = ∅.
+
+       • If no such rt exists, then add Pet to RP′ and add B
+                                                           et to R′ . Otherwise, add B
+                                                                  B
+                                                                                     eT \ Bt to
+           ′
+         RB .
+
+
+Figure 3: Step 3 of Partial Partitioning. At this step, the algorithm refines the crude partial
+                     et )}t of V and obtains sets {(Pt , Bt , A′ , A′′ )}t .
+partitioning {(Pet , B                                         t    t
+
+
+
+
+   For t = 1, · · · , T :
+
+       • Discard all sets Pt , Bt , A′t , A′′t if Pt = ∅, or
+                                                                ′′ (δ)
+                                                               C4.1
+                                           ϕG (Pt ∥ Bt ) >             λk log k,
+                                                                  ε
+                 ′′ (δ) is some function that depends only on δ (see Theorem 4.1).
+          where C4.1
+
+       • If sets Pt , Bt , A′t , A′′t are discarded, then add Pet to RP′ and add B
+                                                                                 et to R′ .
+                                                                                        B
+
+
+
+Figure 4: Step 4 of Partial Partitioning. At this step, the algorithm discards all sets (Pt , Bt ) that
+do not satisfy the conditions of Theorem 4.1.
+
+
+
+
+                                                        15
+Theorem 4.1. Algorithm 1 is a polynomial-time randomized algorithm that given a d-regular graph
+G = (V, E), natural k > 1, and positive parameters ε, δ ∈ (0, 1/80), finds subsets RP′ , RB
+                                                                                          ′ and
+
+Pi , Bi , A′i , A′′i of V for i ∈ [k ′ ] with k ′ ≥ (1 − 2δ)k such that
+
+   1. All sets Pi , Bi , A′i , A′′i and RP′ , RB
+                                               ′ are disjoint and all sets P are nonempty, and
+                                                                            i
+
+                                                       k ′
+                                                       [
+                                          RP′ ∪ RB
+                                                 ′
+                                                   ∪         Pi ∪ Bi ∪ A′i ∪ A′′i = V ;
+                                                       i=1
+
+               ′ (δ) ε|P | for all i ∈ {1, . . . , k ′ }; and
+   2. |Bi | ≤ C4.1      i
+                           ′′ (δ)
+                          C4.1
+   3. ϕG (Pi ∥ Bi ) ≤             λk log k, for all i ∈ [k ′ ],
+                             ε
+   4. |A′′i | ≤ 10ε|Pi |, for all i ∈ [k ′ ];
+        ′ | ≤ 16εn;
+   5. |RB
+        Pk′                                              ′′ (δ)
+                                                       2C4.1
+   6.             ′                    ′
+         j=1 δG (Aj , Pi ∪ Bi ) + δG (RP , Pi ∪ Bi ) ≤          λk log k · d|Pi |, for all i ∈ [k ′ ].
+                                                                   ε
+Remark: We will assume that ε ≤ δ. If that is not the case,P    we can replace ε with ε′ = δ and hide
+                                                                   ′
+the additional factor of ε/ε′ in the bound on ϕG (Pi ∥ Bi ) and kj=1 δG (A′j , Pi ∪ Bi ) + δG (RP′ , Pi ∪ Bi )
+                  ′′ (δ). We will also assume that δ ≥ 1/(3k): indeed if δ < 1/(3k), we can increase
+in the constant C4.1
+it to 1/(3k) and we will still have k ′ ≥ ⌈(1 − 2/(3k))k⌉ = k, as for the original value of δ.
+
+Proof. Our algorithm consists of four steps. First, we embed the vertex set V into a k dimensional
+space using the standard spectral embedding (see Section 6 for details). We denote the image of
+vertex u by ū. We also let ψ(ū) = ū/∥ū∥ (that is, ψ(ū) is the normalized ū) and µ(u) = ∥ū∥2 (note:
+ū ̸= 0 by Claim 6.1). At the second step, we obtain a crude partial partitioning Pe1 , . . . , Pek′′ with
+buffers Be1 , . . . , B
+                      ek′′ using a new technical tool, which we introduced in Section 3. We call this tool
+orthogonal separators with buffers (see Theorem 3.6). Finally, we refine the crude partitioning at
+the third step and discard some sets at the fourth step. We get subsets Pi , Bi , A′i , A′′i for i ∈ [k ′ ]
+and two extra subsets RP′ , RB      ′ . We provide the pseudocode for Steps 1, 2, 3 and 4 in Figures 1, 2,
+
+3, and 4. We now analyze our algorithm.
+     Before we proceed to the proof, we set some notation. Let Ball(u, R) be the ball of radius R
+around u in the metric ρ(u, v) = ∥ψ(ū) − ψ(v̄)∥:
+
+                                   Ball(u, R) = {v ∈ V : ∥ψ(ū) − ψ(v̄)∥ ≤ R}.
+
+We define measure µ on V as follows: for every S ⊆ V ,
+                                               X
+                                        µ(S) =     µ(u).
+                                                             u∈S
+
+
+Step 1: Spectral Embedding. In Section 6, we remind the reader the standard definition of a
+spectral embedding of G into Rk . We then prove two claims about this embedding. First, we note
+that µ(V
+       √ ) = k. This is a known fact (see e.g., [LRTV12]). Then, in Lemma 6.3, we show that for
+R < 1/ 2, for any vertex u ∈ V ,
+                                                                      1
+                                                µ(Ball(u, R)) ≤            .                             (18)
+                                                                   1 − 2R2
+
+                                                             16
+                                     p
+We will use this bound with R =        δ/6.
+
+Step 2: Crude Partial Partitioning. We now analyze the second step of the algorithm described
+                         et )}T be the crude partial partitioning obtained at this step. Define function
+in Figure 2. Let {(Pet , B    t=1
+                                  
+                                       2
+                                  ∥ū∥ ,       if u ∈ Pet , v ∈
+                                                               / Pet ∪ B
+                                                                      et for some t;
+                     η(u, v) = 1/ε ∥ū − v̄∥2 , if u ∈ Pet , v ∈ Pet ∪ Bet for some t;              (19)
+                                  
+                                   0,           otherwise.
+                                  
+
+Later, we will use the following sum as an estimate of the size of the edge boundary of set Pt :
+                                                X
+                                     η(Pet ) =         η(u, v).                                  (20)
+                                                   u∈Pet ; v∈V ;
+                                                   s.t.(u,v)∈E
+
+
+Note that function η(u, v) is not symmetric. If u and v are in Pet , then the sum above includes both
+terms η(u, v) and η(v, u). Depending on the argument, we will use η to denote the cost of an edge
+as in Equation (19) or the cost of all edges incident on vertices in Pet as in Equation (20).
+                         et are contained in Xt ∪Yt ∪Zt \Σt−1 , where Xt , Yt , Zt are orthogonal separator
+    Note that sets Pet , B
+and its two buffers and Σt−1 are vertices covered by previous Pei for i < t. We define another cost
+function as follows:
+                            (
+                              ∥ū∥2 , if u ∈ Pet ∪ B
+                                                   et , v ∈
+                                                          / (Xt ∪ Yt ∪ Zt ) \ Σt−1 for some i;
+               η̃(u, v) =                                                                              (21)
+                              0,      otherwise.
+
+We will use this cost function to bound the total cost of edges from each part in the partial
+partitioning Pi and Bi to the uncovered part RB     ′ and R′ . The cost of all edges incident on vertices
+                                                           P
+in Pet ∪ B
+         et for function η̃ is denoted as
+                                                       X
+                                    η̃(Pet ∪ B
+                                             et ) =            η̃(u, v).                            (22)
+                                                    u∈Pet ∪Bet ; v∈V ;
+                                                      s.t.(u,v)∈E
+
+   We prove the following lemma for all sets generated after Step 2.
+Lemma 4.2. The crude partial partitioning {(Pet , B  et )}T and subsets RB , RP obtained at Step 2
+                                                          t=1
+of the algorithm satisfies the following properties:
+
+  1. µ(Pet ) ≤ 1 + δ for all t;
+     1 PT
+  2.       E[µ(Pet )] ≥ 1 − 5δ;
+     k t=1
+     1 PT       et )] ≤ 4ε;
+  3.       E[µ(B
+     k t=1
+     1 PT                Cδ
+  4.     t=1 E[η(Pt )] ≤
+                   e          · λk d log k;
+     k                    ε
+     PT
+  5.   t=1 E |Bt | + E |RB | ≤ 4εn;
+              e
+
+       1 PT                     Cδ
+  6.      t=1 E[η̃(Pt ∪ Bt )] ≤    · λk d log k.
+                   e    e
+       k                        ε
+
+
+                                                       17
+Here, the expectation is taken over the random decisions made by the algorithm at Step 2 (all other
+steps of the algorithm are deterministic).
+
+Proof. We will use Theorem 3.6 to analyze Step 2 of the algorithm. We first show item (1). Observe
+that Pet ⊂ Xt and for every u ∈ Xt , Xt = Ball(u, R) ∪ (Xt \ Ball(u, R)). Thus,
+
+                              µ(Pet ) ≤ µ(Ball(u, R)) + µ(Xt \ Ball(u, R)).
+
+By Lemma 6.3 (see Equation (18)), µ(Ball(u, R)) ≤ 1/(1−δ/3) ≤ 1+δ/2 for all u. By Theorem 3.6,
+
+                                                              δµ(V )  δ
+                                  min µ(Xt \ Ball(u, R)) ≤           = .
+                                 u∈Xt                           2k    2
+
+Thus, µ(Pet ) ≤ 1 + δ.
+     We now prove item (2). Consider a vertex u. Observe that if u gets assigned to set Σt at
+                                                                       ′
+       S t, then it remains in the set Σt in the future iterations t > t. That is, Σt ⊂ Σt+1 . Let
+iteration                                   ′
+
+Ξt = i<t Xi ∪ Yi ∪ Zi . Then, similarly, we have Ξt ⊂ Ξt+1 . If u is not in Ξt , then at step (t + 1),
+it is assigned to Pet+1 with probability at least α/2 and to Ξt+1 \ Pet+1 with probability at most 2εα
+(see Theorem 3.6). Thus,
+
+                                                          α/2        1
+                              Pr{u ∈ Σt | u ∈ Ξt } ≥             =        .
+                                                       α/2 + 2εα   1 + 4ε
+
+Also,
+                         1 − (1 − α(1 + 2ε))t ≥ Pr{u ∈ Ξt } ≥ 1 − (1 − α/2)t .
+Therefore (since T = ⌈2/α ln 1/δ⌉ and ε < δ < 1/48),
+
+                                           1 − (1 − α/2)T   1−δ
+                           Pr{u ∈ ΣT } ≥                  ≥        ≥ 1 − 5δ.                            (23)
+                                               1 + 4ε       1 + 4δ
+
+Item (2) follows from the bound above because sets Pet are disjoint and ΣT = Tt=1 Pet .
+                                                                              S
+   We then prove items (3) and (5). Note that the remaining parts RP = V \ ΞT and RB =
+V \ (RP ∪ ΣT ∪ ΓT ) = ΞT \ (ΣT ∪ ΓT ). Since all sets Bet are disjoint and ΓT = ∪T B
+                                                                                 t=1 t , we upper
+                                                                                       e
+bound probabilities Pr{u ∈ ΓT } and Pr{u ∈ ΓT ∪ RB }. Since RB = ΞT \ (ΣT ∪ ΓT ), we have
+ΓT ∪ RB = ΞT \ ΣT . Similar to bound (23), we have
+                                                                4ε
+                                                                     · 1 − (1 − α(1 + 2ε))T ≤ 4ε, (24)
+                                                                                           
+ Pr{u ∈ ΓT } ≤ Pr{u ∈ ΓT ∪ RB } ≤ Pr{u ∈ ΞT \ ΣT } ≤
+                                                              1 + 4ε
+where the last inequality is due to Pr{u ∈ ΞT \ ΣT | u ∈ ΞT } ≤ 4ε/(1 + 4ε) and Pr{u ∈ ΞT } ≤
+1 − (1 − α(1 + 2ε))T . Then, item (3) follows from Pr{u ∈ ΓT } ≤ 4ε and item (5) follows from
+Pr{u ∈ ΓT ∪ RB } ≤ 4ε.
+ We now prove       the item (4). Consider an edge (u, v). We bound the probability of the event
+  η(u, v) = ∥ū∥2 . If η(u, v) = ∥ū∥2 , then u ∈ Pet , and v ∈ / Pet ∪ Bet for some t. We first assume
+that v ∈                   ′
+         / Σt′ ∪ Γt′ with t ≤ t − 1 or, in other words, v ∈  / Σt−1 ∪ Γt−1 . Then, u ∈ Xt \ Ξt−1 and
+v∈ / Xt ∪ Yt for some t (otherwise, if v was in (Xt ∪ Yt ) \ Σt−1 ∪ Γt−1 , v would also be in Pet or B  et ).
+If v ∈ Pet′ ∪ B                     ′
+              et′ and u ∈ Pet with t < t, then v ∈ (Xt′ ∪ Yt′ ) \ (Σt′ −1 ∪ Γt′ −1 ) and u ∈
+                                                                                           / Xt′ ∪ Yt′ ∪ Zt′
+
+
+
+
+                                                     18
+for some t′ . Write,
+                         T
+                         X
+                      2
+                            
+     Pr η(u, v) = ∥ū∥ ≤   Pr u ∈ Xt \ Ξt−1 and v ∈
+                                                  / Xt ∪ Yt }                                            (25)
+                                 t=1
+                                 |                        {z                     }
+                                                          (∗)
+                                     T
+                                     X       
+                                 +         Pr v ∈ (Xt ∪ Yt ) \ (Σt−1 ∪ Γt−1 ) and u ∈
+                                                                                    / Xt ∪ Yt ∪ Zt } .   (26)
+                                     t=1
+                                     |                                {z                            }
+                                                                      (∗∗)
+
+We upper bound the first term. Two events {u ∈ Xt ; v ∈
+                                                      / Xt ∪ Yt } and {u ∈
+                                                                         / Ξt−1 } are independent
+for every t. Thus,
+                           T
+                           X       
+                   (∗) ≤         Pr u ∈ Xt and v ∈
+                                                 / Xt ∪ Yt } · Pr{u ∈
+                                                                    / Ξt−1 }
+                           t=1
+                           XT
+                                   
+                       =         Pr v ∈
+                                      / Xt ∪ Yt | u ∈ Xt } · Pr{u ∈ Xt } · Pr{u ∈
+                                                                                / Ξt−1 }
+                           t=1
+                           XT
+                                   
+                       =         Pr v ∈
+                                      / Xt ∪ Yt | u ∈ Xt } · Pr{u ∈ Xt \ Ξt−1 }.
+                           t=1
+
+By Theorem 3.6,
+                                  / Xt ∪ Yt | u ∈ Xt } ≤ D ∥ψ(ū) − ψ(v̄)∥2 ,
+                             Pr{v ∈
+where D = O(1/ε log k/δ) = Oδ (1/ε log k). Observe that events {u ∈ Xt \ Ξt−1 } for t ∈ {1, . . . , T } are
+mutually exclusive. Thus,
+                                                  T
+                                                  X
+                (∗) ≤ D ∥ψ(ū) − ψ(v̄)∥2 ·              Pr{u ∈ Xt \ Ξt−1 } ≤ D ∥ψ(ū) − ψ(v̄)∥2 .
+                                                  t=1
+                                                  |             {z           }
+                                                                ≤1
+
+The same bound holds for (∗∗) in Equation (26). We now bound E[η(u, v)]:
+                       n              o            n                      o
+       E η(u, v) = Pr η(u, v) = ∥ū∥2 · ∥ū∥2 + Pr η(u, v) = 1/ε∥ū − v̄∥2 · 1/ε∥ū − v̄∥2
+               
+
+                   ≤ 2D ∥ψ(ū) − ψ̄(v̄)∥2 · ∥ū∥2 + 1/ε∥ū − v̄∥2 .
+
+By Claim 4.3 (see below), E η(u, v)] ≤ 8D∥ū − v̄∥2 + 1/ε∥ū − v̄∥2 = Oδ (1/ε log k) ∥ū − v̄∥2 .
+                           
+
+Claim 4.3. Consider two vertices u, v ∈ V and the corresponding nonzero vectors ū, v̄. We have
+
+                                         ∥ū∥2 · ∥ψ(ū) − ψ(v̄)∥2 ≤ 4∥ū − v̄∥2 .
+
+Remark: This is a known inequality. See e.g., [CMM06] and [LGT14].
+
+Proof. Write,
+                                                                 ū   v̄ 2        ∥ū∥ 2
+                   ∥ū∥2 · ∥ψ(ū) − ψ(v̄)∥2 = ∥ū∥2 ·               −      = ū −      v̄ .
+                                                                ∥ū∥ ∥v̄∥         ∥v̄∥
+
+
+
+                                                            19
+We now use the relaxed triangle inequality for squared Euclidean distance ∥x − z∥2 ≤ 2∥x − y∥2 +
+2∥y − z∥2 . We have
+                                                                        ∥ū∥    2
+                    ∥ū∥2 · ∥ψ(ū) − ψ(v̄)∥2 ≤ 2∥ū − v̄∥2 + 2 v̄ −           v̄ ≤ 4∥ū − v̄∥2 .
+                                                                        ∥v̄ ∥
+                          ∥ū∥
+Here, we used that v̄ and ∥v̄ ∥ v̄ are collinear vectors and, thus,
+
+                          ∥ū∥                  ∥ū∥
+                                v̄ − v̄ =             v̄ − ∥v̄∥ = ∥ū∥ − ∥v̄∥ ≤ ∥ū − v̄∥.
+                          ∥v̄ ∥                 ∥v̄ ∥
+
+
+    We can now finish the proof of Lemma 4.2,
+            T
+          1X               1 X                                          1 X
+              E[η(Pet )] =     E[η(u, v)] + E[η(v, u)] = Oδ (1/ε log k)     ∥ū − v̄∥2 .
+          k                k                                            k
+             t=1                 (u,v)∈E                                                 (u,v)∈E
+
+By Claim 6.2, the right hand side is upper bounded by Oδ (1/ε log k) dλk .
+    Finally, we prove item (6). Similar to the analysis of item (4), for any edge (u, v), we bound the
+probability that η̃(u, v) = ∥ū∥2 . If η̃(u, v) = ∥ū∥2 , then we have u ∈ Pet ∪ Bet and v ̸∈ (Xt ∪ Yt ∪ Zt ) \
+Σt−1 for some t. We also first assume that when u is contained in Pet ∪ B      et , vertex v is not contained
+in Σt−1 . Then, we must have v ∈    / Xt ∪ Yt ∪ Zt . If v is covered by Pt for some t before u is covered,
+                                                                         e
+then we must have u ∈   / Xt ∪ Yt (otherwise u is contained in Pet ∪ B   et ). Thus, we have
+
+                                            T
+                                            X
+                Pr{η̃(u, v) = ∥ū∥2 } ≤           Pr{u ∈ (Xt ∪ Yt ) \ Ξt−1 and v ∈
+                                                                                 / Xt ∪ Yt ∪ Zt }
+                                            t=1
+                                                T
+                                                X
+                                            +         Pr{v ∈ Xt \ Ξt−1 and u ∈
+                                                                             / Xt ∪ Yt }.
+                                                t=1
+
+By Theorem 3.6, we have Pr{η̃(u, v) = ∥ū∥2 } ≤ 2D ∥ψ(ū) − ψ(v̄)∥2 . By Claim 6.2, we get
+                  T
+                1X             et )] = 1
+                                         X
+                    E[η̃(Pet ∪ B           E[η̃(u, v)] + E[η̃(v, u)] = Oδ (1/ε log k) dλk .
+                k                      k
+                   t=1                       (u,v)∈E
+
+
+
+
+     By item (5) in Lemma 4.2 and Markov’s inequality, we have |RB | + Tt=1 |B
+                                                                                     P        et | ≤ 16εn holds with
+probability at least 3/4. In the following analysis, we assume this always holds.
+Steps 3 & 4. Our algorithm (Algorithm 1) refines the crude partial partitioning {Pet , B                et }T at Step
+                                                                                                            t=1
+3 and obtains set tuples {(Pt , Bt , At , At )}t=1 . Then, it removes some of the sets (Pt , Bt , A′t , A′′t ) from
+                                            ′    ′′ T
+
+the partial partitioning at Step 4. In the analysis of the algorithm, it will be more convenient for us
+to identify those sets (Pet , B    et ) that remain in the solution first and only then find their refinements
+(Pt , Bt , A′t , A′′t ). Let
+       n                                                                                                        o
+ I = i : Pei ̸= ∅, µ(B       ei ) ≤ C ′ εµ(Pei ), and max{η(Pei ), η̃(Pei ∪ B
+                                                                            ei )} ≤ C ′′ /ε · λk d log k µ(Pei ) , (27)
+                                       δ                                             δ
+
+where Cδ′ = 192/δ and Cδ′′ = 48Cδ /δ. We will now prove that Pr{|I| ≥ (1−2δ)|k|} ≥ 1/2. In the next
+section, we show that for each i ∈ I, the set tuple (Pi , Bi , A′i , A′′i ) satisfies all constraints at Step 3
+
+                                                            20
+and 4. Thus, all sets (Pi , Bi , A′i , A′′i ) with i ∈ I remain in the solution after Step 4 and, consequently,
+the algorithm succeeds with probability at least 1/4 (We assume |RB | + Tt=1 |B
+                                                                                     P      et | ≤ 16εn at Step
+2, which holds with probability at least 3/4).                                  P          P
+    Lemma 4.2 gives us upper bounds on the expected values of k − t µ(Pet ), t µ(B                et ), P η(Pet ),
+     P                                                                                                   t
+and t η̃(Pet ∪ Bet ). These four random variables are non-negative. Thus, by Markov’s inequality,
+with probability at least 1/2, the following four inequalities hold simultaneously:
+                                                      T
+                                              1X e
+                                                µ(Pt ) ≥ 1 − 40δ;
+                                              k
+                                                     t=1
+                                                      T
+                                              1      X
+                                                             et ) ≤ 32ε;
+                                                           µ(B
+                                              k
+                                                     t=1
+                                                      T
+                                                 1   X
+                                                           η(Pet ) ≤ 8Cδ/ε λk d log k.
+                                                 k
+                                                     t=1
+                                        T
+                                       1X
+                                                  η̃(Pet ∪ B
+                                                           et ) ≤ 8Cδ/ε λk d log k.
+                                       k
+                                           t=1
+
+Denote the event that all above inequalities hold by E. We know that Pr(E) ≥ 1/2. Let us assume
+that E occurs. Since δ < 1/80, we have
+                                        T
+                                        X                        T
+                                                                 X
+                                                et ) ≤ 64ε
+                                              µ(B                       µ(Pet );
+                                        t=1                       t=1
+                                        XT                                         T
+                                                                                   X
+                                              η(Pet ) ≤ 16Cδ/ε λk d log k                µ(Pet );
+                                        t=1                                        t=1
+                                 T
+                                 X                                                 XT
+                                       η̃(Pet ∪ B
+                                                et ) ≤ 16Cδ/ε λk d log k                 µ(Pet ).
+                                 t=1                                               t=1
+                 .P
+                   T
+Let wi = µ(Pei )   t=1 µ(Pt ) . We rewrite the inequalities above as follows:
+                         e
+
+                                             T
+                                             X             µ(Bei )
+                                                     wi            ≤ 64ε;
+                                             i=1           µ(Pei )
+                                               T
+                                              X            η(Pei ) 16C
+                                                      wi           ≤  δ/ε λk d log k;
+
+                                              i=1          µ(Pei )
+                                       T
+                                       X          η̃(Pei ∪ B ei )
+                                             wi                   ≤ 16Cδ/ε λk d log k.
+                                       i=1            µ(Pei )
+                                                                                    P
+In the expressions above, we ignore the terms with wi = 0. Note that i wi = 1. Suppose that we
+pick i in {1, . . . , T } randomly with probability wi . Then, the above inequalities give bounds on the
+expected values of µ(B      ei )/µ(Pei ) and η(Pei )/µ(Pei ). By Markov’s inequality,
+                       n                                                                                    o
+ Pr {i ∈ I} = Pr µ(B        ei ) ≤ C ′ εµ(Pei ) and max{η(Pei ), η̃(Pei ∪ B
+                                                                          ei )} ≤ C ′′ /ε λk d log k µ(Pei ) ≥ 1 − δ,
+                                     δ                                             δ
+i∼w             i∼w
+
+
+
+
+                                                                21
+where Cδ′ = 192/δ and Cδ′′ = 48Cδ /δ. Therefore,
+                                                           P
+                                                                i∈I wi ≥ 1 − δ. We have
+
+                                 X                         T
+                                                           X
+                                       µ(Pei ) ≥ (1 − δ)         µ(Pei ) ≥ (1 − δ)k.
+                                 i∈I                       i=1
+
+
+We now recall that µ(Pei ) ≤ 1 + δ. Consequently,
+
+                                                      1−δ
+                                              |I| ≥       k ≥ (1 − 2δ)k.
+                                                      1+δ
+We just showed that if event E occurs, then |I| ≥ (1 − 2δ)k and Pr(E) ≥ 1/2. Hence, Pr{|I| ≥
+(1 − 2δ)k} ≥ 1/2.
+Step 3: Refined Partial Partitioning. At Step 3 of the algorithm, we refine the crude parti-
+tioning obtained at Step 2. To this end, we pick a threshold ri ∈ (0, 1) for every pair (Pei , B
+                                                                                               ei ) with
+i ∈ I. We define the refined partitioning sets to be
+
+   • Pi = {u ∈ Pei : µ(u) ≥ ri },
+
+   • Bi = {u ∈ B
+               ei : µ(u) ≥ ri /(1 + ε)} ∪ {u ∈ Pei : µ(u) ∈ [ri /(1 + ε), ri )},
+
+   • A′i = {u ∈ Pei : µ(u) ≤ ri /(1 + ε)2 },
+
+   • A′′i = {u ∈ Pei : µ(u) ∈ (ri /(1 + ε)2 , ri /(1 + ε))}.
+
+The threshold ri must satisfy five conditions: (1) |Bi | ≤ C4.1 ′ (δ)ε|P |; (2) ϕ (P ∥ B ) ≤ C ′′ (δ)/ε λ log k;
+                                                                              i      G i      i     4.1       k
+         ′′                          ′              ′′ (δ)
+(3) |Ai | ≤ 10ε|Pi |, and (4) δG (Ai , Pi ∪ Bi ) ≤ 4.1 /ε λk log k · d|Pi |; (5) δG (Pi ∪ Bi , (ΣT ∪ RP ) \ Pei ) ≤
+                                                  C
+  ′′ (δ)
+C4.1    /ε λk log k · d|Pi |. At Step 4, we drop sets (Pi , Bi , A′i , A′′i ) for which we could not find such
+threshold. We now show that for every i ∈ I such threshold ri exists (set I is defined in Equa-
+tion (27)). We use the probabilistic method.
+Lemma 4.4. Consider i ∈ I. Suppose, we select elements in sets Pi and Bi using a random
+threshold ri , which is uniformly distributed in (0, 1). Then
+
+   1. Eri |Bi | ≤ 2Cδ′ ε Eri |Pi |;
+                                      C ′′
+          h                         i
+   2. Eri δG (Pi , V \ (Pi ∪ Bi )) ≤ εδ λk log k · d Eri |Pi |;
+
+   3. Eri |A′′i | ≤ 2ε Eri |Pi |;
+                                  C ′′
+          h                   i
+   4. Eri δG (A′i , Pi ∪ Bi ) ≤ εδ λk log k · d Eri |Pi |.
+
+                                             C ′′
+         h                                i
+   5. Eri δG (Pi ∪ Bi , (ΣT ∪ RP ) \ Pei ) ≤ εδ λk log k · d Eri |Pi |.
+
+Proof. Denote
+
+            Bi′ = {u ∈ B
+                       ei : µ(u) ≥ ri /(1 + ε)} and B ′′ = {u ∈ Pei : µ(u) ∈ [ri /(1 + ε), ri )}.
+                                                     i
+
+Then, Bi = Bi′ ∪ Bi′′ . Write,
+                                      X                       X
+                        Eri |Pi | =           Pr{u ∈ Pi } =           Pr{ri ≤ µ(u)} = µ(Pei ).
+                                              ri                      ri
+                                      u∈Pei                   u∈Pei
+
+
+                                                           22
+Here, we used that µ(u) ≤ 1 for all u (see Claim 6.1). Similarly, E |Bi′ | ≤ (1 + ε)µ(B
+                                                                                      ei ). Then,
+                  X   n                         o X      n                          o
+      E |Bi′′ | =   Pr µ(i) ∈ [ri /(1 + ε), ri ] =     Pr ri ∈ [µ(i), (1 + ε)µ(i)] ≤ εµ(Pei ).
+                             ri                                          ri
+                     u∈Pei                                       u∈Pei
+
+Thus, using the definition of set I, we get
+      E |Bi | ≤ E |Bi′ | + E |Bi′′ | = (1 + ε)µ(B
+                                                ei ) + εµ(Pei ) ≤ ((1 + ε)C ′ + 1)εµ(Pei ) = 2C ′ ε E |Pi |.
+                                                                           δ                   δ
+
+This proves the first claim of Lemma 4.4.
+   We assign all vertices u ∈ Pei with µ(u) ∈ (ri /(1 + ε)2 , ri /(1 + ε)) to set A′′i . Then, we have
+              X     n                                 o
+  E |A′′i | =   Pr µ(i) ∈ (ri /(1 + ε)2 , ri /(1 + ε)) =
+                     ri
+             u∈Pei
+                                      X         n                                 o X
+                                  =           Pr ri ∈ [(1 + ε)µ(i), (1 + ε)2 µ(i)] =  (ε + ε2 )µ(i) < 2εµ(Pei ).
+                                              ri
+                                      u∈Pei                                            u∈Pei
+
+Since µ(Pei ) = Eri |Pi |, we get the third claim.
+    To show claims 2 and 4 of Lemma 4.4, we bound the expected number of edges from set Pi to
+set V \ (Pi ∪ Bi ), and the expected number of edges from set A′i to set Pi ∪ Bi .
+Claim 4.5. Consider an edge (u, v) ∈ E with u ∈ Pei . We have
+                                              Pr{u ∈ Pi ; v ∈
+                                                            / Pi ∪ Bi } ≤ 2η(u, v),
+and
+                                              Pr{u ∈ A′i ; v ∈ Pi ∪ Bi } ≤ 2η(u, v).
+
+Proof. Consider two cases. If v ∈ Pei ∪ B
+                                        ei , then
+
+                      Pr{u ∈ Pi , v ∈
+                                    / Pi ∪ Bi } = Pr{µ(u) ≥ ri and µ(v) < ri /(1 + ε)}
+                                                                         
+                                                ≤ Pr ri ∈ (1 + ε)µ(v), µ(u)
+                                                         ≤ µ(u) − (1 + ε)µ(v).
+By Claim 2.3,
+        µ(u) − (1 + ε)µ(v) = ∥ū∥2 − (1 + ε)∥v̄∥2 ≤ (1 + 1/ε)(∥ū∥ − ∥v̄∥)2 ≤ 2(∥ū∥ − ∥v̄∥)2 /ε.
+Using the triangle inequality ∥ū∥ − ∥v̄∥ ≤ ∥ū − v̄∥, we conclude that
+                                              Pr{u ∈ Pi , v ∈
+                                                            / Pi ∪ Bi } ≤ 2η(u, v).
+Similarly, we have
+            Pr{u ∈ A′i and v ∈ Pi ∪ Bi } = Pr{µ(u) ≤ ri /(1 + ε)2 and µ(v) ≥ ri /(1 + ε)}
+                                         ≤ Pr ri ∈ (1 + ε)2 µ(u), (1 + ε)µ(v)
+                                                                            
+
+                                                     ≤ (1 + ε)(µ(v) − (1 + ε)µ(u)) ≤ 2(∥ū∥ − ∥v̄∥)2 /ε.
+Therefore, we have
+                                 Pr{u ∈ A′i , v ∈ Pi ∪ Bi } ≤ 2η(u, v).
+   If v ∈       ei , then Pr{u ∈ A′ , v ∈ Pei ∪ B
+        / Pei ∪ B                               ei } = 0, and
+                                               i
+
+                             Pr{u ∈ Pi , v ∈ Pi ∪ Bi } = Pr{u ∈ Pi } = ∥ū∥2 = η(u, v).
+
+
+
+                                                               23
+    By Claim 4.5, the expected number of edges from set Pi to set V \ (Pi ∪ Bi ) is at most 2η(Pei ).
+Also, the expected number of edges from set A′i to set Pi ∪ Bi is at most 2η(Pei ). In other words,
+E δG (Pi , V \ (Pi ∪ Bi )) ≤ 2η(Pei ) and E δG (A′i , Pi ∪ Bi ≤ 2η(Pei ). Using the definition of set I
+                                                          
+
+(see (27)), we get the claims 2 and 4 of Lemma 4.4.
+    Finally, we prove claim 5 of Lemma 4.4. We have for any edge (u, v) with u ∈ Pei ∪ B    ei ,
+
+          Pr{u ∈ Pi ∪ Bi , v ∈ (ΣT ∪ RP ) \ Pei } ≤ Pr{u ∈ Pi ∪ Bi } = (1 + ε)∥ū∥2 ≤ 2η̃(u, v).
+Thus, the expected number of edges from Pi ∪ Bi to (ΣT ∪ RP ) \ Pei is at most 2η̃(Pei ∪ B
+                                                                                         ei ). By the
+definition of set I (see (27)), we get the conclusion.
+
+    Using Lemma 2.4 with six random variables, we conclude that there exists ri ∈ (0, 1) such that
+inequalities (1) |Bi | ≤ 10Cδ′ ε|Pi |, (2) δG (Pi , V \ (Pi ∪ Bi )) ≤ 5Cδ′′/ε λk log k · d|Pi |, (3) |A′′i | ≤ 10ε|Pi |,
+(4) δG (A′i , Pi ∪Bi ) ≤ 5Cδ′′/ε λk log k·d|Pi |, and (5) δG (Pi ∪Bi , (ΣT ∪RP )\Pei ) ≤ 5Cδ′′/ε λk log k·d|Pi | hold
+simultaneously. The second inequality is equivalent to ϕ(Pi ∥ Bi ) ≤ 5Cδ′′/ε λk log k. In this theorem,
+we use the following functions C4.1      ′  and C4.1  ′′ : C ′ (δ) = 10C ′ and C ′′ (δ) = 5C ′′ . Combining the
+                                                            4.1            δ      4.1            δ
+inequalities (4) and (5), we get the property (6) in Theorem 4.1. In Algorithm 1, all sets Pi , Bi , A′i , A′′i
+for i ∈ [k ′ ] and RB ′ , R′ are disjoint and cover the entire graph. Since all set tuples (P , B , A′ , A′′ )
+                           P                                                                           i      i  i  i
+with Pi = ∅ S    are discarded at Step 4, all sets Pi P     returned by Algorithm 1 are nonempty. Note that
+  ′ ⊆ R ∪          T                                           T
+RB        B        i=1 Bi . Since we assume |RB | +            i=1 |Bi | ≤ 16εn at Step 2 (This condition holds
+                        e                                           e
+                                                    ′
+with probability at least 3/4), we have |RB | ≤ 16εn. This finishes the proof of Theorem 4.1.
+
+
+5     From Disjoint Sets to Partitioning
+We now show how to use the partial partitioning given by Algorithm 1 in Section 4 to obtain a true
+ε-buffered partitioning. We prove the following lemma.
+Lemma 5.1. Consider a d-regular graph G. Let {(Pi , Bi , A′i , A′′i )}i∈[k′ ] and RP′ , RB   ′ be a partial
+
+ε-buffered partitioning of G given by Algorithm 1. Then, for every k ∈ {1, · · · , k ′ } and δ ′ = (k ′ −
+k + 1)/k ′ , we can convert this partial partitioning into a true 54ε/δ′ -buffered partitioning P1′ , . . . , Pk′ ,
+B1′ , . . . , Bk′ of G such that
+                                                                     ′′ (δ) log k
+                                                                  4C4.1
+                              ϕG (P1′ , . . . , Pk′ ∥ B1′ , . . . , Bk′ ) ≤·       λk .
+                                                                     δ′       ε
+Proof. Let us sort all pairs (Pi , Bi , A′i , A′′i ) by size and assume |P1 | ≤ · · · ≤ |Pk′ |. Now, we generate
+the true buffered partitioning of the graph. The true buffered partitioning (Pi′ , Bi′ ) contains the
+pairs (Pi , Bi ) for i ∈ [k − 1] in the partial partitioning and a pair of new sets (Pk′ , Bk′ ). Specifically,
+we let Pi′ = Pi and Bi′ = Bi for i ∈ [k − 1] and
+                                        k ′           k′                              k ′            k′
+                                        [             [                               [              [
+                        Pk′ = RP′ ∪           A′j ∪         Pj ;        Bk′ = RB
+                                                                               ′
+                                                                                 ∪          A′′j ∪         Bj .
+                                        j=1           j=k                             j=1            j=k
+
+We can think of each set A′′i is the buffer for the set A′i for i ∈ [k ′ ], and the set RB
+                                                                                         ′ is the buffer
+
+for the set RP′ . We also combine these sets and buffers with the largest k ′ − k + 1 pairs (Pi , Bi ) for
+i = k, k + 1, · · · , k ′ in the partial partitioning, respectively.
+     By Theorem 4.1, all sets Pi , Bi , A′i , A′′i and RP′ , RB
+                                                              ′ are disjoint and cover the entire graph. Also,
+
+all sets Pi and RP are nonempty. Thus, all sets Pi are disjoint and nonempty, and ki=1 Pi′ ∪Bi′ = V .
+                  ′                                       ′
+                                                                                            S
+Also, for all i ∈ [k − 1], we have |Bi | ≤ ε|Pi | and
+                                                                               ′′ (δ)
+                                                                              C4.1
+                                  ϕG (Pi′ , Bi′ ) = ϕG (Pi , Bi ) ≤                   λk log k.                    (28)
+                                                                                 ε
+
+                                                                   24
+   It remains to verify that the last pair of sets Pk′ and Bk′ satisfy the required conditions. By items
+4 and 5 of Theorem 4.1, we have
+                                           k ′               k ′                            k ′
+                                           X                 X                              X
+                      |Bk′ | ≤ |RB
+                                 ′
+                                   |+            |A′′j | +         |Bj | ≤ 16εn + 11ε             |Pi | ≤ 27εn.
+                                           j=1               j=1                            j=1
+
+                                            Pk−1                         Pk′
+Since |P1 | ≤ · · · ≤ |Pk′ |, we have          i=1 |Pi | ≤                i=1 |Pi |. Thus, we have
+                                                                k−1/k′
+
+
+                             k′                        k−1
+                             X                         X
+    |Pk′ | = |V | − |RB
+                      ′
+                        |−         |A′′i | + |Bi | −         |Pi | ≥
+                             i=1                       i=1
+                                                                             k′                      !
+                                          k−1                         ′
+                                                                               X
+                              ≥        1−              ·     |V | − |RB |−           |A′′i | + |Bi |       ≥ δ ′ (n − 27εn) ≥ δ ′ n/2.
+                                           k′
+                                                                               i=1
+
+Hence, we have |Bk′ | ≤ 54ε/δ′ |Pk′ |.
+   We now bound the buffered expansion of this last part. By items (3) and (6) of Theorem 4.1,
+we have
+                       Pk−1
+           ′    ′               δG (Pk′ , Pi ∪ Bi )
+      ϕG (Pk ∥ Bk ) ≤ i=1
+                                  d|Pk′ |
+                       Pk−1 Pk′                 ′                     ′
+                                                                                 Pk′
+                          i=1      j=1 δG (Aj , Pi ∪ Bi ) + δG (RP , Pi ∪ Bi ) +  j=k δG (Pj , Pi ∪ Bi )
+                    ≤                                               ′
+                                                              d · δ n/2
+                                                                     P ′
+                       2C4.1 (δ)/ε · λk log k · d i=1 |Pi | + kj=k δG (Pj , V \ (Pj ∪ Bj ))
+                           ′′
+                                                     Pk−1
+                    ≤
+                                                         d · δ ′ n/2
+                           ′′
+                       4C4.1 (δ)/δ     ′
+                    ≤                    · λk log k.
+                              ε
+This concludes the proof of Lemma 5.1.
+
+     We now prove the main result of the paper, Theorem 1.1.
+                                                                                     √
+Proof of Theorem 1.1. Let k̂ = ⌊(1+δ)k⌋ and δ̂ = min{(1−1/ 1+δ)/2, 1/80}. Let k ′ = ⌈(1−2δ̂)k̂⌉ and
+δ ′ = (k ′ − k + 1)/k ′ . We first use Algorithm 1 from Section 4 with parameters k̂, ε̂ = εδ ′ /54, and δ̂
+to obtain a partial ε̂-buffered partitioning (P1 , B1 , A′1 , A′′1 ), . . . , (Pk′ , Bk′ , A′k′ , A′′k′ ). By Theorem 4.1,
+                                                                                     ′′ (δ)
+the buffered expansion of each set Pi with buffer set Bi is at most C4.1                   /ε̂ λk̂ log k̂. Then, we apply
+Lemma 5.1 to √   transform this partial partitioning into a true  √       k   partitioning.       Since k ′ = ⌈(1 − 2δ̂)k̂⌉,
+we have k ′ ≥ 1 + δk − 1. Then, we have δ ′ ≥ 1 − 1/ 1 + δ. By Lemma 5.1, the expansion of
+                                                                                        ′′ (δ) ′
+this ε-buffered k partitioning is at most c(δ)/ε λk̂ log k̂, where c(δ) = 4C4.1               /δ is a function that only
+depends on δ.
+
+
+6      Spectral Embedding
+Consider a d-regular graph G. Let LG be its normalized Laplacian. Let x1 , . . . , xn be an orthonormal
+eigenbasis for LG and λi be the eigenvalue of xi . Without loss of generality, we assume that
+                                                                               √
+λ1 ≤ · · · ≤ λn . Note that λ1 = 0, so we may assume that x1 = 1/ n. Define an k × n matrix
+U = (x1 , . . . , xk )T ; that is, the (i, u) entry of U equals U (i, u) = xi (u) where i ∈ [k] and u ∈ V .
+Rows of U are indexed by integers from 1 to k and columns by vertices u ∈ V of the graph (to
+
+                                                                    25
+simplify notation, we may assume that V = [n]). Note that U U T = Ik , since vectors x1 , . . . , xk are
+orthonormal. Let {eu }u∈V be the standard orthonormal basis in RV .
+    We are ready to define the spectral embedding of G. Let ū be the column of U indexed by
+vertex u. The spectral embedding maps vertex u to vector ū.
+    Define ψ(u) = ui /∥ui ∥. For a subset of vertices S ⊆ V , let µ(S) = u∈S ∥ū∥2 be the measure
+                                                                        P
+of set S. Now we will state and prove basic properties of the spectral embedding.
+
+Claim 6.1. For all u ∈ V , we have 0 < ∥ū∥ ≤ 1.
+                    √                                     √               √
+Proof. Since x1 = 1/ n, for all u ∈ V , we have ū(1) = 1/ n and ∥ū∥ ≥ 1/ n > 0. Further,
+                         k
+                         X               k
+                                         X              k
+                                                        X              n
+                                                                       X
+                  2               2                    2            2
+              ∥ū∥ =           ū(i) =         xi (u) =   ⟨xi , eu ⟩ ≤   ⟨xi , eu ⟩2 = ∥eu ∥2 = 1.
+                         i=1             i=1               i=1                 i=1
+
+
+
+
+Claim 6.2. We have
+               2
+     P
+  1.  u∈V ∥ū∥ = k
+                       2
+     P
+  2.  (u,v)∈E ∥ū − v̄∥ ≤ kdλk
+
+Proof. Note that the (u, v) entry of matrix U T U equals ⟨ū, v̄⟩, since U has columns ū for u ∈ V .
+1. We have, u∈V ∥ū∥2 = tr(U T U ) = tr(U U T ) = tr Ik = k, as required.
+            P
+
+2. We have,
+
+               X                           k
+                                         X X                                  k
+                                                                              X X
+                        ∥ū − v̄∥2 =                   ∥ū(i) − v̄(i)∥2 =                     ∥xi (u) − xi (v)∥2
+              (u,v)∈E                  (u,v)∈E i=1                            i=1 (u,v)∈E
+                                               k                     k
+                                  by (1)       X                     X
+                                      = d            xTi LG xi = d         λi ≤ dkλk ,
+                                               i=1                   i=1
+
+where we used that λ1 ≤ · · · ≤ λk in the last inequality.
+
+    We show that the spectral embedding vectors {ψ(v̄)} satisfy the following spreading property.
+It is a variant of Lemma 3.2 from the paper by Lee, Oveis-Gharan and Trevisan [LGT14].
+                                                                √
+Lemma 6.3. Assume that we are given a parameter R ∈ [0, 1/ 2]. For every vertex u, consider the
+ball of radius R around u, Ball(u, R) = {v : ∥ψ(ū) − ψ(v̄)∥ ≤ R}. Then µ(Ball(u, R)) ≤ 1/(1 − 2R2 )
+for every u.
+
+Proof. Consider a vertex Pu ∈ V and C = Ball(u, R). Let av = ∥v̄∥ for v ∈ C. Then, v̄ = av ψ(v̄) for
+v ∈ C. We have, µ(C) = v∈C a2v . By the definition of C, ∥ψ(ū) − ψ(v̄)∥ ≤ R for v ∈ C and hence
+∥ψ(v̄) − ψ(w̄)∥ ≤ 2R for all pairs v, w ∈ C. Therefore,
+
+                                               ∥ψ(v̄) − ψ(w̄)∥2
+                  ⟨ψ(v̄), ψ(w̄)⟩ = 1 −                          ≥ 1 − 2R2              for all v, w ∈ C.           (29)
+                                                       2
+Write,
+                                                 X                 1         X
+                                      µ(C) =           a2v = P        2
+                                                                                  a2v a2w .
+                                                 v∈C             v∈C av v,w∈C
+
+
+                                                              26
+By inequality (29),
+                                            av aw ⟨ψ(v̄), ψ(w̄)⟩    ⟨v̄, w̄⟩
+                                 av aw ≤                  2
+                                                                 =           .
+                                                 1 − 2R            1 − 2R2
+Thus,
+                                                 1        X av aw ⟨v̄, w̄⟩
+                                  µ(C) ≤ P           2
+                                                                           .
+                                                v∈C av v,w∈C 1 − 2R2
+
+For any vertex v ∈ V , let ev ∈ RV be the standard basis vector where ev (v) = 1 and ev (u) = 0 for
+all u ̸= v. Let                              P
+                                               v∈C av ev
+                                         z = pP        2
+                                                         .
+                                                 v∈C av
+For any standard basis vector ev , we have U ev = v̄. Therefore,
+                                                      1       X
+                                       U z = pP            2
+                                                                   av v̄,
+                                                      v∈C av v∈C
+
+and
+                                                      z T (U T U )z
+                                            µ(C) ≤                  .
+                                                      (1 − 2R2 )
+    We prove that ∥U z∥2 = z T (U T U )z ≤ 1. To this end, note that z is a unit vector and ∥U z∥2 ≤
+σmax (U )2 = σmax (U T )2 , where σmax (U ) and σmax (U T ) are the largest singular values of U and U T ,
+respectively (here, we used the definition of singular values and the fact that matrices U and U T
+have the same non-zero singular values). Since U U T = Id , all singular values of U T are equal to 1.
+We conclude that ∥U z∥2 ≤ 1.
+
+
+
+7     Orthogonal Separators with Buffers – Proofs
+In this section, we show the algorithm that generates orthogonal separators with buffers. We prove
+Theorem 3.2, Theorem 3.4, and Theorem 3.6.
+
+Theorem 3.2. There exists a randomized polynomial-time procedure that given a finite set U of
+unit vectors in Rd and positive parameters ε ∈ (0, 1), m ≥ 3, R ∈ (0, 2), returns an m-orthogonal
+separator with an ε-buffer with distortion D = OR (1/ε log m), separation radius R, and probability
+scale α ≥ OR (1/poly(m)).
+    For two disjoint random sets X, Y ⊂ U chosen from this orthogonal separator distribution, we
+have the following properties:
+
+    1. For all ū ∈ U , Pr{ū ∈ X} = α; (for some α that depends on m and R).
+
+    2. For all ū ∈ U , Pr{ū ∈ Y } ≤ εα.
+                                                                    1
+    3. For all ū, v̄ ∈ U with ∥ū − v̄∥ ≥ R, Pr{v̄ ∈ X | ū ∈ X} ≤ m .
+
+                                  / X ∪ Y | ū ∈ X} ≤ D ∥ū − v̄∥2 , where D = OR (1/ε log m).
+    4. For all ū, v̄ ∈ U , Pr{v̄ ∈
+
+Proof of Theorem 3.2. We use the following procedure to generate orthogonal separators with buffers.
+We sample a d-dimensional Gaussian vector g ∼ N (0, Id ). For every vector ū in U , we let
+gu = ⟨ū, g⟩ be the projection of vector ū on the direction g. For a standard gaussian random
+variable Z ∼ N (0, 1), we use Φ̄(t) = Pr{Z ≥ t} to denote the probability that Z ≥ t. We pick a
+
+                                                      27
+threshold t such that Φ̄(t) = α for some α that we will specify later; our choice of α will guarantee
+that t ≤ 1. Let ε′ = ε/(e(t + 1/t)). Then, we construct the orthogonal separator X and the buffer
+Y as follows:
+                          X = {ū : gu ≥ t};    Y = {ū : t − ε′ < gu < t}.
+Now we show that this procedure satisfies the required properties.
+  1. For every vector ū ∈ U , we have
+                                 Pr{ū ∈ X} = Pr{gu ≥ t} = Φ̄(t) = α.
+   2. For every vector ū ∈ U , we have
+                                       1    (t−ε′ )2
+  Pr{ū ∈ Y } = Pr{t − ε′ < gu < t} ≤ √ e− 2 · ε′ ≤
+                                       2π
+                                                 ′
+                                            ε′ eε t − t2     εeε         t2   eε
+                                          ≤ √ e 2 = √                  e− 2 ≤    · εΦ̄(t) ≤ εα,
+                                               2π        e 2π(t + 1/t)        e
+where the third inequality is due to Lemma G.1.
+   3. For every ū, v̄ ∈ U , we have
+                    Pr{ū ∈ X, v̄ ∈ X} = Pr{gu ≥ t, gv ≥ t} ≤ Pr{(gu + gv )/2 ≥ t}.
+We know that gu , gv are both random Gaussian variables from N (0, 1). Thus, we have (gu + gv )/2
+is also a Gaussian variable with variance
+                                                                           ∥ū − v̄∥2
+                              
+                       gu + gv     1                1
+                 Var             = E[(gu + gv )2 ] = (2 + 2⟨ū, v̄⟩) = 1 −            ,
+                          2        4                4                          4
+where the second equality is due to E[gu gv ] = ⟨ū, v̄⟩ and the third equality used ū, v̄ are unit vectors.
+Thus for every ū, v̄ ∈ U with ∥ū − v̄∥ ≥ R, we have Var [(gu + gv )/2] ≤ 1 − R2/4. From Lemma G.2
+we get that there exists a constant C such that
+                                                           !
+                          gu + gv                      t           1         √ 1
+                     Pr           ≥ t ≤ Φ̄ p                    ≤ (CtΦ̄(t)) 1−R2 /4 .
+                             2                    1 − R2 /4        t
+
+Since Φ̄(t) = α, we have
+                                                           
+                                                 gu + gv                 √ 1     −1
+                   Pr{ū ∈ X, v̄ ∈ X} ≤ Pr               ≥ t ≤ α · C(Ctα) 1−R2 /4 .
+                                                    2
+                             p
+By Lemma G.1, we have t = Θ( log 1/α). Then we can find some α ≥ 1/poly(m) (for a fixed R)
+that depends on m and R such that Pr{ū ∈ X, v̄ ∈ X} ≤ α/m. Since Pr{ū ∈ X} = α, we have
+                                                                 1
+                                        Pr{v̄ ∈ X | ū ∈ X} ≤      .
+                                                                 m
+   4. For every ū, v̄ ∈ U , we have
+                                         / X ∪ Y } = Pr{gu ≥ t, gv ≤ t − ε′ }.
+                           Pr{ū ∈ X, v̄ ∈
+Since g is a standard Gaussian random vector, we have √        gu and gv are jointly Gaussian random
+variables with distribution N (0, 1). Since ε ≤ 1 and t = Θ( log m), we have ε′ = ε/(e(t + 1/t)) < t.
+Using Lemma G.3 on gu , gv with parameters m̂ = 1/α and ε̂ = ε′ , we get
+                                               √         
+                                        ′          log m̂
+                  Pr{gu ≥ t, gv ≤ t − ε } ≤ O               · ∥ū − v̄∥2 ≤ αD∥ū − v̄∥2 ,
+                                                   ε′ m̂
+where D = OR (1/ε log m).
+
+                                                     28
+Theorem 3.4. There exists a randomized procedure that given a finite set U of unit vectors in
+Rd equipped with a measure µ and positive parameters ε ∈ (0, 1), δ ≤ 2/3, R ∈ (0, 2), returns an
+δ-orthogonal separator with an ε-buffer with distortion D = OR (1/ε log 1/δ), separation radius R,
+and probability scale α ≥ OR (1/poly(m)).
+   For two disjoint random sets X, Y ⊂ U chosen from this orthogonal separator distribution, we
+have the following properties:
+  1. For all ū ∈ U , Pr{ū ∈ X} ∈ [α/2, α].
+  2. For all ū ∈ U , Pr{ū ∈ Y } ≤ εα.
+  3. minū∈X µ(X \ Ball(ū, R)) ≤ δµ(U ) (always).
+                                / X ∪ Y | ū ∈ X} ≤ D ∥ū − v̄∥2 , where D = OR (1/ε log 1/δ).
+  4. For all ū, v̄ ∈ U , Pr{v̄ ∈
+Proof. We first run the algorithm from Theorem 3.2 with m = 2/δ and obtain sets X ′ and Y ′ . If
+set X ′ satisfies the third condition: minū∈X ′ µ(X ′ \ Ball(ū, R)) ≤ δµ(U ), we return sets (X, Y ) =
+(X ′ , Y ′ ). Otherwise, we return empty sets, (X, Y ) = (∅, ∅). By Theorem 3.2, Pr{ū ∈ X} ≤ α and
+Pr{ū ∈ Y } ≤ εα for all ū ∈ X. Also, condition (3) always holds (because if X ′ does not satisfy it,
+we return ∅). We now lower bound Pr{ū ∈ X}:
+                        Pr{ū ∈ X} = Pr{ū ∈ X ′ } − Pr{ū ∈ X ′ and X = ∅}
+                                     = Pr{ū ∈ X ′ } · (1 − Pr{X = ∅ | ū ∈ X ′ }
+                                     = α(1 − Pr{X = ∅ | ū ∈ X ′ }).
+If X = ∅, then
+                        µ(X ′ \ Ball(ū, R)) ≥ min′ µ(X ′ \ Ball(v̄, R)) > δµ(U ).
+                                               v̄∈X
+Thus,                                      n                                        o
+                 Pr{X = ∅ | ū ∈ X ′ } ≤ Pr µ(X ′ \ Ball(ū, R)) > δµ(U ) | ū ∈ X ′ .
+However, by item (3) of Theorem 3.2,
+                         h                               i µ(U )   δµ(U )
+                        E µ(X ′ \ Ball(ū, R)) | ū ∈ X ′ ≤      =        .
+                                                            m        2
+By Markov’s inequality,
+                                                          1
+                                   Pr{X = ∅ | ū ∈ X ′ } ≤ .
+                                                          2
+Therefore, Pr{ū ∈ X} ≥ α(1 − 1/2) = α/2. Finally,
+                                            Pr{v̄ ∈
+                                                  / X ∪ Y and ū ∈ X}
+               Pr{v̄ ∈
+                     / X ∪ Y | ū ∈ X} =
+                                                     Pr{ū ∈ X}
+                                                  / X ′ ∪ Y ′ and ū ∈ X ′ } Pr{ū ∈ X ′ }
+                                            Pr{v̄ ∈
+                                          =                                 ·
+                                                      Pr{ū ∈ X ′ }           Pr{ū ∈ X}
+                                                        ′     ′        ′
+                                                    / X ∪ Y | ū ∈ X } ≤ 2D ∥ū − v̄∥2 .
+                                          ≤ 2 Pr{v̄ ∈
+Theorem 3.6. There exists a randomized procedure that given a finite set U of unit vectors in
+Rd equipped with a measure µ and positive parameters ε ∈ (0, 1), δ ≤ 2/3, R ∈ (0, 2), returns an
+δ-orthogonal separator with two ε-buffers with distortion D = OR (1/ε log 1/δ), separation radius R,
+and probability scale α ≥ OR (1/poly(m)).
+   For three disjoint random sets X, Y, Z ⊂ U chosen from this orthogonal separator distribution,
+we have the following properties:
+
+                                                      29
+  1. For all ū ∈ U , Pr{ū ∈ X} ∈ [α/2, α].
+
+  2. For all ū ∈ U , Pr{ū ∈ Y } ≤ εα, and Pr{ū ∈ Z} ≤ εα.
+
+  3. minū∈X µ(X \ Ball(ū, R)) ≤ δµ(U ) (always).
+
+                                / X ∪ Y | ū ∈ X} ≤ D ∥ū − v̄∥2 , and
+  4. For all ū, v̄ ∈ U , Pr{v̄ ∈
+           / X ∪ Y ∪ Z | ū ∈ X ∪ Y } ≤ D ∥ū − v̄∥2 , where D = OR (1/ε log 1/δ).
+     Pr{v̄ ∈
+
+Proof. We modify the algorithm in Theorem 3.2 to generate three disjoint sets X ′ , Y ′ , Z ′ as follows.
+We sample a d-dimensional Gaussian vector g ∼ N (0, Id ). For every vector ū in U , we let gu = ⟨ū, g⟩
+be the projection of vector ū on the direction g. We use Φ̄(t) to denote the probability that a
+standard gaussian random variable is at least t. We pick a threshold t such that Φ̄(t) = α for some
+α that we will specify later; our choice of α will guarantee that t ≤ 1. Let ε′ = ε/(e(t + 1/t)). Then,
+we construct the orthogonal separator X ′ and two buffers Y ′ , Z ′ as follows:
+
+          X = {ū : gu ≥ t};    Y = {ū : t − ε′ < gu < t};      Z = {ū : t − 2ε′ < gu < t − ε′ }.
+
+If set X ′ satisfies the third condition: minū∈X ′ µ(X ′ \Ball(ū, R)) ≤ δµ(U ), we return sets (X, Y, Z) =
+(X ′ , Y ′ , Z ′ ). Otherwise, we return empty sets, (X, Y, Z) = (∅, ∅, ∅).
+     By the similar analysis in Theorem 3.2, we have for all ū ∈ U , it holds that Pr{ū ∈ X} ≤ α,
+Pr{ū ∈ Y } ≤ εα, and Pr{ū ∈ Z} ≤ εα. By Theorem 3.4, we have for all ū ∈ U , Pr{ū ∈ X} ≥ α/2
+and condition (3) always holds. Then, we show that condition (4) holds. The first part of condition
+(4) is the same as Theorem 3.4. Note that α ≤ Φ̄(t − ε′ ) ≤ (1 + ε)α. Using Lemma G.3 on gu , gv
+with parameters m̂ = 1/Φ̄(t − ε′ ) and ε̂ = ε′ , we have
+                                                   √        
+                                            ′         log m̂
+                       Pr{gu ≥ t, gv ≤ t − ε } ≤ O             · ∥ū − v̄∥2 ≤ αD∥ū − v̄∥2 ,
+                                                      ε′ m̂
+
+where D = OR (1/ε log m).
+
+
+References
+[Alo86]      Noga Alon. Eigenvalues and expanders. Combinatorica, 6(2):83–96, 1986.
+
+[AM85]       Noga Alon and Vitali D Milman. λ1 , Isoperimetric inequalities for graphs, and super-
+             concentrators. Journal of Combinatorial Theory, Series B, 38(1):73–88, 1985.
+
+[AR04]       Konstantin Andreev and Harald Räcke. Balanced graph partitioning. In Proceedings of
+             the Symposium on Parallelism in Algorithms and Architectures, pages 120–124, 2004.
+
+[ARV09]      Sanjeev Arora, Satish Rao, and Umesh Vazirani. Expander flows, geometric embeddings
+             and graph partitioning. Journal of the ACM (JACM), 56(2):1–37, 2009.
+
+[BFK+ 14] Nikhil Bansal, Uriel Feige, Robert Krauthgamer, Konstantin Makarychev, Viswanath
+          Nagarajan, Joseph Seffi Naor, and Roy Schwartz. Min-max graph partitioning and
+          small set expansion. SIAM Journal on Computing, 43(2):872–904, 2014.
+
+[Che69]      Jeff Cheeger. A lower bound for the smallest eigenvalue of the laplacian. In Proceedings
+             of the Princeton conference in honor of Professor S. Bochner, pages 195–199, 1969.
+
+
+
+                                                    30
+[CMM06] Eden Chlamtac, Konstantin Makarychev, and Yury Makarychev. How to play unique
+        games using embeddings. In Proceedings of the Symposium on Foundations of Computer
+        Science, pages 687–696, 2006.
+
+[Fil22]   Arnold Filtser. Hop-constrained metric embeddings and their applications. In Proceed-
+          ings of the Symposium on Foundations of Computer Science, pages 492–503, 2022.
+
+[FL21]    Arnold Filtser and Hung Le. Clan embeddings into trees, and low treewidth graphs. In
+          Proceedings of the Symposium on Theory of Computing, pages 342–355, 2021.
+
+[HHZ21]   Bernhard Haeupler, D Ellis Hershkowitz, and Goran Zuzic. Tree embeddings for hop-
+          constrained network design. In Proceedings of the Symposium on Theory of Computing,
+          pages 356–369, 2021.
+
+[KBL16]   Emilie Kaufmann, Thomas Bonald, and Marc Lelarge. A spectral algorithm with ad-
+          ditive clustering for the recovery of overlapping communities in networks. In Ronald
+          Ortner, Hans Ulrich Simon, and Sandra Zilles, editors, Algorithmic Learning Theory,
+          pages 355–370, Cham, 2016. Springer International Publishing.
+
+[KLL+ 13] Tsz Chiu Kwok, Lap Chi Lau, Yin Tat Lee, Shayan Oveis Gharan, and Luca Trevisan.
+          Improved cheeger’s inequality: Analysis of spectral partitioning algorithms through
+          higher order spectral gap. In Proceedings of the Symposium on Theory of Computing,
+          pages 11–20, 2013.
+
+[KLL17]   Tsz Chiu Kwok, Lap Chi Lau, and Yin Tat Lee. Improved cheeger’s inequality and
+          analysis of local graph partitioning using vertex expansion and expansion profile. SIAM
+          Journal on Computing, 46(3):890–910, 2017.
+
+[KLM06]   Ravi Kannan, László Lovász, and Ravi Montenegro. Blocking conductance and mixing
+          in random walks. Combinatorics, Probability and Computing, 15(4):541–570, 2006.
+
+[KVV04]   Ravi Kannan, Santosh Vempala, and Adrian Vetta. On clusterings: Good, bad and
+          spectral. Journal of the ACM (JACM), 51(3):497–515, 2004.
+
+[LGT14]   James R Lee, Shayan Oveis Gharan, and Luca Trevisan. Multiway spectral partitioning
+          and higher-order Cheeger inequalities. Journal of the ACM (JACM), 61(6):1–30, 2014.
+
+[LM12]    Jure Leskovec and Julian Mcauley. Learning to discover social circles in ego networks.
+          Advances in neural information processing systems, 25, 2012.
+
+[LM14]    Anand Louis and Konstantin Makarychev. Approximation algorithm for sparsest k-
+          partitioning. In Proceedings of the Symposium on Discrete Algorithms, pages 1244–1255,
+          2014.
+
+[LR99]    Tom Leighton and Satish Rao. Multicommodity max-flow min-cut theorems and their
+          use in designing approximation algorithms. Journal of the ACM (JACM), 46(6):787–832,
+          1999.
+
+[LRTV12] Anand Louis, Prasad Raghavendra, Prasad Tetali, and Santosh Vempala. Many sparse
+         cuts via higher eigenvalues. In Proceedings of the Symposium on Theory of Computing,
+         pages 1131–1140, 2012.
+
+
+
+                                              31
+[McS01]    Frank McSherry. Spectral partitioning of random graphs. In Proceedings of the Sympo-
+           sium on Foundations of Computer Science, pages 529–537. IEEE, 2001.
+
+[NJW01]    Andrew Y. Ng, Michael I. Jordan, and Yair Weiss. On spectral clustering: Analysis and
+           an algorithm. In Proceedings of NeurIPS, pages 8490–856, 2001.
+
+[OATT22] Lorenzo Orecchia, Konstantinos Ameranis, Charalampos Tsourakakis, and Kunal Tal-
+         war. Practical almost-linear-time approximation algorithms for hybrid and overlapping
+         graph clustering. In Kamalika Chaudhuri, Stefanie Jegelka, Le Song, Csaba Szepesvari,
+         Gang Niu, and Sivan Sabato, editors, Proceedings of the 39th International Conference
+         on Machine Learning, volume 162 of Proceedings of Machine Learning Research, pages
+         17071–17093. PMLR, 17–23 Jul 2022.
+
+[PSL90]    Alex Pothen, Horst D. Simon, and Kang-Pu Liou. Partitioning sparse matrices with
+           eigenvectors of graphs. SIAM Journal on Matrix Analysis and Applications, 11(3):430–
+           452, 1990.
+
+[Räc08]   Harald Räcke. Optimal hierarchical decompositions for congestion minimization in net-
+           works. In Proceedings of the Symposium on Theory of computing, pages 255–264, 2008.
+
+[RS10]     Prasad Raghavendra and David Steurer. Graph expansion and the unique games conjec-
+           ture. In Proceedings of the Symposium on Theory of Computing, pages 755–764, 2010.
+
+[RST12]    Prasad Raghavendra, David Steurer, and Madhur Tulsiani. Reductions between expan-
+           sion problems. In Proceedings of the Conference on Computational Complexity, pages
+           64–73, 2012.
+
+[SJ89]     Alistair Sinclair and Mark Jerrum. Approximate counting, uniform generation and
+           rapidly mixing markov chains. Information and Computation, 82(1):93–133, 1989.
+
+[SM00]     Jianbo Shi and Jitendra Malik. Normalized cuts and image segmentation. IEEE Trans-
+           actions on pattern analysis and machine intelligence, 22(8):888–905, 2000.
+
+[Spi07]    Daniel A Spielman. Spectral graph theory and its applications. In Proceedings of the
+           Symposium on Foundations of Computer Science, pages 29–38, 2007.
+
+[ST97]     Horst D Simon and Shang-Hua Teng. How good is recursive bisection? SIAM Journal
+           on Scientific Computing, 18(5):1436–1445, 1997.
+
+[ST07]     Daniel A Spielman and Shang-Hua Teng. Spectral partitioning works: Planar graphs
+           and finite element meshes. Linear Algebra and its Applications, 421(2-3):284–305, 2007.
+
+[vL07]     Ulrike von Luxburg. A tutorial on spectral clustering. CoRR, abs/0711.0189, 2007.
+
+[YL12]     Jaewon Yang and Jure Leskovec. Community-affiliation graph model for overlapping
+           network community detection. In 2012 IEEE 12th International Conference on Data
+           Mining, pages 1170–1175, 2012.
+
+[YL14]     Jaewon Yang and Jure Leskovec. Structure and overlaps of ground-truth communities
+           in networks. ACM Trans. Intell. Syst. Technol., 5(2), apr 2014.
+
+
+
+
+                                               32
+A     Connection to Robust Expansion
+In this section, we prove Corollary 1.5.
+
+Proof of Corollary 1.5. Let ε∗ = ϕVη (G) be the robust vertex expansion of G. If ε∗ = 0, then the
+claim is trivial, because λ2 ≥ 0. So we assume below that ε∗ > 0. Then for every disjoint subsets
+S, T ⊂ V with 0 < |S| ≤ |V |/2 and |T | < ε∗ |S|, we have
+
+                                          δ(S, T ) < (1 − η)δ(S, V \ S),                                           (30)
+
+as otherwise, we would have a contradiction
+
+                                                                Nη (S)   |T |
+                                 ε∗ = ϕVη (G) ≤ ϕVη (S) =              ≤      < ε∗ .
+                                                                 |S|     |S|
+
+   Now we apply Corollary 1.2 of Theorem 1.1 with k = 2 and ε′ = ε∗ /2. We get an ε′ -buffered
+partition (P1 , P2 ||B1 , B2 ) with ϕG (P1 , P2 ||B1 , B2 ) ≤ O(λ2 /ε′ ). Assume without loss of generality
+that |P1 | ≤ n/2. Note that |B1 | ≤ ε′ |P1 | < ε∗ |P1 | and thus by (30),
+
+                                       δ(P1 , B1 ) < (1 − η)δ(P1 , V \ P1 ).
+
+Therefore,
+                   δ(P1 , V \ (P1 ∪ B1 )) = δ(P1 , V \ P1 ) − δ(P1 , B1 ) > η δ(P1 , V \ P1 ).
+On the other hand,
+                                                                                                          
+                                                                                               dλ2 |P1 |
+                  δ(P1 , V \ (P1 ∪ B1 )) ≤ d · ϕG (P1 , P2 ||B1 , B2 ) · |P1 | ≤ O                             .
+                                                                                                 ε∗
+
+We conclude that
+                                 δ(P1 , V \ P1 )
+              λ2 ≥ Ω(η) · ε∗ ·                   = Ω(η · ϕVη (G) · ϕG (P1 )) ≥ Ω(η · ϕVη (G) · hG ).
+                                     d|P1 |
+
+
+
+
+B     Heavy Set Pt in a Buffered Partition
+In this section, we argue why we may assume that one of the sets Pt in the buffered partitioning
+(P1 , . . . , Pk ||B1 , . . . , Bk ) contains at least Ω(δn) vertices (where n = |V |).
+
+Corollary B.1. There exists a buffered partitioning as in Theorem 1.1 (possibly with a different
+function c(δ) such that |Pt | = Ω(δn) for some t.
+                  √
+Proof. Let δ ′ = 1 + δ − 1 = Θ(δ) and k ′ = ⌊(1 + δ ′ )k⌋. Apply Theorem 1.1 with parameters k ′
+and δ ′ . We get an ε-buffered partitioning (P1 , . . . , Pk′ ∥ B1 , . . . , Bk′ ) with
+
+                                                                           c(δ ′ ) log k ′
+                        ϕ0 = ϕG (P1 , . . . , Pk′ ∥ B1 , . . . , Bk′ ) ≤                   λ⌊(1+δ)k⌋ .
+                                                                                  ε
+Assume without loss of generality that |P1 | ≤ |P2 | ≤ · · · ≤ |Pk′ |. Merge sets Pk , . . . , Pk′ and sets
+                                               S ′                  S ′
+Bk , . . . , Bk′ . That is, let Pk′ = ki=k Pi and Bk′ = ki=k Bi . We obtain a buffered partitioning
+(P1 , . . . , Pk−1 , Pk′ ∥ B1 , . . . , Bk−1 , Bk′ ). We show that it is ε-buffered and that its buffered expansion
+
+                                                           33
+is at most ϕ0 . Clearly, merging does not change the value of ϕG (Pi ∥ Bi ) for i ∈ [k − 1], as it does
+not change sets Pi and Bi . So it is sufficient to verify that |Bk′ | ≤ ε|Pk′ | and ϕG (Pk′ ∥ Bk′ ) ≤ ϕ0 .
+Indeed,
+                              k  ′             k ′
+                              X                X
+                   |Bk′ | ≤          |Bi | ≤         ε|Pi | = ε|Pk′ |.
+                              i=k              i=k
+                                                                      Pk′                                            Pk′
+                            δG (Pk′ , V \ (Pk′ ∪ Bk′ ))                  i=k δG (Pi , V \ (Pi ∪ Bi ))                   i=k ϕ0 |Pi |
+          ϕG (Pk′ ∥ Bk′ ) =                             ≤                                             ≤                              = ϕ0 .
+                                        |Pk′ |                                     |Pk′ |                                 |Pk′ |
+
+We used that sets Pk , . . . , Pk′ are disjoint and thus |Pk′ | = |Pk | + · · · + |Pk′ |. Finally, we observe that
+Pk′ is the union of k ′ − k + 1 = Ω(δk) largest sets out of k ′ sets that together cover at least (1 − ε)n
+                           ′
+vertices. Thus, |Pk′ | ≥ k −k+1
+                             k′   (1 − ε)n = Ω(δn).
+
+
+C         Lower Bound for k-way Expansion and Pseudo-approximation
+          Algorithm for Sparsest k-way Partitioning
+In this section, we present the lower bound for non-buffered k-way expansion hkG of graphs with
+vertex weights and edge costs. The proof is similar to that for graphs without vertex weights shown
+in [LRTV12, LGT14]. Combined with Theorem 1.3, it gives a pseudo-approximation alghorithm
+for the Sparsest k-way Partitioning problem.
+Proposition C.1. Given any graph G = (V, E, w, c) with vertex weights wu > 0 and edge costs
+cuv > 0, for any integer k > 1, the k-way expansion is at least
+                                                                              λk
+                                                                  hkG ≥          .
+                                                                              2
+Proof. Let P1 , P2 , . . . , Pk be the optimal solution for k-way expansion. Then, we have for any i ∈ [k]
+
+                                                                  |δ(Pi , V \ Pi )|
+                                                     ϕG (Pi ) =                     ≤ hkG .
+                                                                      w(Pi )
+
+Let 1Pi be the indicator vector of set Pi for all i ∈ [k], i.e. 1Pi (u) = 1 if u ∈ Pi , otherwise 1Pi (u) = 0.
+                        1/2
+Then, we use xPi = Dw 1Pi to denote the weighted indicator vector. Let X = {xPi : i ∈ [k]}. Since
+all vectors in X are orthogonal to each other, the span of X has dimension k. By the Courant-Fischer
+Theorem, we have
+                                                           −1/2           −1/2                                 −1/2         −1/2
+                                                      xT Dw      LG Dw            x                    xT Dw          LG Dw        x
+                 λk =         min            max                                      ≤     max                                        .      (31)
+                        S⊂Rn :dim(S)=k x∈S                      xT x                      x∈span(X)                  xT x
+
+   P x ∈ span(X) is the maximizer of the right-hand side of Equation (31). We can write
+Suppose
+x = ki=1 αi xSi for αi ∈ R. Then, we have
+
+                                       k
+                                                      !T          k
+                                                                                  !
+                                       X                          X
+      T    −1/2     −1/2
+  x       Dw    LG Dw    x=                  αi 1Si        LG            αi 1Si       =
+                                       i=1                        i=1
+                                        k                       k
+                                                                                     !2        k
+                        X               X                       X                              X            X
+                   =             cuv           αi 1Si (u) −           αi 1Si (v)          ≤2         αi2             cuv (1Si (u) − 1Si (v))2 ,
+                       (u,v)∈E          i=1                     i=1                            i=1         (u,v)∈E
+
+
+
+                                                                         34
+where the last inequality is due to the relaxed triangle inequality, for any edge (u, v) ∈ E with
+u ∈ Si and v ∈ Sj , (αi 1Si (u) − αj 1Sj (v))2 ≤ 2αi2 1Si (u)2 + 2αj2 1Sj (v)2 . Taking it into Equation (31),
+we have
+              2 ki=1 αi2 (u,v)∈E cuv (1Si (u) − 1Si (v))2
+                P          P
+                                                                  2 ki=1 αi2 |δ(Pi , V \ Pi )|
+                                                                    P
+         λk ≤            Pk                                    =        Pk                     ≤ 2hkG .
+                                 2                                               2
+                                   P
+                            i=1 αi    u∈V wu 1Si (u)                       i=1 αi w(Pi )
+
+
+
+
+    Plugging the bound on λ⌊(1+δ)k⌋(LG ) from Proposition C.1 into Theorem 1.3, we get the following
+Oε,δ (log k) pseudo-approximation algorithm for the Sparsest K-Partitioning problem from
+
+Theorem C.2. There exists a polynomial-time algorithm that given a graph G = (V, E, w, c) with
+vertex weights wu > 0 and edge costs cuv > 0, ε > 0, δ > 0, and k > 1 such that maxu∈V wu ≤
+εw(V )/(3k), finds a ε-buffered partition (P1 , . . . , Pk ∥ B1 , . . . , Bk ) with
+
+                                                                       κ(δ) log k ⌊(1+δ)k⌋
+                           ϕG (P1 , . . . , Pk ∥ B1 , . . . , Bk ) ≤             hG        .
+                                                                           ε
+   Note that in this theorem, we compare the cost of our ε-buffered k-partition to that of the
+optimal non-buffered ⌊(1 + δ)k⌋-partition.
+
+
+D     Buffered Balanced Cut
+In this section, we present our results for the buffered balanced cut. Consider any graph G(V, E, w, c)
+with vertex weight wu > 0 and edge cost cuv > 0. For any 0 < γ ≤ 1/2, the γ-balanced cut of
+graph G is a partition of graph (L, R) such that w(L), w(R) ∈ [γw(V ), (1 − γ)w(V )]. The γ-
+balanced cut problem asks to find a γ-balanced cut of a graph to minimize the cut size δ(L, R).
+We consider the ε-buffered γ-balanced cut. Given a weighted graph G(V, E, w, c), the ε-buffered
+γ-balanced cut is a partition of graph G, (L, R ∥ B) such that w(L), w(R) ∈ [γw(V ), (1 − γ)w(V )]
+and w(B) ≤ ε min(w(L), w(R)). We show a bi-criteria approximation for the balanced cut problem
+with an ε-buffered balanced cut.
+
+Theorem D.1. Let ε ∈ (0, 1/4). Consider any weighted graph G = (V, E, w, c) with vertex weight
+wu > 0 and cuv > 0. There is a polynomial-time algorithm that finds three disjoint sets L, B, R with
+L ∪ B ∪ R = V , w(L), w(R) ∈ [1/4 · w(V ), 3/4 · w(V )], and w(B) ≤ 3ε min(w(L), w(R)) such that
+
+                                         δ(L, R) ≤ O(1/ε) · δ(L∗ , R∗ ),
+
+where (L∗ , R∗ ) is the optimal 1/3-balanced cut. (L, R ∥ B) is a (3ε)-buffered 1/4-balanced cut with
+cut size at most O(1/ε) times the size of the optimal 1/3-balanced cut.
+
+Proof. We first describe our algorithm for buffered balanced cut, which is inspired by the approx-
+imation algorithm for balanced cut in [LR99]. The algorithm recursively partitions the graph by
+using the buffered spectral partitioning algorithm in Section 2. At the beginning, we set the graph
+G1 = G. Then, we run the ε-buffered spectral partitioning to find a partition (L1 , R1 ∥ B1 ) of the
+graph G1 . Suppose w(L1 ) ≤ w(R1 ). If w(L1 ) < w(V )/4, then we recursively run the ε-buffered
+spectral partitioning on the subgraph G2 of G on the set of vertices R1 . For each call of buffered
+                                                t , Rt ∥ Bt ) such that w(Lt ) ≤ w(Rt ). We recursively
+spectral partitioning, we label the partition (LP
+call the ε-buffered spectral partitioning until Tt=1 w(Lt ) ≥ w(V )/4. Then, the algorithm returns
+the partition (L, R, B) of G, where L = Tt=1 Lt , B = Tt=1 Bt , and R = V \ (L ∪ B).
+                                          S              S
+
+
+                                                           35
+    Then, we show that the partition (L, R ∥ B) returned by this algorithm is a 3ε-buffered 1/4-
+balanced cut. Let (Lt , Rt ∥ Bt ) be the buffered partition of graph Gt returned by the t-th call of the
+buffered spectral partitioning. Then, we have w(Lt ) ≤ w(Vt )/2 and w(Bt ) ≤ εw(Lt ).PSuppose the
+algorithm calls the buffered spectral partitioning for T times. Then, we have w(L) = Tt=1 w(Lt ) ≥
+             P −1
+w(V )/4 and Tt=1    w(Lt ) < w(V )/4. Since w(VT ) ≤ w(V ), we have
+                     T
+                     X                 T
+                                       X −1
+            w(L) =          w(Lt ) ≤          w(Lt ) + w(LT ) ≤ w(V )/4 + w(VT )/2 ≤ 3/4 · w(V ).
+                      t=1              t=1
+
+Since w(L) ≥ w(V )/4, we have w(R) ≤ 3/4 · w(V ). Since w(LT ) ≤ w(VT )/2 and w(BT ) ≤ εw(LT ),
+we have                                                            
+                                                              1+ε
+                    w(R) = w(VT ) − w(LT ) − w(BT ) ≥ 1 −             w(VT ).
+                                                                2
+                          PT −1
+                                w(Lt ) + w(Bt ) ≥ 1 − 1+ε
+                                                           
+Note that w(VT ) = w(V ) − t=1                          4    w(V ). Since ε ≤ 1/4, we have
+                                                    
+                                    1+ε           1+ε              w(V )
+                       w(R) ≥ 1 −            1−           w(V ) ≥        .
+                                       2            4                4
+Thus, we have both w(L) and w(R) are in [w(V )/4, 3w(V )/4]. Since w(Bt ) ≤ εw(Lt ) for all t, we
+have w(B) ≤ εw(L) and
+                                                       3
+                              w(B) ≤ εw(L) ≤ ε · w(V ) ≤ 3ε · w(R).
+                                                       4
+Hence, we have w(B) ≤ 3ε · min{w(L), w(R)}.
+    Next, we bound the size of buffered cut (L, B, R). For each call of the buffered spectral par-
+titioning, we bound the cut size δ(Lt , Rt ) for the buffered partition (Lt , Bt , Rt ) of graph Gt . Let
+(L∗ , R∗ ) be the optimal non-buffered 1/3-balanced partition of graph G. Let L∗t = L∗ ∩ Vt and
+Rt∗ = R∗ ∩ Vt . Then, we have δ(L∗t , Rt∗ ) ≤ δ(L∗ , R∗ ). Note that the weight of vertices in V \ Vt is at
+most
+                                         t−1
+                                         X                               w(V )
+                          w(V \ Vt ) =       w(Li ) + w(Bi ) ≤ (1 + ε) ·       .
+                                                                           4
+                                               i=1
+Suppose w(L∗t ) ≥ w(Rt∗ ). Since w(L∗ ) ≥ w(V )/3 and ε ≤ 1/4, we have
+                                                            
+                      ∗          ∗                  1 1+ε               1
+                  w(Lt ) ≥ w(L ) − w(V \ Vt ) ≥       −        w(V ) ≥ w(V ).
+                                                    3    4             48
+By Proposition C.1, we have
+                            λ2 (LGt )                       δ(S, Vt \ S)   δ(L∗t , Rt∗ )
+                                      ≤        min                       ≤               .
+                                2       S⊂Vt :w(S)≤w(Vt )/2    w(S)          w(L∗t )
+By Proposition 2.1, we have
+                      
+                     8
+ δ(Lt , Rt ) ≤ 4 1 +     λ2 (LGt ) · w(Lt ) ≤
+                     ε
+                                                                              
+                                              8     w(Lt )       ∗     ∗        1    w(Lt )
+                                     ≤8 1+        ·         · δ(Lt , Rt  ) ≤ O     ·        · δ(L∗t , Rt∗ ).
+                                              ε     w(L∗t )                     ε    w(V )
+Combining all cuts edges in δ(Lt , Rt ) for T calls of buffered spectral partitioning, we have
+                      T                     X   T                              
+                     X                      1        w(Lt )                      1
+          δ(L, R) ≤     δ(Lt , Rt ) ≤ O        ·            · δ(L∗t , Rt∗ ) ≤ O     δ(L∗t , Rt∗ ),
+                                            ε        w(V )                       ε
+                        t=1                             t=1
+
+where the last inequality is due to w(L) ≤ 3/4 · w(V ).
+
+                                                          36
+    We also consider the k-way balanced partition problem. Given a graph G(V, E, w, c), for any
+γ ≥ 1, we say that P1 , P2 , . . . , Pk is a (γ, k)-balanced partition of G if w(Pi ) ≤ γw(V )/k for all
+i ∈ [k]. The (γ, k)-balanced partition problem aims to find a (γ, k) balanced partition to minimize
+the total cost of edges with two endpoints in different parts. By using the buffered balanced cut
+algorithm in Theorem D.1 and the recursive bi-section algorithm in [ST97], we show a bi-criteria
+approximation for the k-way balanced partition.
+Corollary D.2. Let ε ∈ (0, 1/4). Consider any weighted graph G = (V, E, w, c) with vertex weight
+wu > 0 and cuv > 0. There is a polynomial-time algorithm that finds a ε-buffered (6, k)-balanced
+partition P1 , P2 , . . . , Pk , B such that P1 , P2 , . . . , Pk and B are disjoint, w(B) ≤ O(ε)w(V ), and
+                                       X
+                                           δ(Pi , Pj ) ≤ O(1/ε · log2 k) · OPT,
+                                   i<j
+
+where OPT is the optimal cost for (1, k)-balanced partition.
+
+
+E     Graphs with Vertex Weights and Edge Costs
+In this section, we prove our main results for graphs G = (V, E, w, c) with vertex weights wu > 0
+and edge costs cuv > 0.
+    Theorem 1.1 holds for regular graphs with parallel edges but without edge costs and vertex
+weights. Assume that we have a graph G with edge costs cuv and with vertex weights wu = 1
+such that
+      P the total cost of all edges incident on a vertex does not depend on the vertex; that is,
+C0 = v:(u,v)∈E cuv does not depend on u. If all edge costs are integers, we can simulate edge costs
+by adding parallel edges – we replace each edge (u, v) with cuv parallel edges. We obtain a C0 -regular
+                                                                                              −1/2     −1/2
+graph G′ . Let LG′ = I − C10 AG′ be the normalized Laplacian of G′ . Let LG = Dw L̃G Dw                     be
+the normalized Laplacian of G. It is immediate that LG = C0 LG′ and δG (A, B) = δG′ (A, B) for
+every A, B ⊆ V . Let k ′ = ⌊(1 + δ)k⌋. Then, λk′ (LG′ ) = λk′ (LG )/C0 .
+    By Theorem 1.1, there exists an ε-buffered partition (P1 , . . . , Pk ∥ B1 , . . . , Bk ) such that
+                                         δG′ (Pi , V \ (Pi ∪ Bi ))   c(δ) log k
+                     ϕG′ (Pi ∥ Bi ) =                              ≤            · λk′ (LG′ )
+                                                   C0 |Pi |              ε
+for every i ∈ [k]. Since λk′ (LG′ ) = λk′ (LG )/C0 and w(Pi ) = |Pi |, we have for all i,
+                                         δG (Pi , V \ (Pi ∪ Bi ))   c(δ) log k
+                      ϕG (Pi ∥ Bi ) =                             ≤            · λk′ (LG ).              (32)
+                                                   w(Pi )               ε
+Now if we multiply all edge costs by the same positive number ρ, both the left and right hand side
+will get multiplied by ρ. Therefore, the inequality holds not only for integer edge costs but also for
+arbitrary positive rational costs. By continuity, it holds for arbitrary positive edge costs. We get
+the following corollary.
+Corollary
+P                E.1. Let G be a graph with positive edge costs cuv and unit vertex weights such that C0 =
+  v:(u,v)∈E cuv is the same for all vertices u. Then there exists an ε-balanced partition (P1 , . . . , Pk ∥
+B1 , . . . , Bk ) such that inequality (32) holds for all i.
+    Now we present a black-box reduction that proves Theorem 1.3. We note that the reduction can
+significantly increase the running time of the algorithm. However, in fact, we can use the algorithm
+from Theorem 1.1 to find (P1 , . . . , Pk ∥ B1 , . . . , Bk ) (the proof of this fact essentially repeats that
+of Theorem 1.1, and we do not present it here).
+
+                                                        37
+Theorem E.2. Let G = (V, E, w, c) be a graph with positive weights wu > 0 and edge costs cuv > 0,
+ε ∈ [0, 1), δ ∈ (0, 1), and k ≥ 2 be an integer. Assume that maxu wu ≤ εw(V )/(3k). Let LG =
+  −1/2      −1/2
+Dw L̃G Dw        be the normalized Laplacian of G. Then
+
+                                               κ(δ) log k
+                                       hk,ε
+                                        G ≤               · λ⌊(1+δ)k⌋ (LG ),                                   (33)
+                                                   ε
+where κ(δ) is a function that depends only on δ.
+
+Proof.
+P       Assume first that all vertex weights are integers P greater than or equal to 2. Let W =
+  u∈V wu be the total weight of all vertices. Let C =       (u,v)∈E cuv be the total cost of all edges and
+B = C · W 2.
+    We construct an auxiliary graph G′ with unit vertex weights as follows. For each vertex u of
+G, we create its own “cloud of vertices” Qu of size wu ; all vertices q ∈ Qu have unit weights. For
+(u, v) ∈ E, we connect every q ∈ Qu with every q ′ ∈ Qv by an edge (q, q ′ ) with cost c′qq′ = |Qucuv  ||Qv | .
+                                                                                   P            cuv
+Note that the total cost of all edges between Qu and Qv equals cuv . Let bu = v:(u,v)∈E |Q        u|
+                                                                                                     be  the
+total cost of edges incident on vertex q ∈ Qu (so far). Now we connect every two vertices q, q ∈ Qu  ′
+
+by an edge of cost c′qq′ = |Q
+                            B−bu
+                              u |−1
+                                    . After this step, the total cost of all edges incident on q ∈ Qu is
+exactly B, since q has |Qu | − 1 neighbors in Qu . We denote the obtained graph by G′ .
+
+Properties of G′ = (V ′ , E ′ ) that we established.
+
+    • |Qu | = wu ; all vertices have unit weights in G′ .
+
+    • The total cost of all the edges between Qu and Qv is cuv .
+
+    • The total cost of all edges incident on every vertex equals B (and does not depend on u).
+
+    • G′ [Qu ] is a clique, in which all edges have cost c′qq′ = |Q
+                                                                  B−bu
+                                                                   u |−1
+                                                                          B−C
+                                                                         ≥W −1 > CW .
+
+Now we upper bound λk′ (LG′ ) in terms of λk′ (LG ).
+Lemma E.3. λk′ (LG′ ) ≤ λk′ (LG )
+
+Proof. Let x1 , . . . , xk′ be the first k ′ orthogonal unit eigenvectors of LG . Define vectors z1 , . . . , zk′ ∈
+    ′
+R|V | as follows: for q ∈ Qu , we let zi (q) = x√iw          (u)
+                                                               u
+                                                                 . First, observe that z1 , . . . , zk′ are pairwise
+orthogonal unit vectors:
+                                                                                                     (
+               X                    X X                       X          xi (u)xj (u)                 0, if i ̸= j
+  ⟨zi , zj ⟩ =       zi (q)zj (q) =           zi (q)zj (q) =       |Qu |              = ⟨xi , xj ⟩ =
+                                                                              wu                      1, if i = j
+               q∈V ′                u∈V q∈Q
+                                          u                   u∈V
+
+
+
+
+                                                        38
+Further,
+                                       X
+                    ziT LG′ zj =                   c′qq′ (zi (q) − zi (q ′ )) · (zj (q) − zj (q ′ ))
+                                    (q,q ′ )∈E ′
+                                      X             X           cuv
+                                =                                        (zi (q) − zi (q ′ )) · (zj (q) − zj (q ′ ))
+                                                              |Qu ||Qv |
+                                    (u,v)∈E      q∈Qu
+                                                 q ′ ∈Qv
+                                               (q,q ′ )∈E ′
+                                           X B − bu                    X
+                                       +                                           (zi (q) − zi (q ′ )) · (zj (q) − zj (q ′ ))
+                                                    |Qu | − 1
+                                           u∈V                       q,q ′ ∈Qu
+                                                                    (q,q ′ )∈E ′
+                                                                                    !                             !
+                                      X                  xi (u)           xi (v)            xj (u)       xj (v)
+                                =              cuv            1/2
+                                                                     −      1/2
+                                                                                        ·      1/2
+                                                                                                     −     1/2
+                                                                                                                      = xTi LG xj .
+                                    (u,v)∈E               wu              wv                wu           wv
+
+We conclude that ziT LG′ zj = λi (LG ) if i = j, and ziT LG′ zj = 0, otherwise.
+    Finally, we use the Courant–Fischer theorem to upper bound λk′ (LG ). Let H be the linear span
+of vectors z1 , . . . , zk′ . By the Courant–Fischer theorem,
+                                                                                                T
+                                                                                  P
+                                     z T LG′ z             z T LG′ z               i,j (αi αj )zi LG′ zj
+           λk′ (LG′ ) ≤ max                    =   max               =   max
+                              z∈H\{0} ∥z∥2       z= i αi zi ∥z∥2       α∈Rk′ \{0}        ∥α∥2
+                                                   P
+                                                                      ′
+                                                              α∈Rk \{0}
+                                                      2
+                                             P
+                                                   i αi λi (LG )
+                           =     max                             = λk′ (LG ).
+                                  ′
+                               α∈Rk \{0}             ∥α∥2
+
+
+
+     Let ε′ = ε/10. We apply Theorem 1.1 to G′ and obtain an ε′ -buffered partition (P1′ , . . . , Pk′ ∥
+B1′ , . . . , Bk′ ) of G′ with ϕG′ (P1′ , . . . , Pk′ ∥ B1′ , . . . , Bk′ ) ≤ c(δ)εlog
+                                                                                    ′
+                                                                                       k
+                                                                                         λk′ (LG′ ) ≤ c(δ)εlog
+                                                                                                            ′
+                                                                                                               k
+                                                                                                                 λk′ (LG ). Observe
+that if some set Qu contains a vertex q ∈ Pi and a vertex q ∈ Pj ∪ Bj with j ̸= i then ϕG′ (Pi′ ∥ Bi′ )
+                                                            ′                       ′      ′    ′
+
+is very large
+                                                            δG′ (Pi′ , Pj′ ∪ Bj′ )       cqq′
+                                    ϕG′ (Pi′ ∥ Bi′ ) ≥                      ′         ≥       > C.
+                                                                      w(Pi )             W
+Then, any partition (P1 , . . . , Pk ∥ ∅, . . . , ∅) of G satisfies the condition of the theorem:
+
+                                                                                              c(δ) log k
+                                ϕG (Pi ∥ ∅) ≤ C/2 < ϕG′ (Pi′ ∥ Bi′ ) ≤                                   λk′ (LG ),
+                                                                                                  ε′
+as required. So we assume below that if Pi′ ∩ Qu ̸= ∅ then (Pj′ ∪ Bj′ ) ∩ Qu = ∅ for every u, i, and
+j ̸= i. Then for every u, there are two possibilities: either
+
+   1. Qu ⊆ Pi′ ∪ Bi′ for some i, or
+
+   2. Qu ⊆ i Bi′ .
+           S
+
+Depending on which of the possibilities takes place, we say that u is a vertex of the first or second
+type, respectively6 . Now we define an ε-buffered partition (P1 , . . . , Pk ∥ B1 , . . . , Bk ) of G. First, we
+assign every vertex u to one of the sets P1 , . . . , Pk , B1 , . . . , Bk and U , where U is a special set that
+will be partitioned among B1 , . . . Bk later. We do that as follows:
+   6
+       If Qu ⊆ Bi′ , let us assume that u is of the first type.
+
+
+                                                                            39
+   1. if |Qu ∩ Pi′ | ≥ |Qu |/2, we assign u to Pi ;
+
+   2. otherwise, if |Qu ∩ Bi′ | ≥ |Qu |/2, we assign u to Bi ;
+
+   3. otherwise, we assign u to U .
+
+Note that each vertex of the first type is necessarily assigned to some Pi or Bi . Each vertex of the
+second type is assigned to some Bi or U .
+    Since U consists of the vertices of the second type, we have u∈U Qu ⊂ i Bi′ and thus
+                                                                  S          S
+
+                                                     [              [               [
+                                        w(U ) =            Qu ≤         Bi′ ≤ ε′        Pi′ .
+                                                     u∈U            i               i
+
+Here we used that that partition (P1′ , . . . , Pk′ ∥ B1′ , . . . , Bk′ ) is ε′ -buffered. We create sets B1′′ , . . . , Bk′′ ,
+                                                                          ε|P ′ |
+which are initially empty, and set the capacity of Bi′′ to 2 i . We distribute vertices from U one-by-
+one among B1′′ , . . . , Bk′′ so that the total weight assigned to Bi′ does not exceed its capacity. We stop
+when we either assign all the vertices from U or no unassigned vertex in U can be assigned to any
+Bi′′ , without violating the capacity requirement for Bi′′ . We now show that this procedure assigns
+all the vertices from U . Indeed, assume that some vertex u is not assigned. Then, wu is greater
+                                                                       ε|P ′ |
+than the the remaining capacity of every Bi′′ ; that is, wu > 2 i − w(Bi′′ ) for every i. Adding up
+these inequalities over all i, we get
+                           k 
+                               ε|P ′ |
+                                                       
+                           X                     ε [ ′                ε [ ′      [
+                  kwu >                  i
+                                             − w(Bi′′ )    ≥
+                                                      Pi − w(U ) ≥        Pi −     Bi′
+                                 2               2                    2
+                          i=1                       i                   i        i
+                          ε [          [       2ε  [      ⋆         ′
+                                                            2ε(1 − ε )         εw(V )
+                        ≥     Pi′ − ε′   Pi′ ≥        Pi′ ≥            w(V ) ≥
+                          2                    5                5                3
+                                i                i              i
+
+Inequality ≥⋆ above follows from two inequalities: | i Pi′ | + | i Bi′ | = w(V ) and | i Bi′ | ≤ ε′ | i Pi′ |.
+                                                             S          S                   S           S
+
+We get that wu > εw(V             )
+                                3k , which contradicts to the assumption of the theorem. We conclude that
+       ′′                                               ′′
+S
+  i Bi = U . Finally, we add vertices from Bi to Bi for every i. We obtain the desired partition
+(P1 , . . . , Pk ∥ B1 , . . . , Bk ).
+    Now we prove that (P1 , . . . , Pk ∥ B1 , . . . , Bk ) satisfies the desired requirements. Fix i. We upper
+bound δG (Pi , V \ (Pi ∪ Bi )). Note that if edge (u, v) goes from Pi to V \ (Pi ∪ Bi ) then u is a vertex
+of the first type and |Qu ∩ Pi′ | ≥ |Qu |/2 and either
+
+    • v is a vertex of the first type and Qv ⊆ Pj ∪ Bj for some j ̸= i, or
+
+    • v is a vertex of the second type and at least one half of the vertices in Qv are not in Bi (and
+      none of them are in Pi ).
+
+To summarize, in either case at least a half of the vertices in Qu lie in Pi′ and at least half of vertices
+in Qv do not lie in Pi′ ∪ Bi′ . Thus, at least one quarter of all edges from Qu to Qv contribute to
+δG′ (Pi′ , V ′ \ (Pi′ , Bi′ )), and their total contribution is at least cuv /4. We conclude that
+
+                                    δG (Pi , V \ (Pi ∪ Bi )) ≤ 4δG′ (Pi′ , V \ (Pi′ ∪ Bi′ )).
+
+Now we lower bound w(Pi ). Let A be the set of vertices u of the first type such that Qu ⊆ Pi′ ∪ Bi′ .
+Note that Pi ⊆ A and Pi′ ⊆ u∈A Qu . Consider u ∈ A. If u ∈ Pi , then w(Pi ∩ {u}) = |Qu | ≥
+                            S
+
+
+
+
+                                                               40
+|Qu ∩ Pi′ | − |Qu ∩ Bi′ |. If u ∈
+                                / Pi , then w(Pi ∩ {u}) = 0 ≥ |Qu ∩ Pi′ | − |Qu ∩ Bi′ |, since |Qu ∩ Pi′ | <
+                    ′
+|Qu |/2 ≤ |Qu ∩ Bi |. We have,
+                     X                    X
+           w(Pi ) =       w(Pi ∩ {u}) ≥      |Qu ∩ Pi′ | − |Qu ∩ Bi′ | ≥ |Pi′ | − |Bi′ | ≥ (1 − ε′ )|Pi′ |.
+                    u∈A                        u∈A
+
+We have,
+
+                       δG (Pi , V \ (Pi ∪ Bi )    4 δG′ (Pi′ , V \ (Pi′ ∪ Bi′ )   O(c(δ)) log k
+     ϕG (Pi ∥ Bi ) =                           ≤     ′             ′            =               λk′ (LG ).
+                                w(Pi )           1−ε            |Pi |                  ε
+
+It remains to show that partition (P1 , . . . , Pk ∥ B1 , . . . , Bk ) is ε-buffered. We already showed that
+w(Pi ) ≥ (1−ε′ )w(Pi′ ). Now we upper bound w(Bi ). First, w(Bi′′ ) ≤ ε|Pi′ |/2 ≤ εw(Pi )/2(1−ε′ ) ≤ 5εw(Pi )/9.
+    Then, u ∈ Bi \ Bi′′ if and only if |Qu ∩ Bi′ | ≥ |Qu |/2 = wu /2. Therefore,
+                                  X                                                  2ε′           2ε
+            w(Bi \ Bi′′ ) ≤ 2                |Qu ∩ Bi′ | ≤ 2|Bi′ | ≤ 2ε′ |Pi′ | ≤        ′
+                                                                                           w(Pi ) ≤ w(Pi ).
+                                                                                    1−ε            9
+                                u∈Bi \Bi′′
+
+
+We conclude that w(Bi ) = w(Bi \ Bi′′ ) + w(Bi′′ ) = 7ε
+                                                     9 w(Pi ), as required. This completes the proof
+for the case when all the vertex weights are integers. By linearity, inequality (33) also holds when
+all the weights are rational numbers, and by continuity, it follows that inequality (33) holds when
+weights are arbitrary positive real numbers.
+
+
+F     Lower Bound on hk,ε
+                      G
+
+In this section, we prove Theorem 1.6, which we now restate as follows.
+
+Theorem F.1. Consider a d-regular graph G = (V, E) and its ε-buffered partition (P1 , . . . , Pk ||B1 , . . . , Bk ).
+Then for every i ∈ [k],
+                           λk ≤ 2ϕG (P1 , . . . , Pk ||B1 , . . . , Bk ) + ε.
+Thus,
+                                                      λk ≤ 2hk,ε
+                                                             G + ε.
+
+Proof. By the Courant-Fischer min-max theorem,
+
+                                                                    z T LG z
+                                               λk = min max                  ,
+                                                        H   z∈H:z̸=0 ∥z∥2
+
+where the minimum is over k-dimensional subspaces H of Rn . Let bi be the indicator vector of
+     bi (u) = 1 if u ∈ Pi and bi (u) = 0, otherwise. Let H be the linear span of b1 , . . . , bk and
+Pi : P
+z = ki=1 αi bi . Then,
+                                                           z T LG z
+                                      λk ≤      max
+                                           (α1 ,...,αk )̸=0 ∥z∥2
+
+First note
+       P that vectors P bi have disjoint supports and thus are mutually orthogonal. Therefore,
+∥z∥2 = ki=1 αi2 ∥hi ∥2 = ki=1 αi2 |Pi |. Now we upper bound z T LG z. We will use that |δ(Pi , Bi )| ≤
+
+
+
+
+                                                              41
+d|Bi | ≤ εd|Pi |.
+              by (1)        X                                         X                                 [
+    dz T LG z =                   (αi − αj )2 · |δ(Pi , Pj )| +                (αi − 0)2 · δ Pi ,
+                                                                                                                     
+                                                                                                                Bj
+                        i,j∈[k]                                      i∈[k]                                  j
+                          i<j
+                                                                                                                                           
+                     X                                              X                           [
+                              (2αi2 + 2αj2 ) · |δ(Pi , Pj )| +             αi2 · δ Pi ,                                 + αi2 · |δ(Pi , Bi )|
+                                                                                                                     
+              ≤                                                                                         Bj \ Bi
+                    i,j∈[k]                                        i∈[k]                       j:j̸=i
+                      i<j
+                                                                                                                             
+                       X                                X                           [
+                                αi2 · |δ(Pi , Pj )| +           αi2 ·  δ Pi ,
+                                                                                                        
+              =2                                                                            Bj \ Bi         + |δ(Pi , Bi )|
+                      i,j∈[k]                           i∈[k]                      j:j̸=i
+                        i̸=j
+                                                                                                               
+                    X                         [                [                  
+              ≤             αi2 · 2 δ Pi ,            Pj ∪               Bj \ Bi           + |δ(Pi , Bi )|
+                    i∈[k]                     j:j̸=i             j:j̸=i
+                    X                                              
+              ≤             αi2 · 2 δ(Pi , V \ (Pi ∪ Bi )) + εd|Pi | .
+                    i∈[k]
+
+Therefore,
+
+          z T LG z  1       2 δ(Pi , V \ (Pi ∪ Bi )) + εd|Pi |         2 δ(Pi , V \ (Pi ∪ Bi ))
+                2
+                   ≤ max                                       = max                            + ε.
+            ∥z∥     d i∈[k]                |Pi |                 i∈[k]           d|Pi |
+
+
+
+
+G      Gaussian Distribution
+In this section, we present several useful estimates on the Gaussian distribution. Let X ∼ N (0, 1)
+be a one-dimensional Gaussian random variable. Denote the probability that X ≥ t by Φ̄(t):
+
+                                                         Φ̄(t) = Pr{X ≥ t}.
+
+The first lemma gives an accurate estimate on Φ̄(t) for large t.
+
+Lemma G.1. (see [CMM06, Lemma A.1]) For every t > 0,
+
+                                  t            2             1        2               e− t22 
+                                            − t2                   − t2
+                            √             e      < Φ̄(t) < √      e     and Φ̄(t) = Θ           .
+                              2π (t2 + 1)                    2π t                      t+1
+
+Lemma G.2. (see [CMM06, Lemma A.1, part 2]) For any ρ ≥ 1 and t ≥ 0, there exists a constant
+C such that
+                                        1          2
+                              Φ̄(ρt) ≤ (CtΦ̄(t))ρ .
+                                        t
+Lemma G.3. Let X and Y be jointly N (0, 1)-Gaussian random variables. Denote δ 2 = 1/2 Var[X −
+Y ]. Choose m > 3, threshold t > 1 such that Φ̄(t) = 1/m, and a parameter ε ∈ [0, t]. Then
+
+                        Pr{X ≥ t and Y ≤ t − ε} ≤ O(δ 2 ε−1 log m/m).
+                                                             p
+
+
+
+
+                                                                          42
+Proof. Note that (1)√the covariance of X and Y is E[XY ] = 1 − Var[X − Y ]/2 = 1 − δ 2 , and (2) by
+Lemma G.1, t = Θ( log m). Denote p = Pr{X ≥ t and Y ≤ t − ε}. Note that if δ 2 ε−1 t ≥ 1/32,
+then the lemma trivially holds,
+
+                                                            1      δ 2 ε−1 √log m 
+             p = Pr{X ≥ t and Y ≤ t − ε} ≤ Pr{X ≥ t} =        ≤O                     ,
+                                                           m               m
+as required. So we assume below that ε > 32δ 2 t. Let α = E[XY ] = 1 − δ 2 . Consider Gaussian
+random variable Z = αX −Y . Note that Z has mean 0 and variance E[Z 2 ] = α2 +1−2α2 = 2δ 2 −δ 4 .
+Further, the covariance of X and Z is 0: E[XZ] = α E[X 2 ] − E[XY ] = 0. In particular, for every
+τ ≥ 0,                                                  
+                                 p                   τ     by Lemma G.1   √τ 2 
+                                                                            −(    ) /2
+              Pr{Z ≥ τ } = Φ̄(τ / 2δ 2 − δ 4 ) ≤ Φ̄ √           ≤       O e    2δ      .     (34)
+                                                      2δ
+Therefore, X and Z are independent. We have,
+                                                                                               1
+p = Pr{X ≥ t and Y ≤ t − ε} = Pr{X ≥ t and αX − Z ≤ t − ε} =                                     Pr{Z ≥ ε + αX − t | X ≥ t}
+                                                                                               m
+Define random variable ∆ = X − t. Then
+                                                                                                          ε+∆
+                ε + αX − t = ε + (1 − δ 2 )(t + ∆) − t ≥ ε/2 + (1 − δ 2 )∆ ≥                                  ,
+                                                                                                           2
+where we used that ε/2 − δ 2 t ≥ 0 and δ 2 ≤ ε/(2t) ≤ t/(2t) = 1/2. We have,
+                                                                                      ε+∆ 2         2
+                   1                          by (34) E[e−( 2 ) /(4δ ) | ∆ ≥ 0]
+                p≤   Pr{Z ≥ (ε + ∆)/2 | ∆ ≥ 0} ≤                                .
+                   m                                             m
+Let us upper bound the probability density function f∆ (x) of ∆ conditioned on the event ∆ ≥ 0.
+                              2
+                                  ,                               2
+                      e−(x+t) /2                               e−t /2        2
+             f∆ (x) =   √             Pr{∆ ≥ 0} = (t + 1) · √           · e−x /2−tx · m
+                           2π                                 2π(t + 1)
+                                       2                   2
+                    ≤ O t · Φ̄(t) · e−x /2−tx · m = O te−x /2−tx = O te−tx .
+                                                                             
+
+
+We conclude that
+                         Z ∞                                                        Z ∞
+                                   −(ε+x)2                                                    −(x+8tδ 2 +ε)2
+                                                   −tx                4t2 δ 2 +εt
+           pm ≤ O(1)           e    16δ 2    (te         )dx = O te                        e       16δ 2        dx
+                         0                                                            0
+                          2
+               let x̃= x+8tδ
+                          √ +ε         2 2
+                                               Z ∞              −x̃2
+                                                                                      ε 
+                       2 2δ
+                     =           O δte4t δ +εt            √    e  2 dx̃ ≤ O δte
+                                                                               2εt
+                                                                                   Φ̄   √
+                                               8tδ 2 +ε/(2 2δ)                         2 2δ
+                                2                        2 
+                by Lemma G.1    δ 2εt−ε2 /(16δ2 )           δ t
+                     ≤       O     te                =O
+                                 ε                           ε
+                                                                                            √
+here we three times used that ε > 32δ 2 t. We conclude that p = O(δ 2 ε−1 t/m) = O(δ 2 ε−1 log m/m),
+as required.
+
+
+
+
+                                                               43
+H      Supplementary Figures
+
+
+
+
+    (a) Buffered partition S, B, T = V \ (S ∪ B).         (b) Buffered partitioning (P1 , . . . , P4 ∥B1 , . . . , B4 )
+
+Figure 5: Left: The figure on the left shows a partition of the vertex set V into three pieces S, B
+and T = V \ (S ∪ B). Here B denotes the buffer, and cost of the this cut is δ(S, T ), as denoted by
+the edges marked in red. The edges marked in grey denote the edges between S and the buffer B.
+Right: The illustrative figure shows a k = 4 partition P1 , P2 , P3 , P4 with buffers B1 , B2 , B3 , B4 . The
+red edges indicate the edges δ(P1 , V \ (P1 ∪ B1 )) that contribute to the cut corresponding to P1 . All
+parts P1 , . . . , P4 and B1 , . . . , B4 are disjoint.
+
+
+
+
+                                                     44
+

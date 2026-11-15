@@ -1,0 +1,370 @@
+GLOBAL ALGEBRAIC ENTROPY BRACKETS FROM CLASSICAL LOG SQUARE ROOTING
+================================================================
+
+Owner: /root/entropy_sharp_optimality_breakthrough. 2026-11-15 UTC.
+Requested by parent after entropy-sharp-optimality-search.txt froze.
+This file is a full proof and scope note, not a publication novelty claim.
+Independent review remains necessary. No solver running time is claimed.
+
+1. RESULT AND EXACT CREDIT
+===========================
+
+Write f(x)=x log(x)-x+1 and b(x)=(x-1)^2/2, x>0. Let t_j,w_j be
+the m-node Gauss-Legendre nodes and weights on [0,1], and define
+
+ r_m(x)=sum_(j=1)^m w_j (x-1)/[1+t_j(x-1)],
+ delta=2^(-k),  r_(m,k)(x)=delta^(-1) r_m(x^delta),
+ F_(m,k)(x)=x r_(m,k)(x)-x+1.
+
+The approximation r_(m,k), its operator concavity, root/SDP lifts,
+and its all-x pointwise error bound are EXISTING Fawzi--Saunderson--
+Parrilo constructions. The following is a global weighted corollary
+of those existing ingredients, derived in this note:
+
+ THEOREM. For m>=1 and k>=2,
+
+  sup_(x>0) |f(x)-F_(m,k)(x)|/b(x)
+       <= 64 m (m 2^(-k))^(2m).                         (1.1)
+
+ Moreover F_(m,k) is nonnegative operator convex, normalized by
+ F_(m,k)(1)=F'_(m,k)(1)=0. The approximation error f-F has the
+ sign of x-1. Consequently, for every 0<eta<1, there are explicit
+ normalized operator convex algebraic functions f_eta^- and
+ f_eta^+ with
+
+  0<=f_eta^- <= f <= f_eta^+ = f_eta^- + eta*b          (1.2)
+
+ globally on (0,infinity). Their matrix perspectives have lifts
+ with O(sqrt(log(1/eta))) PSD blocks of order 2N for N-dimensional
+ matrix arguments. Their standard Petz divergences have the same
+ NUMBER of stages, but the direct established joint-matrix lift
+ uses blocks of order N^2, specified in Section 6 below.
+
+ In the explicit Gauss-plus-dyadic-root construction the stage count
+ s=m+k can be chosen to satisfy
+
+  s <= sqrt(2 log(1/eta)/log(2)) + O(log log(1/eta)).     (1.3)
+
+This escapes a rational-degree lower because r_(m,k) and F_(m,k)
+are algebraic functions of x when k>0. It establishes neither an
+arbitrary SDP lower bound nor a reduction of the standard Petz
+block size from N^2 to N.
+
+Primary source actually inspected:
+ H. Fawzi, J. Saunderson, P. A. Parrilo, Semidefinite approximations
+ of the matrix logarithm, Found. Comput. Math.19(2019),259--296.
+ arXiv:1705.00812v2, March2018.
+ https://arxiv.org/abs/1705.00812
+ https://arxiv.org/html/1705.00812
+ https://doi.org/10.1007/s10208-018-9385-0
+Relevant exact locations: Proposition1; Theorems1--3; Proposition3;
+Proposition6 (43) and error sign; Section3.3 and its smaller lift;
+Table1. Theorems1--2 explicitly assume a fixed ratio [a^-1,a].
+The no-ratio weighted assertion (1.1) is not their stated theorem.
+
+2. GLOBAL WEIGHTED ERROR: COMPLETE ELEMENTARY DERIVATION
+=========================================================
+
+The pointwise input is FSP Proposition1. Put u=|log x|. Its bound is
+
+ |log(x)-r_(m,k)(x)|
+ <=4 delta^(-1) sinh^2(delta*u/2) tanh(delta*u/4)^(2m-1).
+
+Since 2x/(x-1)^2=1/[2sinh^2(u/2)], this yields
+
+ |f(x)-F_(m,k)(x)|/b(x)
+ <=2 delta^(-1) [sinh(delta*u/2)/sinh(u/2)]^2
+                                      *tanh(delta*u/4)^(2m-1).
+                                                               (2.1)
+The ratio at x=1 is its continuous limit. Both elementary bounds
+
+ sinh(v)<=v exp(v), v>=0,    tanh(v)<=v, v>=0,
+
+will be used. For 0<u<=1, sinh(u/2)>=u/2 gives
+
+ (2.1)<=2 delta exp(delta*u)*(delta*u/4)^(2m-1)
+       <=8 exp(1/4) delta^(2m)/16^m
+       <=64 m (m delta)^(2m).                            (2.2)
+
+For u>=1, use
+
+ 1/[2sinh^2(u/2)] = 2exp(-u)/(1-exp(-u))^2 <=8exp(-u).
+
+Multiplying the pointwise log error directly gives
+
+ (2.1)<=8 delta u^2 exp(-(1-delta)u)*(delta*u/4)^(2m-1)
+       <=32 delta^(2m)/16^m *u^(2m+1)exp(-3u/4).       (2.3)
+
+For p=2m+1, the all-u maximum of u^p exp(-3u/4) is
+ [4p/(3e)]^p. As m>=1 implies p<=3m and e>2,
+
+ [4p/(3e)]^p <= (2m)^(2m+1).
+
+Therefore (2.3)<=64m (m delta/2)^(2m), which implies
+(1.1). This proof treats the full positive half-line; no truncation,
+condition number, or support restriction occurs.
+
+3. EXPLICIT PARAMETER CHOICE AND STAGE COUNT
+============================================
+
+For a target two-sided error epsilon in (0,1), let L=log(1/epsilon)
+and choose
+
+ m=max(1,ceil(sqrt(L/(2log2)))),
+ k=max(2,ceil(log_2(m)+(L+log(64m))/(2m log2))).          (3.1)
+
+Then
+
+ 64m (m 2^(-k))^(2m)<=epsilon.
+
+As L tends to infinity, m=sqrt(L/(2log2))+O(1) and
+
+ k=sqrt(L/(2log2)) + (log L)/(2log2)+O(1).
+
+Thus m+k=sqrt(2L/log2)+O(log L). This is an upper bound for this
+specific construction; its leading constant is not claimed optimal
+among all algebraic approximants or all semidefinite lifts.
+
+For (1.2), apply (3.1) with epsilon=eta/2. This changes L by O(1).
+Small values of L are covered by the displayed max operations.
+
+4. OPERATOR CONVEXITY, ERROR SIGN AND THE ONE-SIDED RESCALE
+===========================================================
+
+The positive-weight Gauss formula r_m is operator monotone and
+operator concave: each kernel (x-1)/[1+t(x-1)] has these properties.
+Composition with x^delta, 0<delta<=1, preserves operator concavity
+because the outside function is operator monotone. Thus r_(m,k)
+is operator concave, as proved already in FSP Proposition3.
+
+The Gauss rule is invariant under t->1-t. Directly in the kernel
+formula this gives
+
+ r_m(1/x)=-r_m(x),  r_(m,k)(1/x)=-r_(m,k)(x).           (4.1)
+
+Hence F_(m,k) is the transpose x*g(1/x) of
+g(x)=-r_(m,k)(x)+x-1. Since g is operator convex, its transpose is
+operator convex by the noncommutative perspective theorem. Also
+r_(m,k)(1)=0, r'_(m,k)(1)=1, so F(1)=F'(1)=0. Its ordinary
+convexity implies F>=0 globally.
+
+For completeness the Gaussian error sign is elementary. At fixed
+y>0 the integrand a(t)=(y-1)/[1+t(y-1)] satisfies
+
+ a^(2m)(t)=(2m)!(y-1)^(2m+1)/[1+t(y-1)]^(2m+1).
+
+The positive Gaussian error formula therefore shows that
+log(y)-r_m(y) has the sign of y-1. Take y=x^delta and scale by
+delta^(-1); then f(x)-F(x) has the sign of x-1 too. This is also
+stated in FSP Proposition6.
+
+Assume the bound |f-F|<=epsilon*b. Define
+
+ f^- = F/(1+epsilon).
+
+We need two exact scalar facts:
+
+ b(x)<=f(x)<=2b(x)  for 0<x<=1,
+ 0<=f(x)<=b(x)      for x>=1.                           (4.2)
+
+The b comparisons follow by differentiating f-b, whose derivative
+is log x+1-x<=0 and whose value at1 is0. The global upper f<=2b
+follows from (x-1)^2-f=x(x-1-log x)>=0.
+
+For x<=1 we have F>=f by the error sign, and
+F<=f+epsilon*b<=(1+epsilon)f. For x>=1 we have F<=f.
+Thus 0<=f^-<=f globally. Further,
+
+ f-f^-=[epsilon*f+(f-F)]/(1+epsilon).
+
+On x<=1 use f-F<=0 and f<=2b; on x>=1 use f<=b and
+f-F<=epsilon*b. Both give
+
+ 0<=f-f^-<=2epsilon*b/(1+epsilon).                     (4.3)
+
+With epsilon=eta/2, set f^+=f^-+eta*b. These are normalized
+operator convex functions, and (1.2) follows. No subtraction of a
+convex quadratic is used, so convexity is retained on both sides.
+
+5. DIVERGENCE GUARANTEES, INCLUDING JOINTLY NONCOMMUTING INPUTS
+==============================================================
+
+Use the standard Petz convention
+
+ S_h(A||B)=<B^(1/2), h(L_A R_B^(-1)) B^(1/2)>_HS,
+
+where L_A(Z)=AZ and R_B(Z)=ZB. These two positive self-adjoint
+superoperators commute, so scalar inequalities transfer by functional
+calculus and a positive quadratic form. Consequently
+
+ 0<=S_(f^-)(A||B)<=S_f(A||B)<=S_(f^+)(A||B),
+ S_(f^+)-S_(f^-)=eta*S_b(A||B)=eta*Chi2(A||B)/2,        (5.1)
+
+where
+
+ S_f(A||B)=Tr[A(logA-logB)]-TrA+TrB,
+ Chi2(A||B)=Tr[(A-B)B^(-1)(A-B)].
+
+All statements here are for A,B positive definite. For equal trace1,
+the affine corrections vanish and
+Chi2=Tr[A^2 B^(-1)]-1. Petz divergences of normalized operator
+convex functions are jointly convex, so both bounds are jointly
+convex and suitable as convex epigraph constraints.
+
+The same scalar inequalities also hold for the noncommutative matrix
+perspectives, giving Loewner brackets there. These perspectives and
+their traces are DIFFERENT functions from standard Petz/Umegaki
+divergence on noncommuting inputs. Their smaller lifts cannot be
+silently transferred to (5.1).
+
+6. PRECISE LIFTS AND MATRIX ORDERS
+==================================
+
+For positive N-by-N matrices X,Y, write
+P_r(Y,X)=X^(1/2) r(X^(-1/2) Y X^(-1/2)) X^(1/2).
+The operator epigraph -P_r(Y,X)<=T has the existing FSP root-Gauss
+lift. A count-preserving explicit formulation uses Hermitian root variables:
+
+ Z_0=Y,  Z_i Hermitian (1<=i<=k),
+ [ Z_(i-1)   Z_i ; Z_i   X ] >=0       (1<=i<=k),
+ [ Z_k-X-U_j  -sqrt(t_j)U_j ;
+   -sqrt(t_j)U_j   X-t_j U_j ] >=0      (1<=j<=m),
+ sum_j w_j U_j = -delta*T.                            (6.1)
+
+All blocks are order2N. For i<k, Z_i>=0 follows from its occurrence
+as the top-left diagonal of the NEXT root block; no separate PSD
+constraint is added. A root block implies Z_i<=Z_(i-1)#_(1/2)X
+even if the last Z_k is indefinite. Monotonicity of the geometric mean
+therefore gives Z_k<=X#_delta Y. Replace Z_k in every Gauss block by
+that ACTUAL final mean: only its top-left corner increases, preserving
+PSD feasibility. The Gauss Schur bounds then prove the desired output
+inequality at the actual mean. Conversely choose all actual nested
+means, which satisfy the root blocks, and use the actual Gauss values.
+This proves epigraph equivalence without an extra order-N final
+positivity block or a false converse for arbitrary mean underestimates.
+
+There is a relevant primary 2020 corrigendum:
+ https://www.damtp.cam.ac.uk/user/hf323/corrigendum_lieb.pdf
+It corrects the false full-hypograph equivalence for matrix geometric
+means in FS2017. The implication from the 2N block to V<=X#Y is
+valid, and the actual mean satisfies the block. These are precisely
+the two facts used above. The corrigendum expressly proves that
+FSP2019 entropy/logarithm lifts are unaffected. The issue is not
+limited to indefinite V; V>=0 alone would not repair the false full
+hypograph equivalence, because squaring is not operator monotone.
+
+The normalized F perspective is obtained from (6.1) by changing
+matrix arguments and adding the affine correction; (4.1) identifies
+the transpose. The bracket rescaling is an affine output rescaling.
+The b perspective adds one block of order2N, by the usual Schur
+complement for (A-B)B^(-1)(A-B).
+
+For STANDARD PETZ/Umegaki let
+
+ X=A tensor I, Y=I tensor bar(B),
+ phi(M)=vec(I)^* M vec(I).
+
+The matrices X,Y commute and their order is N^2. Functional calculus
+and the identity phi(C tensor D)=Tr[C D^T] show that
+
+ S_F(A||B)=-phi(P_r(Y,X))-TrA+TrB.                     (6.2)
+
+Applying (6.1) in dimension N^2 gives m+k blocks of order2N^2.
+The existing FSP Section3.3 smaller representation reduces the m
+Gauss blocks to orderN^2+1; the k root blocks remain order2N^2.
+Thus the established representation counts are
+
+  S_(f^-): m blocks orderN^2+1, k blocks order2N^2,
+  S_(f^+): those blocks plus one block order2N.
+
+The extra block for Chi2 uses a Hermitian W with
+
+ [ W A-B ; A-B B ] >=0,
+
+and its scalar epigraph is TrW. These claims count PSD constraints
+and their matrix orders; they make no arithmetic or iteration-cost
+claim for solving an arbitrary optimization instance.
+
+7. COMPARISON WITH THE PARENT POSITIVE RATIONAL THEOREM
+========================================================
+
+The parent entropy a=1,b=2 positive rational theorem uses
+m_R=log^2(1/eta)/(2pi^2)+O(log(1/eta)) poles and O(m_R) blocks
+of order2N for standard Petz divergence. The companion lower proves
+that leading POLE resource is optimal even for unrestricted real
+rational functions of type[m_R+1/m_R].
+
+Here the algebraic approach uses O(sqrt(log(1/eta))) stages, but
+standard Petz blocks grow to orderN^2. These two constructions give
+an accuracy versus matrix-order tradeoff. There is no contradiction
+to the rational lower and neither construction dominates in every
+combination of N and eta. The root route is directly small-block for
+scalar relative entropy, fixed-reference matrix entropy, and maximal
+operator perspectives, as distinguished in FSP Table1.
+
+The error is absolute measured against Chi2, which can be arbitrarily
+large. No global multiplicative error relative to entropy itself,
+uniform bounded absolute error for all states, or condition-free
+solver complexity follows from (5.1). With Chi2<=M, the enclosure
+width is at most eta*M/2. A rigorous convex optimization certificate
+can therefore be obtained on sets where M is controlled, subject to
+ordinary feasibility/optimization-error handling.
+
+8. NOVELTY AUDIT STATUS AND WHAT WOULD ACTUALLY BE STRONGER
+===========================================================
+
+The underlying construction and square-root acceleration are fully
+classical FSP2019. The new-to-this-session content is the short
+all-x Chi2-weighted estimate (2.1)--(2.3), its explicit parameters,
+and the sign-aware convex two-sided bracket (4.3). A targeted source
+search did not locate this exact global statement, but that does NOT
+establish priority. It is an elementary corollary of an existing
+all-x estimate and should be described as such unless independent
+literature review establishes a meaningful missing application.
+
+FF2023 Theorem5 instead discusses standard Petz lifts with order2N
+blocks and rational quadrature size; it does not state this algebraic
+global root result. Its fixed-degree minimax problem does not cover
+the algebraic function class. Source:
+ https://arxiv.org/html/2305.12405
+
+Potentially larger open structural target: retain the algebraic
+root acceleration AND O(N)-order blocks for jointly variable standard
+Petz entropy on arbitrary noncommuting A,B. The root superoperator
+is (L_B R_A^(-1))^delta, which involves both left and right fractional
+powers and cannot simply be replaced by an N-dimensional matrix
+geometric mean. Such a replacement generally changes standard Petz
+quantities to maximal-perspective/fidelity-type quantities. No valid
+small-block elimination is proved in this note.
+
+A concrete reduction clarifies this structural target. Already the
+single-node, single-root case m=1,k=1 has
+
+ r_(1,1)(x)=4(sqrt(x)-1)/(sqrt(x)+1),
+ F_(1,1)(x)=3x+1-8h(x),  h(x)=x/(1+sqrt(x)),
+ h(x)+x*h(1/x)=sqrt(x).
+
+Consequently its standard Petz divergence obeys the exact identity
+
+ S_F(A||B)+S_F(B||A)
+   =4TrA+4TrB-8Tr[sqrt(A)sqrt(B)]
+   =4||sqrt(A)-sqrt(B)||_HS^2.                         (8.1)
+
+An epigraph lift of S_F gives a hypograph lift of S_h by the affine
+relation S_F=3TrA+TrB-8S_h. Applying that lift to both argument
+orders and adding gives a hypograph lift of quantum AFFINITY
+Tr[sqrt(A)sqrt(B)]. Thus a constant-stage O(N)-order exact lift of
+even this simplest algebraic Petz generator would yield such an
+affinity lift. This is a reduction, NOT an impossibility result.
+The known general Lieb-function construction uses N^2-order blocks:
+ H. Fawzi, J. Saunderson, Lieb's concavity theorem, matrix geometric
+ means, and semidefinite optimization, LAA513(2017),240--263.
+ https://arxiv.org/abs/1512.03401
+ https://doi.org/10.1016/j.laa.2016.10.012
+This again identifies exactly where the fidelity/affinity distinction
+matters. It does not assert that smaller affinity lifts are impossible.
+
+Another potentially stronger target is a genuine lower for arbitrary
+SDP extensions under an explicitly specified approximation model.
+The entropy pole lower cannot supply it, and (1.1) is a concrete
+reason to keep these resource models separate.

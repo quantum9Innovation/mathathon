@@ -1,0 +1,177 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newcommand{\one}{\mathbf1}
+\newcommand{\Prob}{\mathbb P}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Fp}{\mathbb F_p}
+\newcommand{\supp}{\operatorname{supp}}
+\title{Boolean rigidity and polynomial kernel enumeration in the regular SBM}
+\author{Research session note: self-contained type-counting argument}
+\date{November 15, 2026}
+\begin{document}
+\maketitle
+\begin{abstract}
+For fixed internal degree $a>b>0$ with $a\ge3$, we prove that the planted signs are the only sign vectors at adjacency eigenvalue $a-b$, with polynomially small failure probability, at every admissible block size. Exact configuration-model type counting gives a strictly negative macroscopic entropy exponent; a small-support estimate handles near-planted alternatives. The same count over a fixed finite field bounds the expected kernel size polynomially, allowing polynomial-time enumeration of its sign vectors. This proves exact recovery without requiring one-dimensionality of the real eigenspace. All statements here use the original independent random cross graph, not an arbitrary prescribed cross graph. No novelty claim is made without further literature review.
+\end{abstract}
+
+Fix $a>b>0$, put $D=a+b$, $\delta=a-b$, and let both blocks have size $N$. All limits follow admissible sizes $aN$ even. The two internal graphs are independent uniform simple $a$-regular graphs; the cross graph is independent uniform simple $b$-regular bipartite. Denote the adjacency matrix by $A$ and planted signs by $\sigma=(\one,-\one)$.
+
+\begin{theorem}[Boolean rigidity]\label{thm:rigidity}
+If $a\ge3$, then
+\[
+ \Prob\{\exists\tau\in\{-1,1\}^{2N}\setminus\{\sigma,-\sigma\}:
+ A\tau=\delta\tau\}
+ =O_{a,b}\bigl(N^{-(D-2)(\delta+1)}\bigr).
+\]
+In particular this includes $a=4$ and odd $N$.
+\end{theorem}
+
+Every sign eigenvector at $\delta$ is balanced, because
+$(D-\delta)\one^T\tau=0$ over $\mathbb R$ and $D-\delta=2b>0$.
+Thus an alternative flips $k$ vertices in each planted block; replacing it by its negative allows $1\le k\le N/2$.
+
+\section{Exact configuration-model type count}
+Start with independent internal configuration pairings and a uniform cross-stub bijection. Give each vertex $a$ ordered internal stubs and $b$ ordered cross stubs. For an alphabet $\mathcal S$, a star profile records its root value, its $a$ internal neighbor values, and its $b$ cross neighbor values. Retain only profiles obeying
+\begin{equation}\label{eq:local}
+ \sum_{i=1}^a x_i+\sum_{j=1}^b y_j=\delta x_0.
+\end{equation}
+Use real equality for $\mathcal S=\{-1,1\}$ and finite-field equality for $\mathcal S=\Fp$.
+
+Let $\pi_+,\pi_-$ be empirical star-profile laws in the two blocks. Their root marginals are $\mu_+,\mu_-$. Let $m^+_{st}$ count plus-block internal stubs with root value $s$ and desired neighbor value $t$, and similarly $m^-$. Let $e_{st}$ count plus-block cross stubs with root value $s$ and desired minus-neighbor value $t$. Feasible pairings require $m^\pm$ symmetric with even diagonal, and the opposite cross table equal to $e^T$. Put
+\[
+ Q_\pm=\frac{m^\pm}{aN},\qquad R=\frac e{bN}.
+\]
+The marginals of $Q_\pm$ are $\mu_\pm$ in both coordinates; those of $R$ are $\mu_+,\mu_-$.
+
+For assigned labeled star profiles, the number of compatible internal pairings for a table $m$ is
+\[
+ W(m)=\prod_{s}(m_{ss}-1)!!\prod_{s<t}m_{st}!,
+\]
+and the number of cross bijections is $\prod_{s,t}e_{st}!$. Write $n^\pm_\omega=N\pi_\pm(\omega)$ for profile counts. The exact expected number of alphabet-valued eigenvectors is the sum over all feasible integer types of
+\begin{equation}\label{eq:exact}
+ \frac{N!}{\prod_\omega n^+_\omega!}
+ \frac{N!}{\prod_\omega n^-_\omega!}
+ \frac{W(m^+)W(m^-)\prod_{s,t}e_{st}!}
+ {((aN-1)!!)^2(bN)!}.
+\end{equation}
+Indeed, choose the profiles at labeled vertices and then pair the stubs by their root and desired-neighbor classes. Each actual eigenvector and configuration determines those labels uniquely. Root-label assignments are already included in the two multinomial factors; there is no omitted root-entropy term.
+
+For fixed alphabet and degrees, there are polynomially many types. Uniform Stirling estimates, including zero counts, give the logarithm of each term in \eqref{eq:exact} as
+\begin{equation}\label{eq:Phi}
+ N\Phi+O(\log(N+1)),\qquad
+ \Phi=H(\pi_+)+H(\pi_-)-\frac a2\{H(Q_+)+H(Q_-)\}-bH(R),
+\end{equation}
+where entropies use natural logarithms. The error constant depends only on the fixed alphabet and degrees.
+
+Independently symmetrize the internal stub positions and cross stub positions in each profile law. This preserves \eqref{eq:local}, all aggregated edge tables, and root marginals, while increasing profile entropy. It therefore suffices to upper-bound $\Phi$ for such symmetric laws.
+
+\section{The entropy inequality}
+For a symmetric plus-star law write the variables as
+$(X;Y_1,\ldots,Y_a;Z_1,\ldots,Z_b)$. Because \eqref{eq:local} determines $Y_a$ from all the other entries,
+\begin{align*}
+ H(\pi_+)
+ &=H(X)+H(Y_1,\ldots,Y_{a-1},Z_1,\ldots,Z_b\mid X)\\
+ &\le H(\mu_+)+(a-1)H(Y_1\mid X)+bH(Z_1\mid X).
+\end{align*}
+Let $J_+\ge0$ be the conditional subadditivity defect in this inequality; define $J_-$ analogously. Put
+\[
+ I_+=2H(\mu_+)-H(Q_+),\quad
+ I_-=2H(\mu_-)-H(Q_-),\quad
+ I_\times=H(\mu_+)+H(\mu_-)-H(R).
+\]
+These are mutual informations, hence nonnegative. Substitution into \eqref{eq:Phi} gives the exact identity for symmetrized laws
+\begin{equation}\label{eq:MI}
+ -\Phi=\left(\frac a2-1\right)(I_++I_-)+bI_\times+J_++J_-.
+\end{equation}
+Thus $\Phi\le0$ for every alphabet whenever $a\ge2$.
+
+For sign profiles with flip fraction $\alpha=k/N$,
+\[
+ \mu_+(1)=1-\alpha,\qquad \mu_-(1)=\alpha.
+\]
+When $a\ge3$, equality $\Phi=0$ would force all three mutual informations and both defects to vanish. Conditional on $X$, the retained $a-1$ internal values and $b$ cross values are then independent, with laws $\mu_+$ and $\mu_-$. The eliminated $Y_a$ also has law $\mu_+$ conditional on $X$, by $I_+=0$. Conditional variances in
+$Y_a=\delta X-\sum_{i<a}Y_i-\sum_jZ_j$ would give
+\[
+ \operatorname{Var}(\mu_+)=(a-1)\operatorname{Var}(\mu_+)+b\operatorname{Var}(\mu_-).
+\]
+Hence both variances vanish. The constant laws must be opposite by \eqref{eq:local}, so they are the planted assignment or its global negative. This already implies a strictly negative entropy maximum on every compact macroscopic overlap range.
+
+An explicit bound is also available. Set $L=-\Phi$, $v=4\alpha(1-\alpha)$, and $K=\delta^2+D-2$. Let $P$ be the joint law of the retained plus-star entries $(X,Y_1,\ldots,Y_{a-1},Z_1,\ldots,Z_b)$, and let $T$ be the product law with the same one-coordinate marginals. Then
+\[
+ D_{\rm KL}(P\Vert T)=J_++(a-1)I_++bI_\times\le4L,
+\]
+using $(a-1)/(a/2-1)\le4$ for $a\ge3$. Thus Pinsker's inequality gives $\|P-T\|_{\rm TV}\le\sqrt{2L}$. For
+$U=\delta X-\sum_{i<a}Y_i-\sum_jZ_j$, we have $U^2=1$ under $P$, whereas independence and the opposite root means give
+\[
+ \E_T U^2-1=Kv.
+\]
+Since $|U|\le2a-1$, comparison of the bounded function $U^2$ under the two laws yields
+\begin{equation}\label{eq:gap}
+ \Phi\le-\frac{8(\delta^2+D-2)^2}{(2a-1)^4}
+ \alpha^2(1-\alpha)^2.
+\end{equation}
+For nonsymmetric laws the same upper bound follows by symmetrizing first.
+
+Consequently, for every fixed $\eta>0$, the expected number of sign eigenvectors with $\eta N\le k\le N/2$ is at most $\exp(-c_{a,b,\eta}N)$ for all sufficiently large $N$, by \eqref{eq:exact}--\eqref{eq:gap} and the polynomial number of types.
+
+\section{Near-planted alternatives}
+\begin{lemma}[Small-support bound]\label{lem:support}
+For some fixed $\varepsilon=\varepsilon(a,b)>0$,
+\[
+ \Prob\{\exists x\ne0:Ax=\delta x,\ |\supp x|\le\varepsilon N\}
+ =O_{a,b}\bigl(N^{-(D-2)(\delta+1)}\bigr).
+\]
+\end{lemma}
+\begin{proof}
+In a simple $D$-regular graph, a $\delta$-eigenvector has zero coordinate sum and both signs. At its maximum positive coordinate there must be at least $\delta$ positive neighbors; apply the same observation to its negative. Thus its support size $q$ is at least $q_0=2(\delta+1)$.
+
+For a fixed possible support $S$ of size $q$, every exterior vertex adjacent to $S$ must have at least two incident edges from $S$, since otherwise the eigenvector equation at that zero coordinate cannot vanish. Expose the configuration pairings incident to $S$ adaptively. A collision means pairing to $S$ or to an exterior vertex already seen. If $i$ exposed edges lie within $S$, $j$ go outside, and $t$ distinct exterior vertices are reached, the number of collisions is $i+j-t$. Necessarily $t\le j/2$ and $Dq=2i+j$, so at least $Dq/2$ collisions occur in at most $Dq$ exposures.
+
+For $q\le\varepsilon N$ with $\varepsilon$ small enough, each conditional collision probability is at most $Cq/N$: at most $O_D(q)$ stubs lie at previously reached vertices, while every relevant internal or cross pool retains a positive fraction of its $\Theta(N)$ stubs. A union bound over collision positions and then over $\binom{2N}q$ supports gives
+\[
+ \Prob(\exists\text{ such support of size }q)
+ \le\left[C'\left(\frac qN\right)^{(D-2)/2}\right]^q.
+\]
+Choose $\varepsilon$ small enough that successive terms decrease geometrically. Summing from $q_0$ to $\varepsilon N$ gives $O(N^{-(D-2)(\delta+1)})$.
+
+The support lower bound was used only for the desired simple-graph event. The exploration bound was performed in the configuration model. Conditioning its two internal factors and bipartite factor on simplicity costs a bounded factor at fixed degrees and yields the requested independent uniform-simple model.
+\end{proof}
+
+For an alternative sign vector near $\sigma$, take $x=\sigma-\tau$. Its support has size $2k$, so Lemma~\ref{lem:support} handles $k\le\varepsilon N/2$. The preceding macroscopic argument handles the remaining $k$. Fixed-degree configuration simplicity has probability bounded below, so the macroscopic exponential bound also survives conditioning. This proves Theorem~\ref{thm:rigidity}.
+
+\section{Polynomial finite-field moment and enumeration}
+\begin{theorem}\label{thm:polymoment}
+Fix $a\ge2$, $b>0$, and an odd prime $p$. For some finite constants $C,\kappa$ depending only on $a,b,p$,
+\[
+ \E\bigl|\ker_{\Fp}(A-\delta I)\bigr|\le C N^\kappa
+\]
+at all sufficiently large admissible sizes, in the original uniform-simple RSBM.
+\end{theorem}
+\begin{proof}
+Use alphabet $\Fp$ in \eqref{eq:exact}. There are at most $p^{D+1}$ star profiles in each block and polynomially many integer types. The uniform Stirling prefactor is polynomial in $N$, with a fixed exponent. Equation~\eqref{eq:MI} gives $\Phi\le0$ for every feasible type when $a\ge2$. Summing \eqref{eq:exact} therefore gives the polynomial bound in the configuration model. Bounded-cost conditioning on simplicity proves the result as stated. No distributional limit or uniform growing-prime estimate is needed.
+\end{proof}
+
+Let $r=\dim_{\Fp}\ker(A-\delta I)$. Markov's inequality gives, for any desired fixed $t>0$, a fixed computable constant $c=c(a,b,p,t)$ such that
+\[
+ \Prob(r>c\log N)=O(N^{-t}).
+\]
+The conservative constants can be read from the finite type count and Stirling bounds; no optimization is needed for polynomial time.
+
+\begin{corollary}[Recovery for internal degree at least three]
+For every fixed $a>b>0$ with $a\ge3$, there is a polynomial-time algorithm recovering the planted partition with high probability, at every admissible size, without an outlier-gap assumption.
+\end{corollary}
+\begin{proof}
+Fix an odd prime, for example $p=3$. Compute a basis matrix for the finite-field kernel. If $r>c\log N$, report failure. Otherwise choose $r$ coordinate rows giving an invertible $r\times r$ submatrix. Enumerate all $2^r$ assignments of signs to those coordinates, extend each uniquely within the kernel, retain vectors whose every coordinate is $\pm1$, and lift those signs to integers. Verify the exact integer equation $A\tau=\delta\tau$ for each candidate. This verification removes any extra modular solutions, even when $p$ is smaller than the degree.
+
+The planted signs are always enumerated. On the event of Theorem~\ref{thm:rigidity}, the only surviving vectors are $\pm\sigma$. The cutoff event has polynomially small probability by Theorem~\ref{thm:polymoment}. With the cutoff the worst-case running time is polynomial, since $2^r\le N^{c\log2}$.
+\end{proof}
+
+For $(a,b)=(2,1)$, the separate exact counting proof in the companion low-degree note establishes Boolean rigidity with ambiguity probability $\Theta(N^{-2})$. Theorem~\ref{thm:polymoment} and the same enumeration then apply to that pair as well. This last statement uses the companion proof; the internal-degree-at-least-three rigidity theorem above does not silently cover $a=2$.
+
+These recovery conclusions do not prove that the real planted eigenspace is one-dimensional in the previously uncovered cases. They also do not extend the Boolean-rigidity or polynomial-moment claims to an adversarial prescribed cross graph: the exact count uses the independent random bipartite factor.
+\end{document}

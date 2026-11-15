@@ -1,0 +1,106 @@
+Unit-mass graph voltage bound removes a quadrature scale barrier
+Independent dynamic session, 2026-11-15
+
+This is a constructive observation, included with the barriers audit
+because it shows why the SPD access barrier must not be transferred
+blindly to explicit graph input. It does not by itself close the
+inexact-factor construction problem; a feasible-flow repair proposed
+later in this session is audited in barriers-feasible-flow-audit.txt.
+
+Let L be a connected unit-mass weighted graph Laplacian, let
+u=sqrt(d)(e_p-e_q), d>0, and let tau=u^T L^dagger u. Work on 1-perp.
+Put x=L^dagger u. The graph maximum principle places the maximum and
+minimum of x at the injection terminals p and q: all other vertices
+are harmonic. Thus
+
+  osc(x)=x_p-x_q=sqrt(d) R_eff(p,q)=tau/sqrt(d).
+
+Since x has mean zero, for example
+
+  ||x||^2 <= n tau^2/d.
+
+The sharper n tau^2/(4d) follows from the variance bound for values in
+an interval; the weaker bound is sufficient below. This bound contains
+no graph gap or conductance ratio. It applies to existing or new edges.
+
+For 0<alpha<1 write c_alpha=sin(pi alpha)/pi. The exact relative
+correction is the PSD integral
+
+  C=c_alpha integral_0^infinity
+      t^alpha L^{-alpha/2}(L+tI)^{-1}u u^T(L+tI)^{-1}L^{-alpha/2}
+               /[1+u^T(L+tI)^{-1}u] dt.
+
+LOW TAIL. Let
+
+  M_alpha=max_{z>0} z^{2-alpha}/(1+z)^2
+         =alpha^alpha(2-alpha)^{2-alpha}/4 <= 1.
+
+Spectral calculus yields
+
+  ||L^{-alpha/2}(L+tI)^{-1}u||^2
+   = sum_i (u_i^2/lambda_i^2)
+                 lambda_i^{2-alpha}/(lambda_i+t)^2
+   <= M_alpha t^{-alpha} ||L^dagger u||^2.
+
+Consequently, with C_(0,T) denoting that part of the integral,
+
+  ||C_(0,T)|| <= tr C_(0,T)
+       <= c_alpha M_alpha T ||L^dagger u||^2
+       <= c_alpha M_alpha n tau^2 T/d.
+
+Thus T_min of order_alpha eps d/(n tau^2) makes the low tail at most
+eps, independent of lambda_2(L). The SPD barrier's family has an
+unbounded ||A^{-1}u|| at fixed ||u|| and tau, so precisely this estimate
+is absent there.
+
+HIGH TAIL. By scalar concavity (or spectral Holder interpolation),
+
+  ||L^{-alpha/2}u||^2
+     <= (u^T L^dagger u)^alpha ||u||^{2(1-alpha)}
+     = tau^alpha(2d)^{1-alpha}.
+
+Since (L+tI)^{-2} <= t^{-2}I in the common eigenbasis,
+
+  ||C_(T,infinity)|| <= tr C_(T,infinity)
+   <= c_alpha/(1-alpha) T^{alpha-1}
+                      tau^alpha(2d)^{1-alpha}.
+
+T_max of order_alpha d (tau^alpha/eps)^{1/(1-alpha)} therefore controls
+the high tail without lambda_max(L). These two estimates supply a
+finite interval with only logarithmic dependence on n,tau,1/eps when
+alpha is fixed. No graph gap or conductance condition is used.
+
+EXACT QUADRATURE. For a fixed strip |arg z|<=theta<pi/2,
+Re(1+u^T(L+zI)^{-1}u)>=1. The inequalities
+
+  |lambda+z|>=cos(theta/2)(lambda+|z|)
+
+and the preceding spectral estimates bound the relative integrand after
+z=d exp(y) by a constant_alpha,theta times
+
+  min(n tau^2 exp(Re y),
+      tau^alpha exp(-(1-alpha)Re y)).
+
+The relative integrand is analytic in that strip. Standard logarithmic
+trapezoid arguments therefore give a quadrature with positive weights,
+exact raw resolvent factors, gap-free node scales, and number of nodes
+O_alpha(log^2((n(1+tau)+1)/eps)), after allocating tail/discretization
+budgets and using the trivial zero-output case for sufficiently small
+tau. This is an exact-node representation statement; it still needs
+factor compression if rank must track the log-determinant budget.
+
+INEXACT SOLVES REQUIRE ADDITIONAL STRUCTURE. Standard shifted SDD solver accuracy
+controls the solve error in (L+tI)-energy. It permits error concentrated
+in a very small positive L eigenvector. Whitening that error by
+L^{-alpha/2} can be arbitrarily large. The explicit 3-vertex example
+in barriers-positive-shift-oracle.txt, Section 3, demonstrates this.
+No nearly-linear, finite-word, or gap-free charged construction theorem
+is inferred from exact-node quadrature alone. The feasible-flow method
+in barriers-feasible-flow-audit.txt supplies the additional error
+structure for raw factor construction in exact-real arithmetic.
+
+Possible way forward: a structured linear approximate-solve map with
+errors controlled after fractional whitening, a provable residual
+filter whose final arithmetic has no spectral-condition loss, or a
+different factor representation and certification mechanism. Each
+requires a proof beyond the ordinary energy-error SDD solver contract.

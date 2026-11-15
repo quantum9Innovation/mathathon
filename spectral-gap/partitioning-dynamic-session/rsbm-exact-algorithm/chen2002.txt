@@ -1,0 +1,1299 @@
+             Linear Algebra and its Applications 343–344 (2002) 119–146
+                                                                   www.elsevier.com/locate/laa
+
+
+
+
+   Efficient matrix preconditioners for black box
+                    linear algebra
+         Li Chen a , Wayne Eberly b , Erich Kaltofen c ,∗ ,
+     B. David Saunders a , William J. Turner c , Gilles Villard d
+a Department of Computer and Information Sciences, University of Delaware, Newark, DE 19716, USA
+       b Department of Computer Science, University of Calgary, Calgary, AB, Canada T2N 1N4
+    c Department of Mathematics, North Carolina State University, Raleigh, NC 27695-8205, USA
+            d CNRS Laboratoire de l’Informatique du Parallélisme, ENSL 46 Allée d’Italie,
+                                     69364 Lyon Cedex 07, France
+                           Received 31 August 2000; accepted 8 August 2001
+                                      Submitted by V. Olshevsky
+
+
+
+Abstract
+    The main idea of the “black box” approach in exact linear algebra is to reduce matrix prob-
+lems to the computation of minimum polynomials. In most cases preconditioning is necessary
+to obtain the desired result. Here good preconditioners will be used to ensure geometrical/al-
+gebraic properties on matrices, rather than numerical ones, so we do not address a condition
+number. We offer a review of problems for which (algebraic) preconditioning is used, provide
+a bestiary of preconditioning problems, and discuss several preconditioner types to solve these
+problems. We present new conditioners, including conditioners to preserve low displacement
+rank for Toeplitz-like matrices. We also provide new analyses of preconditioner performance
+and results on the relations among preconditioning problems and with linear algebra problems.
+Thus, improvements are offered for the efficiency and applicability of preconditioners. The
+focus is on linear algebra problems over finite fields, but most results are valid for entries from
+arbitrary fields. © 2002 Elsevier Science Inc. All rights reserved.
+
+
+
+ ∗ Corresponding author.
+    E-mail addresses: lchen@mail.eecis.udel.edu (L. Chen), eberly@cpsc.ucalgary.ca (W. Eber-
+ly), kaltofen@math.ncsu.edu (E. Kaltofen), saunders@mail.eecis.udel.edu (B.D. Saunders), wjturn-
+er@math.ncsu.edu (W.J. Turner), Gilles.Villard@ens-lyon.fr (G. Villard).
+    URL: http://www.cis.udel.edu/∼ lchen (L. Chen), http://www.cpsc.ucalgary.ca/∼ eberly (W. Eberly),
+http://www.math.ncsu.edu/∼ kaltofen (E. Kaltofen), http://www.cis.udel.edu/∼ saunders (B.D. Saunders),
+http://www.math.ncsu.edu/∼ wjturner (W.J. Turner), http://www.ens-lyon.fr/∼ gvillard (G. Villard).
+
+0024-3795/02/$ - see front matter  2002 Elsevier Science Inc. All rights reserved.
+PII: S 0 0 2 4 - 3 7 9 5( 0 1) 0 0 4 7 2 - 4
+120            L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146
+
+Keywords: Black box matrix; Sparse matrix; Structured matrix; Toeplitz-like matrix; Matrix precon-
+ditioner; Exact arithmetic; Finite field; Symbolic computation; Linear system solution; Minimal poly-
+nomial; Characteristic polynomial; Rank; Determinant; Wiedemann algorithm; Randomized algorithm;
+Butterfly network
+
+
+
+
+1. Introduction
+
+    In the black box approach [15] one takes an external view of a matrix: it is a linear
+operator on a vector space. Information is derived from a series of applications of this
+operator to vectors. By contrast most matrix algorithms are internal, involving some
+sort of elimination process. The black box approach is particularly suited to the han-
+dling of large sparse or structured matrices over finite fields. This fact—well known
+in the numerical computation area—has led the computer algebra community to a
+considerable interest in black box algorithms for linear algebra. Many developments
+have been proposed to adapt Krylov or Lanczos methods to fast exact algorithms.
+Wiedemann’s paper [25] was the seminal work to these developments. He showed
+how to solve an invertible n × n linear system using O(n) matrix-vector products,
+O(n2 ) additional arithmetic operations in the entry field, and O(n) space for in-
+termediate results. Since a matrix-vector product costs at most O(n2 ) operations,
+Wiedemann’s algorithm is asymptotically competitive with elimination. For many
+problems of the operator application, the matrix-vector product Av may be econom-
+ically computed both in time and/or in space. Problems of interest may have cost
+O(n log(n)), even O(n). In these cases the black box approach is a substantial im-
+provement over elimination. When the matrix is sparse and elimination is subject to
+fill-in, it also has the important advantage of modest space demand. Other examples
+are matrices that have efficient procedures for generating their entries, for instance,
+the Hilbert matrix. A black box algorithm never constructs such a matrix, hence is
+substantially more space efficient.
+    To solve several problems using the algorithms invented by Wiedemann and
+his followers the black box coefficient matrix needs to be preconditioned. As de-
+tailed in Sections 2 and 3, the preconditioning allows the reduction of problems to
+the computation of minimum polynomials and leads to faster solutions. Common
+preconditioners, some already known to Wiedemann, are matrix pre- and post-multi-
+pliers. These multiplier matrices must have efficient matrix-vector products in order
+to avoid too high a slowdown of the matrix-vector product for the resulting precondi-
+tioned matrix. Our target problems discussed are linear system solution, determinant,
+and rank. Solutions to additional problems such as Diophantine problems (over the
+integers) and Smith form computation [7,8,17] also involve these preconditioners.
+Future work may concern the use of preconditioners to compute the characteristic
+polynomial of a matrix and matrix normal forms, as well as conditioners to preserve
+additional structural properties.
+          L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146   121
+
+   We present more efficient preconditioners for most of the problems discussed
+above, including conditioners that maintain low displacement rank. Most of our pre-
+conditioners apply to matrices over an arbitrary field, but our focus is on matrices
+over a finite field. Our time cost analyses are in terms of the number of arithmetic
+operations in the element field and our space cost is measured in terms of the number
+of field elements stored. Finite fields are categorized as large or small, depending on
+whether they have sufficiently many elements to support these randomized methods
+for which the Schwartz–Zippel lemma [22,26] (see also [3]) is used in the probability
+analysis. We organize solutions around this distinction and offer new results for large
+and small fields.
+   In Section 2 we offer a list of problems to which preconditioning has been ap-
+plied with a discussion of the solution methods advanced to date. In Section 3 the
+notion of a preconditioning problem and preconditioner are given precise definitions
+and a list of useful preconditioning problems is offered. The problems are of three
+general types: linear independence (localizing it), nilpotent blocks (avoiding them),
+and cyclicity (achieving it for the nonzero eigenvalues). Results on relations among
+them are also given in Section 3. Notably, Wiedemann already used three kinds of
+preconditioners: diagonal, Beneš’s permutation network, and sparse preconditioners.
+The usefulness of diagonal conditioners is extended and their effects are more thor-
+oughly examined in Section 4. Toeplitz preconditioners that increase displacement
+rank by at most a small constant are investigated in Section 5. Regarding Beneš’
+network-based preconditioners, we show that the size can be cut into half yielding a
+butterfly network, the individual switches can be simplified, and the network can be
+generalized to arbitrary dimensions that are not powers of 2 (see Section 6). Further,
+in Section 7 we prove that Wiedemann’s sparse preconditioners can be used directly
+for the inhomogeneous system solution problem for matrices over small finite fields
+without the need of binary search.
+
+
+2. List of matrix problems and solutions
+
+    We present our target linear algebra problems which we label as M IN P OLY, L IN -
+S OLVE 0, L IN S OLVE 1, D ET, and R ANK. We discuss the use of various precondition-
+ers to provide reductions between problems and list known solutions.
+    The objectives are to find algorithms running within the costs stated in Section
+1: with n(log n)O(1) black box calls, n2 (log n)O(1) additional operations in the entry
+field and using n(log n)O(1) intermediate storage [11, Open Problem 3]. Throughout
+this paper, when we say of a problem “the question is open” or “it is an open prob-
+lem”, we mean that the question has no known solution within these resource limita-
+tions (see for instance the certificate of system inconsistency or the computation of
+the determinant). Most of the solutions listed below are randomized. Such algorithms
+are Monte Carlo if the answer returned is possibly wrong (with quantified probability
+of error), and are called Las Vegas or are said to have a certificate if the solution
+122         L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146
+
+is always correct and unfortunate random choices can only cause violation of the
+resource limitations promised. We say problem A is reducible to problem B if A
+may be solved by computing an instance for problem B in such a way that the overall
+cost is within the resource limitations assuming an algorithm for B which meets the
+resource limitations. Problems A and B are equivalent if reductions exist both ways.
+   For a matrix A ∈ Fn×n over a field F, and vectors u1 , . . . , uκ ∈ Fn , the black
+box algorithms (adaptations of Krylov, Lanczos, or conjugate gradient algorithms)
+essentially compute minimal relations in Krylov spaces constructed from the vectors.
+Using block size κ = 1, we have scalar algorithms to compute the minimum polyno-
+mial of the vector with respect to A [25]. With κ ⩾ 1, we obtain block algorithms to
+compute a matrix minimum polynomial [23]. With high probability this will give the
+minimum polynomial of A or a multiple of it and thus a solution to the first problem
+to consider:
+M IN P OLY—Compute the minimum polynomial of A. Over any field, a Monte Carlo
+solution is given by the original Wiedemann’s algorithm [25]. It is not known how
+to certify the result and how to recover the minimum polynomial from the blocked
+versions (only a multiple is computed).
+    The next problem to consider is L IN S OLVE 0, the computation of a nonzero vector
+in the nullspace of a singular matrix. We remark that the goal of homogeneous linear
+systems solving is often taken to be to compute a nullspace basis. However, for sparse
+or structured matrices of low rank, to compute a basis for the nullspace will entail
+construction of many dense vectors, which will consume vastly more space than the
+original matrix. Such a project would be antithetical to the spirit of sparse methods.
+One may as well use a dense method if the goal is a basis and the rank is low. Thus,
+we pose as the basic problem to compute one vector in the nullspace.
+    In the discussion of this and the following problems we refer to certain precon-
+ditioners (see Section 3). The preconditioners are categorized by purpose and given
+names such as P RE C OND N IL, P RE C OND C YC, etc. For example, the problem P RE -
+C OND N IL is to produce a matrix equivalent to A which has no nilpotent blocks in its
+Jordan form. These must be understood by forward reference to Section 3 where the
+preconditioning problems are discussed in detail. Summary of the existing solutions
+to these preconditioning problems and presentation of improved methods for them are
+the central purpose of this paper. By abuse of notation we also use the label of a pre-
+conditioner problem to refer to the use of a solution to this problem in a computation.
+L IN S OLVE 0—Compute w /     = 0 such that Aw = 0. This also gives a singularity cer-
+tificate and a Monte Carlo test for nonsingularity: if any of the algorithms repeatedly
+fails, the matrix is likely nonsingular.
+    Over small fields, the block Wiedemann algorithm [2] together with tricks in [10]
+leads to (1 + ε)n or (2 + ε)n matrix-times-vector products. Complete analyses may
+be found in [10,23,24]. Comparisons with the block Lanczos algorithm are under
+development. Both may incorporate the early termination strategy first observed by
+Lobo. If the minimum polynomial has small degree, the solution is found without
+          L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146   123
+
+completing the sequence to the worst case length. This criterion, probabilistical-
+ly correct for randomly preconditioned matrices, is incorporated in Lanczos vari-
+ants [6]. Over large fields, a Lanczos variant of the block Wiedemann algorithm
+should be superior since look-ahead is unlikely [5].
+Special case S YM R EAL—If A is symmetric and F is a subfield of the real numbers,
+then unblocked Lanczos should be used to solve the system Ax = Ay for a randomly
+chosen y. With high probability, x − y is a nonzero element of the nullspace if A is
+singular. Here n matrix-times-vector products are sufficient.
+   Over a field of positive characteristic problems arise due to the possibility of self-
+orthogonal rows in a symmetric matrix A and the possibility of nontrivial nilpotent
+blocks in its Jordan form. If F is sufficiently large and its characteristic is not 2, then
+P RE C OND N IL together with the above solution allows the problem to be solved with
+n matrix-times-vector products [5].
+   It is not known whether an additional black box for AT can improve the above
+methods.
+L IN S OLVE 1—Given A and b, compute x such that Ax = b. The problem of finding
+a random element of the nullspace (call it random-L IN S OLVE 0) is equivalent to
+L IN S OLVE 1. To solve random-L IN S OLVE 0, solve Ax = Ay, where y is a random
+vector. In the reverse direction, consider [A | b]w = 0.
+    The reduction of L IN S OLVE 1 to L IN S OLVE 0 is immediate if A is nonsingular.
+The preconditioner P RE C OND N IL together with a block algorithm as discussed un-
+der L IN S OLVE 0 solves L IN S OLVE 1 (see [24] over large fields). A solution to R ANK
+together with the preconditioner P RE C ONDRXR also solves L IN S OLVE 1 [14]. A cer-
+tificate for inconsistency is known only with an additional black box for AT [9].
+Without a transpose box, the problem is open.
+D ET—Compute det(A). The problem is open over small fields except for F2 where
+one may use the singularity test mentioned in L IN S OLVE 0. It is also open how to cer-
+                 = 0. Over large fields, a solution to the problem M IN P OLY together
+tify that det(A) /
+with the preconditioner P RE C OND C YC solves D ET [25].
+R ANK—Compute the rank of A. A Monte Carlo algorithm uses the preconditioner
+P RE C ONDSXS and the singularity test mentioned under L IN S OLVE 0 to find the rank
+by binary search [25], using O(log n) calls to the sparse solver. It is open how to avoid
+using (log n) of these calls. The problem is also solved over large fields with the
+preconditioner P RE C OND C YC N IL and a solution to problem M IN P OLY, see [14].
+These Monte Carlo algorithms may underestimate the rank. However, the rank can
+be certified over real fields [21].
+
+
+3. Preconditioners in general
+
+  Matrix problems on A may be reduced to simpler problems on a well-chosen
+matrix A called a preconditioning of A. This section is intended to define precisely
+124         L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146
+
+what we mean by a preconditioning problem. New preconditioners for some of the
+problems will be given in Sections 4 and 6. We also derive reductions between pre-
+conditioning problems that help in characterizing the preconditioners themselves and
+will lead to new preconditioners with the sparse matrices of Section 7.
+   A preconditioning problem is a pair (R, C) of a relation R and a condition C
+on matrices in a given class M. A solution to a preconditioning problem is a map-
+ping A → A on M such that (1) C(A ) holds, and (2) R(A, A ) holds. We say that
+A is good for A with respect to the given preconditioning problem.
+   Generally speaking, C is a property desired so that the input conditions of some
+computational techniques are satisfied, R is a relation needed in order for results
+computed concerning A to yield information about A. For most preconditioners
+used in linear systems solving, the relation R is matrix equivalence: A = LAR for
+L and R two invertible matrices. However, some of the existing preconditioners
+are symmetrizing products involving AT for which the relation is preservation of
+rank [6]. All of the preconditioners discussed in this paper are multiplicative, A
+being a product involving A, nonsingular scaling matrices, and sometimes AT .
+   A preconditioner A → A is generic if it is good for all A ∈ M. The central
+issue determining the usefulness of a preconditioner is usually that computation
+with A be as inexpensive as possible, preferably within a constant factor of the
+cost with A alone. A generic preconditioner with good computational performance
+is generally not possible to achieve. Generic preconditioners usually involve scal-
+ing the given matrix by a multiplier whose entries are multivariate polynomials
+over the field of the entries of A. They are useful as a step in the construction of
+families of preconditioners whose scalings have entries in the field of entries (or
+a small extension thereof). The individual members of a family of preconditioners
+are obtained by substitution of random field elements for the variables in a gener-
+ic preconditioner. The distribution of the preconditioners in such a family should
+have the property that for all A ∈ M the probability that a preconditioner A → A
+chosen at random is good for A is at least p for a specified probability p. When
+we solve a preconditioner problem with a random family in this way we prefix the
+preconditioner name with “p-”. For example, we may speak of a p-P RE C OND I ND
+preconditioner.
+
+3.1. Preconditioning problems
+
+   Since we reduce problems to computing minimum polynomials, the precondi-
+tioning questions we address are related to modifications of Jordan structures of
+matrices. In general, the purpose is to ensure diagonalizability conditions which
+may themselves follow from independence properties (see Section 3.4). We dis-
+tinguish three main types of preconditioners: linear independence conditioners,
+nilpotent block conditioners (to avoid nontrivial ones in the Jordan form), cyclic-
+ity conditioners (to ensure cyclicity—only one Jordan block—of the nonzero
+eigenvalues).
+          L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146   125
+
+   Solutions to the following problems will be proposed in subsequent sections.
+These problems are listed with the target conditions C on A and the solutions
+for small and large fields, where large means big enough for the use of the Sch-
+wartz–Zippel lemma. Generally, preconditioners to be applied to L INSOLVE preserve
+the matrix equivalence relation. Preconditioners to be applied to D ET or R ANK
+may potentially preserve a weaker condition. For example, in the following list
+P RE C OND S QU F REE preserves (an unknown) rank while the others preserve matrix
+equivalence.
+
+3.1.1. Linear independence preconditioning
+P RE C OND I ND—The r leading columns of A are linearly independent, where r is
+the rank of A (see L IN S OLVE 1). Over small fields, see the solution of [25] presented
+in Section 7.
+
+P RE C ONDRXR—The r × r leading principal minor of A is nonzero, where r is
+the rank of A (see LinSolve1). Over small fields, A = W1 · A · W2 , where Wi are
+the sparse matrices constructed in [25] (see also Section 7). Over large fields, see
+P RE C OND G EN but note that the failure probabilities are smaller for this condition.
+
+P RE C ONDSXS—Given s, if s ⩽ the rank of A, the s × s leading principal minor of
+A is nonzero (see R ANK).
+
+P RE C OND G EN—All leading principal minors of A of size up to and including the
+rank are nonzero. This condition was given the name generic rank profile in [12].
+The question of efficient P RE C OND G EN is open over small fields. Over large fields,
+A = B1 · A · B2 , where Bi encode symbolic Beneš’ permutation networks [25]. A
+new, more efficient solution is given in Section 6. Another is A = Tupper · A · Tlower ,
+where Tupper is a random unit upper triangular Toeplitz matrix and Tlower is a ran-
+dom unit lower triangular Toeplitz matrix [14]. This is less efficient but useful for
+matrices of low displacement rank [10, Appendix]. P RE C OND G EN may be reduced
+to P RE C OND I ND, see Theorem 3.1. If A is nonsingular, the preconditioner may be
+reduced to a single multiplier, which may be on either side.
+   These independence preconditioners were used for instance in [25] to compute
+the rank by binary search. They are also a main ingredient to construct nilpotent
+block preconditioners basically used for L IN S OLVE 1 (see Theorem 3.5).
+
+3.1.2. Nilpotent block preconditioning
+P RE C OND N IL—A has no nilpotent blocks of size greater than 1 in its Jordan ca-
+nonical form (see L IN S OLVE 1). A reduction to independence preconditioners is pro-
+posed in Section 3.4. Over small fields, A = W1 · A · W2 is a solution, where W1 and
+W2 are sparse matrices as shown in Section 7. For large fields when A is symmetric,
+use A = D · A or D · A · D, where D is a random diagonal matrix as established in
+Section 4.
+126          L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146
+
+   For problems as D ET or R ANK, independence preconditioners are too weak,
+known reductions to M IN P OLY need to modify the invariant structure of the matrix.
+The corresponding cyclicity preconditioners may be classified with respect to the
+effect they have on the nonzero and zero eigenvalues.
+
+
+3.1.3. Cyclicity preconditioning
+P RE C OND C YC—For A nonsingular, A is nonsingular and cyclic: char-poly(A ) =
+min-poly(A ). For problem D ET, the det(A) must be easily derivable from det(A ).
+The question is open over small fields. Over large fields, the solution A = D · A
+given in Theorem 4.2 improves previously known solutions that were reducing the
+problem to P RE C OND G EN(A) · D [25]. The solution to P RE C OND G EN based on
+Toeplitz matrices is also sufficient here [13].
+P RE C OND C YC - X—The nonsingular part of A is cyclic: char-poly(A ) =
+min-poly(A ) · x l = f (x) · x k , where f (0) /
+                                               = 0 (deg(f ) + k − l − 1 is then a lower
+bound for the rank). Over large fields, one can use A = D · A, where D is a random
+diagonal matrix, see Theorem 4.2.
+P RE C OND S QU F REE - X—Same as P RE C OND C YC - X with the additional condition
+that f is squarefree. If the characteristic of the coefficient field is 0 or greater than n
+the same solution A = D · A works, see Theorem 4.3.
+P RE C OND C YC N IL—The minimum polynomial is f (x) · x and the characteristic
+                                        = 0. As a consequence k = n − rank(A) [14]
+polynomial is f (x) · x k , where f (0) /
+(see R ANK). Over large fields and for A symmetric, A = D · A or D · A · D, where
+D is a random diagonal matrix, see Theorems 4.3 and 4.5. A solution will solve
+P RE C OND N IL and P RE C OND C YC - X.
+P RE C OND S QU F REE—Same as P RE C OND C YC N IL with the additional condition
+that f is squarefree. One also has the same solution in the case of a symmetric
+matrix when the field characteristic is 0 or greater than n, see Theorem 4.7. In
+the general case, a solution here will also solve P RE C OND N IL and P RE C OND S QU -
+F REE - X. The question is open over small fields. For large fields, a solution is
+A = P RE C OND G EN(A) · D, where D is a random diagonal matrix [14]. If the trans-
+pose black box is available, A = AT · D · A, where D is a random diagonal
+matrix [6].
+
+
+3.2. Reducibility: independence preconditioners
+
+   A P RE C OND I ND scaling for F∗×n is a solution to P RE C OND
+                                                                I ND of the form
+A = AR with R ∈ Fn×n valid for all m × n matrices: M = m Fm×n . In this
+section we show that generic rank profile scaling reduces to two independence
+scalings.
+          L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146   127
+
+Theorem 3.1. Let L be a (row) p-P RE C OND I ND scaling for Fn×∗ and let R be a
+(column) q-P RE C OND I ND scaling for F∗×n . Let t = 1 − (1 − pq)n. Then
+      h(A) = LAR
+forms a pq-P RE C ONDRXR (and pq-P RE C ONDSXS) scaling and a t-P RE C OND G EN
+scaling for F m×n . Conversely, if h is a p-P RE C ONDRXR (or P RE C OND G EN) scal-
+ing for Fn×n , defined by h(A) = LAR, then R is a p-P RE C OND I ND scaling for F∗×n .
+
+Proof. Let B = LA. Then B has leading r rows independent for r = rank(A) with
+probability at least p. For given k, with 1 ⩽ k ⩽ rank(A), let Bk denote the ma-
+trix consisting of the first k rows of B. Then the leading k columns of Bk R are
+independent with probability at least pq. This implies that the leading k × k minor
+of (full rank) Bk R is nonzero. This minor is also the leading k × k minor of LAR.
+The probability that all these principal minors are simultaneously nonzero is at least
+t = 1 − (1 − pq)n, since each is zero with probability at most 1 − pq.
+    To prove the second claim, consider a given m ⩽ n and A ∈ Fm×n of rank r. We
+have that the firstr columns
+                             of
+                    A
+       h(A) = L         R
+                    0
+are independent. It follows immediately that the first r columns of AR are indepen-
+dent. 
+
+Remark 3.2. Considering for A any n × n matrix with exactly k nonzero columns
+being distinct canonical vectors shows that if R is a q-P RE C OND I ND preconditioner
+for F∗×n , then any k × k determinant of a submatrix formed from the first k columns
+of R is nonzero with probability at least q.
+
+3.3. Reducibility: matrices with nonzero minors
+
+    The property of independence preconditioners given in Remark 3.2 is not suffi-
+cient. The minors in the leading k columns must themselves satisfy independence
+conditions. We show that simply the addition of a diagonal scaling will ensure these
+latter conditions.
+
+Theorem 3.3. Let Q be a matrix such that all minors in the leading k columns of Q
+are nonzero. Let D be a diagonal matrix of indeterminates. Then DQ is a generic
+P RE C OND I ND conditioner for F∗×n .
+
+Proof. Let I and J be sequences of k indices with J = (1, 2, . . . , k). Denote the
+minor in rows I columns J of matrix A by AI,J . Let the matrix A be conditioned as
+B = A = ADQ. Then for each I , the minor BI,J has the expansion
+             
+     BI,J =      AI,K DK,K QK,J .
+               K
+128         L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146
+
+As a polynomial in the indeterminates in D, each summand is a distinct term, since
+the DK,K are distinct monomials. As the QK,J are nonzero if any AI,K is nonzero,
+then BI,J is nonzero and the first k columns of B are independent. 
+
+3.4. Reducibility: avoiding nilpotent blocks
+
+   For A ∈ Fn×n the generic nilpotency problem—P RE C OND N IL—is to produce
+an equivalent matrix A whose minimum polynomial has valuation 1 (the nilpotent
+blocks of the Jordan form have dimension 1). By valuation we mean the degree of
+the lowest term. This problem is closely related to the L IN S OLVE1 problem.
+
+Lemma 3.4. Let A ∈ Fn×n . Then the minimum polynomial of A has valuation 1 if
+and only if rank A2 = rank A.
+
+Proof. Let J = T −1 AT = diag (J1 , . . . , Jλ , N1 , . . . , Nν ) be the Jordan
+normal form of A with λ blocks Jj having nonzero eigenvalues and ν nilpotent
+blocks Nj . They satisfy rank J2j = rank Jj , 1 ⩽ j ⩽ λ, and rank N2j = rank
+Nj (= 0) if and only if Nj = [ 0 ], 1 ⩽ j ⩽ ν. The assertion of the lemma follows
+since rank A2 = rank J 2 . 
+
+   This naturally leads to the fact that preconditioners ensuring independence and
+rank properties give preconditioners for the generic nilpotency problem.
+
+Theorem 3.5. Let L be a (row) p-P RE C OND I ND scaling for Fn×∗ and let R be
+a (column) p-P RE C OND I ND scaling for F∗×n . If, in addition, for A of rank r and
+Q ∈ F(n−r)×r , the columns of
+           
+           I
+      AR r                                                                        (1)
+           Q
+are independent with probability at least q, then LAR and ARL have rank r and their
+minimum polynomials have valuation 1 with probability at least pq.
+
+Proof. For A of rank r and two matrices L and R with appropriate dimensions, if
+rank ARLA = r, then rank AR = r. Thus, the column space of R together with the
+right nullspace of A and the one of AR generate all of Fn and rank ARLAR = r. This
+also implies that the row space of L together with the left nullspace of A generates
+all of Fn and rank (LAR)2 = r. In the same way we deduce from rank ARLAR = r
+that rank (ARL)2 = r. Since the converse statements are true we have
+
+      rank(ARL)2 = r ⇐⇒ rank ARLA = r
+                          ⇐⇒ rank(LAR)2 = r.                                              (2)
+
+Now if L is such that the first r rows of LA are independent, let T be an invertible
+matrix such that
+           L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146    129
+                         
+                  Ir    0
+       LAT =              .
+                  Q     0
+
+Then
+                  
+                  Ir
+       rank AR       = r ⇒ rank ARLA = r.
+                  Q
+
+Thus, for L and R the preconditioners of the theorem, rank ARLA = r with prob-
+ability at least pq and using (2) together with Lemma 3.4 the theorem is proven.
+                                                                              
+
+   We will establish in Section 7 that a particular class of sparse matrices used in [25]
+fulfills the requirements of the theorem. As for Remark 3.2 we have:
+
+Remark 3.6. Taking for A in (2) any n × n matrix with exactly k nonzero col-
+umns being distinct canonical vectors shows that if C = RL is a p-P RE C OND N IL
+preconditioner, then any of its minors is nonzero with probability at least p.
+
+   From independence preconditioners L and R, the additional condition (1) could
+be ensured up to a diagonal scaling RD by analogy with Theorem 3.3.
+
+
+4. Diagonal preconditioners
+
+    Recall that the invariant factors of a matrix A are polynomials f1 , . . . , fs such
+that f1 · · · fs is the characteristic polynomial of A, fi divides fi+1 for 1 ⩽ i < s,
+and fs is the minimal polynomial of A. A matrix A is cyclic up to nilpotent blocks
+if the invariant factors f1 , . . . , fs−1 are monomials in x, that is, if the ratio of the
+characteristic polynomial to the minimal polynomial is a monomial in x.
+
+Lemma 4.1. Let A be a square matrix over a field and let D =
+diag(δ1 , . . . , δn ), where δ1 , . . . , δn are distinct indeterminates over the field. Then
+DA is cyclic up to nilpotent blocks and the minimal polynomial of DA is the product
+of a squarefree polynomial and a power of x.
+
+Proof. It is necessary and sufficient to prove that the characteristic polynomial C(x)
+of DA has no repeated factor other than x. Let C(x) = x n + c1 x n−1 + c2 x n−2 +
+· · · + c0 . Each coefficient ci is a sum of i × i minors of DA and hence is either
+homogeneous of degree i in δ1 , . . . , δn or is zero. Therefore, C(x) is homogeneous
+of degree n in the indeterminates δ1 , . . . , δn and x. Thus, the factors of C(x) are
+homogeneous in these indeterminates, in any factorization of this polynomial. On
+the other hand, each ci is at most linear in each indeterminate δj , since each i × i
+minor of DA is.
+130          L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146
+
+   Suppose now that C(x) has a repeated factor g(x), so that C(x) = f (x)g(x)2
+for some polynomial f (x). No indeterminate δj can occur in g(x) for, otherwise,
+g(x)2 and C(x) would not be linear in δj . Thus, the repeated factor g(x) must be
+homogeneous in δ1 , . . . , δn , x and free of δ1 , . . . , δn , and must be a monomial in x.
+                                                                                            
+Theorem 4.2. Let F be a field, let A be an n × n matrix over F, and let S be a
+finite subset of F. If D = diag(d1 , . . . , dn ), where d1 , . . . , dn are chosen uniformly
+and independently from S, then DA is cyclic up to nilpotent blocks with probability
+at least 1 − n(n − 1)/(2|S|).
+
+Proof. Suppose |F| > n(n − 1)—the result is trivial otherwise. By Lemma 4.1, ev-
+ery invariant factor of DA except the minimal polynomial fˆs is a monomial of x,
+if D = diag(δ1 , . . . , δn ) and δ1 , . . . , δn are distinct indeterminates over F. Let k be
+the degree of fˆs . If γ1 , . . . , γn are distinct indeterminates that are different from
+δ1 , . . . , δn and Y = [γ1 , . . . , γn ]T , then the vectors
+      Y, (DA)Y, . . . , (DA)k−1 Y
+are linearly independent, so there is a k × k submatrix of the matrix with these
+vectors as its columns whose determinant is a nonzero polynomial in δ1 , . . . , δn ,
+γ1 , . . . , γn . This polynomial has total degree at most k ⩽ n in the indeterminates
+γ1 , . . . , γn . Therefore, if these indeterminates are replaced by uniformly and inde-
+pendently chosen elements of S, so that Y is replaced by a vector y ∈ Fn×1 , then
+this determinant becomes a nonzero polynomial in δ1 , . . . , δn with probability at
+least 1 − n/|S| > 0, by the Schwartz–Zippel lemma. Fix any such vector y for which
+the determinant is nonzero; the determinant is now a nonzero polynomial with total
+degree at most k(k − 1)/2 ⩽ n(n − 1)/2 in δ1 , . . . , δn . Thus, if values d1 , . . . , dn
+for δ1 , . . . , δn are chosen uniformly and independently from S, then the determi-
+nant is a nonzero element of F with probability at least 1 − n(n − 1)/|S|. In this
+case, if we set D = diag(d1 , . . . , dn ), then the vectors y, (DA)y, . . . , (DA)k−1 y are
+linearly independent, and the invariant factors of DA are f1 , . . . , fs−1 , fs , where
+f1 , . . . , fs−1 , fˆs are the invariant factors of DA and fs is obtained from fˆs by
+replacing the indeterminates δ1 , . . . , δn with the values d1 , . . . , dn , respectively. 
+
+    It follows that if F is a large field, then diagonal scaling is a sufficient conditioner
+for P RE C OND C YC. Choosing S to be a subset of F\{0}, one can ensure that DA is
+nonsingular if A is, so that the minimal polynomial and characteristic polynomial
+of DA agree if DA is cyclic up to nilpotent blocks.
+    A conditioner for P RE C OND S QU F REE - X is also obtained, unless the characteris-
+tic of F is positive and small.
+
+Theorem 4.3. Let F be a field whose characteristic is either 0 or greater than n, let
+A be an n × n matrix over F, and let S be a finite subset of F. If D = diag(d1 , . . . , dn ),
+where d1 , . . . , dn are chosen uniformly and independently from S, then the charac-
+           L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146    131
+
+teristic polynomial of DA is the product of a squarefree polynomial and a power of x
+with probability at least 1 − (2n2 − n)/|S|.
+
+Proof. Once again, it follows by Lemma 4.1 that if D = diag(δ1 , . . . , δn ), where
+δ1 , . . . , δn are distinct indeterminates over F, then the characteristic polynomial of
+DA is the product of a squarefree polynomial f such that f (0)  = 0 and a power x k
+of x. The coefficients of f are clearly polynomials in δ1 , . . . , δn , since these are also
+coefficients of the characteristic polynomial.
+    Since the degree of f is at most n, f is squarefree, and the characteristic of F
+is either zero or greater than n, the discriminant of f with respect to x is a nonzero
+polynomial in δ1 , . . . , δn . This polynomial has degree at most 2n − 1 in each indeter-
+minate δi . So it follows, once again by the Schwartz–Zippel lemma, that if d1 , . . . , dn
+are chosen uniformly and independently from S, and D = diag(d1 , . . . , dn ), then
+the polynomial in F[x] obtained from f by replacing δ1 , . . . , δn with d1 , . . . , dn ,
+respectively, is squarefree with probability at least 1 − (2n2 − n)/|S|. In this case,
+the characteristic polynomial of DA is clearly the product of a squarefree polynomial
+and a power of x. 
+
+   Suppose once again that A is an n × n matrix over F, and let r be the rank of A.
+Then there exist an (n − r) × n matrix L and an n × (n − r) matrix R, each with
+full rank n − r such that LA = 0 and AR = 0.
+
+Lemma 4.4. Let A, L, and R be as above. If LR is nonsingular, then A has no
+nilpotent blocks (of size greater than 1) in its Jordan normal form.
+
+Proof. Suppose A is a matrix with at least one nilpotent block of size greater
+than 1 in its Jordan normal form. If X is a nonsingular matrix and A = X −1 AX,
+then L = XL and R = X −1 R are clearly matrices with full rank n − r such that
+L A = LAX = 0 and A R = X −1 A = 0. Since L R = LR, we may assume
+without loss of generality that A is block diagonal, with a nilpotent Jordan block of
+size greater than 1 in its lower right corner. In this case, the vector v = [0, . . . , 0, 1]T
+is a vector such that Av = 0 and uT v = 0 for every vector u such that uT A = 0.
+Thus, v is a nonzero vector in the column space of R, and Lv = 0. Therefore, LR is
+singular. 
+
+Theorem 4.5. Let A be a symmetric n × n matrix over a field F and let S be a
+finite subset of F\{0}. If d1 , . . . , dn are chosen uniformly and independently from S
+and D = diag(d1 , . . . , dn ), then the matrices A and DA have the same rank r, and
+the probability that DA has a nilpotent block of size greater than 1 is at most (n −
+r)/|S| ⩽ n/|S|.
+
+Proof. It is sufficient to prove that the matrix D −1 A has no nilpotent blocks of
+size greater than 1 with high probability, since the entries of D −1 are clearly chosen
+132          L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146
+
+uniformly and independently from a finite subset S = {s −1 : s ∈ S} with the same
+size as S.
+    Let L and R be as above, so that L and R are (n − r) × n and n × (n − r) ma-
+trices, respectively, of full rank n − r such that LA = 0 and AR = 0. Since A is
+symmetric we may assume that R = LT . In this case, L = LD and R = R = LT
+are matrices of full rank such that L (D −1 A) = 0 and (D −1 A)R = 0. It is sufficient,
+by the above lemma, to prove that the (n − r) × (n − r) matrix L R = LDLT is
+nonsingular with probability at least (n − r)/|S|.
+    Consider the matrix LDLT , where as usual D = diag(δ1 , . . . , δn ) and δ1 , . . . , δn
+are distinct indeterminates over F. The determinant of this matrix has total degree at
+most n − r in these indeterminates.
+    Since L has full rank, it has a nonsingular (n − r) × (n − r) minor, L . Set D to
+be a diagonal matrix whose ith diagonal entry is one if the ith row of L is included
+in this minor, and whose ith entry is zero otherwise. Then D = (D )2 , LD LT =
+L(D )2 LT = L (L )T , and the determinant of LD LT is the square of that of L ,
+which is clearly nonzero. The determinant of LDLT is therefore a nonzero polyno-
+mial, and the result follows by the Schwartz–Zippel lemma. 
+   A diagonal scaling that preserves symmetry will also be useful. Note that if A is
+symmetric and D is a nonsingular diagonal matrix, then DAD is a symmetric matrix
+with the same invariant factors (and rational Jordan form) as D 2 A. The next result
+can therefore be established from the previous one.
+
+Theorem 4.6. Let A be a symmetric n × n matrix over a field F and let S be a
+finite subset of F\{0}. If d1 , . . . , dn are chosen uniformly and independently from
+S and D = diag(d1 , . . . , dn ), then the matrices A and DAD have the same rank,
+and the probability that DAD has a nilpotent block of size greater than 1 is at most
+2n/|S|. Furthermore, if the squares of elements of S are distinct (that is, if s 2  = t 2
+whenever s, t ∈ S and s  = t), then DAD has a nilpotent block of size greater than 1
+with probability at most n/|S|.
+    A conditioner for P RE C OND S QU F REE can also be obtained unless the character-
+istic of F is small.
+
+Theorem 4.7. Let A be a symmetric n × n matrix over a field F whose characteristic
+is 0 or greater than n and let S be a finite subset of F\{0}. If d1 , . . . , dn are chosen
+uniformly and independently from S and D = diag(d1 , . . . , dn ), then the matrices A
+and DAD have the same rank, the minimal polynomial of DAD is squarefree, and
+the characteristic polynomial is the product of the minimal polynomial and a power
+of x, with probability at least 1 − 4n2 /|S|. This probability increases to 1 − 2n2 /|S|
+if the squares of elements of S are distinct.
+
+Proof. Once again, it should be noted that the matrices DAD and D 2 A have the
+same minimal polynomial.
+          L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146   133
+
+    Consider the first claim. If |S| ⩽ 4n2 , then this is trivial. Otherwise, there is a
+subset S of S with size greater than 2n2 whose squares are distinct, and one can
+apply Theorem 4.3 to establish the existence of a nonsingular diagonal matrix D such
+that the characteristic polynomial of D 2 A (and DAD) is the product of a squarefree
+polynomial and a power of x. The argument used to prove Theorem 4.6 can now be
+applied, with the matrix DAD instead of DA, where D is as above, to conclude that
+if d1 , . . . , dn are chosen uniformly and independently from S, then the characteristic
+polynomial of DAD is not the product of a squarefree polynomial f and a power of x,
+with probability at most (4n2 − 2n)/|S|. On the other hand, Theorem 4.6 implies
+that DAD has a nilpotent block of size greater than 1 with probability at most 2n/|S|.
+Consequently, the characteristic polynomial is the product of a squarefree polynomi-
+al f such that f (0)  = 0, and a power of x, and the minimal polynomial of DAD is
+either f or xf , with probability at 1 − (4n2 )/|S|, as needed.
+    If the squares of elements of S are distinct, then the set S of squares of elements
+of S is another subset of F\{0} of the same size, and, since DAD and D 2 A have the
+same minimal polynomial for any nonsingular diagonal matrix D, the likelihood that
+the minimal polynomial of DAD is squarefree, and that the characteristic polynomial
+is the product of the minimal polynomial and a power of x, is the same when the
+entries of D are chosen uniformly and independently from S as the likelihood that
+these properties hold for DA when the entries of D are chosen uniformly and inde-
+pendently from S . The second claim therefore follows from Theorems 4.3 and 4.5.
+                                                                                       
+
+5. Toeplitz preconditioners
+
+    Random diagonal matrices as preconditioners have a very low cost but may be
+a drawback for structured matrices such as matrices with small displacement rank.
+Indeed, a random diagonal matrix has displacement rank n. Here we will focus on
+Toeplitz preconditioners. Preconditioners based on other types of structured matrices
+could certainly be derived in a similar way or using the reducibility properties given
+in Section 3. It may also be that problems of other structured types can be solved
+by using the Toeplitz preconditioners together with the transformations described in
+[18,19].
+    A linear independence preconditioning for P RE C OND G EN has been proposed by
+Kaltofen and Saunders [14, Theorem 2]. As previously noted, random unit triangu-
+lar Toeplitz matrices are sufficient. For cyclicity preconditioning, the problem P RE -
+C OND C YC has been solved by Kaltofen and Pan [13, Proposition 1]. They have
+shown that a solution based on random triangular Toeplitz matrices will also work.
+In Theorem 5.3 we state a new application of random Toeplitz multipliers. We show
+that they can be used for P RE C OND C YC N IL (see problem R ANK). Our solution is
+close to the one given in [14, Theorem 3]. However, we will prove that the random
+diagonal matrix used there can be replaced by a random Toeplitz one. We first reduce
+the problem to P RE C OND G EN:
+134            L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146
+
+Lemma 5.1. Let A be a square n × n invertible matrix over a field and let
+                                   
+          v1 v2 v3 . . .        vn
+              v1 v2 . . . vn−1 
+                                   
+                         ..     .. 
+    U=             v 1     .    . 
+                                                                                            (3)
+                         .         
+                           ..  v2 
+                                v1
+
+be an upper triangular Toeplitz matrix, where v1 , . . . , vn are distinct indeterminates
+over the field. If the lower left i × i submatrix of A is invertible for all 1 ⩽ i ⩽ n,
+then the characteristic polynomial of AU is squarefree.
+
+Proof. We follow the proofs of Wiedemann [25, lemma in Section V] and of Kal-
+tofen and Pan [13, Proposition 1]. The argument is by induction on n. For n = 1 the
+statement is obvious. The characteristic polynomial det(xI − AU) of AU is a poly-
+nomial in x, v1 , . . . , vn . For v1 = 0 this polynomial is x det(xI − A(n−1) U(n−1) ),
+where A(n−1) denotes the lower left (n − 1) × (n − 1) submatrix of A and U(n−1)
+denotes the upper right (n − 1) × (n − 1) submatrix of U. Since U(n−1) is upper
+triangular Toeplitz, as shown in (3), and since A(n−1) is invertible, by the inductive
+hypothesis det(xI − A(n−1) U(n−1) ) is squarefree. Moreover, this determinant is not
+divisible by x. Thus, det(xI − AU) is squarefree for v1 = 0 and remains squarefree
+for an indeterminate v1 . 
+
+      A similar result holds in the singular case:
+
+Lemma 5.2. Let A be a square n × n matrix of rank r over a field and let U be an
+upper triangular Toeplitz matrix with distinct indeterminate entries as in (3). If the
+lower left i × i submatrix of A is invertible for all 1 ⩽ i ⩽ r, then the characteristic
+polynomial of AU is f (x) · x n−r , where f (0) /= 0 and f is squarefree.
+
+Proof. The characteristic polynomial det(xI − AU) of AU is a polynomial in x,
+v1 , . . . , vn . For v1 = v2 = · · · = vn−r = 0 this polynomial is x n−r det(xI −
+A(r) U(r) ), where A(r) denotes the lower left r × r submatrix of A and U(r)
+denotes the upper right r × r submatrix of U. By Lemma 5.1, since A(r) is invertible
+and since U(r) is as in (3), det(xI − A(r) U(r) ) is a squarefree polynomial g such
+that g(0) =     / 0. The statement of the lemma thus holds with some indeterminates
+set to zero. In addition, A has rank r. Therefore, x n−r must divide the
+characteristic polynomial of AU and the statement must hold for indeterminates
+v1 , v2 , . . . , vn−r . 
+
+  From there, a solution to P RE C OND G EN can be used to ensure the conditions of
+Lemma 5.2 and to establish the solution to P RE C OND C YC N IL.
+          L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146   135
+
+Theorem 5.3. Let A be an n × n matrix of rank r over a field and let S be a finite
+subset of F. Let V and W be two unit lower triangular Toeplitz matrices with entries
+randomly and uniformly selected from the set S. Let U be upper triangular Toeplitz
+with entries randomly and uniformly selected from the set S. Then (V · A · W ) · U
+has rank r and its minimal polynomial is squarefree with probability at least 1 −
+(3n2 + n)/|S|.
+
+Proof. Using an argument of Kaltofen and Saunders [14, Theorem 2] we know
+that V · A · W has a singular lower left i × i matrix, 1 ⩽ i ⩽ r, with probability
+at most r(r + 1)/|S|. On the other hand we may apply Lemma 5.2 to the matrix
+V · A · W . The constant term of f in Lemma 5.2 has total degree of at most r in
+v1 , . . . , vn and the discriminant of f has total degree of at most 2r 2 − r. Therefore,
+by the Schwartz–Zippel lemma (compare with the proof of Theorem 4.3), the poly-
+nomial in F[x] obtained from f by replacing the indeterminates v1 , . . . , vn with the
+corresponding entries of U is not squarefree or has a zero constant term with proba-
+bility at most 2r 2 /|S|. The assertion of the theorem follows since r(r + 1) + 2r 2 =
+3r 2 + r ⩽ 3n2 + n. 
+
+
+
+6. Preconditioners based on Beneš networks
+
+    Preconditioners based on Beneš’ networks work on the problem of localizing lin-
+ear independence. The objective is to precondition an n × n matrix of rank r so that
+the first r rows of the preconditioned matrix become linearly independent. In this
+section, we improve on the earlier work presented in [20,25] in two ways. First, in
+Section 6.1, instead of using Beneš’ permutation networks as in [25] we use but-
+terflies as Parker does in [20]. However, unlike Parker, we generalize our networks
+to arbitrary n and are not limited to powers of 2. Then in Section 6.2, we improve
+on [20] again by using an exchange matrix that saves one multiplication per switch
+over Parker’s.
+
+6.1. Butterfly networks
+
+   Let us consider the n rows of an n × n matrix. We want to make the first r of
+these linearly independent. We can use a switching network to exchange rows until
+the first r are linearly independent. Our goal is to switch any r rows of an arbitrary
+number n rows to the beginning of the network. However, we must first consider the
+case of switching any r rows into any contiguous block for n = 2l .
+   An l-dimensional butterfly network is a recursive network of butterfly switches
+with 2l nodes at each level such that at level m the node i is merged with node
+i + 2m−1 . Fig. 1 illustrates a three-dimensional butterfly with eight nodes at each
+level.
+136           L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146
+
+                          0     1      0      0     1      0      1     1
+
+
+                          1     0      0      0     0      1      1     1
+
+
+                          0     0      1      0     1      1      0     1
+
+
+                          1     1      1      0     0      0      0     1
+                                     Fig. 1. Butterfly network.
+
+
+Lemma 6.1. Let n = 2l . The l-dimensional butterfly network discussed above can
+switch any r indices 1 ⩽ i1 < · · · < ir ⩽ n into any desired contiguous block of in-
+dices; wrap around outside, which for our purposes, shall preserve contiguity. For
+example, in Fig. 1, the ones would be considered contiguous. Furthermore, the net-
+work contains a total of n log2 (n)/2 switches.
+
+Proof. Let us prove this lemma by induction. For n = 1 the proof is trivial because
+no switches are required.
+    Suppose the lemma is true for n/2. Then let us divide the n nodes in half with
+r1 given such that ir1 ⩽ n/2 < ir1 +1 . We now can construct butterfly networks of
+dimension l − 1 for each of these collections of n/2 nodes. By the lemma, each of
+these subnetworks can arrange the indices i1 , . . . , ir1 and ir1 +1 , . . . , ir , respectively,
+to any desired contiguous blocks.
+    Let us consider the contiguous block desired from the network. It is either con-
+tained in the interior of the network in indices 1 ⩽ j, . . . , j + r − 1 ⩽ n or it wraps
+around the outside of the network and can be denoted by indices 1, . . . , j − 1 and
+n − r + j, . . . , n. This second situation can be converted into the first by instead
+thinking of switching the n − r indices not originally chosen into the contiguous
+block j, . . . , j + n − r − 1. Thus, we only have to consider the first situation. This
+can then be further divided into the two cases when the contiguous block j, . . . , j +
+r − 1 is contained within one-half and when the block is in both halves and connect-
+ed in the center.
+    For the first case, let us assume the desired block is completely within the first
+half: j + r − 1 ⩽ n/2. Then we can use the first subnetwork to place i1 , . . . , ir1 so
+they switch into j, . . . , j + r1 − 1, and we can use the second subnetwork to position
+ir1 +1 , . . . , ir to switch into j + r1 , . . . , j + r − 1 as in Fig. 2. A symmetric argument
+holds when the desired contiguous block is contained in the second half: j > n/2.
+    For the case when j ⩽ n/2 and j + r − 1 > n/2, let us assume r1 ⩽ n/2 − j + 1
+and thus we need to switch r2 = n/2 − j − r1 + 1 indices from the second half to
+the first. Then we can use the first subnetwork to place i1 , . . . , ir1 so they switch into
+j, . . . , j + r1 − 1, and we can use the second subnetwork to position ir1 +1 , . . . , ir in
+a contiguous block which wraps around the outside of the subnetwork so they switch
+           L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146       137
+
+                                         n                                n
+                                         2                                2
+                             r1                                                r - r1
+
+
+
+                             r1              r - r1
+                                    Fig. 2. Butterfly network case 1.
+
+
+into j + r1 , . . . , j + r − 1 as in Fig. 3. Once again, a symmetric argument holds for
+r1 ⩾ n/2 − j + 1.
+   The switch count is that for an l-dimensional butterfly. 
+
+   This means we can switch any r rows of an n × n matrix into any contiguous
+block for n = 2l . Now we are ready to consider our original goal of switching any
+r rows into the first block of r rows for any n. When n is not a power of 2, let us
+decompose n as
+
+           
+           k
+      n=          2li , where l1 < l2 < · · · < lp ;                    let ni = 2li .       (4)
+            i=1
+
+First we lay out butterfly networks for each of the ni blocks. Then we build a gener-
+alized butterfly network by connecting these butterfly networks by butterfly switches
+recursively such that k−1i=1 ni is merged with the far right nodes of nk as in Fig. 4.
+
+Theorem 6.2. The generalized butterfly network discussed above can switch any r
+indices 1 ⩽ i1 < · · · < ir ⩽ n into the contiguous block 1, 2, . . . , r. Furthermore, it
+has a depth of log2 (n) and a total of not more than nlog2 (n)/2 butterfly switches.
+
+                                         n                                 n
+                                         2                                 2
+                                    r1                     r - r1- r2                   r2
+
+
+
+                                    r1                r2   r - r1- r2
+                                   Fig. 3. Butterfly network case 2.
+
+
+                                         np - 1
+                                                                    np
+
+
+
+
+                                  Fig. 4. Generalized butterfly network.
+138           L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146
+
+Proof. If n = 2l , the proof follows directly from Lemma 6.1 and equality is obtained
+in the number of switches. Otherwise, from (4) we know that nk > k−1                i=1 ni . We
+prove the first part of this theorem by induction. If k = 1, the proof is directly from
+Lemma 6.1. Otherwise, suppose the theorem is true for k−1           i=1 ni , and let ir1 be the
+last index in the left half of the network, that is, ir1 ⩽ r−1 i=1 ni < ir1 +1 . Then we can
+switch the indices i1 , . . . , ir1 into the contiguous block 1, . . . , r1 using a generalized
+butterfly network.
+     If r ⩽ k−1i=1 ni , we can use Lemma 6.1 to position the indices ir1 +1 , . . . , ir so
+they switch into positions r1 + 1, . . . , r as in Fig. 5. Otherwise, let r2 = ( k−1  i=1 ni ) −
+r1 , and then we can use the same lemma to position the indices as in Fig. 6.
+     The total number of butterfly switches is the number of switches for each of the
+                                    p−1
+subnetworks plus another i=1 ni switches to combine the two. Another way of
+counting the switches is the sum of the number of switches for each of the ni blocks
+plus the number of switches to connect these blocks:
+                                         
+            p
+                 ni      
+                         p−1       i
+         s=         li +              nj .                                                 (5)
+                 2
+            i=1              i=1        j =1
+                                                                                           i
+From Eq. (4) we know that li ⩽ lp − (p − i) for i < p and also                             j =1 nj < ni+1 .
+Thus, Eq. (5) gives us
+           
+           p
+             ni              
+                             p
+                               ni                n     n n
+      s⩽              lp +                  <      lp + = log2 (n).                                  (6)
+                  2                     2        2     2 2
+            i=1              i=2
+Furthermore, the depth of the network is lp + 1 = log2 (n).                          
+
+
+
+                             n 1 + . . .+ n p - 1                   np
+
+                             r1                                          r - r1
+
+
+
+                             r1         r - r1
+                                  Fig. 5. Generalized butterfly network case 1.
+
+
+
+                             n 1 + . . .+ n p - 1                   np
+
+                                   r1                  r - r1- r2                 r2
+
+
+
+                                   r1             r2   r - r1- r2
+                                  Fig. 6. Generalized butterfly network case 2.
+           L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146     139
+
+6.2. Generic exchange matrices
+
+   Wiedemann [25] uses these switching networks (Beneš’ permutation networks in
+his case; butterflies were shown to suffice in [20]) for the construction of left (and
+right) preconditioners in the following manner. Each switch in the network imple-
+ments a directed acyclic arithmetic circuit:
+                                                
+                            a     b     x   ax + by
+                                          =
+                             c    d     y    cx + dy
+
+
+Here a, b, c, d will be chosen appropriately later. The circuit performs the given
+2 × 2 matrix operation. Here x and y stand for rows (columns) that need to pass
+through the switch. The 2 × 2 matrix is embedded in an n × n matrix in the fashion
+of an elementary matrix that can exchange row i and row j :
+                                                             
+                           ..
+                          1  .                               
+                                                             
+                                 a                 b         
+                                                             
+                                     1                       
+                                                             
+        [i,j ]
+      E (a, b, c, d) =                  . ..                .
+                                                              
+                                                             
+                                               1             
+                                                             
+                                 c                 d         
+                                                             
+                                                        1.
+                                                           ..
+Similar to Wiedemann, one observes that by setting a = d = 1 and b = c = 0 the
+circuit passes the rows straight through, while by setting a = d = 0 and b = c = 1
+the circuit exchanges the rows. We consider the preconditioner
+             s
+       L=        Ek (αk , βk , γk , δk ),
+             k=1
+where Ek implements the kth switch in the generalized butterfly network of s switch-
+es, and where αk , βk , γk , δk are symbols. Let A be a fixed n × n matrix of rank r.
+Then the first r rows of LA are linearly independent over F(α1 , . . . , αs , β1 , . . . , βs ,
+γ1 , . . . , γs , δ1 , . . . , δs ) because one may evaluate the symbols in such a manner that
+the generalized butterfly network switches r linearly independent rows to the top. In
+[16] the exchange matrix is reduced to a single variable, namely,
+                                 
+            1−a              a
+                                    .
+              a          1−a
+Wiedemann actually gives a unimodular matrix, namely,
+                       
+      1 a 1 0 1 c
+                              ,
+      0 1 b 1 0 1
+where the row exchange is accomplished by a = 1, b = −1, and c = 1.
+140          L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146
+
+   The preconditioner matrix L, where the symbols have been evaluated at fixed
+random values, is used as a black box matrix and the expense for L times a vector
+needs to be optimized. We will show that for symbolic matrices of the form
+                                                                
+                  1   α                           x         x + ay
+       Ê(α) =                 with action Ê(a)     =                               (7)
+                  1 1+α                           y      y + (x + ay)
+                     
+the first r rows of ( sk=1 Êk (αk ))A are linearly independent over F(α1 , . . . , αs ).
+By (7), each switch requires two additions and one multiplication. For contrast,
+Parker [20] uses an exchange matrix of the form
+               
+         a    b
+         a −b
+which requires two additions and two multiplications, one more multiplication than
+Ê(a).
+     The proof is by induction on the levels of the generalized butterfly network,
+where we follow the routing of r linearly independent rows. On each level, these
+rows have been placed in certain row positions in the matrix. In Fig. 7 we depict
+the route of row xi through the network. We will set the switches by evaluating
+the symbols αk to certain values using the mixing DAG (7). The goal is to show
+that along the route of the generalized butterfly network that brings the r linearly
+independent rows to the front, the now arithmetically mixed rows, which originally
+correspond to the routed r linearly independent rows, remain linearly independent.
+                                                                            [j ]
+We simply prove this from one level to the next, and denote by xi the row in the
+position of the original row i at level j . The induction hypothesis is that the r rows
+  [j ]         [j ]
+xi1 , . . . , xir are linearly independent over F(α1 , . . . , αs ). In the network, they are
+placed at certain designated positions (at level j ), which we have marked by squares
+in Fig. 7.
+
+
+                                                                   x i[0]              Level 0
+                                             [ ]
+                                            xi 1
+
+
+
+                                                        x i[ j ]
+                                  Level j                                   Case 5   Case 6
+
+
+
+
+              Case 1    Case 2              Case 3 Case 4 x i[ j+1]                  Level j+1
+
+
+                       x i[ l ]                                                      Last level
+
+                                            Fig. 7. Illustration of proof.
+           L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146   141
+
+   Each position at level j + 1 that holds a designated row has a mixture of the rows
+above. There are six cases, depicted from left to right in Fig. 7. Case 1 is where the
+row is routed straight through without a switch. This may be done at the bottom of
+the network if n is not a power of 2. Nothing needs to be done, as the row remains
+untouched. Case 2 is where the switch mixes two designated rows. This case is sur-
+prisingly easy: we set the corresponding symbol αk = 0. By (7) the new rows are
+x and x + y. They span the same two-dimensional subspace and the overall linear
+independence of the r designated rows remains unaffected. In the remaining four
+cases, a linearly independent row is mixed with a dependent one. In Cases 3 and 4,
+the designated row is on the left side of the switch, and in Cases 5 and 6 on the
+right side. The former is easier: in Case 3 we again set αk = 0 and in Case 4 we
+set αk = −1 with the effect that the designated row gets routed through the switch
+unchanged. In both Cases 5 and 6 we retain αk as a symbol. We now have fresh
+symbolic weights on these rows on the next level, where they appear in the linear
+combination αk y + x + y (Case 5) or αk y + x (Case 6).
+   The argument is concluded as follows. Select r columns in the linearly inde-
+                 [j ]       [j ]
+pendent rows xi1 , . . . , xir on level j such that the r × r submatrix formed by the
+rows and these columns is nonsingular. Now  consider the same column selection on
+level j + 1. The coefficient of the term kt αkt in the corresponding minor, where
+αkt are the retained new symbols of the Cases 5 and 6, is the minor (of the submatrix)
+on level j , hence nonzero. Thus, the new designated rows on level j + 1 are linearly
+independent over F(α1 , . . . , αs ).
+
+Theorem 6.3. Let F be a field, let A be an n × n matrix over F with r linearly
+independent rows, let s be the number of butterfly switches in the generalized but-
+terfly network from Theorem 6.2, and let S be a finite subset of F. If a1 , . . . , as are
+randomly chosen uniformly and independently from S, then the first r rows of
+       s            
+       
+              Êk (ak ) A
+        k=1
+
+are linearly independent with probability not less than
+
+           rlog2 (n)     nlog2 (n)
+      1−               ⩾1−             .
+               |S|             |S|
+
+Proof. The matrix A is over the field F, so each row of A is a row vector of polyno-
+mials in α1 , . . . , αs of degree 0. Each switch in the generalized butterfly network in-
+creases the degree of the polynomials by 1, and the depth of the network is log2 (n).
+                     
+So the rows of ( sk=1 Êk (αk ))A are vectors of polynomials in α1 , . . . , αs of degree
+log2 (n). Thus, the determinant of an r × r submatrix of this preconditioned matrix
+is a polynomial of degree rlog2 (n).
+142          L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146
+
+   Given that A has r linearly independent rows, we can designate these rows to be
+                           butterfly network of Theorem 6.2 to the first r rows of the
+switched by the generalized
+preconditioned matrix ( sk=1 Êk (αk ))A. The argument above shows at every level in
+the network the r designated rows remain linearly independent over F(α1 , . . . , αs ).
+In particular, the designated rows in the last level, namely, the first r rows of the
+preconditioned matrix, are linearly independent overF(α1 , . . . , αs ). This means that
+there is an r × r submatrix of the first r rows of ( sk=1 Êk (αk ))A whose determi-
+nant is not identically zero. Because this is a polynomial of degree rlog2 (n), the
+Schwartz–Zippel lemma tells us that (a1 , . . . , as ) is a root of it with probability no
+greater than rlog2 (n)/|S|. With probability not less than 1 − rlog2 (n)/|S|, it is
+not aroot of the polynomial, and thus we have an r × r submatrix of the first r rows
+of ( sk=1 Êk (ak ))A whose determinant is not zero. Therefore, the first r rows of
+ 
+( sk=1 Êk (ak ))A are linearly independent with probability not less than
+            rlog2 (n)         nlog2 (n)
+       1−                ⩾1−                .     
+                |S|                 |S|
+
+
+
+7. Sparse matrix preconditioners
+
+    For matrices over fields F with a small number of elements compared to the matrix
+dimension n or to n2 , the preconditioners of Sections 4 and 6 may not be usable
+directly. Their proofs—based on the Schwartz–Zippel lemma—require a field exten-
+sion with logarithmic degree over F. An extra O(log n) factor may be involved in
+the costs of the resulting algorithms. We show here that a special probability distri-
+bution on sparse matrices with entries in F, proposed in [25], also provides precon-
+ditioners for p-P RE C OND N IL. This avoids the need of field extensions, for instance
+to solve L IN S OLVE 1 using the algorithm in [24], and may be useful for practical
+implementations.
+    In the following, for given parameters wi,j ∈ [0, 1], 1 ⩽ i, j ⩽ n, the precondi-
+tioner distributions are defined by a random n × n matrix whose entry (i, j ) is a
+uniform randomly chosen nonzero element of F (or of a subset of F) with probability
+wi,j and zero otherwise. For q = |F| and wi,j = w = 1 − 1/q it is well known that
+such matrices are invertible with probability
+                                                          √
+       τq (n) = (1 − 1/q)(1 − 1/q 2 ) · · · (1 − 1/q n ) ⩾ 2/5 > 1/4                (8)
+             √
+(the bound 2/5 is proven in [4]). For wi,j = w, the expected rank considered as
+a function of w decreases monotonically in the range 1 − 1/q ⩾ w ⩾ 0, its value is
+n − O(1) for wi,j = log(n)/n [1]. To get P RE C OND I ND scalings with wi,j a func-
+tion wj of j only, Remark 3.2 thus indicates that wj has to be greater than (log j )/j .
+
+Definition 7.1 [25]. For any given subset S of F with σ ⩾ 2 elements and containing
+zero and for κ ⩾ 1, the distribution defined by
+             L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146   143
+
+      wi,j = wj = min {1 − 1/σ, κ(log n)/j }
+is called the Wiedemann distribution.
+
+   Wiedemann has shown that his distribution gives P RE C OND I ND p-precondition-
+ers for S = F [25, Theorem 1]. Actually it also satisfies the additional assumption (1)
+of Theorem 3.5.
+
+Proposition 7.2. Let A ∈ F∗×n be of rank r and let Q be in F(n−r)×r . Let W be
+chosen from the Wiedemann distribution. If W (r) and W , respectively, denote the
+first r and the last n − r columns of W, then W satisfies (1)
+      rank A(W (r) + W Q) = rank A
+with probability at least
+                         
+                         r
+      (1 − 1/nκ )r ·            (1 − 1/σ j ).                                              (9)
+                         j =1
+
+Proof. We follow the arguments in [25, pp. 56–57] and detail only what is needed to
+show the additional property (1). The property is satisfied if and only if W (r) + W Q
+together with the right nullspace of A generates all of Fn . Since the entries of W
+are independent it is sufficient to prove that the columns of W (r) + C for any n × r
+matrix C together with any given subspace Vn−r of dimension n − r generate all
+of Fn with the announced probability.
+   Let Vk be a subspace of dimension k. For a given vector c let a[i] be the number
+of vectors u having i nonzero entries in S and such that u + c ∈ Vk . With no loss
+of generality, the set of restrictions of vectors in Vk to the k first coordinates is of
+dimension k. Two different vectors u1 + c and u2 + c in Vk have different restric-
+tions to these coordinates and the same is true for the restrictions of u1 and u2 . Each
+restriction is a vector of length k with i nonzero coordinates chosen between σ − 1
+values thus
+       j          j  
+                         k
+           a[i] ⩽            (σ − 1)i .
+                         i
+      i=0            i=0
+This coincides with the bound used in [25] for the number of vectors u, with at most
+j nonzero entries, which belong to a given Vk . For any given C, the probability that
+the j th column Wj + Cj of W (r) + C lies in a given subspace of dimension n − j
+is thus less than (1 − wj )j [25, p. 56]. The probability that it does not belong to the
+subspace generated by Vn−r and the columns Wl + Cl , r ⩾ l ⩾ j + 1 is thus greater
+than 1 − (1 − wj )j . By doing the product, the probability that W satisfies (1) is thus
+at least
+        r
+           (1 − (1 − wj )j ).
+      j =1
+144            L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146
+
+Let J = κ(log n)(σ − 1)/σ . For 1 ⩽ j ⩽ J , (1 − wj )j = 1/σ j . Otherwise, (1 −
+wj )j = (1 − κ(log n)/j )j ⩽ exp(−κ log n) ⩽ 1/nκ . The probability that W is good
+is thus at least
+                                    
+                                  min{J,r}
+       (1 − 1/nκ )r−min{J,r} ·               (1 − 1/σ j ),
+                                     j =1
+
+this gives the announced bound.             
+
+   Let us notice that for κ ⩾ 2 and large n, bound (9) will be very close to bound (8)
+with q = σ . The expected number of nonzero entries in W is less than n j wj
+which is less than κn(log n)(1 + log n).
+
+Corollary 7.3. For any A ∈ Fn×n , matrices R and L chosen from the Wiedemann
+distribution and the transposed one give scaling preconditioners for the generic nil-
+potency problem (P RE C OND N IL) (A = LAR or A = ARL as in Section 3.4)—each
+with at most 2n(log n)(1 + log n) + hn nonzero entries—with probability at least
+(1 − 2/n)τσ2 (n) − 1/(2h2 ). The probability is thus bounded from below by a con-
+stant even for {0, 1}-preconditioners.
+Proof. Theorem 3.5 and Proposition 7.2 with κ = 2 give the first term of the proba-
+bility bound. Following [25, Theorem 1], the variance of the total number of nonzero
+entries in both preconditioners is 2n2 /4. Therefore, by Chebyshev’s inequality, the
+probability that the expected number of nonzero entries is exceeded by hn is less
+than 2n2 /(4h2 n2 ) = 1/(2h2 ). 
+
+   If the rank r of the matrix A to precondition is known, then preconditioners
+over any field with an expected number of nonzero entries O(n log n) instead of
+O(n(log n)2 ) may be constructed using the distribution in [25, Theorem 1]. It may
+be possible to show that it also satisfies (1).
+
+
+Acknowledgements
+
+   This material is based on the work supported in part by the National Science Foun-
+dation under grant Nos. CCR-9712267, CCR-9988177, and DMS-9977392 (Erich
+Kaltofen and William J. Turner), INT-9726763 (Erich Kaltofen and David Saun-
+ders), and CCR-9712362 (Li Chen and David Saunders), by the Natural Sciences
+and Engineering Research Council of Canada (Wayne Eberly), and by the Centre
+National de la Recherche Scientifique, Action Incitative No. 5929 (Gilles Villard).
+
+
+References
+
+Note: many of the authors’ publications are accessible through links in their Internet homepages listed
+     under the title.
+            L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146                  145
+
+ [1] J. Blömer, R. Karp, E. Welzl, The rank of sparse random matrices over finite fields, Random Struct.
+     Algorithms 10 (1997) 407–419.
+ [2] D. Coppersmith, Solving homogeneous linear equations over GF(2) via block Wiedemann algo-
+     rithm, Math. Comp. 62 (205) (1994) 333–350.
+ [3] R.A. DeMillo, R.J. Lipton, A probabilistic remark on algebraic program testing, Inform. Process.
+     Lett. 7 (4) (1978) 193–195.
+ [4] W. Eberly, Processor-efficient parallel matrix inversion over abstract fields: two extensions, in: M.
+     Hitz, E. Kaltofen (Eds.), Proc. Second International Symposium on Parallel Symbolic Computation
+     PASCO ’97, New York, ACM Press, New York, 1997, pp. 38–45.
+ [5] W. Eberly, private communication.
+ [6] W. Eberly, E. Kaltofen, On randomized Lanczos algorithms, in: W Küchlin (Ed.), ISSAC 97 Proc.
+     1997, International Symposium on Symbolic and Algebraic Computation, New York, ACM Press,
+     New York, 1997, pp. 176–183.
+ [7] M. Giesbrecht, Fast computation of the Smith normal form of a sparse integer matrix, in: Algorithms
+     in Number Theory Symposium, Lecture Notes in Computer Science, vol. 1122, 1996, pp. 173–186.
+ [8] M. Giesbrecht, Efficient parallel solution of sparse systems of linear diophantine equations, in:
+     Second International Symposium on Parallel Symbolic Computation (PASCO’97), Maui, HI, USA,
+     July 1997, pp. 1–10.
+ [9] M. Giesbrecht, A. Lobo, B.D. Saunders, Certifying inconsistency of sparse linear systems, in: O.
+     Gloor (Ed.), ISSAC 98 Proc. 1998, International Symposium on Symbolic and Algebraic Computa-
+     tion, New York, ACM Press, New York, 1998, pp. 113–119.
+[10] E. Kaltofen, Analysis of Coppersmith’s block Wiedemann algorithm for the parallel solution of
+     sparse linear systems, Math. Comp. 64 (210) (1995) 777–806.
+[11] E. Kaltofen, Challenges of symbolic computation my favorite open problems, J. Symbolic Comput.
+     29 (6) (2000) 891–919 (with an additional open problem by R.M. Corless and D.J. Jeffrey).
+[12] E. Kaltofen, A. Lobo, On rank properties of Toeplitz matrices over finite fields, in: Y.N. Lakshman
+     (Ed.), ISSAC 96 Proc. 1996, International Symposium on Symbolic and Algebraic Computation,
+     New York, ACM Press, New York, 1996, pp. 241–249.
+[13] E. Kaltofen, V. Pan, Processor-efficient parallel solution of linear systems II: the positive character-
+     istic and singular cases, in: Proc. 33rd Annual Symposium on Foundations of Computer Science,
+     Los Alamitos, CA, IEEE Computer Society Press, Silver Spring, MD, 1992, pp. 714–723.
+[14] E. Kaltofen, B.D. Saunders, On Wiedemann’s method of solving sparse linear systems, in: H.F.
+     Mattson, T. Mora, T.R.N. Rao (Eds.), Proc. AAECC-9, Heidelberg, Germany, 1991, Lecture Notes
+     in Computer Science, vol. 539, Springer, Berlin, pp. 29–38.
+[15] E. Kaltofen, B. Trager, Computing with polynomials given by black boxes for their evaluations:
+     greatest common divisors factorization separation of numerators and denominators, J. Symbolic
+     Comput. 9 (3) (1990) 301–320.
+[16] A. Lobo, Matrix-free linear system solving and applications to symbolic computation, PhD. Thesis,
+     Rensselaer Polytechnic Institute, Troy, New York, December, 1995.
+[17] T. Mulders, A. Strorjohann, Diophantine linear system solving, in: International Symposium on
+     Symbolic and Algebraic Computation, Vancover, BC, Candada, July 1999, pp. 181–188.
+[18] V. Olshevsky, Pivoting on structured matrices with applications, Linear Algebra Appl. (to appear).
+[19] V. Pan, On computations with dense structured matrices, Math. Comp. 55 (1990) 179–190.
+[20] D.S. Parker, Random butterfly transformations with applications in computational linear alge-
+     bra, Technical Report CSD-950023, Computer Science Department, UCLA, 1995, Available from
+     http://www.cs.ucla.edu/stott/ge.
+[21] B.D. Saunders, A. Storjohann, G. Villard, Rank certificates for sparse matrices, Tech. Report nr.
+     2001-30, Lab. LIP, ENS Lyon, 2001, ftp://ftp.ens-lyon.fr/pub/LIP/Rapports/RR/RR2001/RR2001-
+     30.ps.Z. Submitted for publication.
+[22] J. Schwartz, Fast probabilistic algorithms for verification of polynomical identities, J. ACM 27
+     (1980) 701–717.
+146           L. Chen et al. / Linear Algebra and its Applications 343–344 (2002) 119–146
+
+[23] G. Villard, Further analysis of Coppersmith’s block Wiedemann algorithm for the solution of sparse
+     linear systems, in: W. Küchlin (Ed.), ISSAC 97 Proc. 1997, International Symposium on Symbolic
+     and Algebraic Computation, New York, 1997, pp. 32–39.
+[24] G. Villard, Block solution of sparse linear systems over GF(q): the singular case, SIGSAM Bull. 32
+     (4) (1998) 10–12.
+[25] D. Wiedemann, Solving sparse linear equations over finite fields, IEEE Trans. Inform. Theory IT-32
+     (1986) 54–62.
+[26] R. Zippel, Probabilistic algorithms for sparse polynomials, in: Proc. EUROSAM ’79, Heidelberg,
+     Germany, Lecture Notes in Computer Science, vol. 72, Springer, Berlin, 1979, pp. 216–226.
+

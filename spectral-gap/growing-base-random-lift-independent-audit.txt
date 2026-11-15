@@ -1,0 +1,189 @@
+Independent actual-source audit of growing-base random lift theorem
+===================================================================
+Reviewer: spectral_audit worker. Date: November 15, 2026.
+Decision: PASS at the precise deterministic-base, bounded-degree scope.
+This is informal mathematical reconstruction, not formal verification or
+historical-priority certification. No source/session files were modified.
+
+Reviewed complete new proof files:
+ spectral-gap/independent-random-session/prior/generator-free-tail-proof.md
+ SHA256 4af2c98dfc597f04fde122f88f16b4cfe1192ae2bdf3adfb6bb4c4cc221b7908
+ spectral-gap/independent-random-session/sharp-cubic-threshold.tex
+ SHA256 679b4fb6906e8f18e0e4382a2ace304d3c267dbc2da925c0ea1418b1ff2d6cf6
+
+Freshly checked primary-source passages in
+ prior/CGVTvH-I-v3-source/strongcv.tex,
+ SHA256 a8aae7fc21d6abe98dc177849a9fcff3768bce74e25a84debb5a6e78833dc440:
+ rational word formula and denominator (roughly lines 1860--1930),
+ polynomial master inequality proof (1990--2190), smooth extension
+ (2190--2280), first-order support setup and exact corollary
+ (2600--2720 and 2920--2965), and cutoff construction (1720--1830).
+These were targeted reads of the necessary source chain, not a claim
+that this reviewer read the entire paper during this audit.
+
+1. Universal denominator and its numerator degree
+--------------------------------------------------
+For each connected pattern, let e be total edges, v vertices, and c the
+number of used colors. Before clearing denominators, the numerator degree
+is (e-v+1)+(v-1)=e. The denominator degree is
+sum_(used colors)(e_color-1)=e-c. Its (1-jx) multiplicity is at most
+floor(q/(j+1)), since total edges are <=q. Hence it divides the universal
+g_q independent of the generator count, and the cleared numerator has
+degree at most G_q+e-(e-c)=G_q+c<=G_q+q.
+The subtraction of the invariant vector is -x*g_q. It has degree G_q+1,
+including q=1 where g_q=1. The constant word contributes 1-x exactly.
+The harmonic inequality G_q<=q log q is valid for all q>=1.
+Thus the degree B_q=q(1+log q) is correct independently of r and D.
+No coefficientwise bound or count of patterns is needed after this step.
+
+2. Reciprocal mesh, Markov constants, and all-N extension
+----------------------------------------------------------
+Set B=B_q>=1, p=ceil(B)<=2B, M=ceil(32B^2). Then M>=8p^2 and M>=q.
+The reciprocal mesh {1/L:L>=M}, together with its limit 0, has maximum
+gap <=M^-2. On [0,1/M], all jx<=1/2 and
+-log g_q(x)<=2x sum_j j*b_j<=2qB/M<=1.
+Consequently e^-1<=g_q<=1. The normalized expected trace at every mesh
+point is bounded by H, despite having actual dimension D(L-1), because
+the normalization is DL and all eigenvalues lie in [-K,K]. Thus |f_h|
+is <=H at the mesh and at zero by continuity.
+
+The interval-scaled Markov derivative bound is
+||f_h'||<=2p^2 M ||f_h||. Comparing a maximum point with a nearest mesh
+point yields ||f_h||<=H+(2p^2/M)||f_h||<=H+||f_h||/4, hence certainly
+<=2H. Repeating Markov gives first/second numerator derivative bounds
+O(B^4 H), O(B^8 H). These inequalities also hold for complex polynomials:
+apply the real inequality after rotating the derivative value's phase.
+
+The logarithmic denominator derivatives are bounded by 2qB and 4q^2B;
+with g_q>=e^-1, product differentiation gives the claimed rational
+first/second derivative bounds. All constants are numerical and have no
+hidden dependence on the generator count, coefficient size, or dimension.
+
+For N>=M, ordinary Taylor's theorem gives O(B^8 H/N^2). For N<M the
+actual normalized trace remains bounded by H, nu_0 by H, and nu_1 by
+O(B^4 H). Multiplying the trivial error bound by N^2 gives
+2M^2 H+O(B^4 M H)=O(B^8 H), because M<=33B^2 and B>=1.
+This patch does not evaluate a rational formula at N<q. It is valid even
+for N=1 (the new space is then zero dimensional).
+
+3. Smooth extension, changing r,D, and exact support
+----------------------------------------------------
+At Chebyshev index j the coefficient error is
+O(j^8(1+log j)^8/N^2). Cauchy--Schwarz with
+sum_(j>=1)(1+log j)^16/j^2<infinity bounds its sum by a universal
+multiple of the L2 norm of nine angular derivatives. Parseval supplies
+the j^18 weighted coefficient square sum. Smooth angular functions have
+superpolynomial coefficient decay; the corresponding Chebyshev sums
+converge with every finite derivative on [-K,K], since derivatives of
+T_j have only polynomial growth in j. They therefore pass through the
+published compactly supported distributions.
+
+The constant term has EXACT zero second-order remainder:
+nu_0(1)=1, nu_1(1)=-1, and normalized trace of identity=1-1/N.
+The published local smooth-extension paragraph writes nu_i(1)=0 for i>=1,
+which is incompatible with this normalization; the new derivation correctly
+handles the constant separately and does not rely on that sentence.
+
+The coefficients nu_0 and nu_1 coincide with the published functionals:
+their rational functions agree at infinitely many reciprocal integers,
+so every Taylor coefficient is the same. Corollary saf supp gives the
+EXACT support inclusion for nu_1, while nu_0 is the free spectral measure.
+The support proof has dimension-dependent intermediate constants, but
+no estimate using those constants is imported. For every fixed finite
+coefficient system, the exact inclusion suffices to annihilate the cutoff.
+When r,D and coefficients change with the lift degree, apply the argument
+separately to each finite system. Its hypothetical reciprocal interpolation
+uses that same coefficient system at every mesh size; it does not require
+the family itself to be constant with lift degree. Thus there is no
+uniformity gap from varying coefficient dimension or generator number.
+
+4. Cutoff and graph consequence
+--------------------------------
+A fixed C-infinity transition of width epsilon/2 on both sides of the
+free spectral interval has angular ninth-derivative L2 norm
+O((K/epsilon)^9), including lower chain-rule terms since epsilon<K.
+It vanishes on a neighborhood of [-rho,rho], so both support distributions
+annihilate it. Multiplying the normalized O(N^-2) error by DN gives
+expected unnormalized cutoff trace O(D/N*(K/epsilon)^9). Its trace is
+nonnegative and at least one if any eigenvalue reaches the exterior
+threshold, proving the probability estimate by Markov's inequality.
+Boundary thresholds at K follow from increasing events as epsilon tends
+upward from below; thresholds strictly above K are impossible.
+
+For a loopless base multigraph, one generator per undirected edge gives
+exactly adjacency on the fibrewise new space. The full unitary norm is
+bounded by the scalar base adjacency norm using block-vector norms; setting
+all labels to identities gives equality. The free-labelled graph is a
+forest: any reduced closed walk would produce a nonempty freely reduced
+word in distinct edge letters. Every component covers the connected base,
+so it is its universal covering tree. Parallel base edges do not alter
+this argument because they have distinct generators. Thus the free norm
+is exactly the universal-cover norm, and K<=Delta. The displayed graph
+probability bound follows, including cases whose threshold is already >K.
+For fixed bounded Delta and D_N=o(N), choosing vanishing epsilon slowly
+enough gives the stated upper spectral convergence in probability.
+
+5. Diamond probability and tangle constants
+-------------------------------------------
+The necklace base G_m is simple, connected and cubic for m>=3, on 4m
+vertices. Gauge-fixing three internal spanning-tree permutations of each
+diamond leaves two independent uniform chord permutations. Its one-point-
+per-fibre diamond copies are common fixed points, with factorial moments
+E(X)_k=1/(n)_k. Exact inclusion-exclusion gives the displayed p_n;
+the first two Bonferroni terms give 1/n-1/[2n(n-1)]<=p_n<=1/n.
+The internal edge sets are disjoint across blocks, so their events are
+independent regardless of connector permutations. At least one diamond
+therefore has exact probability 1-(1-p_n)^m.
+
+The cubic alpha^3-alpha-2 has a unique root alpha>1, lying between sqrt(2)
+and 2. Its t=1/alpha gives q=2t^2<1. Substitution verifies all three
+core/branch eigenfunction equations, including Lb=2+tb. There are 2^k
+vertices at branch level k>=1. Thus the truncation contains
+4+sum_(k=1)^R 2^k=2^(R+1)+2 vertices and squared norm M_R as written.
+Its lost boundary energy is exactly
+2^(R+1)*b^2*t^(2R+1)=2b^2*t*q^R (also valid at R=0).
+This proves its Rayleigh quotient L_R exactly; no factor two is missing.
+The positive square-summable eigenfunction and the weighted quadratic-form
+inequality bound both ends of adjacency spectrum by L (apply the positive
+bound to absolute values if needed), so the infinite tangle norm is L.
+
+6. Covering pushforward and projected new-space witness
+-------------------------------------------------------
+The core embedding extends recursively to a local bijective covering of
+its finite cubic component by the infinite cubic core completion. A finite
+truncation Perron vector, extended by zero, satisfies A h>=mu_R h
+pointwise, with mu_R>=L_R. This pointwise statement is valid because it
+uses the Perron vector of the truncation, not the original cut-off trial
+vector. The covering pushforward is a finite sum; adjacency commutes with
+it by local bijectivity, including when branches collide in the image.
+Hence g>=0 obeys A_H g>=mu_R g and has support at most S_R.
+
+Projection onto old fibre constants has squared norm
+n^-1 sum_v |sum_i g(v,i)|^2 <=(S_R/n)||g||^2.
+With delta<=S_R/n<=1/2, the new projection is nonzero. Old and new spaces
+reduce adjacency; its old-space norm is at most three. The new Rayleigh
+quotient is therefore at least (L_R-3delta)/(1-delta).
+Since 0<L_R<=3, this is >=L_R-6S_R/n. This proves the deterministic
+spectral implication for every embedded diamond, without an assumption
+that its outward finite neighborhood is a tree in the random lift.
+That detail is essential and correctly handled by pushforward.
+
+7. Sharp worst-case scope and limits
+-------------------------------------
+For m_n/n->c finite, p_n~1/n gives diamond-event probability ->1-exp(-c).
+For m_n/n->infinity it tends to one. Fixing a sufficiently large but
+finite truncation radius and then sending n->infinity gives the claimed
+new-eigenvalue lower bound at every fixed epsilon. Thus simple cubic
+bases of size proportional to lift degree have a fixed positive chance
+of a fixed outlier above 2sqrt(2), while every deterministic bounded-degree
+base sequence of size o(lift degree) satisfies the uniform upper theorem.
+
+This proves the claimed sharp worst-case scale in base size alone. It
+is not a necessity statement for each individual growing base family,
+a simultaneous event over bases chosen after sampling, a result for
+uniform simple random regular graphs, or a full critical-window law.
+These limitations are accurately stated. The proof is a refinement and
+combination of published mechanisms; historical novelty has not been
+certified by this audit.
+
+No unresolved mathematical defect was found in the reviewed source.

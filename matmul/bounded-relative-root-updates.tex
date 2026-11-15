@@ -1,0 +1,766 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,array}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{remark}[theorem]{Remark}
+\numberwithin{equation}{section}
+\newcommand{\R}{\mathbb R}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\op}{\mathrm{op}}
+\newcommand{\Frob}{\mathrm F}
+\newcommand{\range}{\operatorname{range}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\cB}{\mathcal B}
+\newcommand{\cR}{\mathcal R}
+\title{Bounded-spectrum fractional updates\protect\\
+and relative principal-root corrections}
+\author{Working research manuscript}
+\date{November 2026}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We give two refinements of low-rank fractional matrix-function updates
+from raw factors. If positive semidefinite endpoints have norms at most
+$R$ times their perturbation norm, fixed $R>1$, a conventional
+$\widetilde O_\alpha(Nmr+m^3)$ construction attains the sharp leading
+width $r\log^2(1/\varepsilon)/(4\pi^2\alpha)$ for their fractional-power
+correction. All large-shift quadrature terms share one polynomial Krylov
+block; no best-rational-approximant oracle is used. For square roots we
+also construct a correction with error relative to the correction itself,
+including singular endpoints and signed updates. Its two-factor width
+is $O(rL[L+\log\rho])$, where $L=\log(C/\varepsilon)$ and $\rho$ is
+an explicitly computable endpoint-to-update scale parameter. Classical
+low-rank ADI is executed through Stieltjes integrals over raw shifted
+solves, with all action errors and preprocessing charged. A diagonal-Gram
+promise removes cubic preprocessing deterministically. These are
+exact-arithmetic results; the general raw-factor backend remains cubic
+in the square case.
+\end{abstract}
+
+\noindent\textit{Review and priority status.}
+The complete research note and typeset source passed separate independent
+internal reviews. No external or formal verification, finite-word stability,
+or certified novelty is claimed.
+ADI, Sylvester displacement, Stieltjes integrals, polynomial Krylov
+compression and randomized preconditioning are established methods.
+
+\section{Statements and arithmetic model}
+
+Let $X\in\R^{N\times m}$, $U\in\R^{N\times r}$ and $K=K^T\in
+\R^{r\times r}$, with $1\le r\le m\le N$. Throughout,
+\begin{equation}\label{eq:input}
+ A=XX^T,\qquad E=UKU^T,\qquad B=A+E\succeq0.
+\end{equation}
+The norm without subscript is the operator norm. We count exact real
+field operations, comparisons, positive scalar square roots and discrete
+randomness. Complex or large matrix-function oracles are not inputs.
+The notation $\widetilde O$ suppresses only logarithms of dimensions,
+$1/\varepsilon$ and $1/\delta$. Additional scale logarithms will remain
+explicit through $H$ below.
+For general fixed $0<\alpha<1$, input-dependent scalar powers must be
+added to the model or charged separately, as in the companion algorithm
+\cite{Raw}. The square-root case needs only the operations just listed.
+
+Thin QR gives $U=Q_0R_0$, with $Q_0$ orthonormal on its column support.
+Define
+\begin{equation}\label{eq:intrinsic}
+ C=R_0KR_0^T,\qquad E=Q_0CQ_0^T,\qquad
+ a=\|C\|_{\Frob}=\|E\|_{\Frob}.
+\end{equation}
+This costs $O(Nr^2+r^3)\le O(Nmr)$, and
+\begin{equation}\label{eq:anorm}
+ \|E\|\le a\le\sqrt r\|E\|.
+\end{equation}
+If $a=0$, every correction below is zero and the algorithm returns zero.
+Henceforth $a>0$. Singular and arbitrarily cancelling supplied update
+factors are allowed. Actual support sizes smaller than $r$ only improve
+the stated bounds.
+
+\begin{theorem}[Constructive sharp width at bounded endpoint scale]
+\label{thm:bounded}
+Fix $0<\alpha<1$, a positive integer $r$, and $R>1$. Under
+\eqref{eq:input}, additionally promise
+\begin{equation}\label{eq:Rpromise}
+ \max(\|A\|,\|B\|)\le R\|E\|.
+\end{equation}
+For $\varepsilon,\delta\in(0,1)$ an algorithm returns a real signed
+factor $F=Z\Sigma Z^T$, $\Sigma$ diagonal with entries $\pm1$, such
+that, with probability at least $1-\delta$,
+\[
+ \|F-(B^\alpha-A^\alpha)\|\le\varepsilon\|E\|^\alpha.
+\]
+Its conventional work is
+$(Nmr+m^3)$ times a fixed polynomial in $\log(2r/\varepsilon)$ and
+the allowed dimension/confidence logarithms. Uniformly in finite
+dimensions and all promised inputs, its width is at most
+\begin{equation}\label{eq:sharpwidth}
+ \left[\frac{r}{4\pi^2\alpha}+o_{\alpha,R,r}(1)\right]
+                                      \log^2(1/\varepsilon).
+\end{equation}
+This leading coefficient is optimal by the bounded-spectrum minimax
+theorem \cite{Bounded}. If $E\succeq0$, $F$ may be positive
+semidefinite; if $E\preceq0$, it may be negative semidefinite.
+Dense expansion costs an additional $O(N^2\,\mathrm{width})$.
+\end{theorem}
+
+The fixed promise $R>1$ is material. The class with $R=1$ has a
+saturation exception and leading minimax coefficient
+$(r-1)/(4\pi^2\alpha)$ \cite{Bounded}. We do not claim to attain that
+boundary improvement here. For square roots, \eqref{eq:sharpwidth}
+has coefficient $r/(2\pi^2)$, half the unrestricted-endpoint coefficient.
+
+For the relative theorem, let $\Lambda>0$ be any known common endpoint
+norm bound. For example, the raw input supplies the valid choice
+$\Lambda=\|X\|_{\Frob}^2+a$ at cost $O(Nm)$. Put
+\begin{equation}\label{eq:relative-scales}
+ d_0=\frac{a}{2\sqrt{r\Lambda}},\qquad
+ \rho=\frac{a}{d_0^2}=\frac{4r\Lambda}{a},\qquad
+ L=\log(C_*/\varepsilon),
+\end{equation}
+where $C_*>1$ is an absolute constant.
+
+\begin{theorem}[Relative principal-root correction]
+\label{thm:relative}
+For $\varepsilon,\delta\in(0,1)$ and \eqref{eq:input}, set
+$\Delta=B^{1/2}-A^{1/2}$ and use \eqref{eq:relative-scales}.
+An algorithm returns real two-factor output
+$F=P_fQ_f^T$ with at most $kr$ columns in each factor, satisfying
+\begin{equation}\label{eq:relative-error}
+ \Pr\{\|F-\Delta\|\le\varepsilon\|\Delta\|\}\ge1-\delta,
+ \qquad k=O\bigl(L[L+\log\rho]\bigr).
+\end{equation}
+Its symmetrization has the same error guarantee and at most $2kr$
+signed columns. Let $H$ be a sufficiently large absolute multiple of
+$L+\log(2\rho)+\log(2r)+1$. A conventional operation bound is
+\begin{equation}\label{eq:relative-work}
+ \widetilde O\bigl(NmrH^5+m^3H^4\bigr).
+\end{equation}
+Neither endpoint need be nonsingular. There is no smallest positive
+eigenvalue or downdate-margin parameter. The scale dependence through
+$\rho$ is explicit. Dense expansion adds $O(N^2kr)$.
+\end{theorem}
+
+The relative ADI construction does not assert PSD output, even if
+$E\succeq0$, or optimal joint dependence on relative accuracy and
+$\rho$. Its smaller width arises because internal quadrature stages
+compute actions without creating extra final columns.
+
+\begin{theorem}[Deterministic backend without cubic setup]
+\label{thm:diagonal}
+Let $D=\diag(\|X_{:1}\|^2,\ldots,\|X_{:m}\|^2)$ and promise
+\begin{equation}\label{eq:diagonal-promise}
+ \tfrac34D\preceq X^TX\preceq\tfrac54D.
+\end{equation}
+Then Theorems~\ref{thm:bounded} and \ref{thm:relative} hold
+deterministically without cubic preprocessing. The relative algorithm
+uses $O(NmrH^5)$ operations; the bounded-spectrum algorithm uses
+$Nmr$ times a fixed polynomial in its accuracy logarithm.
+Zero columns cause no problem. The promise permits arbitrarily unequal
+column magnitudes and arbitrarily large nonzero spectral condition
+numbers. It is not supplied or verified for free for arbitrary $X$.
+\end{theorem}
+
+For $N=m$, fixed $r$ and polynomially bounded $\rho$, the last theorem
+gives ordinary $N^2$ arithmetic up to the stated logarithms, including
+explicit output. Its input promise is essential. For arbitrary raw
+factors, \eqref{eq:relative-work} remains cubic in the square case;
+none of these statements establishes general quadratic multiplication.
+
+\section{Common inverse operators and positive quadrature}
+
+We state exactly the inputs taken from the companion algorithm
+\cite{Raw}, and record the core algebra needed for both refinements.
+For $t>0$ write
+\[
+ R_A(t)=(A+tI)^{-1},\quad R_B(t)=(B+tI)^{-1},\quad
+ V_t=R_A(t)Q_0,\quad M_t=Q_0^TR_A(t)Q_0.
+\]
+The Woodbury identity, including singular $C$, gives
+\begin{align}
+ H_t&=(I+M_tC)^{-1}=I-Q_0^TR_B(t)Q_0C,
+             &\|H_t\|&\le1+a/t,\label{eq:Hcore}\\
+ K_t&=CH_t=(I+CM_t)^{-1}C=K_t^T,
+             &D_t&:=R_A(t)-R_B(t)=V_tK_tV_t^T.
+                                                        \label{eq:core}
+\end{align}
+$H_t$ need not be symmetric. The invertibility follows from the
+determinant lemma and positive shifted endpoints. No inverse of $C$
+occurs.
+
+\begin{lemma}[Common inverse and core bounds]\label{lem:inverse}
+One constant-distortion sparse subspace embedding of $X$ can be built
+in $\widetilde O(Nm+m^3)$ conventional work. On one event of probability
+at least $1-\delta$, it supports common symmetric linear approximations
+$\widehat R_A(t)$ at all later shifts and right-hand sides, with
+\begin{equation}\label{eq:inverse-error}
+ \|\widehat R_A(t)-R_A(t)\|\le\nu_A/t.
+\end{equation}
+At each shift, setup is $O(m^3)$ and a block of $r$ right-hand sides
+uses $O(Nmr\ell)$ work for $\ell=O(\log(1/\nu_A)+1)$ fixed polynomial
+steps. If
+\begin{equation}\label{eq:core-condition}
+ \nu_A\le1,\qquad \nu_A(a/t)(1+a/t)\le\tfrac12,
+\end{equation}
+then substitution in \eqref{eq:core} is well defined and
+\begin{equation}\label{eq:core-error}
+ \|\widehat D_t-D_t\|\le
+ \frac{6\nu_Aa(1+a/t)}{t^2}
+       +\frac{2\nu_Aa^2(1+a/t)^2}{t^3}.
+\end{equation}
+The actual common symmetric operator
+$\widehat R_B(t)=\widehat R_A(t)-\widehat D_t$ can therefore achieve
+error $\nu_B/t$, $\nu_B\le1$, by the literal choice
+\begin{equation}\label{eq:Bprecision}
+ \nu_A\le\frac{\nu_B}{100(1+a/t)^4}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+The embedding and fixed common inverse are \cite[Section~3]{Raw},
+using the sparse embedding of \cite[Theorem~9]{NN}. In detail a
+sketched Gram $G_0$ satisfies
+$(3/4)G_0\preceq G=X^TX\preceq(5/4)G_0$. With $P_t=G_0+tI$,
+the normalized error $P_t^{-1/2}(G-G_0)P_t^{-1/2}$ has norm at most
+$1/4$. An even truncated Neumann series yields the stated common
+symmetric physical inverse, uniformly in all right-hand sides. Square
+roots of $P_t$ are analysis only; Cholesky and preconditioned polynomial
+steps implement it. Its norm error decreases as $4^{-\ell}/t$.
+
+For the core, $\|\widehat M_t-M_t\|\le\nu_A/t$. Inverse
+perturbation using \eqref{eq:Hcore} gives
+$\|\widehat H_t\|\le2(1+a/t)$ and
+$\|\widehat K_t-K_t\|\le2\nu_Aa^2(1+a/t)^2/t$.
+Expanding the two $V_t$ factors and then the core proves
+\eqref{eq:core-error}; this is also \cite[Lemma~2.1]{Raw}.
+The operator $\widehat D_t$ can be applied to any new block $W$ as
+$\widehat V_t\widehat K_t(\widehat V_t^TW)$, using only thin
+operations. Thus the bound for $B$ is a common-operator guarantee.
+Writing $\Gamma=a/t$, \eqref{eq:core-error} implies
+\[
+ t\|\widehat R_B-R_B\|
+ \le\nu_A(1+6\Gamma+8\Gamma^2+4\Gamma^3+2\Gamma^4)
+ \le\nu_B
+\]
+under \eqref{eq:Bprecision}, which also ensures
+\eqref{eq:core-condition}.
+\end{proof}
+
+For $c_\alpha=\sin(\pi\alpha)/\pi$, spectral calculus gives
+\begin{equation}\label{eq:frac-integral}
+ B^\alpha-A^\alpha=c_\alpha\int_0^\infty t^\alpha D_t\,dt,
+ \qquad \|D_t\|\le\min(1/t,a/t^2).
+\end{equation}
+Both zero eigenvalues and signed $E$ are allowed. The norm bound and
+the integral follow directly from positive endpoint resolvents and
+their difference identity.
+
+We use the positive quadrature in \cite[Lemma~5.1]{Raw} in its actual
+scalar realization. In $t=ae^y$, the normalized logarithmic integrand
+is analytic on $|\Im y|<\pi$ with envelope a fixed sector constant
+times $e^{-g(y)}$, where
+\begin{equation}\label{eq:g}
+ g(y)=\alpha(-y)_++(1-\alpha)y_+.
+\end{equation}
+For $L\ge1$ the construction has $O_\alpha(L^2)$ positive actual
+nodes $t_j=as_j$ and nonnegative logarithmic coefficients $a_j$,
+with normalized error $O_\alpha(e^{-L})$ and
+\begin{equation}\label{eq:quadrature-properties}
+ |\log s_j|\le C_\alpha(L+1),\qquad
+ \sum_j a_j\le C_\alpha(L+1).
+\end{equation}
+Its window length is $\ell=L^{3/4}+O_\alpha(1)$, enlargement
+$b=O(\sqrt L)$, and local density
+$[L-g(y)]_+/(2\pi d)$ with $d=\pi-L^{-1/4}$ up to certified
+scalar-constant errors. Its actual log nodes differ from the ideal
+lattice by $e^{-C_\alpha L}$. The scalar construction costs
+$O_\alpha(L^3)$, using positive polynomial-square Gaussian windows
+and Taylor/repeated-squaring exponential approximations. It uses no
+input-dependent exponential, error function or best-pole oracle.
+Choosing
+\begin{equation}\label{eq:Lchoose}
+ L=\log(1/\varepsilon)+O_\alpha(\log(2r))
+\end{equation}
+and sufficiently accurate common inverses gives the error
+$\varepsilon\|E\|^\alpha$. These precise quadrature and inverse
+inputs, rather than an uncharged approximation oracle, are the
+imports from the earlier paper.
+
+\section{Constructive sharp width at bounded endpoint scale}
+
+We prove Theorem~\ref{thm:bounded}. Set $T=2Ra$, so
+$\|A\|\le T/2$. Split the actual positive quadrature nodes into
+low shifts $t<T$ and high shifts $t\ge T$.
+
+\begin{lemma}[The low-node prefix]\label{lem:prefix}
+The number of low actual nodes is bounded by
+\begin{equation}\label{eq:low-count}
+ q_{\rm low}\le\frac{L^2}{4\pi^2\alpha}
+                             +O_{\alpha,R}(L^{7/4}).
+\end{equation}
+\end{lemma}
+\begin{proof}
+Their log coordinates lie below $\log(2R)$ up to the certified tiny
+node perturbation. Every retained lattice point lies within $b$ of
+its window. A low point therefore belongs to a window whose left
+endpoint is at most $\log(2R)+b+1$. Count all these windows completely.
+The extra prefix-boundary length is $O(\ell+b+1)$; its density is
+$O(L+\ell)$. The same Riemann-sum and enlargement estimates as in
+the full quadrature count give
+\[
+ q_{\rm low}\le\frac1{2\pi d}
+     \int_{-\infty}^{\log(2R)}[L-g(y)]_+\,dy
+       +O_{\alpha,R}(L\ell+L^2b/\ell).
+\]
+The negative half-line contributes exactly $L^2/(2\alpha)$, and
+the fixed positive interval contributes $O_R(L+1)$. Since
+$\ell=O(L^{3/4})$, $b=O(\sqrt L)$ and $d\uparrow\pi$ at rate
+$L^{-1/4}$, the losses are $O_{\alpha,R}(L^{7/4})$.
+\end{proof}
+
+Each low node is computed by the previous common inverse and contributes
+at most $r$ signed columns. At high shifts, instead use a single
+polynomial block. Choose a sufficiently large even integer
+\begin{equation}\label{eq:k-high}
+ k_h\ge C_\alpha\bigl(L+\log(L+2)+1\bigr),\qquad k_h=O_\alpha(L).
+\end{equation}
+This is literal in the arithmetic model: for $L\ge1$,
+$\log(L+2)\le L+1$, so an even integer above a larger fixed multiple
+of $L+1$ suffices and is found by comparisons. Form
+\begin{equation}\label{eq:high-W}
+ W=[Q_0,(A/T)Q_0,\ldots,(A/T)^{k_h-1}Q_0].
+\end{equation}
+For $t\ge T$ set
+\begin{equation}\label{eq:high-inverse}
+ \widetilde R_A(t)=t^{-1}\sum_{j=0}^{k_h-1}(-A/t)^j.
+\end{equation}
+For even $k_h$ and $0\le x\le1/2$,
+$\sum_{j=0}^{k_h-1}(-x)^j=(1-x^{k_h})/(1+x)$. Consequently
+\begin{equation}\label{eq:high-inverse-bound}
+ 0\preceq\widetilde R_A(t)\preceq R_A(t),\qquad
+ \|\widetilde R_A(t)-R_A(t)\|\le2^{-k_h}/t.
+\end{equation}
+In particular all high-node vectors have the exact common representation
+\begin{equation}\label{eq:high-coeff}
+ \widetilde V_t=W\cB_t,\qquad
+ \cB_t=t^{-1}[I,-(T/t)I,\ldots,(-T/t)^{k_h-1}I]^T.
+\end{equation}
+Compute the small cores
+$\widetilde M_t=Q_0^TW\cB_t$ and
+$\widetilde K_t=C(I+\widetilde M_tC)^{-1}$. Since
+$a/t\le1/(2R)<1/2$, Lemma~\ref{lem:inverse} gives
+\begin{equation}\label{eq:high-node-error}
+ \|\widetilde V_t\widetilde K_t\widetilde V_t^T-D_t\|
+                                      \le C2^{-k_h}a/t^2.
+\end{equation}
+The physical quadrature weights $w_t$ are nonnegative. Sum all high
+nodes into the one symmetric core
+\begin{equation}\label{eq:high-core}
+ J_h=\sum_{t\text{ high}}w_t\cB_t\widetilde K_t\cB_t^T.
+\end{equation}
+The corresponding correction $WJ_hW^T$ has width at most $rk_h$,
+regardless of the number of high nodes. No basis of the full $X$
+range is constructed.
+
+Multiplying \eqref{eq:high-node-error} by $t^{\alpha+1}$ and using
+$t\ge T\ge a$ bounds the normalized logarithmic node error by
+$C_\alpha2^{-k_h}a^\alpha$. The coefficient mass in
+\eqref{eq:quadrature-properties} is $O_\alpha(L+1)$, so
+\eqref{eq:k-high} makes their total error fit in $a^\alpha e^{-L}$.
+A fixed adjustment of the budget in \eqref{eq:Lchoose} absorbs this
+along with the unchanged quadrature and low-solve errors. The width is
+therefore at most
+\[
+ rq_{\rm low}+rk_h\le\frac{rL^2}{4\pi^2\alpha}
+                               +O_{\alpha,R,r}(L^{7/4}),
+\]
+proving \eqref{eq:sharpwidth}.
+
+Forming $W$ costs $O(Nmrk_h)$ through $X(X^T\cdot)$ actions, and
+$Q_0^TW$ costs $O(Nr^2k_h)$. Even naive assembly and congruence
+factorization of the $rk_h$ core cost at most $m^3$ times a fixed
+polynomial in $L$. Multiplication of its final factor through $W$
+costs $O(Nr^2k_h^2)$. Both are within the stated bound because
+$r\le m\le N$. Adding the unchanged low nodes proves the work bound.
+
+If $C\succeq0$, then $\widetilde M_t\succeq0$ and
+$\widetilde K_t\succeq0$. If $C\preceq0$, write $C=-DD^T$
+only in analysis. The exact shifted downdate gives
+$I-D^TM_tD\succ0$, and \eqref{eq:high-inverse-bound} gives
+$I-D^T\widetilde M_tD\succeq I-D^TM_tD$. Hence
+$\widetilde K_t\preceq0$. The high sum thus has the claimed sign;
+the low sum has the same sign property by \cite[Section~6]{Raw}.
+Congruence elimination with scalar square roots returns all factors,
+including singular cores. This completes the proof.
+
+\begin{remark}
+If only a computable upper bound $\Lambda$ is available, the same
+algorithm may take $T=2\max(\Lambda,a)$, but its low-node prefix can
+contain an additional $O(L\log(T/a))$ contribution. A Frobenius bound
+that grows with dimension cannot be treated as a fixed $R$ in
+\eqref{eq:sharpwidth}. The theorem instead uses its supplied promise
+directly, setting $T/a=2R$.
+\end{remark}
+
+\section{Relative rank with singular endpoints}
+
+In this section roots are analysis objects. Set
+$P=A^{1/2}$, $Q_b=B^{1/2}$ and $d=\|\Delta\|$, with
+$\Delta=Q_b-P$. Without any commutativity assumption,
+\begin{equation}\label{eq:sylvester}
+ E=P\Delta+\Delta Q_b.
+\end{equation}
+Therefore
+\begin{equation}\label{eq:relative-lower}
+ d\ge\frac{\|E\|}{2\sqrt\Lambda}\ge d_0.
+\end{equation}
+Also $d\le\sqrt{\|E\|}\le\sqrt a$, by Loewner--Heinz comparison,
+so $\rho\ge1$. One may further use $d\le\sqrt\Lambda$, since
+$0\preceq P,Q_b\preceq\sqrt\Lambda I$.
+
+\begin{lemma}[Explicit relative ADI rank]\label{lem:adi-rank}
+If $0<d_0\le d$, $\max(\|A\|,\|B\|)\le\Lambda$ and
+$\rank E\le r$, an explicit low-rank ADI sum has width at most $kr$,
+where
+\[
+ k=O\left(\log(C_*/\varepsilon)
+   [\log(C_*/\varepsilon)+\log(\sqrt\Lambda/d_0)]\right),
+\]
+and error at most $\varepsilon d/2$. It allows singular endpoints.
+\end{lemma}
+\begin{proof}
+Let $\lambda=\varepsilon d_0/8$, $\zeta=\varepsilon/8$ and
+$M=\sqrt\Lambda$. Take the dyadic grid
+$\tau_i=2^i\lambda$, $0\le i\le h$, where $h$ is least with
+$2^h\lambda\ge M$. Repeat the entire grid $p$ times, where $p$ is
+least with $3^{-p}\le\zeta$. There are $k=(h+1)p$ poles, each in
+$[\lambda,2M]$, with the displayed bound. Doubling, multiplication by
+three and comparisons compute the grid and repetition count.
+
+Define $r_\tau(x)=(x-\tau)/(x+\tau)$ and
+$\cR(x)=\prod_{j=1}^k r_{\tau_j}(x)$. For $x\ge0$,
+$|\cR(x)|\le1$. For $\lambda\le x\le M$, one dyadic grid point
+satisfies $\tau_i\le x\le2\tau_i$, giving $|r_{\tau_i}(x)|\le1/3$.
+Thus $|\cR(x)|\le\zeta$ on $[\lambda,M]$.
+
+Let $L_0$ be the spectral projection of $P$ on $[0,\lambda)$, and
+$L_1$ that of $Q_b$; put $H_i=I-L_i$. The special identity
+$\Delta=Q_b-P$ gives
+\begin{equation}\label{eq:lowlow}
+ \|L_0\Delta L_1\|\le2\lambda.
+\end{equation}
+Indeed the two terms $L_0Q_bL_1$ and $L_0PL_1$ each have norm at
+most $\lambda$, even though the projections need not commute.
+Decomposing $\Delta=L_0\Delta L_1+H_0\Delta+L_0\Delta H_1$
+therefore gives
+\begin{equation}\label{eq:adi-error}
+ \|\cR(P)\Delta\cR(Q_b)\|
+ \le2\lambda+2\zeta d\le\varepsilon d/2.
+\end{equation}
+
+For one pole, multiplying on the left by $P+\tau I$ and on the
+right by $Q_b+\tau I$ proves the classical ADI identity
+\begin{equation}\label{eq:adi-one}
+ \Delta-r_\tau(P)\Delta r_\tau(Q_b)
+       =2\tau(P+\tau I)^{-1}E(Q_b+\tau I)^{-1}.
+\end{equation}
+Set $U_0=V_0=Q_0$ and define
+\begin{align}
+ L_j&=(P+\tau_jI)^{-1}U_{j-1},&
+ R_j&=(Q_b+\tau_jI)^{-1}V_{j-1},\label{eq:adi-factors}\\
+ U_j&=U_{j-1}-2\tau_jL_j,&
+ V_j&=V_{j-1}-2\tau_jR_j.\nonumber
+\end{align}
+The width-$kr$ sum
+\begin{equation}\label{eq:adi-sum}
+ F_k=\sum_{j=1}^k2\tau_jL_jCR_j^T
+\end{equation}
+satisfies $\Delta-F_k=\cR(P)\Delta\cR(Q_b)$ by telescoping
+\eqref{eq:adi-one}. This proves the lemma. Its proof needs no
+separation of the two root spectra at zero.
+\end{proof}
+
+The root Sylvester identity and rational-displacement/ADI mechanism
+are established antecedents \cite{SDA,BT}. The estimate
+\eqref{eq:lowlow} supplies the cutoff qualification when the positive
+spectra touch at zero. The next section removes the apparently supplied
+root actions in \eqref{eq:adi-factors}.
+
+\section{Executing root ADI through raw shifted solves}
+
+\begin{lemma}[Common inverse-root action]\label{lem:root-action}
+For any PSD $S$, $\tau>0$ and $0<\eta<1$, positive quadrature over
+ordinary shifted $S$ inverses constructs a common symmetric operator
+$\widehat F_{S,\tau}$ satisfying
+\begin{equation}\label{eq:root-action-error}
+ \|\widehat F_{S,\tau}-(\sqrt S+\tau I)^{-1}\|\le\eta/\tau.
+\end{equation}
+It uses $O(\log^2(C_*/\eta))$ positive shifts with
+$|\log(t/\tau^2)|\le C\log(C_*/\eta)$. Scalar work is a fixed
+polynomial in that logarithm, using field operations and square roots.
+\end{lemma}
+\begin{proof}
+Scalar integration after $t=u^2$, followed by spectral calculus, gives
+\begin{equation}\label{eq:root-stieltjes}
+ (\sqrt S+\tau I)^{-1}
+  =\frac1\pi\int_0^\infty
+           \frac{\sqrt t}{t+\tau^2}(S+tI)^{-1}\,dt.
+\end{equation}
+The identity remains valid at a zero eigenvalue. Substituting
+$t=\tau^2e^y$, the logarithmic integrand has norm at most
+\begin{equation}\label{eq:root-envelope}
+ \frac1{\pi\tau}\frac{e^{y/2}}{1+e^y}
+                         \le\frac1{\pi\tau}e^{-|y|/2}.
+\end{equation}
+It is analytic on $|\Im y|<\pi$; both denominators obey uniform
+sector estimates. On the fixed half-strip $|\Im y|\le\pi/2$ the
+boundary integral is $O(1/\tau)$. The infinite trapezoid error is at
+most a constant times $\tau^{-1}e^{-\pi^2/h}$ for mesh $h$; truncating
+at $|y|\le Y$ contributes $O(\tau^{-1}e^{-Y/2})$. Take
+$h$ comparable to $1/\log(C_*/\eta)$ and
+$Y=C\log(C_*/\eta)$. This proves the node and ideal error bounds.
+
+The physical weights are
+$h\,t\sqrt t/[\pi(t+\tau^2)]$. The same certified scalar
+construction as in \cite[Lemma~5.1]{Raw} realizes them with positive
+actual nodes and weights: approximate $\pi$ by its elementary series,
+and $e^y$ by Taylor approximation at a small argument followed by
+repeated squaring. Normalized real-line derivative bounds from
+\eqref{eq:root-envelope} make the needed node precision a fixed
+polynomial in $\eta$. This costs $O(\log^3(C_*/\eta))$ scalar
+operations after a fixed error allocation, with no transcendental or
+polynomial-root oracle.
+
+If each physical inverse has error at most $\nu/t$, the total added
+error is at most $C\nu/\tau$, because the positive quadrature of the
+norm envelope \eqref{eq:root-envelope} has uniformly bounded mass.
+Choose $\nu$ a sufficiently small fixed multiple of $\eta$ and split
+the remaining scalar and truncation budgets. Lemma~\ref{lem:inverse}
+provides these actual common inverse operators for either $S=A$ or
+$S=B$, using \eqref{eq:Bprecision} for the latter.
+\end{proof}
+
+Execute every action in \eqref{eq:adi-factors} with
+Lemma~\ref{lem:root-action} at the fixed tolerance
+\begin{equation}\label{eq:eta}
+ \eta=\frac{\varepsilon^2}{10^6\rho(k+1)^2}.
+\end{equation}
+All accuracy and loop caps can be selected before the adaptive products.
+Since $\lambda\le\tau_j\le2M$, \eqref{eq:relative-scales} gives
+\begin{equation}\label{eq:tau-range}
+ \lambda^2/a=\varepsilon^2/(64\rho),\qquad
+ M^2/a=\Lambda/a=\rho/(4r).
+\end{equation}
+Every physical shift in a root action consequently satisfies
+\begin{equation}\label{eq:shift-range}
+ |\log(t/a)|\le C\bigl(L+\log\rho+\log(C_*/\eta)\bigr).
+\end{equation}
+The precision \eqref{eq:Bprecision} thus adds only these logarithms to
+the fixed Neumann degree. No small endpoint eigenvalue enters.
+
+We prove error propagation explicitly. Each exact Cayley operator
+$I-2\tau(\sqrt S+\tau I)^{-1}$ is a contraction; its computed operator
+differs by at most $2\eta$. Ordered-product comparison, which does
+not require computed operators to commute, gives for $j\le k$
+\begin{align}
+ \|\widehat U_j\|,\|\widehat V_j\|&\le(1+2\eta)^j,\label{eq:Uhatnorm}\\
+ \|\widehat U_j-U_j\|,\|\widehat V_j-V_j\|
+     &\le(1+2\eta)^j-1\le4k\eta.\label{eq:Uhaterr}
+\end{align}
+The chosen \eqref{eq:eta} ensures $2k\eta<2\cdot10^{-6}$ and
+\begin{equation}\label{eq:strongfactor}
+ \|\widehat L_j\|,\|\widehat R_j\|
+ \le\frac{(1+\eta)(1+2\eta)^k}{\tau_j}<\frac2{\tau_j}.
+\end{equation}
+Combining \eqref{eq:root-action-error} with \eqref{eq:Uhaterr} yields
+\begin{equation}\label{eq:factor-error}
+ \|\widehat L_j-L_j\|,\|\widehat R_j-R_j\|
+                         \le\frac{6(k+1)\eta}{\tau_j}.
+\end{equation}
+Expanding first in the left factor and then the right, and using
+$\|C\|\le a$, gives the literal term bound
+\[
+ \|2\tau_j(\widehat L_jC\widehat R_j^T-L_jCR_j^T)\|
+                 \le\frac{36a(k+1)\eta}{\tau_j}.
+\]
+Summing and inserting \eqref{eq:eta}, \eqref{eq:relative-scales} and
+$\lambda=\varepsilon d_0/8$ gives
+\begin{equation}\label{eq:ADI-inexact-error}
+ \|\widehat F_k-F_k\|
+ \le\frac{72a(k+1)^2\eta}{\lambda}
+ =\frac{576}{10^6}\varepsilon d_0<\varepsilon d_0/2.
+\end{equation}
+Together with Lemma~\ref{lem:adi-rank}, this proves the full relative
+error in Theorem~\ref{thm:relative}.
+
+The Stieltjes stages act on $N$-by-$r$ blocks; they do not add final
+factor columns. Thus $\widehat F_k$ has width at most $kr$. If
+$\widehat F_k=P_fQ_f^T$, the symmetric signed representation is
+\begin{equation}\label{eq:sym}
+ \frac{\widehat F_k+\widehat F_k^T}{2}
+ =\left(\frac{P_f+Q_f}{2}\right)
+       \left(\frac{P_f+Q_f}{2}\right)^T
+  -\left(\frac{P_f-Q_f}{2}\right)
+       \left(\frac{P_f-Q_f}{2}\right)^T.
+\end{equation}
+It has no larger error to the symmetric target $\Delta$.
+
+We finally charge the work. With $H$ as in the theorem,
+$k=O(H^2)$ and $\log(C_*/\eta)=O(H)$. Each root action uses
+$O(H^2)$ physical shifts; each physical inverse uses $O(H)$ raw
+polynomial steps on a thin block and $O(m^3)$ setup. In addition to
+the intrinsic reduction and one $\widetilde O(Nm+m^3)$ embedding,
+an explicit overbound is
+\begin{equation}\label{eq:cost-count}
+ O(NmrH^5+m^3H^4+H^5).
+\end{equation}
+The scalar term is absorbed by $NmrH^5$. Costs $Nr^2$, $m^2r$ and
+$r^3$ per stage are absorbed since $r\le m\le N$. Common inverse
+operators make all estimates uniform in the adaptively generated
+right-hand sides on the one embedding event; no failure union over
+ADI stages is needed. On a bad event, failed small-core inverses or
+required sign tests return zero, while all loops retain their caps.
+This proves \eqref{eq:relative-work} with an every-outcome cost bound.
+Internal Stieltjes nodes may be streamed; output storage is $O(Nkr)$
+apart from the embedding/core workspace. No root, eigendecomposition
+or Sylvester solve was assumed free.
+
+\section{Deterministic preprocessing and scope}
+
+We prove Theorem~\ref{thm:diagonal}. Compute $D$ in $O(Nm)$ and use
+$G_0=D$ in Lemma~\ref{lem:inverse}. The promise
+\eqref{eq:diagonal-promise} supplies the same constant Gram sandwich.
+The shifted coarse matrix $D+tI$ is diagonal even if $D$ has zeros.
+Every true Gram action is still $X^T(XW)$ on a thin block, costing
+$O(Nmr)$. The same even Neumann proof therefore constructs all
+common inverse operators without either an embedding or a dense
+$m$-dimensional factorization. The only cubic cores are of update
+size, and $r^3\le Nmr$. The count \eqref{eq:cost-count} becomes
+$O(NmrH^5)$.
+
+The bounded-spectrum construction uses the same diagonal coarse
+inverse at low shifts and its unchanged common polynomial block at
+high shifts. Its high core of size $rk_h$ also costs only $Nmr$
+times accuracy logarithms because $r^3\le Nmr$. This proves the
+second claim in Theorem~\ref{thm:diagonal}.
+
+The promise controls correlations after column normalization, not
+column magnitudes. It allows arbitrary positive diagonal rescaling
+of otherwise well-preconditioned columns, and hence unbounded condition
+numbers. It does not assert that a diagonal proxy can be produced for
+an arbitrary raw factor at this cost. The cubic-free statement remains
+a theorem for that explicit class.
+
+\subsection*{Scale dependence and comparison}
+
+The $\rho$ dependence in the relative theorem cannot simply disappear.
+For any $n$, let $P=\diag(R^i)_{i=0}^{n-1}$, $R\ge289$, and
+$u_i=\sqrt{2R^i}$. Set $A=P^2$, $E=\tau uu^T$ with $\tau=1/10$,
+and $B=A+E$. The solution of $PT+TP=uu^T$ has entries
+\[
+ T_{ij}=\frac{2\sqrt{R^iR^j}}{R^i+R^j},\qquad
+ T_{ii}=1,\qquad
+ \sum_{j\ne i}|T_{ij}|\le\frac4{\sqrt R-1}\le\tfrac14.
+\]
+Thus $(3/4)I\preceq T\preceq(5/4)I$. The exact root correction
+$\Delta$ satisfies $P\Delta+\Delta P+\Delta^2=\tau uu^T$, so
+\[
+ \tau T-\Delta=\int_0^\infty e^{-sP}\Delta^2e^{-sP}\,ds\succeq0.
+\]
+Since $\lambda_{\min}(P)=1$, one obtains
+$\|\Delta\|\le5\tau/4$ and
+$\|\tau T-\Delta\|\le25\tau^2/32$. Consequently
+$\lambda_{\min}(\Delta)>\|\Delta\|/2$. Every rank-$<n$ approximation
+has relative error greater than $1/2$. Here
+$a=\Theta(\tau R^{n-1})$, $\Lambda=\Theta(R^{2(n-1)})$, and
+$\log\rho=\Theta(n)$ at fixed $R,\tau$. The linear logarithmic scale
+dependence in Theorem~\ref{thm:relative} has the correct order for
+this family at fixed accuracy. This is neither an arithmetic lower
+bound nor joint optimality in $\varepsilon,\rho$.
+
+Shmueli--Drineas--Avron \cite{SDA} already use the root Sylvester
+identity and relative singular-value decay, with an SPD separation
+parameter involving $\lambda_{\min}(A)$. The singular-endpoint relative
+rank order here also follows by a short regularization argument from
+that published theorem: add $\gamma I$ to both endpoints with
+$\gamma=(\varepsilon d_0/16)^2$. The root correction changes by at
+most $2\sqrt\gamma\le\varepsilon d_0/8$, while the SPD estimate gives
+the same $O(rL[L+\log\rho])$ rank order. Thus the low--low cutoff
+proof is a direct alternative, rather than a new rank-order principle.
+Regularized classical ADI also uses the same raw Stieltjes backend,
+with physical shifts $t$ replaced by $t+\gamma$. The fully charged
+implementation is a separate synthesis and complexity question.
+Beckermann--Townsend
+\cite{BT} establishes the rational-displacement rank mechanism and
+its relation to ADI. Beckermann et al.\ \cite{BCKS} establishes rational
+and polynomial matrix-function update methods. The common high-shift
+span used here belongs to that classical framework. Classical positive
+quadrature, root-exponential compression and sparse preconditioning
+also predate these results \cite{BKS,NN,FTU}.
+
+The precise consequences proved here are constructive sharp leading
+width in the bounded endpoint class, and fully charged relative
+principal-root corrections with a computable scale cutoff and singular
+endpoints. A bounded primary-source search did not locate identical
+statements; this is not a novelty certificate or an all-method
+state-of-the-art comparison. No PSD-output claim for ADI, numerical
+bit-complexity theorem, or unrestricted quadratic algorithm is implied.
+
+\begin{thebibliography}{99}
+\bibitem{Raw}
+Working research manuscript,
+\emph{Sharp-rank algorithms for low-rank updates of fractional matrix
+functions}, 2026. Companion source:
+\texttt{sharp-matrix-function-updates.tex}.
+
+\bibitem{Bounded}
+Working research note,
+\emph{Sharp fractional compression with a bounded endpoint-to-update
+ratio}, 2026. Companion source:
+\texttt{bounded-spectrum-fractional-counts.txt}.
+
+\bibitem{SDA}
+S.~Shmueli, P.~Drineas and H.~Avron,
+Low-rank updates of matrix square roots,
+\emph{Numer. Linear Algebra Appl.} \textbf{31} (2024), e2528.
+\href{https://doi.org/10.1002/nla.2528}{doi:10.1002/nla.2528}.
+\href{https://arxiv.org/abs/2201.13156}{arXiv:2201.13156}.
+
+\bibitem{BT}
+B.~Beckermann and A.~Townsend,
+On the singular values of matrices with displacement structure,
+\emph{SIAM J. Matrix Anal. Appl.} \textbf{38} (2017), 1227--1248;
+expanded as \emph{SIAM Rev.} \textbf{61} (2019), 319--344.
+\href{https://doi.org/10.1137/16M1096426}{doi:10.1137/16M1096426}.
+
+\bibitem{BCKS}
+B.~Beckermann, A.~Cortinovis, D.~Kressner and M.~Schweitzer,
+Low-rank updates of matrix functions II: Rational Krylov methods,
+\emph{SIAM J. Numer. Anal.} \textbf{59} (2021), 1325--1347.
+\href{https://doi.org/10.1137/20M1362553}{doi:10.1137/20M1362553}.
+
+\bibitem{BKS}
+M.~Sh.~Birman, L.~S.~Koplienko and M.~Z.~Solomyak,
+Estimates of the spectrum of a difference of fractional powers of
+selfadjoint operators, \emph{Izv. Vyssh. Uchebn. Zaved. Mat.}
+(1975), no.~3, 3--10.
+\href{https://www.mathnet.ru/eng/ivm6330}{Math-Net record}.
+
+\bibitem{NN}
+J.~Nelson and H.~L.~Nguy\^en,
+OSNAP: Faster numerical linear algebra algorithms via sparser subspace
+embeddings, \emph{Proc. FOCS} (2013), 117--126.
+\href{https://arxiv.org/abs/1211.1002}{arXiv:1211.1002}.
+
+\bibitem{FTU}
+Z.~Frangella, J.~A.~Tropp and M.~Udell,
+Randomized Nystr\"om preconditioning,
+\emph{SIAM J. Matrix Anal. Appl.} \textbf{44} (2023), 718--752.
+\href{https://doi.org/10.1137/21M1466244}{doi:10.1137/21M1466244}.
+\end{thebibliography}
+\end{document}

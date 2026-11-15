@@ -1,0 +1,214 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsthm,hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newcommand{\E}{\mathbb E}
+\newcommand{\KL}{\operatorname{KL}}
+\newcommand{\TV}{\operatorname{TV}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\one}{\mathbf1}
+\title{One-hot entropy rigidity for a connected degree frame}
+\author{Independent rigidity audit}
+\date{November 15, 2026}
+\begin{document}
+\maketitle
+
+\paragraph{Scope.}
+This note independently proves the real one-hot entropy inequality and its
+equality/strictness claims in the root's coarse-frame proposal. It does not
+audit the exact configuration factorial count, simplicity conditioning,
+small-support exclusion, enumeration algorithm, or historical novelty.
+All entropies and divergences below use natural logarithms.
+
+Fix an old frame $Q=(d_{ij})_{1\leq i,j\leq k}$, with $k\geq2$,
+$a_i=d_{ii}\geq2$, total degrees $d_i=\sum_jd_{ij}$, and
+$\Delta=\max_i d_i$. Let $\alpha_i>0$, $\sum_i\alpha_i=1$, satisfy
+$\alpha_i d_{ij}=\alpha_jd_{ji}$, and assume the undirected cross-frame
+is connected. Write $w_{ij}=\alpha_i d_{ij}$ for $i<j$, and
+$\alpha_{\min}=\min_i\alpha_i$.
+
+Let $R$ be any fixed nonnegative integer $r\times r$ candidate frame.
+For old type $i$ take a law $P_i$ of an ordered star whose root is
+$X_i\in[r]$, with $a_i$ internal-neighbor labels $A_{i,1},\ldots,A_{i,a_i}$
+and $d_{ij}$ neighbors $B_{ij,1},\ldots,B_{ij,d_{ij}}$ of each $j\ne i$.
+Regard each label $x$ as the standard unit vector $e_x\in\mathbb R^r$.
+Every supported star must satisfy the ordinary integer equation
+\begin{equation}
+ \sum_{s=1}^{a_i}e_{A_{i,s}}+
+ \sum_{j\ne i}\sum_{s=1}^{d_{ij}}e_{B_{ij,s}}
+ =R_{X_i,*}.
+ \label{constraint}
+\end{equation}
+Define $\rho_i$ as the root law. Let $\pi_{ii}$ be the root/internal pair
+law pooled over its $a_i$ slots, and, when $d_{ij}>0$, $\pi_{ij}$ the
+root/$j$-neighbor pair law pooled over its $d_{ij}$ slots. Zero-degree
+terms below are omitted. Assume the exact matching constraints
+\[
+ \pi_{ii}(x,y)=\pi_{ii}(y,x),\qquad
+ \pi_{ij}(x,y)=\pi_{ji}(y,x).
+\]
+Consequently the two marginals of $\pi_{ii}$ are $\rho_i$, and those of
+$\pi_{ij}$ are $\rho_i,\rho_j$. Set
+\begin{equation}
+\begin{gathered}
+ \Phi(P)=\sum_i\alpha_iH(P_i)
+ -\sum_i\frac{\alpha_i a_i}{2}H(\pi_{ii})
+ -\sum_{i<j}w_{ij}H(\pi_{ij}),\\
+ \delta(P)=\sum_i\alpha_i\left(1-\max_x\rho_i(x)\right).
+\end{gathered}
+ \label{functional}
+\end{equation}
+The quantity $\delta$ is the least weighted disagreement with any
+blockwise point map $T:[k]\to[r]$; merging old blocks is allowed.
+
+\begin{theorem}[Explicit strict entropy gap]
+For every such family of legal star laws,
+\begin{equation}
+ \Phi(P)\leq-\frac{\alpha_{\min}}{2\Delta^4}\,\delta(P)^2\leq0.
+ \label{gap}
+\end{equation}
+In particular $\Phi(P)=0$ if and only if every root law is a point mass
+$\rho_i=\delta_{T(i)}$ and the resulting one-hot matrix $T\in\{0,1\}^{k\times r}$
+satisfies $QT=TR$. Unused candidate labels are harmless; if all candidate
+classes are required nonempty, the map $T$ must be onto.
+\end{theorem}
+
+\begin{proof}
+First symmetrize $P_i$ over arbitrary permutations of the internal slots
+and, independently, the slots of every fixed cross type. Denote the result
+by $\overline P_i$. This leaves every pooled pair law, the root laws, and
+\eqref{constraint} unchanged. Concavity of entropy gives
+$H(\overline P_i)\geq H(P_i)$, and hence
+$\Phi(P)\leq\Phi(\overline P)$. In particular the negative pair-entropy
+terms do not move under this symmetrization; they were defined by pooling.
+It suffices to prove the quantitative bound for slot-exchangeable laws.
+
+Suppress the bars. Drop the last internal neighbor $A_{i,a_i}$, and call
+the retained star law $P_i^-$, including its root. Equation
+\eqref{constraint} determines the omitted unit vector uniquely from the
+retained data. It therefore determines its label uniquely on the legal
+support, and $H(P_i)=H(P_i^-)$. Let $J_i$ be the conditional total
+correlation of all retained neighbors given $X_i$; it is the sum of their
+individual conditional entropies minus their joint conditional entropy.
+Writing
+\[
+ I_{ii}=I(X_i;A_{i,1}),\qquad I_{ij}=I(X_i;B_{ij,1}),
+\]
+conditional entropy expansion yields the exact cancellation
+\begin{equation}
+ L:=-\Phi(P)=
+ \sum_i\alpha_i\left(\frac{a_i}{2}-1\right)I_{ii}
+ +\sum_{i<j}w_{ij}I_{ij}+\sum_i\alpha_iJ_i.
+ \label{cancellation}
+\end{equation}
+For completeness, each star entropy is
+\[
+ H(P_i)=H(\rho_i)+(a_i-1)H(A_{i,1}\mid X_i)
+       +\sum_{j\ne i}d_{ij}H(B_{ij,1}\mid X_i)-J_i.
+\]
+Substitute $H(A\mid X)=H(\pi_{ii})-H(\rho_i)$ and
+$H(B_{ij}\mid X)=H(\pi_{ij})-H(\rho_i)$ in \eqref{functional}; use
+$\alpha_i d_{ij}=\alpha_jd_{ji}$ to obtain \eqref{cancellation}.
+All terms on its right are nonnegative because $a_i\geq2$.
+
+Let $\mathsf Q_i$ be an auxiliary retained-star law: keep the same root
+law, sample its $a_i-1$ retained internal neighbors independently from
+the original conditional law given $X_i$, and sample all its cross
+neighbors independently from the root-independent laws $\rho_j$.
+Everything is conditionally independent given the root. The chain rule
+for divergence gives exactly
+\begin{equation}
+ \kappa_i:=\KL(P_i^-\Vert\mathsf Q_i)
+ =J_i+\sum_{j\ne i}d_{ij}I_{ij},\qquad
+ \alpha_i\kappa_i\leq L.
+ \label{kl}
+\end{equation}
+For the inequality, the cross terms on the left are precisely the edges
+incident to $i$ in the single edge sum in \eqref{cancellation}; each is
+counted once, and all other contributions are nonnegative.
+
+Write
+\[
+\begin{gathered}
+ m_i(x)=\E[e_{A_{i,1}}\mid X_i=x],\qquad
+ v_i=\E\,\operatorname{tr}\Var(e_{A_{i,1}}\mid X_i),\\
+ \mu_j=\E e_{X_j},\qquad V_j=\operatorname{tr}\Var(e_{X_j})
+       =1-\|\rho_j\|_2^2.
+\end{gathered}
+\]
+Arbitrary definitions of $m_i(x)$ at zero-probability roots do not matter.
+On retained star data put
+\[
+ W_i=R_{X_i,*}-\sum_{s<a_i}e_{A_{i,s}}
+       -\sum_{j\ne i}\sum_s e_{B_{ij,s}},\qquad
+ f_i=\|W_i-m_i(X_i)\|_2^2.
+\]
+Under $P_i^-$, $W_i=e_{A_{i,a_i}}$. Slot exchangeability therefore gives
+$\E_{P_i^-}f_i=v_i$. Under $\mathsf Q_i$, conditional independence gives
+\begin{align}
+ \E_{\mathsf Q_i}f_i-\E_{P_i^-}f_i
+ &=(a_i-2)v_i+\sum_{j\ne i}d_{ij}V_j\notag\\
+ &\quad+\E\left\|R_{X_i,*}-a_i m_i(X_i)
+                -\sum_{j\ne i}d_{ij}\mu_j\right\|_2^2
+ \ \geq\sum_{j\ne i}d_{ij}V_j.
+ \label{variance}
+\end{align}
+No independence between the root and its internal neighbor was assumed.
+This is why $a_i=2$ is covered.
+
+On each root of positive probability the entries of $R_{X_i,*}$ are
+nonnegative and sum to $d_i$, by \eqref{constraint}. Also the vector
+formed by the retained neighbor sum plus $m_i(X_i)$ is nonnegative with
+coordinate sum $d_i$. Thus $0\leq f_i\leq2d_i^2$: for nonnegative vectors
+$u,v$ of coordinate sum $d_i$,
+$\|u-v\|_2^2\leq\|u\|_2^2+\|v\|_2^2\leq2d_i^2$.
+Pinsker's inequality and \eqref{kl} now give
+\[
+ \sum_{j\ne i}d_{ij}V_j
+ \leq2d_i^2\TV(P_i^-,\mathsf Q_i)
+ \leq2d_i^2\sqrt{\kappa_i/2}
+ \leq2d_i^2\sqrt{L/(2\alpha_i)},
+\]
+and consequently
+\begin{equation}
+ L\geq\frac{\alpha_i}{2d_i^4}
+       \left(\sum_{j\ne i}d_{ij}V_j\right)^2.
+ \label{localgap}
+\end{equation}
+For any probability vector $\rho$, $\sum_x\rho(x)^2\leq\max_x\rho(x)$;
+hence $V_j\geq1-\max_x\rho_j(x)$. Some $j$ therefore has
+$V_j\geq\sum_j\alpha_jV_j\geq\delta$. Since $k\geq2$ and the cross-frame
+is connected, this $j$ has a neighbor $i$ with $d_{ij}\geq1$.
+Use this $i$ in \eqref{localgap}, $\alpha_i\geq\alpha_{\min}$ and
+$d_i\leq\Delta$ to obtain \eqref{gap}.
+
+If $\Phi=0$ then \eqref{gap} forces all root laws to be point masses.
+Matching consistency forces every internal neighbor of type $i$ to have
+label $T(i)$ and every cross neighbor of old type $j$ to have label $T(j)$.
+Equation \eqref{constraint} is then exactly $(QT)_{i,*}=(TR)_{i,*}$.
+All star and pair laws are deterministic, so all entropies are zero.
+Conversely a point map with $QT=TR$ gives these deterministic legal laws
+and $\Phi=0$.
+\end{proof}
+
+\paragraph{Consequences and limits.}
+For every fixed $\varepsilon>0$, all types at weighted distance at least
+$\varepsilon$ from every point map have entropy exponent at most
+$-\alpha_{\min}\varepsilon^2/(2\Delta^4)$. No compactness argument is
+needed, and no extra bound on candidate $R$ is needed for this estimate:
+on any occupied candidate label its row sum is already an actual degree.
+A finite alphabet is still needed for polynomial type enumeration.
+Unequal proportions enter exactly through the reversible weights
+$\alpha_i d_{ij}=\alpha_jd_{ji}$. The constant is uniform over proportions
+bounded below, and is explicit for any fixed positive proportion vector.
+The integer/real identity in \eqref{constraint} is essential for the
+variance argument; modular vector addition cannot be substituted there.
+
+\paragraph{Necessary excluded case.}
+Connectedness alone with $k=1$ would not suffice when $a_1=2$. Let the
+root label be uniform on $\{1,2\}$ and both internal neighbors always
+have the opposite label. Then $R=\left(\begin{smallmatrix}0&2\\2&0\end{smallmatrix}\right)$,
+$H(P_1)=H(\pi_{11})=\log2$, and $\Phi=0$ although its root law is not a
+point mass. This is the alternating labeling of an even cycle. The
+standing $k\geq2$ connected cross-frame assumption removes this obstruction.
+\end{document}

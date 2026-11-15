@@ -1,0 +1,593 @@
+POLYNOMIAL-BIT PREPARATION OF POSITIVE RATIONAL ENTROPY APPROXIMANTS
+=================================================================
+
+Owner: /root/local_singularity_independent_referee, in a NEW author role.
+Date: 2026-11-15 UTC. Only this file is owned in this assignment.
+Working mathematical deduction; independent exact-copy review is pending.
+No existing manuscript, program, coefficient file or audit is modified.
+
+The approximation theorem and its Gaussian comparison are imported from
+positive-rational-approximation.tex. The conditioning estimates below
+make preparation an actual polynomial-bit procedure for the ENTROPY
+case, rather than leaving degree-m root extraction as a primitive.
+The finite 25-pole certificate is a separate, already implemented instance.
+This note gives an algorithm/proof for the entire accuracy family; it
+does not implement that family or claim a numerical SDP solver theorem.
+
+1. THEOREM, INPUT MODEL AND MEANING OF THE COMPLEXITY
+==================================================
+
+Let b>=1 be an integer accuracy parameter, eta=2^(-b), and
+
+  f(x)=x log(x)-x+1,       f_2(x)=(x-1)^2/2, x>0.
+
+THEOREM. A deterministic algorithm using ordinary integer/rational bit
+operations returns positive rational t_i,c_i, i=1,...,m, and the rational
+number e=eta/8, such that
+
+  R_0(x)=sum_(i=1)^m c_i/(x+t_i),
+  f^-(x)=(x-1)^2 R_0(x)/(1+e),
+  f^+(x)=f^-(x)+eta f_2(x),
+
+  0<=f^-(x)<=f(x)<=f^+(x)                 for ALL x>0.       (1.1)
+
+Every output rational has polynomially many bits in b. The number of
+bit operations, and total output length, are bounded by a fixed
+polynomial in b. The poles are distinct and strictly negative, -t_i.
+Moreover, as b tends to infinity,
+
+  m <= log^2(1/eta)/(2*pi^2)+O(log(1/eta)),                 (1.2)
+
+where the logarithm is natural and the implied constant is absolute.
+The procedure uses m=2n+1; it need not return the smallest possible m.
+
+Here 'polynomial in b' is precision complexity: b is the requested
+number of accuracy bits, equivalently the accuracy input 2^(-b) has
+O(b) bits. If b itself is encoded in binary, no claim of a runtime
+polynomial in log(b) is made. For an arbitrary rational eta, include
+its FULL numerator/denominator encoding length in the complexity.
+
+The same rational data give entropy lower/upper semidefinite lifts
+with respectively 2m and 2m+1 blocks of order 2N. Their pointwise
+bracket width is EXACTLY eta*chi_P^2/2. This transfers (1.1) by the
+parent's nonnegative Petz spectral formula and small-block lift.
+No generic SDP optimization runtime, input-independent absolute error,
+finite-word matrix stability, or matrix N^2 algorithm follows.
+
+All transcendental scalar calculations and all root isolation below
+are paid for. Only entropy is covered: the note does NOT extend its
+moment formulas to arbitrary noninteger f_a or assert a uniform
+bit theorem for all operator-convex functions.
+
+2. CLASSICAL INPUTS USED, WITHOUT A ROOT ORACLE
+============================================
+
+(i) The parent paper's balanced n_-=n_+=n, a=1,b=2 positive Gaussian
+construction. For ANY positive interpolation nodes a_j in (0,1), use
+the same nodes in the lower and upper tails, paired as a_j and 1/a_j.
+Write
+
+  B(s)=prod_(j=1)^n (s-a_j)/(s+a_j),
+  M=max_(0<=s<=1) s B(s)^4.
+
+The parent's global comparison gives an ideal m=2n+1 positive
+Stieltjes rule R satisfying
+
+ |(x-1)^2 R(x)-f(x)| <= (2*pi+4) M f_2(x).                (2.1)
+
+Its exact error has sign sign(x-1). Therefore, if the right-hand
+error coefficient is at most e,
+
+  f_*^-(x)=(x-1)^2 R(x)/(1+e),
+  0<=f(x)-f_*^-(x)<=2e/(1+e)*f_2(x),                    (2.2)
+
+and f_*^-<=f<=2f_2 globally. These are the parent's one-sided bounds.
+
+(ii) Ganelius nodes at the FIXED parameter r=1/4. For each sufficiently
+large n there are explicit nodes a_j^* with
+
+ max_(0<=s<=1) s^(1/4)|B_*(s)| <= A exp(-pi*sqrt(n)/2),
+ M_* <= A^4 exp(-2*pi*sqrt(n)),                          (2.3)
+
+where A is a fixed finite constant. Their explicit formula and the
+precise source are recorded in the parent's Ganelius lemma. No need
+to know A numerically is used in the stopping rule below.
+
+(iii) Polynomial real-root isolation/refinement is a CLASSICAL paid
+subroutine, not a unit-cost primitive. Sagraloff--Mehlhorn, Computing
+real roots of real polynomials, Theorems 2 and 3, give deterministic
+isolation and refinement for square-free integer polynomials of
+degree d and coefficient bitsize tau, with bit cost polynomial in
+d,tau,kappa for isolating intervals of width <2^(-kappa). Theorem3
+states the bound ~O(d(d^2+d*tau+kappa)). We only require polynomial
+complexity. We square-free a rational input and clear denominators
+first; exact polynomial gcd and rational linear algebra are paid.
+
+Primary source actually read, including Theorems1--3 on printedpp3--5:
+  https://arxiv.org/pdf/1308.4088
+  https://arxiv.org/abs/1308.4088
+Journal: J. Symbolic Comput.73 (2016),46--86,
+  https://doi.org/10.1016/j.jsc.2015.03.004
+The algorithm used below only passes explicitly computed RATIONAL
+polynomials to this subroutine. No real coefficient oracle is assumed.
+
+Classical Gaussian quadrature, shifted Legendre polynomials, Markov's
+polynomial derivative inequality, exact partial fractions, and elementary
+scalar series provide the remaining tools. These are not new principles.
+
+3. RATIONAL INTERPOLATION NODES WITHOUT A TRANSCENDENTAL CEILING TEST
+==================================================================
+
+For n=16,17,18,... do the following. Enclose
+
+  theta_n=pi*sqrt(n)/8
+
+in a rational interval of width <1/4. This requires only polynomially
+many bits in log(n). Try BOTH integers ceil(lower),ceil(upper), if they
+differ. At least one is the exact ceil(theta_n), even if theta_n is
+extremely close to an integer. Thus there is no claim that the sign of
+theta_n-k can be decided to a prescribed absolute precision.
+
+For each candidate k put n_0=n-k and generate the explicit nodes
+
+  a_j^*=exp(2*pi*(sqrt(j-1)-sqrt(n_0))),       1<=j<=n_0,
+  a_(n_0+1)^*=exp(2*pi*(sqrt(n_0-1/2)-sqrt(n_0))),
+  a_j^*=1-(j-n_0-1)/[5(n-n_0-1)],            n_0+2<=j<=n.
+
+Starting at n=16 makes every such candidate have n_0>3 and
+n-n_0-1>0. At least one candidate is precisely the Ganelius choice.
+Every candidate nevertheless gives strictly positive nodes below1.
+
+Choose positive DYADIC rational nodes a_j, with
+
+  |a_j/a_j^*-1|<=delta,   delta=eta/[2^16(n+1)].           (3.1)
+
+They can be rounded downward, ensuring a_j<1. Exact coincident nodes
+are allowed and are interpreted with multiplicity. This causes no
+problem for Gaussian quadrature, the product estimate, or grouped
+partial fractions later.
+
+The derivative of the factor (s-a)/(s+a) with respect to log(a) has
+absolute value <=1/2, uniformly over s>=0,a>0. Since delta<=1/2,
+one factor changes by at mostdelta, and all factors have modulus<=1.
+Therefore
+
+  |B(s)-B_*(s)|<=n*delta,
+  |s B(s)^4-s B_*(s)^4|<=4n*delta<=eta/2^14.              (3.2)
+
+The formulas also give
+
+  min_j a_j >= (1/2)exp(-2*pi*sqrt(n)),
+  log(1/D)=O(n*sqrt(n)),      D=prod_j a_j^2.             (3.3)
+
+All rational nodes have bit height
+H=O(b+sqrt(n)+log(n+2)). Indeed their smallest exact value is
+bounded below by 2^(-16 ceil(sqrt(n))). Evaluating the elementary
+formula to additive error smaller than delta times this lower bound,
+then taking a dyadic lower endpoint, proves (3.1) at this height.
+
+None of pi,square root,exp is an oracle: Machin's arctangent series,
+dyadic bisection for square roots, and range-reduced Taylor series for
+exp compute enclosing rationals in polynomial time in their requested
+bits and the displayed argument sizes. All arguments here have magnitude
+O(sqrt(n)). The geometric or factorial tails provide explicit error
+bounds. Extra O(sqrt(n)) absolute accuracy bits suffice for the relative
+accuracy of the smallest node. No inverse-power-of-eta loop is used.
+
+4. A POLYNOMIAL-TIME ACCEPTANCE TEST WITH A FIXED ACCURACY MARGIN
+=============================================================
+
+For a candidate rational node set compute an upper bound U for M with
+
+  M<=U<=M+eta/1024.                                      (4.1)
+
+Then ACCEPT if 11U<=eta/8; otherwise try the next candidate or n.
+The rational inequality is exactly decidable. A nearly equal comparison
+does not trigger unbounded precision refinement: (4.1) is the only
+accuracy requested. Since 2*pi+4<11, every accepted set has ideal
+error coefficient at most e=eta/8 in (2.1).
+
+Here is a fully charged way to compute (4.1). Apart from the zeros of
+B, whose function value iszero, the interior critical points of
+F(s)=s B(s)^4 satisfy the rational polynomial equation
+
+ prod_j(s^2-a_j^2)
+       +8s sum_j a_j prod_(ell!=j)(s^2-a_ell^2)=0.         (4.2)
+
+This has degree2n and leading coefficient1. Take its square-free part,
+isolate its real roots in (0,1), and include the endpoints0,1. Its
+integer-cleared coefficient bitsize is polynomial in n,H. Endpoint
+roots, if any, can be removed exactly before isolation. Repeated
+interpolation nodes merely add irrelevant zero-value critical roots.
+
+For a_min=min a_j, F has the elementary Lipschitz bound
+
+  |F'(s)|<=K_F=1+8n/a_min,       0<=s<=1.                  (4.3)
+
+One proves this by differentiating each factor: its derivative is at
+most2/a_min, while every factor has modulus<=1. Isolate each critical
+root to width <=eta/(2048 K_F). Endpoint evaluation and directed
+rational evaluation on these intervals give upper/lower value bounds
+of width <=eta/1024, after a fixed factor2 safety allowance. For example
+each factor interval is obtained from its monotone endpoint values in
+[-1,1]; its product and fourth power have exactly the width bound
+underlying (4.3). Taking the largest upper value proves (4.1).
+Root isolation and all evaluations have polynomial bit cost in n,H,b.
+
+Termination with the sharp pole budget follows without knowing A.
+For the correct Ganelius candidate, once
+
+  A^4 exp(-2*pi*sqrt(n))<=eta/1024,
+
+(3.2),(4.1) give explicitly
+U<=(1/1024+1/16384+1/1024)eta=33eta/16384,
+and 11*33/16384<1/8. Thus an accepted n occurs no later than
+
+  n <= log^2(1/eta)/(4*pi^2)+O(log(1/eta)).                 (4.4)
+
+The sequential search has O(b^2) candidates and each has polynomial
+cost in b, since n=O(b^2), H=O(b). It is a deterministic polynomial-bit
+algorithm even though its proof uses the existence of the fixed
+Ganelius constant. Earlier acceptance can only decrease m=2n+1.
+
+5. COMPACTIFY THE IDEAL GAUSSIAN RULE
+===================================
+
+Fix an accepted rational node set and m=2n+1. Set, for 0<=T<=1,
+
+  d_a(T)=1+(a-1)T,
+  P(T)=prod_j [d_(a_j)(T)d_(1/a_j)(T)]^2,
+  w(T)=1/P(T),             D=prod_j a_j^2.
+
+Since
+
+  d_a(T)d_(1/a)(T)=1+(a+1/a-2)T(1-T),
+  1<=d_a(T)d_(1/a)(T)<=1/a,
+
+one has the explicit conditioning sandwich
+
+                   0<D<=w(T)<=1.                       (5.1)
+
+Let T_i in (0,1), A_i>0 be the m-node Gaussian rule for w(T)dT,
+exact through degree2m-1. This is exactly the compact version of
+the ideal rule in (2.1), rather than a different quadrature.
+Indeed under t=(1-T)/T the parent's modified measure is
+
+ dnu_infty(t)=dt/[(1+t)^3 prod_j(t+a_j)^2(t+1/a_j)^2]
+             =T^(2m-1)w(T)dT.
+
+For each k<=2m-1, t^k T^(2m-1)=T^(2m-1-k)(1-T)^k is a polynomial
+of degree2m-1. Thus the transformed nodes and weights A_i T_i^(2m-1)
+give an exact m-node Gaussian rule for the parent measure. Uniqueness
+identifies it with that rule. Equivalently the transformed orthogonal
+polynomial T^m q_infty((1-T)/T) is orthogonal for w on [0,1].
+
+Consequently the ideal entropy kernel is
+
+ R(x)=sum_i u_i/[1+T_i(x-1)],
+ u_i=A_i(1-T_i)P(T_i)>0.                                  (5.2)
+
+Writing t_i=(1-T_i)/T_i, c_i=u_i/T_i=A_i t_i P(T_i) gives
+the positive Stieltjes form used in (2.1)--(2.2).
+
+6. ELEMENTARY QUADRATURE CONDITIONING BOUNDS
+===========================================
+
+The following bounds apply to ANY weight D<=w<=1, not just this P.
+They ensure no hidden exponentially many ACCURACY BITS are required.
+Exponentially small numerical margins are allowed, but their logarithms
+below are polynomial in m and log(1/D).
+
+For a polynomial p of degree<m on [0,1], shifted Legendre expansion
+gives the classical Nikolskii bound
+
+  ||p||_infty^2 <= m^2 integral_0^1 |p(T)|^2 dT.             (6.1)
+
+Indeed the squared orthonormal basis values are at most2k+1, whose
+sum for k=0,...,m-1 ism^2. Let ell_i be the Lagrange polynomial for
+the Gaussian nodes. Gaussian exactness on ell_i^2 and T ell_i^2 gives
+
+  A_i=integral ell_i^2 w >= D/m^2=:a_0,
+  T_i A_i=integral T ell_i^2 w.                             (6.2)
+
+Also A_i<=integral w<=1. To bound T_i away fromzero, take
+delta_0=1/(2m^2). By (6.1), the interval [0,delta_0] carries at most
+half the UNWEIGHTED squared norm of ell_i. Hence
+
+ T_i A_i >= delta_0 D/2 * integral ell_i^2
+           >= delta_0 D/2 * A_i,
+
+and the same argument at1 gives
+
+   tau<=T_i<=1-tau,        tau=D/(4m^2).                   (6.3)
+
+Moreover integral ell_i^2<=1/D, so ||ell_i||_infty<=m/sqrt(D).
+The classical Markov inequality on [0,1] gives
+||ell_i'||_infty<=2m^3/sqrt(D). Since ell_i(T_i)=1 and ell_i(T_j)=0,
+
+  |T_i-T_j|>=sqrt(D)/(2m^3)>=sigma,
+  sigma:=D/(2m^3),       i!=j.                             (6.4)
+
+For m=1 the separation assertion is vacuous. Using the weaker rational
+sigma avoids a square-root operation in all subsequent precision bounds.
+
+Let mu_k=integral T^k w(T)dT and H=(mu_(i+j))_(i,j=0)^(m-1).
+For a monomial coefficient vectorv, (5.1) gives
+v^*Hv>=D integral|sum v_j T^j|^2. A shifted Legendre polynomial of
+degree k has monomial coefficients
+(-1)^(k-j) binom(k,j)binom(k+j,j), of magnitude at most8^k.
+The orthonormal degree-k coefficient vector therefore has squared norm
+at most(k+1)(2k+1)64^k. Cauchy--Schwarz in the basis change yields
+
+   lambda_min(H)>=h:=D/[2m^3*64^m].                       (6.5)
+
+All bounds are constructive functions of the EXACT positive rational D.
+Their negative logarithms are O(m+log(1/D)+log(m+1)).
+
+7. MOMENTS ARE COMPUTABLE IN POLYNOMIAL BIT TIME
+==============================================
+
+The polynomial P has degree4n=2m-2 and rational coefficient height
+polynomial in n,H. Its rational linear factors vanish only at
+
+  p=1/(1-a_j)>1,       p=-a_j/(1-a_j)<0.
+
+Group coincident poles exactly. For each 0<=k<=2m-1, exact division
+and rational partial fractions express T^k/P(T) as a polynomial of
+degree at most1 plus rational multiples of (T-p)^(-ell).
+The degree4n partial-fraction system is nonsingular after grouping.
+Its coefficients have polynomial bit height. Fraction-free elimination
+or determinant/minor bounds prove both polynomial operation count and
+polynomial numerator/denominator lengths of the answer. No ill-conditioned
+floating elimination is being treated as exact here.
+
+Integrals for ell>=2 are exact rationals. For ell=1 the integral is
+log|1-p|-log|p|, which for these two pole types is log(a_j) or
+-log(a_j). Therefore
+
+                  mu_k=r_(k,0)+sum_j r_(k,j)log(a_j),       (7.1)
+
+with rational coefficients of polynomial bit height, computable exactly.
+There can be severe cancellation; it is paid for by computing the
+logarithms with B plus the coefficient-height bound plus O(log(m+1))
+bits to obtain ABSOLUTE moment error <=2^(-B).
+
+For completeness, logarithms of positive rationals of bit heightH'
+are computable with certified absolute error2^(-B) in polynomial
+time in H',B. Write q=2^k r with 1<=r<2, using exact comparisons.
+Here |k|=O(H'). With z=(r-1)/(r+1) in [0,1/3), use
+
+  log(r)=2 sum_(ell=0)^(N-1) z^(2ell+1)/(2ell+1)+remainder,
+
+whose positive tail is bounded by3*9^(-N). The same series gives
+log2, with z=1/3. Taking N=O(B+H'+log(H'+2)) and exact rational
+arithmetic, then rounding outward, gives the required enclosure.
+All intermediate integer lengths are polynomial. Thus (7.1) is an
+explicit polynomial-bit moment procedure, rather than an unspecified
+integration or transcendental primitive. These are algorithmic steps;
+no claim of a new whole-family software implementation is made.
+
+8. FROM APPROXIMATE MOMENTS TO A RATIONAL POLYNOMIAL WITH KNOWN ROOTS
+==================================================================
+
+The monic degree-m orthogonal polynomial is
+q(T)=T^m+sum_(j=0)^(m-1) z_j T^j, with
+
+ H z=-(mu_m,...,mu_(2m-1))^T.                              (8.1)
+
+All roots of q are the distinct Gaussian nodes in (0,1); consequently
+its coefficient l1 norm is at most2^m. Suppose every moment is replaced
+by a rational approximation of absolute error<=epsilon_mu. If
+m*epsilon_mu<=h/2, the approximate Hankel matrix is invertible.
+Solving that rational system EXACTLY gives a rational monic qhat and
+
+ max_j |zhat_j-z_j| <=4m*2^m*epsilon_mu/h.                  (8.2)
+
+Indeed the matrix perturbation norm is <=m*epsilon_mu, the RHS error
+norm is <=sqrt(m)*epsilon_mu, the inverse norm is <=2/h, and
+||z||_2<=2^m. Rational solution bit height is polynomial in m and the
+moment precision, by the same fraction-free linear algebra argument.
+
+Choose any rational gamma<=min(tau/4,sigma/4) and put
+
+  psi=gamma*(sigma/2)^(m-1)/(4m).
+
+If the RHS of (8.2) is <=psi, then qhat has exactly m distinct REAL
+roots, one within gamma of every ideal T_i. This statement is proved,
+not assumed of a generic perturbed polynomial: at T_i+/-gamma,
+
+ |q(T_i+/-gamma)|>=gamma*(sigma/2)^(m-1),
+ |qhat-q|<=m*psi
+
+on [0,1]. Their endpoint signs therefore agree. The m disjoint
+sign-change intervals each contain a real qhat root, and its degree
+is m, exhausting all roots. Their separation is >=sigma-2gamma.
+
+Now isolate the roots of the EXPLICIT rational polynomial qhat to
+width<=gamma using the integer case of the paid classical subroutine
+in Section2. Enlarge every isolating interval by gamma on both sides.
+In their sorted order these enclose the true ideal nodes T_i, with
+width<=3gamma. The root-label correspondence follows from the disjoint
+gamma neighborhoods and their ordering. No exact q root or unknown
+coefficient oracle has been supplied for free.
+
+9. CERTIFIED GAUSSIAN WEIGHTS AND AN EXPLICIT SAFE PRECISION
+=========================================================
+
+Here are explicit rational choices sufficient for the final rounding.
+They are intentionally conservative. Put
+
+  K=(4/sigma)^(m-1), a_0=D/m^2,
+  M_0=8/tau+8n/a_min+1,
+
+  delta_T=min{tau/32, sigma/(32m), eta/(2^20 M_0),
+                    eta*a_0*sigma/(2^24 m^2 K^2)},
+  gamma=delta_T/4,
+  psi=gamma*(sigma/2)^(m-1)/(4m),
+
+  epsilon_mu <=min{h/(4m), eta*a_0/(2^24 K^2),
+                                      psi*h/(8m*2^m)}.     (9.1)
+
+Choose epsilon_mu as the largest dyadic power not exceeding this
+minimum; its negative logarithm differs from that of the minimum by
+less than one. The coarser sufficient precision (9.5) is an alternative.
+
+Compute enclosing moments to this error and follow Section8. The
+resulting ideal-node boxes have width<delta_T and lie in
+[tau/2,1-tau/2]. Their midpoint values T'_i satisfy |T'_i-T_i|<=delta_T.
+Form their Lagrange polynomials ell'_i with exact rational coefficients,
+and compute the rational approximation
+
+ A'_i=sum_(k=0)^(2m-2) coefficient_k((ell'_i)^2)*muhat_k.
+
+Let
+
+ E_A=K^2*epsilon_mu+16m^2*K^2*delta_T/sigma.                (9.2)
+
+Then [A'_i-E_A,A'_i+E_A] encloses the true positive Gaussian A_i.
+To see this, all intermediate node vectors have separation>=sigma/2.
+Their Lagrange coefficient l1 norms are <=K. Differentiating the
+product/denominator formula for ell_i shows its coefficient l1
+Lipschitz constant in the maximum node distance is <=8m^2 K/sigma.
+Squaring doubles this to <=16m^2 K^2/sigma. Moment error contributes
+at most K^2*epsilon_mu. This proves (9.2) without relying on a
+dependency-sensitive interval linear solve. In particular
+
+             E_A<=17 eta*a_0/2^24<eta*a_0/2^19.           (9.3)
+
+All weight intervals are strictly positive, since A_i>=a_0.
+
+The required number of ACCURACY BITS is explicitly polynomial. If
+b_D=ceil(log2(1/D)), then a_min^2>=D and (9.1) imply
+
+ log2(1/delta_T)=O(b+m*(b_D+log(m+1))),
+ log2(1/epsilon_mu)=O(b+m*(b_D+log(m+1))).                 (9.4)
+
+For example, rounding moments to
+
+ B_mu=ceil(10^6 m^2 [b+b_D+m+10])                          (9.5)
+
+absolute bits is more than sufficient for all inequalities in (9.1).
+This follows directly by taking logarithms of their displayed factors:
+log2 K=(m-1)log2(4/sigma), log2(1/h)=b_D+O(m+logm),
+and log2 M_0<=b_D+O(log(m+1)). There are no unspecified exponentially
+many precision bits. Using the exact rational minimum in (9.1), rather
+than (9.5), gives a smaller computable bound.
+
+One fully explicit check of sufficiency is as follows. For
+X=b+b_D+m+10, use log2(m)<=m and a_min^2>=D to bound
+log2(1/tau)<=2X, log2(1/sigma)<=3X, log2 K<=4mX,
+log2 M_0<=2X and log2(1/h)<=10X. Taking logarithms in
+(9.1) then gives log2(1/delta_T)<=20mX,
+log2(1/psi)<=30mX, and, for the largest dyadic choice,
+log2(1/epsilon_mu)<=100mX. Thus (9.5) has a fixed verified
+polynomial margin, not an unquantified stability constant.
+
+All operations on Lagrange polynomials, qhat, moments and root boxes
+have polynomial-size rational operands. The paid root routine's
+degree, integer coefficient height and target refinement precision
+are therefore polynomial in m,b_D,b. Since accepted n=O(b^2) and
+b_D=O(n sqrt(n))=O(b^3), the ENTIRE preparation has polynomial-bit
+complexity in b. No optimized exponent for this polynomial is claimed.
+
+10. EXPORT POSITIVE RATIONAL COEFFICIENTS WITH A GLOBAL LOWER BOUND
+================================================================
+
+For a node box [T_i^-,T_i^+] define positive rational pole bounds
+
+  t_i^-=(1-T_i^+)/T_i^+,
+  t_i^+=(1-T_i^-)/T_i^-.
+
+Bound each positive linear factor d_a(T) on that node box by its
+monotone endpoint values, and multiply/square to get rational
+P_i^-<=P(T_i)<=P_i^+. With the weight interval from Section9 set
+
+  c_i^-=(A'_i-E_A)t_i^- P_i^-,
+  c_i^+=(A'_i+E_A)t_i^+ P_i^+.
+
+Export tbar_i=t_i^+ and cunder_i=c_i^-, both exact rationals. Since
+the node boxes are disjoint and ordered, the exported poles are
+distinct. All residues are strictly positive. Define the exact rational
+
+  kappa=min_i (c_i^-/c_i^+)*(t_i^-/t_i^+).                  (10.1)
+
+Termwise for EVERY x>0,
+
+ kappa*c_i/(x+t_i)<=c_i^-/(x+t_i^+)<=c_i/(x+t_i).
+
+Thus kappa R<=R_0<=R globally; no interpolation equality is assumed
+to survive the rational enclosure.
+
+The quantitative choices above certify 1-kappa<=eta/16. Here are
+explicit width bounds. A node box has width<=delta_T and lies in
+[tau/2,1-tau/2], where |(log t)'|<=4/tau. Hence
+
+ log(t_i^+/t_i^-)<=4delta_T/tau<=eta/2^21.
+
+Every d_a and d_(1/a) factor has relative variation at most
+exp(delta_T/a_min); there are2n factors, each squared. Consequently
+
+ log(P_i^+/P_i^-)<=4n delta_T/a_min<=eta/2^21.
+
+By (9.3), log[(A'_i+E_A)/(A'_i-E_A)]<=4E_A/a_0<=eta/2^17.
+It follows that log(c_i^+/c_i^-)<=eta/2^16, and then
+-log(kappa)<=eta/2^15. In particular kappa>=1-eta/16 as claimed.
+All these conclusions can also be checked by the exact rational
+comparison kappa>=1-eta/16 before exporting.
+
+If desired, endpoints can be rounded further to positive dyadics with
+a fixed small fraction of the available error budget. That is not
+needed for rational output: the displayed endpoints already have
+polynomial bit height. Kernel coefficients are then
+
+ Tbar_i=1/(1+tbar_i),   ubar_i=cunder_i/(1+tbar_i),
+
+with the extra rational factor1/(1+e) for f^-.
+
+Finally use e=eta/8 and (2.2):
+
+ f^-<=f_*^-<=f,
+ f-f^- <= (f-f_*^-)+(1-kappa)f_*^-
+         <=[2e/(1+e)+2(1-kappa)]f_2
+         <=(3eta/8)f_2<=eta f_2.
+
+This proves (1.1), and adding EXACTLY eta f_2 gives the stated upper
+function and exact-width entropy bracket. Equations(4.4) and m=2n+1
+give (1.2). Every output quantity is rational and every scalar root,
+moment and transcendental evaluation has been charged.
+
+11. WHAT THIS DOES AND DOES NOT ESTABLISH
+========================================
+
+This closes the mathematical polynomial-bit PREPARATION gap for the
+entropy family in the parent construction. It preserves the sharp
+leading upper pole-count coefficient1/(2*pi^2) proved there; it does
+not prove that this coefficient is an optimal entropy lower bound.
+No unknown degree-m root operation remains in the model.
+
+The construction is nongalactic in the limited theoretical sense that
+all preparation costs are fixed polynomials in log(1/eta), with no
+fast matrix multiplication or exp(poly(log(1/eta))) cost hidden as an
+arithmetic primitive. Its unoptimized polynomial and conservative
+precision bounds need not be suitable for hardware implementation.
+The separately implemented 25-pole certificate is a useful smaller
+instance, but is not claimed to be an implementation of this whole
+family proof.
+
+Gaussian quadrature conditioning, polynomial root algorithms and
+positive Stieltjes coefficient rounding are classical. The candidate
+contribution is a complete charged preparation theorem attached to
+the parent entropy approximation rate and small-block certificates.
+Faust--Fawzi2023 already studies rational approximants and practical
+coefficient computation using differential correction:
+  https://arxiv.org/abs/2305.12405
+No first invention of positive quadrature, rational entropy SDP lifts,
+certified root isolation or polynomial-bit algebra is claimed.
+
+No exhaustive novelty audit, external referee approval, formal proof,
+floating matrix stability theorem or generic fast SDP solver is asserted.
+The original unrestricted N^2 goal remains distinct and unresolved.
+
+STATUS AT FIRST WRITE: complete working proof, awaiting an independent
+exact-copy mathematical audit, especially Sections6--10 and all bit
+height/termination bookkeeping. No existing source was changed.

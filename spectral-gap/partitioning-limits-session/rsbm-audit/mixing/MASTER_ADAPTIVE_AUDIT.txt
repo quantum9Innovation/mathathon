@@ -1,0 +1,142 @@
+ACTUAL-SOURCE ADVERSARIAL AUDIT OF ADAPTIVE CROSS MATCHING -- 2026-11-15
+=====================================================================
+
+Source fully read and independently reconstructed:
+spectral-gap/partitioning-limits-session/rsbm-audit/adaptive-cross-matching.tex
+Final audited SHA256:
+779626afee78c4ab0363113ba0a148b86ba758ea42b2b281c8dfe99af59aacf8
+
+Earlier proof-identical source also read, SHA256:
+d76794a3389e4571a5a924ace9671ca7ed544537347803da656c43b69f9aadfb.
+The final source adds only the correct statistical-inference scope caveat.
+
+VERDICT: PASS. No fatal gap found in clean-cycle input, deterministic
+matching construction, polynomial selection, or pairwise-independence
+symmetrization. This is an audit of correctness, not historical priority.
+
+1. PRIMARY MWW THEOREM AND CLEANNESS IMPLICATION
+----------------------------------------------
+Primary PDF actually opened and inspected:
+McKay--Wormald--Wysocka, Short cycles in random regular graphs (2004),
+https://users.monash.edu/~nwormald/papers/girth.pdf
+Exact inspected portions: model convention and assumptions PDFpp1-2,
+Theorem2 PDFp3, Equation(2.9) and its context PDFp5.
+
+The model convention explicitly says uniform among labelled graphs in
+the specified class. Thus no contiguity step is hidden in the use here.
+Its standing condition is(d-1)^(2g-1)=o(N), with growing g allowed. Its
+Theorem2 for forbidden-length setC={ell} gives exactly
+  P(no ell-cycle)=exp[-2^ell/(2ell)+o(1)]
+at d3,g=ell, including the o(1) IN THE EXPONENT. Both required limits
+hold for ell=floor(loglogN). Thus existence follows with high probability.
+
+The primary Equation(2.9) really bounds the probability that ANY cycle
+whose length lies in C shares an edge with a different cycle of length
+at most g, by O((d-1)^(2g-1)/N). With C={ell},g=ell this is precisely
+the event ruled out by the manuscript, with no missing union factor.
+
+For a chord, the shorter arc has length between2 andfloor(ell/2), and
+adding the chord makes a different cycle of length<=floor(ell/2)+1.
+For a repeated outside third neighbor, its two incident cycle vertices
+are distinct; their shorter arc has length at least1. That arc plus
+the two boundary edges is a simple different cycle, length at most
+floor(ell/2)+2. Its outside vertex is not on the original cycle, and
+the shorter arc contains an original cycle edge. For ell>=4 these
+lengths are<=ell. Both obstructions therefore contradict the precise
+edge-sharing event excluded by(2.9). Cubicity supplies exactly one
+outside neighbor once chordlessness is established.
+
+Independent crosscheck: my separate self-contained configuration-model
+proof establishes the same claim without MWW; see
+mixing/adaptive-clean-cycle-boundary.tex, SHA256
+b1a7eae05c6ab0198376e6afa7dc02c67fa78bbcf245bd46f64f754a03458f71.
+It explicitly controls growing-cycle second moments and bad boundaries.
+The two arguments agree; the master correctly uses the sharper and
+already classical primary result rather than claiming a new cycle theorem.
+
+2. DETERMINISTIC MATCHING AND LOCALIZED EIGENVECTOR
+-------------------------------------------------
+Clean cycles X,Y have disjoint boundary sets U,W in their respective
+blocks; each has exactly ell vertices. Every boundary vertex has exactly
+one neighbor on its cycle, because the cycle-to-boundary map is injective
+and onto. Thus the three displayed bijections use disjoint source sets
+and disjoint target sets and exhaust both blocks, giving a genuine simple
+perfect matching, not a fractional or weighted substitute.
+
+The eigenvector calculation is exact, vertex by vertex:
+* X vertices see two+1 entries internally and zeros at both other neighbors.
+* U vertices see one+1 cycle neighbor and one-1 cross-matching neighbor.
+* Y vertices similarly see two-1 entries; W entries cancel.
+* Remaining vertices see neither cycle internally nor through their matching.
+Consequently zeta=(1_X,-1_Y) has eigenvalue2 and support exactly2ell.
+The hypothesis0<ell<N ensures zeros outside its support, so it is linearly
+independent of sigma. The sign vector sigma-2zeta has equal block sizes;
+its eigenvalue2 identity in a4-regular graph implies exactly3 same-side
+and1 opposite-side neighbors. It is distinct from both sigma and-sigma.
+
+No statement about eigenspace multiplicity was inferred merely from
+approximate vectors. No inference from a second partition to a statistical
+lower bound is needed; the final source expressly separates those claims.
+
+3. DEFINITE SELECTION AND RUNNING TIME
+------------------------------------
+In a cubic graph all nonbacktracking walks of length ell can be generated
+in at most3N2^(ell-1) branches. Testing a branch for a simple closed cycle,
+a chord, and injective boundary is possible in O(ell) operations with
+ordinary adjacency lists and temporary vertex marks. Choosing the first
+passing branch in a fixed traversal order is a definite deterministic
+choice of the required first cycle. Thus O(N ell2^ell) is valid and
+polynomial, and the three matching bijections can be chosen in sorted
+label order. The rare no-cycle event is explicitly assigned a fixed
+fallback matching, so the function is defined on every input pair.
+
+4. PAIRWISE INDEPENDENCE: ADVERSARIAL CONDITIONAL-LAW CHECK
+---------------------------------------------------------
+This is the nontrivial strengthening, and it survives the conditional
+dependence check. Start with independent uniform labelled cubic C,D and
+independent uniform permutations pi,rho. For any deterministic graph d'
+and permutation r,
+  P(D'=d',rho=r)=P(r D r^-1=d')/N!
+                =1/(|G_N,3| N!),
+so D' is exactly independent of rho, despite the deterministic relation
+D'=rho D rho^-1. Likewise C' is independent of pi. Because the two input
+pairs are independent, (C',D') is independent of(pi,rho) jointly.
+
+For B independence from C, the safe conditioning is exactly that in the
+master: condition on(C,pi,D'), NOT on(C,D,pi,D'). Then m'=F(C',D') is
+fixed, and rho remains uniform and independent of everything conditioned
+upon. For any fixed target bijection b there is exactly ONE permutation
+rho satisfying rho^-1 m' pi=b. Hence
+  P(m=b | C,pi,D')=1/N!,
+and averaging proves P(m=b|C)=1/N!. This establishes full independence
+of the random matching B from the entire labelled matrix C, not merely
+independence of selected edge indicators.
+
+For B independence from D, condition symmetrically on(D,rho,C'). Then
+m' is fixed and pi is still independent uniform. Again exactly one pi
+produces any prescribed m, yielding P(m=b|D)=1/N!.
+The pair(C,D) was never resampled and remains independent. Thus the
+THREE factors are truly pairwise independent with the required exact
+marginals. They are generally not jointly independent.
+
+For the high-probability failure assertion, (C',D') has the independent
+uniform cubic law, so the deterministic function F fails to make an extra
+eigenvector with probability o(1). Pulling its matching back by the block
+permutations gives exactly m=rho^-1 m' pi, the same full graph with labels
+changed within each block. The localized eigenvector, planted block sign
+vector and second partition therefore pull back without changing support
+size or any eigenvalue. No inappropriate conditioning on the success event
+is used in proving any marginal or independence statement; fallback inputs
+are symmetrized as well.
+
+5. FINAL SCOPE
+--------------
+The two quantifier statements sup_fixedB P(failure)=o(1) and
+P(exists B:failure)=1-o(1) are logically compatible. The corollary supplies
+a concrete coupling showing that even exact pairwise independence does
+not recover the joint independence needed by the positive proof. This
+is a dependence-model boundary, not a contradiction of the independent
+RSBM theorem. The second partition differs on2ell=o(N) memberships.
+The final statistical-recovery caveat is appropriate: combinatorial
+nonuniqueness alone need not make two partitions equally likely under
+an estimator's known adaptive generative law.

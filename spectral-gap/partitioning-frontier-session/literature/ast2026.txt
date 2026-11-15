@@ -1,0 +1,1162 @@
+                                                                                                     p
+                                           Kh -Minor-Free Graphs Have Balanced Separators of Size O(h n)
+                                                                   Jonathan Conroy*                  Hung Le†              Jack Spalding-Jamieson‡
+
+
+                                                                                                           Abstract
+                                                                                                                                                               p
+                                                         We show that every Kh -minor-free graph with n vertices has a balanced separator of size O(h n) for any
+
+
+
+
+arXiv:2611.00663v1 [math.CO] 31 Oct 2026
+                                                     parameter h ∈ N, resolving the conjecture posed by Alon, Seymour, and Thomas [AST90] in 1990. The proof is
+                                                     elementary, building on the combinatorial framework by Le [Le26]. A key new idea of the proof is the existence of
+                                                     a short hitting walk on vertex expanders: given k large (not necessarily disjoint) subsets of vertices, there is a walk
+                                                     of length O(k/ψ(G)) hitting every subset, where ψ(G) is the vertex expansion. This technical result substantially
+                                                     improves on an analogous lemma by Alon, Seymour, and Thomas [AST90] in an important parameter setting,
+                                                     where the previous lower bound [Kot00] does not apply.
+
+
+                                           AI Disclosure. The key technical ideas of this paper are due to GPT-6 Astra, with some simplification due to
+                                           Claude Opus 5.5. A Lean formalization1 of our main result was produced using a combination of GPT-6 Astra
+                                           and Claude Opus 5.5, and its main definitions and statements have been checked over by the human authors.
+                                           GPT-6.1 Sol was used to produce some figures from hand-drawn sketches. The human authors claim no role
+                                           in developing the technical ideas. Our main contribution is verifying correctness, contextualizing the results,
+                                           completely rewriting the paper to present the key new ideas in the proofs, and attributing existing ideas to prior
+                                           work (to the best of our knowledge). In particular, we have simplified the proof for understandability, and obtained
+                                           a slightly worse constant than the formalization in doing so.
+
+
+                                           1        Introduction
+                                           The separator theorem for planar graphs by Lipton and Tarjan [LT79] in 1979 is a cornerstone of algorithmic graph
+                                           theory. Given a graph G = (V, E), a vertex subset S ⊂ V is a balanced separator if every connected component of
+                                           G \S has size at most 3|V |/4. The Lipton-Tarjan theorem says that any n-vertex planar graph has a balanced (vertex)
+                                                                 p                                                                             p    p
+                                           separator of size O( n). This bound is asymptotically optimal: any balanced separator of the n × n-planar
+                                                                   p
+                                           grid must have size Ω( n). A similar result was soon shown for bounded genus graphs [GHT84], which is also
+                                           asymptotically tight. A decade later, Alon, Seymour, and Thomas [AST90] (AST) generalized the planar separator
+                                           theorem to Kh -minor-free graphs. They showed that any n-vertex Kh -minor-free graph has a balanced separator of
+                                                       p                                                                    p
+                                           size O(h3/2 n). In particular, for a constant h, the AST separator has size O( n); this applies to planar graphs,
+                                           which are K5 -minor-free. In the regime of constant h ⩾ 5, their separator bound is also asymptotically optimal,
+                                                              p    p
+                                           witnessed by the n × n-planar grid.
+                                               For non-constant h, Alon, Seymour, and Thomas [AST90] conjectured that the bound is not optimal. They
+                                                                                                                                               p
+                                           pointed out that for 3-regular expander graphs with n vertices,ph = Θ(n1/2 ), but the bound O(h3/2 n) = O(n1/4 n),
+                                           while a (trivial) balanced separator has size n. This excess of h is their basis for the following conjecture.
+
+                                           Conjecture 1 (Alon-Seymour-Thomas Conjecture [AST90]). Any Kh -minor-free graph with n vertices has a
+                                                                                p
+                                           balanced vertex separator of size O(h n) for any h ⩾ 3.
+                                             * Dartmouth College. jonathan.conroy.gr@dartmouth.edu. Supported by the NSF CAREER award CCF-2443017.
+                                             †
+                                               University of Massachusetts Amherst. hungle@cs.umass.edu. Supported by the NSF CAREER award CCF-2237288 and the NSF grant
+                                           CCF-2517033.
+                                             ‡
+                                               Independent. jacksj@uwaterloo.ca
+                                               1
+                                                   https://github.com/jacketsj/formalized-minor-free-separators
+
+
+
+
+                                                                                                               1
+    Conjecture 1 has received significant attention over the last few decades; see Table  p 1 for an overview. In
+1994, Plotkin, Rao, and Smith [PRS94] constructed a balanced separator of size O(h n log n). For large h, this
+improves on the AST bound, but for constant h, their separator size is not optimal. Nearly two decades later, in
+2010, Kawarabayashi and Reed [KR10] announced a separator result based on the Robertson–Seymour structure
+                                                          p
+theorem; their precise bound is later clarified2 to be O(h n + f (h)), where f (h) is a very fast-growing function. It
+is possible that the recently improved structure theorem for minor-free graphs [GSW25] may reduce f (h) to a
+(very large) polynomial in h, but even then it does not settle Conjecture 1, and the proof would not be elementary.
+Around
+     p the same   time, Biswal, Lee, and Rao introduced a new technique to give another balanced separator of size
+              p
+O(h3 log h · n). Although their bound is worse than the AST bound, their technique brought multicommodity
+flow-cut duality into the picture. Recent works [Spa25, Le26] exploit the optimal padded decomposition [CF25]
+                                                                                                         p
+to push the flow-cut duality technique much further and obtain a balanced separator of size O(h log h · n) [Le26].
+This bound matches the barrier of the standard flow-cut approach, since the flow-cut gap can be Ω(log h) (e.g. for
+3-regular expanders).
+
+             Separator size                  Reference       Year    Notes
+                    p
+             O(h3/2
+                p n)                         [AST90]          1990
+             O(h pn log n)                   [PRS94]          1994
+                            p
+             O(h3 log h · n)                 [BLR10]          2008   flow-cut duality
+                p
+             O(h n + f (h))                  [KR10]           2010   f (h) is a fast growing function
+                                  p
+             O(h log h log log h · n)        [Spa25]          2025
+                        p
+             O(hplog h · n)                  [Le26, Thm. 1] 2026     optimal flow-cut duality
+                          p
+             O(h log h · n)                  [Le26, Thm. 2] 2026     bypasses flow-cut duality
+                p
+             O(h n)                                This paper        Asymptotically optimal [AST90]
+
+                         Table 1: Bounds for balanced separators of n-vertex Kh -minor-free graphs.
+
+    Recently, Le [Le26] bypassed the flow-cut duality barrier and obtained a balanced separator of size O(h n log h).
+                                                                                                           p
+
+The main idea there is to incorporate the optimal padded decomposition by Conroy and Filtser [CF25] directly into
+the
+p combinatorial frameworks   p by Alon, Seymour, and Thomas [AST90] and Plotkin, Rao, and Smith [PRS94]. The
+  log h factor is essentially βh where βh = Θ(log h) is the “paddingpparameter” of Kh -minor-free graphs [CF25].
+The bound log h is also optimal for βh . As noted in [Le26], “Erasing log h entirely seems to require substantially
+new ideas.”
+    Our main result is a complete resolution of Conjecture 1.
+                                                                                                        p
+Theorem 1. Any n-vertex Kh -minor-free graph G has a 3/4-balanced separator of size at most 16h n.
+
+      In Section 1.2, we give a detailed overview of the proof. Here we highlight two new ideas underlying the proof.
+
+The first idea is a bound on the length of a walk intersecting k large subsets of vertices in a vertex expander.
+To formally state the bound, we recall the definition of a vertex expander. Given a connected graph G = (V, E)
+and a subset S ⊆ V of vertices, we define the (outer) boundary ∂ S := {v ∈ V \ S : ∃u ∈ S, uv ∈ E}, which is the
+set of vertices in V \ S that have at least one neighbor in S. We say that G is a ψ-vertex expander for a parameter
+ψ > 0 if, for every S ⊆ V such that |S| ⩽ |V |/2, |∂ S| ⩾ ψ|S|. That is, every vertex subset of size at most |V |/2 has
+a sufficiently large external neighbor set in G. We denote by ψ(G) = max{ψ : G is a ψ-vertex expander}.
+    The central new ingredient of the proof of Theorem 1 is the following theorem, which gives a short walk that
+intersects every set in a given collection of large subsets. Note that these subsets may not be vertex-disjoint.
+
+Theorem 2 (Short Hitting Walk on Expanders). Let G = (V, E) be a connected graph on n vertices. Let X 1 , . . . , X k ⊂
+V be k subsets of vertices, each of size at least n/k. Then G has a walk W of length less than 13k/ψ(G) that
+intersects every subset: W ∩ X i ̸= ∅ for every i ∈ [k].
+  2
+      See [Le26, BKL+ 26] for a more detailed discussion.
+
+
+                                                               2
+      To place Theorem 2 in context, we compare it with the following lemma of Alon, Seymour, and Thomas [AST90].
+Lemma 1 (Lemma 2.1 [AST90]). Let G = (V, E) be an n-vertex graph and ℓ > 0 be a parameter. Let X 1 , . . . , X k
+be k subsets of vertices of G. Then there exists either:
+   1. a tree T in G of at most ℓk vertices such that T ∩ X i ̸= ∅ for every i ∈ [k], or
+   2. a subset Z ⊆ V of size |Z| < n/ℓ such that for every connected component C of G \ Z, C ∩ X i = ; for some
+      i ∈ [k].
+    Alon, Seymour, and Thomas [AST90] observed that improving the trade-off between the tree size hℓ and the
+                                                                                     p
+separator size n/ℓ would improve their balanced-separator bound (which is O(h3/2 n)). However, Kotlov [Kot00]
+later showed that the tradeoff is tight when ℓ is constant, and G is the hypercube. Subsequent papers either avoid
+the AST framework entirely [KR10, BLR10, Spa25] or exploit Kh -minor-freeness to get a better tradeoff [Le26].
+(Herein, for simplicity, we assume that k = h since this is the most interesting regime.) Specifically, Le [Le26] uses
+the optimal padded decomposition for Kh -minor-free graphs [CF25] to construct a tree T of size O(ℓ log h) (in a
+very specific setting), improving over the bound O(hℓ) in Lemma 1. The log h factor is essentially the padding
+parameter, which is best possible as noted above.
+    The walk-length bound in Theorem 2 improves the bound on |V (T )| in Lemma 1 to O(ℓ) when ℓ = c · h/ψ(G)
+for a sufficiently large constant c. To see this, assume |X i | = n/h for every i ∈ [k], and let Z ⊆ V be any
+set with |Z| < n/ℓ = ψ(G) · n/(c · h). Every union S of components of G \ Z with |S| ⩽ n/2 has ∂ S ⊆ Z, so
+|S| ⩽ |Z|/ψ(G) < n/(c · h) by the definition of a vertex expander. Take such an S of maximum size. By maximality,
+every other component C of G \ Z has |C| > n/2 − |S| > n/2 − n/(c · h), which is greater than n/(c · h) > |S| for
+c ⩾ 2, and therefore |C| > n/2. So G \ Z consists of S and a single component C, which intersects every X i because
+|V \ C| = |S| + |Z| < n/(c · h) + ψ(G) · n/(c · h) = (1 + ψ(G)) · n/(c · h) ⩽ n/h = |X i | for any c ⩾ 3 ⩾ 1 + ψ(G).
+Hence Z does not satisfy case 2 of Lemma 1, which requires every component of G \ Z to miss some X i . Hence,
+case 2 cannot occur, and case 1 gives a tree T with at most
+                                                           hℓ = O(h2 /ψ(G))
+vertices that intersects every X i . However, Theorem 2 gives a tree — more precisely, a spanning tree of the subgraph
+G[V (W )] where W is the walk — of only O(h/ψ(G)) vertices that intersects every X i , a factor of h improvement!
+Note that Theorem 2 does not exploit Kh -minor-freeness, and yet still gives a factor of h improvement over
+Lemma 1.
+    At this point, readers might ask: does Theorem 2 contradict Kotlov’s [Kot00] lower bound, which shows the
+tightness of Lemma 1? One observation is that Theorem 2 requires |X i | ⩾ n/k, whereas Lemma 1 imposes no such
+requirement. However, the lower bound instance of Kotlov [Kot00] has |X i | = n/2, so assuming large subsets is not
+the source of the improvement. The key fact here is that the parameter setting ℓ = c · k/ψ(G) in the application of
+Theorem 2 is outside the lower bound regime of Kotlov. Specifically, Kotlov’s lower bound applies p  to the case ℓ = 2,
+k ≈ 2 log(n) and G is the (discrete) hypercube (in {0, 1}log n ). For the hypercube3 , ψ(G) = Θ(1/ log n) [Har66],
+and hence our setting of ℓ in Theorem 2 is ℓ = c · k/ψ(G) = Θ(log3/2 (n)), which is much larger than 2. In summary,
+there is no contradiction.
+
+The second idea is to adapt the algorithm by Le [Le26], which itself is a combination of two different algo-
+rithms [AST90, PRS94], so that Theorem 2 can be applied. For readers who are familiar with Le [Le26] (as well
+as [AST90, PRS94]), in a nutshell, the algorithm is iterative, and every iteration essentially has two major steps:
+it finds either (i) a small set of vertices Z of the current subgraph H ⊆ G that cuts off a large subset A (relative
+to |Z|), or (ii) a tree T ⊆ H of small size that intersects every neighborhood of the current branch sets in the
+clique minor model. Here in this paper, both steps are reframed in terms of vertex expanders. Specifically, case
+(i) can be implemented as cutting off the smaller side of a sparse cut if H is not a vertex expander, while in the
+(complementary) case (ii), H is a vertex expander. In this case, we split into two smaller cases: one of which
+extends the neighborhood of each branch set, so its size is at least n/h, then applies Theorem 2 to find the tree T .
+The other smaller case is handled similarly to prior work [AST90, Le26].
+  3
+      For the hypercube, Theorem 2 is asymptotically tight when k = 4.
+
+
+                                                                     3
+On notation. Graphs in this paper are unweighted and connected, unless explicitly noted otherwise. For any walk
+W in G, we denote by |W | the length of the walk, which is the number of edges in W (counted with multiplicity).
+Let πG (u, v) denote a shortest path between u and v in a graph G. We use dG (u, v) to denote the distance between
+u and v, which is also |πG (u, v)|. For any two walks P and Q of G that share the same endpoint, we denote by P ◦ Q
+the walk obtained by concatenating P and Q at the shared endpoint. We use [n] to denote the set {1, 2, . . . , n}.
+
+
+1.1       Related work
+An orthogonal line of work on balanced separators of Kh -minor-free graphs focuses on fast, ideally linear-time
+algorithms [AST90, PRS94, RW09, KR10, Wul11, Wul14, BKL+ 26]. Here, we assume that the minor size h is a
+fixed constant. In this regime, Bonnet, Korhonen, Le, Li, and Masařík [BKL+ 26] gave a linear-time algorithm,
+which concludes decades of effort on the running-time question. The dependency on h in these works could be
+exponential [RW09] or polynomial with a high degree [BKL+ 26].
+    Another relevant line of work focuses on constructing balanced separators for more general graph classes, such
+as graphs with polynomial expansion [PRS94, DN16, ER18], H-induced-minor-free graphs [KL24], or fat-minor-
+free graphs [BLPP26]. In these papers, the separator size, especially its dependency on the minor size (in their
+respective definitions of graph minors), is not optimal. It would be interesting to see if the short hitting walk in
+Theorem 2 can be applied to improve the separators in these more general settings.
+
+
+1.2       Proof overview
+A K t minor model of a graph G is a collection K = {C1 , C2 , . . . , C t } of vertex-disjoint connected subgraphs of G,
+such that for any two different sets Ci , C j with 1 ⩽ i ̸= j ⩽ t there exists an edge (u, v) ∈ E    Swhere u ∈ Ci and
+v ∈ C j . Each subgraph in K is called a branch set. We use V (K) to denote the set of vertices C∈K C.
+
+                                                              p
+The algorithm. We describe an algorithm to find an O(h n)-size separator. (For simplicity, we are concerned
+only with the existence of the separator and not an efficient construction. The algorithm as we present it does not
+run in polynomial time.) In describing the algorithm, we assume that the walk-length bound in Theorem 2 holds.
+The algorithm is basically a reduction to the case where we can apply the walk-length bound. At the end, we give
+an overview of the proof of Theorem 2.
+    Just as in [AST90, PRS94, Le26], our algorithm proceeds by iteratively sweeping a short separator through
+G until it finds a balanced separator. It maintains an induced subgraph H of G which contains at least 3n/4
+vertices; the current separator is the boundary of H, denoted ∂ H. One should think of H as the largest connected
+component of G after removing the “current separator.” We maintain the invariant that the current separator, i.e.
+                                          p
+the boundary of H, always has size O(h n). To this end, the algorithm maintains two additional objects, whose
+union contains the boundary of H: (1) a minor model K of a clique in G, such that each branch set C ∈ K has
+                p                                                                                               p
+|∂ H ∩ C| ⩽ O( n) and (2) an additional subset X of vertices, which we separately guarantee has size O(h n).
+                                                                            p
+The invariant that ∂ H lies in the union X ∪ V (K) implies that |∂ H| ⩽ O(h n).
+    In each iteration of the algorithm, we add some vertices to X ∪ V (K), then set H to be the largest connected
+component of H \ (X ∪ V (K)). When the size of H drops below 3n/4, we return the boundary of H as our balanced
+separator. In each iteration, there are three cases that determine which vertices to add to X ∪ V (K). The first two
+are simple cases. In the only remaining case, we can exploit the expander walk theorem.
+
+      • Case 1: H has small expansion.
+                                       p
+        Case 1 occurs if H is not an h/ n-expander. In this case, there is a set of vertices A whose boundary Z
+                           p
+        contains at most h/ n|A|. We add Z to X , and continue to the next iteration. A charging argument4 shows
+                                       p
+        that X never grows beyond O(h n).
+                                                                                            p
+      • Case 2: Some branch set C ∈ K can be enlarged while preserving |∂ H ∩ C| ⩽ O( n).
+  4                               p                                                                                                p
+      Each vertex in A receives h/ n charge from the vertices of Z, and is never charged again. Over n vertices, there is at most h n charge.
+
+
+
+
+                                                                       4
+       For Case 2, we check if there is some branch set C and radius r such that we can enlarge C by growing a
+                                                                                                                p
+       radius-r ball around C into H. Such an enlargement is valid so long as C still satisfies |∂ H ∩ C| ⩽ O( n),
+                                                            p
+       which is equivalent to asking if there are at most O( n) vertices at distance r from C (with respect to H). If
+       there is such a branch set C and small-boundary ball, then we are in Case 2: we grow C and update K.
+    • Case 3. Otherwise, we can apply the walk theorem.
+                                                  p
+      If Case 1 does not apply, we know H is an h/ n-expander. If Case 2 does not apply, we can show that for any
+                             p
+      branch set C ∈ K, the n/h-radius ball around C contains at least n/h vertices in H. In this case, the hitting
+                                                                   p                                         p
+      walk theorem applies, and we can find a walk W in H with O( n) vertices that travels within distance n/h
+                                                                                                              p
+      of every C ∈ K. We extend the walk W so that it is adjacent to every C ∈ K. We have that |W | = O( n).
+      The vertices in W become a new branch set that we add to K.
+                                                                                          p
+In each of these three cases, we shrink H while maintaining the invariant that |∂ H| ⩽ O(h n). When H becomes
+small enough, we terminate and return ∂ H.
+
+The existence of a short hitting walk in Theorem 2. It is well known that a ψ(G)-vertex-expander has diameter
+O(log n/ψ(G)), which is also tight. Thus, we can construct a walk in Theorem 2 of length O(k log n/ψ(G)) simply
+by picking one vertex per subset and connecting them into a walk using shortest paths. This bound is worse than
+Theorem 2 by a factor of log n and does not exploit the fact that the subsets are large (of size at least n/k).
+     Getting rid of this log n-factor is more complicated. The very high-level idea of the proof is to construct a
+randomized walk W that performs exactly k large steps, using shortest-paths between chosen vertices, while
+selecting exactly one of the sets X 1 , . . . , X k in each step. We design the random walk to minimize the expected length
+of visiting a new subset. For simplicity of the exposition in this overview, we assume that the subsets {X 1 , . . . , X k }
+are pairwise vertex disjoint, and each has size exactly r := ⌈n/k⌉.
+     In this special case, the random walk maintains the following invariant: After the t-th step of the walk, we
+have selected a uniformly random t-element subset I ⊆ [k], and the walk is guaranteed to hit all sets X i with i ∈ I.
+Moreover, conditioned on I = J (for any fixed t-element subset J ⊆ [k]), the last vertex on the walk is distributed
+uniformly at random among the vertices in the selected sets {v ∈ X i : i ∈ J}.
+     How should we design the random walk to maintain this invariant? Fix some J ⊆ [k] and condition on the fact
+that our selected subset is I = J. We know that the last vertex vt is uniformly distributed among {v ∈ X i : i ∈ J}.
+Call this distribution pJ . To maintain the invariant, we would like to select a uniformly random index i ∈ [k] \ J
+and a uniformly random vertex vt+1 ∈ X i , and then extend the walk W along a shortest path from vt to vt+1 . Let
+qJ denote the distribution from which vt+1 is sampled. It is not difficult to see that if we sample vt+1 according to
+qJ , we maintain the desired invariant on the random walk.
+     The simplest way to sample vt+1 from qJ is to perform this sampling independently of the current vertex vt
+(which itself was sampled from pJ ). However, this turns out to be a bad idea: the expected distance E[d(vt , vt+1 )]
+is too large, and we recover the same O(k log n/ψ(G)) bound. Instead, we can sample from qJ in a way that is
+correlated with pJ . We exploit the fact that G is an expander to show5 that vt+1 can be sampled from qJ such that
+                                                                          4k
+                                                 E[d(vt , vt+1 )] ⩽       p         .
+                                                                      ψ(G) t(k − t)
+By linearity of expectation and a routine calculation, the expected length of the walk can then be bounded by
+                                     k−1                     Zk
+                                 4k X         1          4k          dt         4πk      13k
+                     E[|W |] ⩽                      ⩽                        =       <                       (1)
+                               ψ(G) j=1 j(k − j)        ψ(G) 0                 ψ(G)     ψ(G)
+                                         p                       p
+                                                                    t(k − t)
+
+as claimed in Theorem 2.
+    In this overview, we used the pairwise disjointness assumption on the subsets to simplify the definitions of
+the two distributions pJ and qJ . In the actual proof, we slightly adjust the definitions of pJ and qJ to account for
+   5
+     Specifically, minimizing the expected distance while sampling jointly from pJ and qJ is equivalent to bounding the Wasserstein distance
+between pJ and qJ . We bound the Wasserstein distance on expanders by using a standard dual form of Wasserstein distance from optimal
+transport literature, and a known relationship of that dual form to vertex expansion.
+
+
+                                                                      5
+                                    X1                          X2                           X3
+
+                                                                                                   vt+1
+                                                           vt
+                           W
+                                                                           πG (vt , vt+1 )
+
+
+                                                                                                                          X4
+                                           I t = {1, 2}                                            Ī t = {3, 4}
+                                              |{i ∈ I t : v ∈ X i }|                                  |{i ∈ Ī t : v ∈ X i }|
+                                p I t [v] =                                             q I t [v] =
+                                                      |I t |r                                                 | Ī t |r
+
+Figure 1: One iteration of the walk construction on a graph. Each shaded subset contains r = 6 vertices. The red
+path extends W from vt to vt+1 . Vertices belonging to two subsets in the same family receive twice the probability
+mass of vertices belonging to only one.
+
+                                                                                                        4k
+overlaps between subsets. Consequently, the proof that E[d(vt , vt+1 )] ⩽                               p             is somewhat more complicated
+                                                                                                  ψ(G)     t(k−t)
+than it would be in the disjoint-subset case.
+
+
+2    Short Hitting Walks on Expanders
+In this section, we prove Theorem 2, restated below.
+
+Theorem 2 (Short Hitting Walk on Expanders). Let G = (V, E) be a connected graph on n vertices. Let X 1 , . . . , X k ⊂
+V be k subsets of vertices, each of size at least n/k. Then G has a walk W of length less than 13k/ψ(G) that
+intersects every subset: W ∩ X i ̸= ∅ for every i ∈ [k].
+
+    We prove Theorem 2 by constructing a randomized walk that can be viewed as a randomized greedy process in
+k − 1 steps. Let X = {X 1 , X 2 , . . . , X k }. By discarding vertices from the subsets, we can assume that every subset
+X ∈ X has size exactly r := ⌈n/k⌉. For a subset I ⊆ [k], we denote by X I = {X i : i ∈ I} the set of subsets whose
+indices are in I.
+
+The algorithm. We start the walk W at a random vertex v1 ∈ X i , where X i is sampled uniformly at random from
+{X 1 , . . . , X k }. At the beginning of step t ∈ [k − 1], let I t be the set of indices selected so far. We will maintain that
+|I t | = t, and that the walk W intersects every subset in X I t . Let Ī t = [k] \ I t , which is the set of indices not yet
+selected.
+       The walk W currently ends at a vertex we denote as vt ; we can show (in Lemma 5) that the distribution of vt
+conditional on I t = J (for some subset J ⊂ [k]) is:
+
+                                                            |{i ∈ J : v ∈ X i }|
+                                               pJ [v] =                                      ∀v ∈ V                                            (2)
+                                                                   |J|r
+
+(If all subsets in X are vertex-disjoint, then pJ [v] is simply the uniform distribution over vertices in ∪i∈I t X i
+conditional on I t = J; the distribution in Equation (2) is simply adjusted for the overlap between the subsets in X I t .
+Intuitively, we select a uniform random set X i ∈ X I t , and then select a uniform random vertex in X i .) In the next
+step, we want the walk W to get to a random vertex vt+1 in a set in X Ī t , whose indices have not been selected;
+vt+1 is distributed according to:
+
+                                                            |{i ∈ J̄ : v ∈ X i }|
+                                              qJ [v] =                                       ∀v ∈ V                                            (3)
+                                                                       |J̄|r
+
+
+
+                                                                           6
+which is also an adjusted uniform distribution to account for the overlap between the subsets in X Ī t . By moving
+from vt to vt+1 along the shortest path πG (vt , vt+1 ), W hits a newly selected subset; see Figure 1. If these
+distributional properties were all we needed, then the algorithm and its analysis could be quite simple. However,
+we simultaneously need a bound on the expected total length of the walk, which we will accomplish by ensuring
+each component of the walk is short. In particular, our goal here is to move from vt to vt+1 (sampling from
+their respective distributions in a correlated manner), so that E[|πG (vt , vt+1 )|] is small. The minimum possible
+expectation is exactly the Wasserstein distance, defined formally in Definition 1, between p I t [v] and q I t [v]. (This
+problem has been studied extensively in optimal transport literature, but our construction does not require any
+deep understanding of this area.) As we will see, the solution to this problem gives us a distribution y t∗ on V , from
+which we can sample vt+1 . Finally, we walk from vt to vt+1 and proceed to the next iteration. The pseudocode is
+given in Algorithm 1.
+
+Definition 1 (Wasserstein distance). For aPfinite metricPspace (U, dU ), the Wasserstein distance between two
+probability distributions p, q : U → [0, 1] (so u∈U p[u] = u∈U q[u] = 1) with respect to dU , denoted by Wd (p, q),
+is the solution of the following linear program.
+
+                                  Wd (p, q) := min      u,v∈U dU (u, v) x[u, v]
+                                                       P
+                                                                                                              (4)
+                                               x∈R U×U
+
+                                                  s.t. P v∈U x[u, v] = p[u] ∀u ∈ U
+                                                       P
+
+                                                         u∈U x[u, v] = q[v]     ∀v ∈ U
+                                                                   x ⩾0
+
+   A simple interpretation of the Wasserstein distance in Definition 1 is this: fix a vertex u ∈ U; if we move u to v
+according to the distribution:
+                                                     x[u, v]       x[u, v]
+                                                                 =
+                                                 v ′ ∈U x[u, v ]
+                                              P
+                                                              ′     p[u]
+                                                                                   x[u,v]
+then the expected cost of moving from u to a random v is v∈U dU (u, v) p[u] . If we move from a random u
+                                                                   P
+
+sampled from p to a random v sampled from q, then the expected cost is:
+                                                          
+                               X X               x[u, v]             X
+                                       dU (u, v)             p[u] =       dU (u, v) x[u, v]                       (5)
+                               u∈U v∈U
+                                                     p[u]           u,v∈U
+
+
+    That is, finding Wd (p, q) is equivalent to minimizing the expected distance from a random u to a random v,
+distributed according to p and q, respectively.
+
+Algorithm 1 WASSERSTEINWALK(G, X := {X 1 , . . . , X k })
+Input: a connected graph G = (V, E) and subsets X 1 , . . . , X k ⊂ V of size r = ⌈n/k⌉.
+Output: a walk W through G that intersects every subset in X.
+ 1: sample i ∈ [k] uniformly, and sample v1 ∈ X i uniformly.
+ 2: I 1 ← {i} and W ← {v1 }.
+ 3: for t ← 1 to k − 1 do                                             ▷ vt current endpoint of W and I t indices visited up to step t
+ 4:     p I t [v] ← |{i ∈ I t : v ∈ X i }|/(|I t | · r) for all v ∈ V                               ▷ distribution in Equation (2)
+ 5:     q I t [v] ← |{i ∈ Ī t : v ∈ X i }|/(| Ī t | · r) for all v ∈ V                            ▷ distribution in Equation (3)
+ 6:      x ∗t ← optimal solution of Equation (4) for computing Wasserstein distance WdG (p I t , q I t )
+                      x ∗ [v ,v]
+ 7:     y t∗ [v] ← P ′ t x ∗t [v ,v ′ ] for all v ∈ V                                         ▷ the distribution to sample vt+1
+                    v ∈V t      t
+ 8:    sample vt+1 ∈ V according to y t∗
+ 9:    sample i t ∈ {i ∈ Ī t : vt+1 ∈ X i } uniformly                                                 ▷ The walk W will hit X it
+10:    I t+1 ← I t ∪ {i t }
+11:    W ← W ◦ πG (vt , vt+1 )
+12: return W
+
+
+
+
+                                                                 7
+   In Section 2.1, we give a formal bound on the Wasserstein distance using the vertex expansion of graphs.
+Using this bound, we can bound the expected length of πG (vt , vt+1 ) at the t-th iteration, as stated in the following
+lemma.
+Lemma 2. At iteration t ∈ [k − 1] of Algorithm 1,
+                                                                  4k
+                                        E |πG (vt , vt+1 )| ⩽       p         .                                     (6)
+                                                                ψ(G) t(k − t)
+Here the expectation is over the random choices of the algorithm.
+   Since proving Lemma 2 requires understanding the relationship between Wasserstein distance and vertex
+expansion laid out in Section 2.1, we defer it to Section 2.2. Here, we show that Lemma 2 implies Theorem 2.
+Proof of Theorem 2. Assume without loss of generality (by discarding elements) that each of the sets X i has
+exactly ⌈n/k⌉ vertices. Let W be the walk from running Algorithm 1 on G and {X 1 , . . . , X k }. By Lemma 2:
+
+                                           k−1
+                                     4k X      1
+                          E[|W |] ⩽                    (linearity of expectation)
+                                    ψ(G) t=1 t(k − t)
+                                            p
+                                         Zk
+                                     4k        dx
+                                  ⩽
+                                    ψ(G) 0
+                                            p
+                                              x(k − x)                                                              (7)
+                                    4πk
+                                  =              (by the calculation in Equation (8) below)
+                                    ψ(G)
+                                    13k
+                                  <      .
+                                    ψ(G)
+                                                     p
+   The second inequality is because f (x) := 1/ x(k − x) decreases on (0, k/2] and increases on [k/2, k). It
+                         Rk
+remains to show that 0 p d x          = π. This follows by substituting x := k sin2 θ where θ ranges from 0 to π/2.
+                               x(k−x)
+                                         p            p
+Since d x = 2k · sin θ · cos θ · dθ and x(k − x) = k sin2 θ · k cos2 θ = k sin θ · cos θ , we have
+                             Zk                 Z π/2                       Z π/2
+                                      dx              2k sin θ · cos θ
+                                              =                        dθ =       2 dθ = π,                     (8)
+                                                       k sin θ · cos θ
+                                  p
+                               0     x(k − x)     0                          0
+
+                                       13k
+as claimed. Finally, because E[|W |] < ψ(G) , there must exist some execution of Algorithm 1 that produces a walk
+                      13k
+with length less than ψ(G) .                                                                                          □
+
+2.1    Wasserstein distance and vertex expansion
+This section proves the following lemma, which bounds the Wasserstein distance between p and q in terms of
+∥p − q∥2 and the graph expansion. This lemma is the only fact needed to prove Lemma 2, so readers who are
+interested in the proof of Lemma 2 can skip this section.
+Lemma 3. Let G = (V, E) be a connected graph on n vertices with shortest-path metric dG . If p, q : V → [0, 1] are
+probability distributions, then                       p
+                                                     4 n · ∥p − q∥2
+                                        WdG (p, q) ⩽                .                                          (9)
+                                                         ψ(G)
+    Although we are not aware of the exact form of Lemma 3 in the literature, it can be easily deduced from
+two known results. The first is an immediate consequence of the well-known Kantorovich–Rubinstein dual of
+Wasserstein distance. The Kantorovich–Rubinstein dual is itself equivalent to the routine dual linear program for
+WdG (p, q) in Equation (4) so long as the weights dU (u, v) satisfy the triangle inequality, and it can be stated in the
+following form for finite metrics.
+
+
+                                                           8
+Lemma 4 (Kantorovich–Rubinstein dual, alternative form [PC19, Equation (6.2)]).
+
+                          Wd (p, q) = max     u∈U (p[u] − q[u]) f u
+                                            P
+                                                                                                                 (10)
+                                                        f ∈RU
+                                                          s.t.   | fu − f v | ⩽ dU (u, v)   ∀u, v ∈ U.
+
+    The second result is by Bobkov, Houdré and Tetali [BHT00], relating vertex expansion to feasible solutions of
+the dual program in Lemma 4 applied to shortest-path metrics.
+
+Theorem 3 ([BHT00, Theorem 1]). Let G = (V, E) be a connected graph on n vertices with shortest-path metric
+dG . If f ∈ RV satisfies | fu − f v | ⩽ dG (u, v) for all u, v ∈ V , then
+                                X                                2n                                 1X
+                                 ( f v − f )2 ⩽ p                     2 ,             where f :=         fv .
+                                 v∈V                      1 + ψ(G) − 1                              n v∈V
+
+Proof of Lemma P 3. Let f be an optimal solution of the dual program in Lemma 4 where the metric is (V, dG ). We
+have WdG (p, q) = v∈V (p v − q v ) f v and | fu − f v | ⩽ dG (u, v) for every u, v ∈ V . By Theorem 3:
+                                       X                               2n
+                                        ( f v − f )2 ⩽ p                   2
+                                       v∈V                  1 + ψ(G) − 1
+                                                                                        2
+                                                                          1 + ψ(G) + 1
+                                                                        p
+                                                                  2n ·
+                                                       = p                   p               2
+                                                              1 + ψ(G) − 1        1 + ψ(G) + 1
+                                                                                2
+                                                                  1 + ψ(G) + 1
+                                                               p
+                                                         2n ·                                                    (11)
+                                                       =
+                                                           ((1 + ψ(G)) − 1)2
+                                                               p       2
+                                                         2n · 3 + 1
+                                                       ⩽                      (since ψ(G) ⩽ 2)
+                                                              ψ(G)2
+                                                          16n
+                                                       <        .
+                                                         ψ(G)2
+
+               v∈V p[v] =       v∈V q[v] = 1, we have                v∈V (p[v] − q[v]) · f = 0. Therefore,
+           P                P                                    P
+   Since
+                                                 X
+                            WdG (p, q) =          (p[v] − q[v]) f v
+                                               v∈V
+                                               X
+                                             =     (p[v] − q[v])( f v − f )
+                                                 v∈V
+                                                                               1/2
+                                                          X
+                                             ⩽ ∥p − q∥2 ·  ( f v − f )2                 (by Cauchy-Schwarz)
+                                                               v∈V
+                                                  p
+                                                 4 n · ∥p − q∥2
+                                             ⩽                                          (by Equation (11))
+                                                    ψ(G)
+
+as claimed.                                                                                                        □
+
+
+2.2    Bounding the expected distance
+In this subsection, we prove Lemma 2. First, we show that I t is uniformly distributed over the size-t subsets of [k],
+and that conditional on I t = J, the endpoint vt has distribution pJ . All the probabilities and expectations are over
+the random choices of the algorithm.
+
+
+
+
+                                                                            9
+Lemma 5. For every t ∈ [k − 1] and every size-t-subset J ⊂ [k], and every vertex a ∈ V ,
+
+                                                 1                                                    |{i ∈ J : a ∈ X i }|
+                              Pr[I t = J] =      k
+                                                          and           Pr[vt = a | I t = J] =                             .
+                                                                                                             t·r
+                                                   
+                                                 t
+
+Proof: We proceed by induction on t. The base case t = 1 holds by lines 1 and 2 of Algorithm 1. Now assume that
+t < k − 1 and that the claim holds for t. By induction hypothesis, vt is distributed according to pJ . Algorithm 1
+constructs a coupling between the distributions pJ and qJ and uses this to sample vt+1 , so vt+1 has distribution qJ :
+formally,                                         X
+                           Pr[vt+1 = b|I t = J] =    x ∗t [a, b] = qJ [b] for all b ∈ V .
+                                                                 a∈V
+
+Now, notice that (conditional on I t = J) the algorithm first samples vt+1 according to qJ , and then samples i t
+uniformly at random among {i ∈ [k] \ J : vt+1 ∈ X i }. This leads to a key observation: for any i ∈ [k] \ J and b ∈ X i ,
+
+                                                                                               1                    1
+                            Pr[i t = i ∧ vt+1 = b|I t = J] = qJ [b] ·                                          =          .                       (12)
+                                                                                    |{i ∈ [k] \ J : b ∈ X i }|   (k − t)r
+
+Part 1 of the claim. We prove that I t+1 is uniformly distributed. First observe that (conditional on I t = J), the
+next selected index i t is uniformly distributed among [k] \ J. Indeed, we can sum (12) over the r vertices of X i :
+                                                              X                                                1
+                                    Pr[i t = i|I t = J] =             Pr[i t = i ∧ vt+1 = b|I t = J] =            .
+                                                              b∈X i
+                                                                                                              k−t
+
+The first part of the claim now follows: if we start with I t as a uniform random t-element subset of [k] (which we
+do, by induction), and add a uniformly random element in [k] \ I t to form I t+1 , the set I t+1 is a uniformly random
+(t + 1)-element subset of [k]. That is, Pr[I t+1 = J ′ ] = 1k for any size-(t + 1) subset J ′ ⊆ [k].6
+                                                          (t+1)
+
+Part 2 of the claim. We prove that the distribution of vt+1 has the desired form. Let J ′ ⊂ [k] be a size-(t + 1)
+subset of [k] and let a ∈ V . Observe that
+                                                    X
+                       Pr[I t+1 = J ′ ∧ vt+1 = a] =   Pr[I t = J ′ \ {i} ∧ vt+1 = a ∧ i t = i]
+                                                                 i∈J ′ :a∈X i
+                                                                      X         1           1        |{i ∈ J ′ : a ∈ X i }|
+                                                             =                    ·                = k
+                                                                 i∈J ′ :a∈X i
+                                                                                k       (k − t) · r       · (k − t) · r
+                                                                                t                         t
+
+where the second-to-last equality follows from (12). Hence
+
+                                                                           Pr[I t+1 = J ′ ∧ vt+1 = a]
+                                        Pr[vt+1 = a | I t+1 = J ′ ] =
+                                                                                  Pr[I t+1 = J ′ ]
+                                                                           |{i ∈ J ′ : a ∈ X i }|
+                                                                                                          
+                                                                                                        k
+                                                                          = k                    ·
+                                                                                 · (k − t) · r        t +1
+                                                                                    t
+                                                                            |{i ∈ J ′ : a ∈ X i }|
+                                                                          =
+                                                                                (t + 1) · r
+
+as claimed.                                                                                                                                          □
+
+       Now we prove Lemma 2 restated below.
+   6
+    In more detail: the event I t+1 = J ′ occurs precisely when I t = J ′ \ {i} and i t = i for some i ∈ J ′ . For each i ∈ J ′ , this event occurs with
+               1                                                                ′       1
+probability       k . Summing over the t + 1 choices of i yields Pr[I t+1 = J ] =
+            (k−t)( t )                                                              ( t+1 )
+                                                                                        k
+
+
+
+
+                                                                            10
+Lemma 2. At iteration t ∈ [k − 1] of Algorithm 1,
+                                                                         4k
+                                           E |πG (vt , vt+1 )| ⩽           p         .                                  (6)
+                                                                       ψ(G) t(k − t)
+
+Here the expectation is over the random choices of the algorithm.
+
+Proof: By Lemma 5, given I t = J, we have vt = a with probability pJ [a]. Then in line 8, we sample vt+1 and:
+
+                                                                  x ∗t [a, b]    x ∗t [a, b]
+                               Pr[vt+1 = b | I t = J ∧ vt = a] = P ∗           =             .                         (13)
+                                                                  v x t [a, v]    pJ [a]
+
+Then, we have:
+                                                             X                              x ∗t [a, b]
+                            E[dG (vt , vt+1 ) | I t = J] =           dG (a, b) · pJ [a] ·
+                                                             a,b∈V
+                                                                                             pJ [a]
+                                                        = WdG (pJ , qJ )                                               (14)
+                                                           p
+                                                          4 n · ∥pJ − qJ ∥2
+                                                        ⩽                                   (by Lemma 3)
+                                                                ψ(G)
+
+By averaging over I t (rather than conditioning on I t = J), we get:
+                                             p
+                                           4 n                        
+                     E [dG (vt , vt+1 )] ⩽       · E ∥p I t − q I t ∥2
+                                           ψ(G)
+                                             p                                                                         (15)
+                                           4 n Ç                        2
+                                                                           
+                                         ⩽       · E ∥p I t − q I t ∥2       (by Jensen’s inequality)
+                                           ψ(G)
+                                            
+Now we focus on bounding E ∥p I t − q I t ∥22 . To this end, for each i ∈ [k], let σi := 1/t if i ∈ I t and σi := −1/(k − t)
+otherwise. Then by the definition of p I t and q I t in Equations (2) and (3), for every v ∈ V ,
+
+                                                                          1 X
+                                                p I t [v] − q I t [v] =           σi .                                 (16)
+                                                                          r i:v∈X
+                                                                                 i
+
+
+By Lemma 5, I t is a uniformly random size-t subset of [k], so each i ∈ [k] lies in I t with probability t/k, and
+
+                                       t 1    k−t      1        1     1          1
+                           E[σ2i ] =    ·   +     ·          =    +         =          .                               (17)
+                                       k t2    k    (k − t)2   t k k(k − t)   t(k − t)
+
+For distinct i, i ′ ∈ [k], considering whether both, neither or exactly one of i and i ′ lie in I t gives
+
+                               t(t − 1) 1      (k − t)(k − t − 1)      1       2t(k − t)     1
+                   E[σi σi ′ ] =        ·    +                    ·          −           ·
+                               k(k − 1) t 2        k(k − 1)         (k − t)2   k(k − 1) t(k − t)
+                                                                                                                       (18)
+                                   1      t −1 k− t −1                     1      1     1
+                                                                                        
+                             =                  +           −2 =−                   +        < 0.
+                               k(k − 1)     t       k−t                k(k − 1) t k − t
+
+
+
+
+                                                                 11
+    By Equation (16), we get
+                                                                                 !2 
+                                                    1 X                             = 1
+                                                                  X                      X X
+                           E ∥p I t − q I t ∥22 =             E             σi                                E[σi σi ′ ]
+                                                    r 2 v∈V        i:v∈X i
+                                                                                       r 2 v∈V i,i ′ :v∈X ∩X ′
+                                                                                                         i    i
+
+
+                                                    1 X X
+                                              ⩽                E[σ2i ]              (by Equation (18))
+                                               r 2 v∈V i:v∈X
+                                                             i
+
+                                                1 X                                                                                      (19)
+                                              = 2       E[σ2i ] · |X i |
+                                               r i∈[k]
+                                                1            1
+                                              =   2
+                                                    ·k·          ·r                  (by Equation (17))
+                                                r       t(k − t)
+                                                     k
+                                              =              .
+                                                t(k − t) · r
+    Plugging Equation (19) into Equation (15), we get:
+                                          p     v
+                                         4 n t         k
+                   E [dG (vt , vt+1 )] ⩽      ·
+                                         ψ(G)     t(k − t) · r
+                                          p       v
+                                         4 k·r t          k
+                                       ⩽        ·                                                            since r ⩾ n/k
+                                          ψ(G)      t(k − t) · r
+                                               4k
+                                       =     p           .
+                                         ψ(G) t(k − t)
+as claimed.                                                                                                                                 □
+
+
+3     The Algorithm
+For a subgraph H of G and a set of vertices A of G, let ∂H A denote the set of vertices of H that are not in A but
+have at least one neighbor in A. We note that A might not belong to V (H); for example, when H is a subgraph of a
+larger graph G and A ⊆ V (G) that is not in H. When A ⊆ V (H), we use the notation BH (A, r) to denote the ball of
+radius r around A in H, that is, {v ∈ V (H) : dH (A, v) ⩽ r}. We will use the following corollary of Theorem 2.
+Corollary 1. Suppose that H is a ψ-vertex expander. Let X = {X 1 , X 2 , . . . , X k } be a collection of k vertex subsets
+of V (H) such that |X i | ⩾ |V (H)|/h and k ⩽ h. Then there is a procedure SHORT TREE(H, X) that produces a tree
+T ⊆ H such that:
+    1. T ∩ X i ̸= ∅ for every i ∈ [k].
+    2. |V (T )| ⩽ ⌈13h/ψ⌉.
+Proof: If k = h, then we can apply Theorem 2 to produce a walk W , and we can then simply take T to be a
+spanning tree of H[V (W )]. As W has length strictly less than 13h/ψ, the tree T has at most ⌈13h/ψ⌉ vertices.
+If k < h, then we duplicate X k to get X+ = {X 1 , . . . , X k , X k+1 = X k , . . . , X h = X k } and apply Theorem 2 to H and
+X+ .                                                                                                                          □
+
+The algorithm. We begin with an informal description of the algorithm. The formal pseudocode is given as
+Algorithm 2. At every step, the algorithm maintains three important objects: H, X and K.
+    1. H is an induced subgraph of G. Except when the algorithm terminates, H contains at least 3n/4 vertices.
+       One should think of the “current separator” as ∂G H, and H as the largest connected component7 of G if we
+       remove ∂G H from G.
+    7
+      For easier bookkeeping, H may briefly become disconnected at the end of an iteration; it is reassigned to the largest connected component
+at the start of the next iteration.
+
+
+                                                                        12
+The “current separator” ∂G H will lie in the union of two objects:
+                                                                                                          p
+   2. X is a subset of vertices of G which the algorithm will keep adding to. We guarantee that |X | ⩽ O(h n).
+   3. K is a clique minor model found so far, whose branch sets of K are disjoint from H. We guarantee that, for
+                                           p
+      every C ∈ K, we have |∂G H ∩ C| ⩽ O( n).
+
+    It will hold that X and V (K) are disjoint from V (H). See Figure 2.
+In every step, the algorithm removes at least one vertex from H and at                                             C2
+most n/2 vertices from H, adding them to X or V (K). The algorithm
+terminates when the size of H drops below 3n/4, at which point we
+return ∂G H as the separator.8 Because each step removes at most n/2
+vertices, we have n/4 ⩽ |H| ⩽ 3/4n and thus ∂G H is a balanced separator.
+                                    p                                                                                 H
+To guarantee that ∂G H has size O(h n), we maintain the invariant that
+                                  p
+∂G H ⊆ X ∪ V (K), that |X | ⩽ O(h n), and that for each branch set C ∈ K
+                         p
+we have |C ∩ ∂G H| ⩽ O( n) (recall that Kh -minor-freeness implies that                                C1                           C3
+K contains at most h − 1 branch sets).
+                                                                                                                                    X
+    Each iteration of the algorithm proceeds as follows. At the start, the
+algorithm checks whether any connected component of H has ⩾ 3n/4
+                                                                                               Figure 2: The subgraph H. The bound-
+vertices. If not, we terminate and return the current separator ∂G H;
+                                                                                               ary of H is contained in the union of X
+otherwise we update H to be the largest connected component, update
+                                                                                               (drawn in orange) and the vertices of
+K by discarding all branch sets that aren’t adjacent to H, and proceed.
+                                                                                               the K3 minor model {C1 , C2 , C3 } = K.
+Within each iteration, there are three cases; see Figure 3.
+                              p
+    • Case 1: H is not a h/ n-vertex expander.
+                                                                                                          p
+      By the definition of a vertex expander, there must be a subset of vertices A such that |∂H A| ⩽ h/ n|A| and
+      |A| ⩽ |V (H)|/2 (the smaller side of the sparse cut). We will update X by adding ∂H A to X , and removing ∂H A
+                                                                                                                p
+      from H. We can afford adding ∂H A to X since we can charge the size of ∂H A to A. Each vertex gets h/ n
+      charge over the entire process, since A will be removed from H (once H is reassigned to the largest connected
+                                                                                                     p        p
+      component) and so over the entire course of the algorithm, the size of X is bounded by (h/ n)n = h n.
+                                                                                                                p
+    • Case 2: There exists branch set C ∈ K and r ⩾ 1 with |BH (∂H C, r)| ⩽ n/2 and |∂H BH (∂H C, r − 1)| ⩽ n.
+       Then we simply grow C by adding the entire ball BH (∂H C, r) to C, and (correspondingly) deleting BH (∂H C, r)
+       from H. This step could blow up the size of C significantly (up to Ω(n)). However, since |∂H BH (∂H C, r −1)| ⩽
+       p                                                     p
+         n, after the update we still have that |C ∩ ∂G H| ⩽ n. The condition |BH (∂H C, r)| ⩽ n/2 just guarantees
+       that we remove at most n/2 vertices from H in this step.
+    • Case 3: Otherwise.
+                                    p
+       In this case, (i) H is an h/ n-vertex expander, and (ii) for every branch set C ∈ K and radius r ⩾ 1, either
+                                                      p                        p
+       |BH (∂H C, r)| > n/2 or |∂H BH (∂H C, r − 1)| > n. If we pick r ∗ = ⌈ n/h⌉, we can show (Claim 1) that
+       |BH (∂H C, r ∗ )| > n/h. We can now form X ← {BH (∂H C, r ∗ )}C∈K and apply Corollary 1 to get a tree T of H of
+               p
+       size O( n) that intersects every set in X. We then extend T so that it is adjacent to every branch set in K:
+       for every branch set C ∈ K, we pick an arbitrary vertex x C ∈ T ∩ BH (∂H C, r ∗ ), and add to T the shortest
+                                                                        p
+       path in H from x C to a vertex in ∂H C. Note that since r ∗ = ⌈ n/h⌉ and |K| ⩽ h, the total size of all the
+                                              p
+       paths added to T is at most hr ∗ = O( n), so the total size of (a new branch set) T formed in this step is still
+          p
+       O( n). We add T to K, and remove T from H.
+                                                            p
+    In summary, the algorithm guarantees that |X | = O(h n) (Case 1) and for every branch set C ∈ K, either
+              p                                    p
+|∂G H ∩ C| ⩽ n (Case 2) or directly that |C| = O( n) (Case 3). Moreover, the current separator ∂G H is in X ∪ V (K).
+                                                                 p
+Since |K| < h, the size of the current separator is always O(h n). Once |V (H)| ⩽ 3n/4, the current separator is
+balanced and we simply return it.
+   8
+     This description is slightly inaccurate, as H may be disconnected at the start of an iteration. The first step of each iteration reassigns H to
+be the largest connected component, and the termination condition is that every connected component of H has < 3n/4 vertices.
+
+
+
+
+                                                                        13
+                                                      C
+
+
+
+
+                                                                                                    T
+             ∂H A
+
+      A
+
+
+      (a) Case 1: Add ∂H A to X .                  (b) Case 2: Grow C by              (c) Case 3: Add a new branch set T to
+                                                    C ← C ∪ BH (∂H C, r).              K using the expander walk theorem.
+                            Figure 3: The three cases possible in each step of the algorithm
+
+                                                                                                                   p
+Algorithm 2 BALANCEDSEPARATOR(G)                                            ▷ Find a balanced separator of size O(h n)
+ 1: K ← ∅, X ← ∅, H ← G
+ 2: while there is some connected component of H with ⩾ 3n/4 vertices do
+ 3:       H ← largest connected component of H
+ 4:       K ← {C ∈ K : C has a neighbor in H}
+ 5:       if H is not a phn -vertex expander then                                                                 ▷ Case 1
+ 6:          A ← nonempty subset of V (H) such that |A| ⩽ n/2 and |∂H A| ⩽ phn |A|
+ 7:          X ← X ∪ ∂H A.
+ 8:          H ← H \ ∂H A
+                                                                                                        p
+ 9:       else if there exists C ∈ K and r ⩾ 1 with |BH (∂H C, r)| ⩽ n/2 and |∂H BH (∂H C, r − 1)| ⩽ n then ▷ Case 2
+10:          B ← BH (∂H C, r)
+11:          C ← C ∪ B.
+12:          H ←H\B
+                                                                                                 p
+13:       else               ▷ ∀C ∈ K, ∀r ⩾ 1: |BH (∂H C, r)| > n/2 or |∂H BH (∂H C, r − 1)| > n                  ▷ Case 3
+14:          if K = ∅ then
+15:               T ← an arbitrary vertex in V (H)
+16:          else
+                           p
+17:               r ∗ ← ⌈ n/h⌉
+18:               X ← {BH (∂H C, r ∗ )}C∈K                                    ▷ Claim 1 shows that |BH (∂H C, r ∗ )| ⩾ n/h.
+19:               T ← SHORT TREE(H, X)
+20:               for every C ∈ K do
+21:                   x C ← a vertex in T ∩ BH (∂H C, r ∗ )
+22:                   π x C ← a shortest path in H from x C to a vertex in ∂H C     ▷ π x C exists because H is connected.
+23:                   T ← T ∪ πxC                                                     ▷ this makes T adjacent to C ∈ K.
+24:       K ← K ∪ {T }
+25:       H ← H \ V (T )
+26: return ∂G H
+
+
+   We now turn to the analysis. First, we show that every set BH (∂H C, r ∗ ) ∈ X in line 18 has size at least n/h.
+This justifies the call to SHORT TREE(H, X) in line 19.
+                                                                                                                       p
+Claim 1. Let C ∈ K be a branch set such that for every r ⩾ 1, either |BH (∂H C, r)| > n/2 or |∂H BH (∂H C, r −1)| >        n.
+
+
+                                                            14
+Then
+                                            |BH (∂H C, r ∗ )| ⩾ n/h ⩾ |V (H)|/h                                        (20)
+             p
+where r ∗ = ⌈ n/h⌉. Consequently, (H, X) is a valid input to the SHORT TREE procedure on line 19.
+
+Proof: If there exists r ∈ [0, r ∗ ] such that |BH (∂H C, r)| ⩾ n/h, then the claim holds, as BH (∂H C, r) ⊆ BH (∂H C, r ∗ ).
+                                                                                      p
+Otherwise, by assumption, for r ∈ [0, r ∗ − 1] we have that |∂H BH (∂H C, r)| > n. Observing that BH (∂H C, r ∗ )
+contains ∂H BH (∂H C, r) for every r ∈ [0, r ∗ − 1], we conclude
+                                                       ∗
+                                                      rX −1
+                                              ∗
+                                                                                     p
+                                  |BH (∂H C, r )| ⩾           |∂H BH (∂H C, r)| > r ∗ n ⩾ n/h
+                                                      r=0
+
+as claimed. Thus, when we call SHORT TREE(H, X) in line 19, it holds that every X ∈ X has |X | ⩾ |V (H)|/h and
+               p
+that H is an h/ n-vertex expander, as required by the definition of SHORT TREE.                              □
+
+    This shows that the algorithm is well-defined. We now observe that it terminates.
+
+Lemma 6. The algorithm BALANCEDSEPARATOR(G) terminates.
+
+Proof: It suffices to show that every iteration of the while loop removes at least one vertex from H. Indeed, in
+Case 1, we remove some nonempty subset ∂H A from H. In Case 2, we remove some ball BH (∂H C, r) from H; this
+ball is nonempty because it contains ∂H C, which is nonempty because (due to the trimming in line 4) C has some
+neighbor in H. In Case 3, we remove the nonempty set T from H.                                                □
+
+    We record two simple invariants.
+
+Lemma 7. At the start of every iteration, the following properties hold:
+
+   1. K is a clique minor model in G (of size |K|). Thus |K| < h.
+   2. V (H) and V (K) are disjoint.
+
+Proof: In the beginning of the algorithm, we have K = ∅, X = ∅, and H = G, and so the invariants are satisfied
+trivially.
+1) By induction, assume that K is a model of a clique minor in G at the start of the current iteration. Discarding
+some branch sets in line 4 does not affect this property. In the rest of the iteration (lines 5–24), we may modify K
+during one of the three cases of the algorithm. In Case 1, K is unchanged. In Case 2, some C ∈ K is expanded
+(line 11) to include additional vertices in V (H). But C remains disjoint from the other branch sets after the
+expansion (because, by induction, H was disjoint from the other branch sets), C remains adjacent to all other
+branch sets, and C remains connected; thus K remains a clique minor model. Finally, in Case 3, a new branch set
+T is added. If T is a singleton added by line 15 then the claim holds. In the nontrivial case (lines 17–23), the
+branch set T is disjoint from the other C ∈ K because V (T ) ⊆ V (H) and V (H) is disjoint from the other branch
+sets; moreover, T is adjacent to every other branch set C ∈ K because we added the path π x C to T in line 23.
+2) By induction, assume V (K) and V (H) are disjoint at the start of the current iteration. In this iteration, the set
+V (H) shrinks, and some vertices may be added to V (K). It suffices to show that every vertex added to V (K) in
+the iteration is removed from V (H). Indeed, in Case 1, no new vertices are added to V (K); in Case 2, the ball
+B = BH (∂H C, r) is added to V (K) and removed from V (H); and in Case 3, the vertices of the new branch set T are
+added to V (K) and removed from V (H).                                                                              □
+                                                                        p
+    We can now prove that the algorithm produces a separator of size O(h n) (Lemma 8), and that this separator
+is balanced (Lemma 9). Our main theorem follows.
+                                                                                                     p
+Lemma 8 (Size bound). At the start and end of every iteration of the while loop, we have |∂G H| ⩽ 16h n. This
+is a consequence of the following invariants:
+
+
+                                                                 15
+   1. ∂G H ⊆ X ∪ V (K)
+              p
+   2. |X | ⩽ h n
+                                              p
+   3. For every C ∈ K, we have |∂G H ∩ C| ⩽ 15 n
+                                                                                    p                p       p
+Proof: Given the invariants, we can conclude that |∂G H| ⩽ |X | + |∂G H ∩ V (K)| ⩽ h n + (h − 1) · 15 n ⩽ 16h n,
+where the second-to-last inequality follows from the fact that |K| ⩽ h − 1 (by Lemma 7(1)). It remains to prove
+the invariants.
+1) We proceed by induction. Assume that ∂G H ⊆ X ∪ V (K) holds at the start of the while loop (line 3). Observe
+that for any connected component H ′ of H, we have ∂G H ′ ⊆ ∂G H; thus the claim holds after line 3 (when the
+largest connected component of H is renamed as H), and it also holds trivially after line 4 (when all branch sets
+not adjacent to H are discarded). In lines 5–25, in each of the three cases H is modified in the following way:
+some set of vertices is added to X ∪ V (K), and these same vertices are removed from H. When removing a vertex
+v from H, the only possible new vertex that could be added to ∂G H is v itself. Thus, after each iteration it remains
+the case that ∂G H ⊆ X ∪ V (K).
+                     p
+2) We prove |X | ⩽ h n by a charging argument. Note that we only add to X in line 7: whenever we add ∂H A to
+                                                                        p
+X , we charge the size of ∂H A to |A|. Each vertex in A gets at most h/ n charge. Now we argue that vertices of
+A ⊂ V (H) will not be charged again in future iterations. Indeed, after we delete ∂H A from H in this iteration, any
+connected component that intersects A (and is therefore fully contained in A) contains at most n/2 vertices. But if
+the algorithm continues, it reassigns H (in line 3) to be some connected component with at least 3n/4 vertices.
+                                                                                                      p          p
+Thus vertices in A are never charged again, and the total size of X over all iterations is at most (h/ n)n = h n.
+3) At the start of the algorithm, we have K = ∅ and the claim holds trivially. There are three things that can occur
+during the course of the algorithm that could affect whether the claim holds: (1) the set H can change, (2) some
+set C ∈ K may be modified in Case 2, or (3) a new set C ∈ K may be created in Case 3. We claim that after any of
+these changes, the claim still holds.
+     For the first, observe that H only shrinks over the course of the algorithm (i.e., H is changed to be some
+subgraph of itself). As every C ∈ K is disjoint from H (by Lemma 7(2)), shrinking H can only cause the set ∂G H ∩ C
+to shrink.
+     For the second, suppose that Case 2 selects some ball B r = BH (∂H C, r) and updates C ← C ∪ B r and H ← H \ B r .
+For clarity, let H and C denote the sets before the update, and let Hnew and Cnew denote the sets after the update.
+                                             p
+We want to show that |∂G Hnew ∩ Cnew | ⩽ n. To this end, we first define B r−1 = BH (∂H C, r − 1) and observe that
+B r \ B r−1 = ∂H BH (∂H C, r − 1). We claim that
+
+                                               ∂G Hnew ∩ Cnew ⊆ B r \ B r−1 .                                        (21)
+                                                                                                                       p
+The desired size bound on ∂G Hnew ∩ Cnew follows from (21), as by assumption of Case 2 we have |B r \ B r−1 | ⩽ n.
+To prove (21), observe that Cnew = C ∪ B r , so it suffices to show that vertices in C ∪ B r−1 are not in ∂G Hnew . Indeed,
+every vertex in C has no neighbors in Hnew , as every neighbor lying in H is in ∂H C ⊆ B r ; similarly, every vertex in
+B r−1 has no neighbors in Hnew , as its neighbors in H are in B r . So, the only vertices in Cnew that could be adjacent
+to Hnew (and thus in ∂G Hnew ) are those in B r \ B r−1 , as desired.
+    Finally, for the third case, suppose that Case 3 adds some new branch set T to K. When T is formed in line 19,
+by Corollary 1
+                                                       13h            p
+                                           |V (T )| ⩽ p + 1 ⩽ 13 n + 1.
+                                                      h/ n
+                                                                      p
+Then T is extended further in line 23 by adding at most r ∗ = ⌈ n/h⌉ vertices per branch set, totaling at most
+        p           p     p                 p                  p
+(h − 1)⌈ n/h⌉ ⩽ n − n/h + h − 1 ⩽ 2 n − 1. (If h ⩾ n, our main theorem holds trivially.) Thus, |V (T )| ⩽
+   p
+15 n.                                                                                                                    □
+
+Lemma 9 (Balance). At every point during the algorithm, we have |H| ⩾ n/4. Moreover, when the algorithm
+terminates, every connected component of H has at most 3n/4 vertices.
+
+
+
+                                                            16
+Proof: The second statement follows immediately from the while loop termination condition. We now show that
+|H| ⩾ n/4 always. Indeed, initially we have |H| = n. At the beginning of each iteration, after line 3, we have
+|H| ⩾ 3n/4 by assumption. During the iteration, in steps 4–25 of the algorithm, at most n/2 vertices are removed
+                                                                    p                                      p
+from H: in case 1 we remove |∂H A| vertices, where |∂H A| ⩽ h/ n|A| ⩽ |A| ⩽ n/2 (note we assume h ⩽ n as
+otherwise our main theorem holds trivially); in Case 2 we remove |BH (∂H C, r)| ⩽ n/2 vertices; and in Case 3
+                                                                                      p
+we remove |V (T )| vertices, where the proof of Lemma 8(3) shows that |V (T )| ⩽ 15 n, which is ⩽ n/2 if n is
+sufficiently large9 . Thus the size of H is always at least 3n/4 − n/2 = n/4.                                  □
+
+      The main theorem follows immediately from Lemmas 8 and 9.
+                                                                                               p
+Theorem 1. Any n-vertex Kh -minor-free graph G has a 3/4-balanced separator of size at most 16h n.
+                                                                  p
+Proof: The algorithm returns ∂G H, which comprises at most 16h n vertices by Lemma 8. Moreover, every
+connected component of G \ ∂G H is either a connected component of H or is contained in G \ H; as Lemma 9
+implies that connected components of H have size ⩽ 3n/4 and that |V (G \ H)| ⩽ 3n/4, we conclude that ∂G H is a
+balanced separator of G.                                                                                     □
+
+
+References
+[AST90]        Noga Alon, Paul Seymour, and Robin Thomas. A separator theorem for nonplanar graphs. Journal
+               of the American Mathematical Society, 3(4):801–808, 1990. Announced at STOC ’90. doi:10.1090/
+               s0894-0347-1990-1065053-0.
+
+[BHT00] Sergey G. Bobkov, Christian Houdré, and Prasad Tetali. λ∞ , vertex isoperimetry and concen-
+        tration. Comb., 20(2):153–172, 2000. URL: https://doi.org/10.1007/s004930070018, doi:
+        10.1007/S004930070018.
+
+[BKL+ 26] Édouard Bonnet, Tuukka Korhonen, Hung Le, Jason Li, and Tomáš Masařík. Separator theorem for
+          minor-free graphs in linear time. In Proceedings of the 58th Annual ACM Symposium on Theory of
+          Computing, pages 61–71, 2026.
+
+[BLPP26] Édouard Bonnet, Hung Le, Marcin Pilipczuk, and Michał Pilipczuk. Coarse balanced separators in
+         fat-minor-free graphs, 2026. URL: https://arxiv.org/abs/2604.11318, arXiv:2604.11318, doi:
+         10.48550/arXiv.2604.11318.
+
+[BLR10]        Punyashloka Biswal, James R. Lee, and Satish Rao. Eigenvalue bounds, spectral partitioning, and
+               metrical deformations via flows. J. ACM, 57(3), 2010. Announced at FOCS ’08. doi:10.1145/1706591.
+               1706593.
+
+[CF25]         Jonathan Conroy and Arnold Filtser. How to protect yourself from threatening skeletons: Optimal
+               padded decompositions for minor-free graphs. In Proceedings of the 57th Annual ACM Symposium on
+               Theory of Computing, STOC ’25, pages 2281–2292, 2025. doi:10.1145/3717823.3718252.
+
+[DN16]         Zdenek Dvorák and Sergey Norin. Strongly sublinear separators and polynomial expansion. SIAM
+               Journal on Discrete Mathematics, 30(2):1095–1101, 2016.
+
+[ER18]         Louis Esperet and Jean-Florent Raymond. Polynomial expansion and sublinear separators. European
+               Journal of Combinatorics, 69:49–53, 2018.
+
+[GHT84] John R Gilbert, Joan P Hutchinson, and Robert Endre Tarjan. A separator theorem for graphs of bounded
+        genus. Journal of Algorithms, 5(3):391–407, 1984. doi:10.1016/0196-6774(84)90019-1.
+  9                              p                                                                 p
+      In the extreme case when 15 n ⩾ n/2, our main theorem holds trivially: deleting any set of 14 n vertices is a balanced separator.
+
+
+
+
+                                                                     17
+[GSW25] Maximilian Gorsky, Michał T. Seweryn, and Sebastian Wiederrecht. Polynomial bounds for the graph
+        minor structure theorem. In 2025 IEEE 66th Annual Symposium on Foundations of Computer Science—
+        FOCS 2025, pages 1961–1978. IEEE Comput. Soc. Press, Los Alamitos, CA, 2025. doi:10.1109/
+        FOCS63196.2025.00104.
+
+[Har66]   L.H. Harper. Optimal numberings and isoperimetric problems on graphs. Journal of Combinatorial
+          Theory, 1(3):385–393, 1966. URL: http://dx.doi.org/10.1016/S0021-9800(66)80059-5, doi:
+          10.1016/s0021-9800(66)80059-5.
+
+[KL24]    Tuukka Korhonen and Daniel Lokshtanov. Induced-minor-free graphs: Separator theorem, subexponen-
+          tial algorithms, and improved hardness of recognition. In Proceedings of the 2024 Annual ACM-SIAM
+          Symposium on Discrete Algorithms, SODA ’24, pages 5249–5275, 2024. doi:10.1137/1.9781611977912.
+          188.
+
+[Kot00]   Andrei Kotlov. Bulky subgraphs of the hypercube. European Journal of Combinatorics, 21(4):503–507,
+          May 2000. doi:10.1006/eujc.1999.0362.
+
+[KR10]    Ken-ichi Kawarabayashi and Bruce Reed. A separator theorem in minor-closed classes. In Proceedings of
+          the 51st Annual Symposium on Foundations of Computer Science, FOCS ’10, pages 153–162. IEEE, 2010.
+          doi:10.1109/FOCS.2010.22.
+
+[Le26]    Hung Le. A separator for minor-free graphs beyond the flow barrier. arXiv preprint arXiv:2605.05494,
+          2026. URL: https://arxiv.org/abs/2605.05494.
+
+[LT79]    Richard J. Lipton and Robert Endre Tarjan. A separator theorem for planar graphs. SIAM Journal on
+          Applied Mathematics, 36(2):177–189, 1979. doi:10.1137/0136016.
+
+[PC19]    Gabriel Peyré and Marco Cuturi. Computational optimal transport with applications to data sciences.
+          Foundations and trends® in machine learning, 11(5-6):355–607, 2019.
+
+[PRS94]   Serge Plotkin, Satish Rao, and Warren D. Smith. Shallow excluded minors and improved graph
+          decompositions. In Proceedings of the 5th Annual ACM-SIAM Symposium on Discrete Algorithms, SODA
+          ’94, pages 462–470, 1994.
+
+[RW09]    Bruce Reed and David R. Wood. A linear-time algorithm to find a separator in a graph excluding a
+          minor. ACM Transactions on Algorithms, 5(4):1–16, 2009. doi:10.1145/1597036.1597043.
+
+[Spa25]   Jack Spalding-Jamieson. Reweighted spectral partitioning works: Bounds for special graph classes.
+          arXiv preprint arXiv:2506.01228, 2025. URL: https://arxiv.org/abs/2506.01228.
+
+[Wul11]   Christian Wulff-Nilsen. Separator theorems for minor-free and shallow minor-free graphs with appli-
+          cations. In Proceedings of the 52nd Annual Symposium on Foundations of Computer Science, FOCS ’11,
+          pages 37–46. IEEE, 2011. doi:10.1109/focs.2011.15.
+
+[Wul14]   Christian Wulff-Nilsen. Faster separators for shallow minor-free graphs via dynamic approximate
+          distance oracles. In International Colloquium on Automata, Languages, and Programming, ICALP ’14,
+          pages 1063–1074. Springer, 2014. doi:10.1007/978-3-662-43948-7_88.
+
+
+
+
+                                                     18
+

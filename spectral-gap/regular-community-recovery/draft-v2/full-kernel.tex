@@ -1,0 +1,301 @@
+\section{Certified full kernels and nearly quadratic partition listing}\label{sec:full-kernel}
+The next algorithm computes the entire kernel on every fixed symmetric
+input, with no corank-one promise. Its classical preconditioning,
+recurrence, extension construction, deterministic certificate, retry
+cost, and base-field descent are all charged. This stronger algorithm
+will be averaged using a bounded raw moment for the actual graph law,
+rather than a qualitative high-probability rank assertion.
+
+\subsection{Unconditional per-matrix algorithm}
+Fix an odd prime $p$. Let $M=M^T\in\F_p^{n\times n}$, $n\ge1$,
+be supplied as a sparse matrix, with $w=\nnz(M)$,
+$k=\rank_{\F_p}M$, and $r=n-k$.
+All logarithmic constants below may depend on the fixed $p$.
+
+\begin{theorem}\label{fk:thm:kernel}
+There is a Las Vegas algorithm, valid for every such fixed $M$,
+which returns a basis $C\in\F_p^{n\times r}$ of its entire kernel,
+pivot rows $J$ with $C_{J,:}=I_r$, and a deterministically checkable
+rank certificate. Its expected work is
+\[
+ \widetilde O_p\bigl(n(w+n)(r+1)\bigr)
+ \quad\text{bit operations}.
+\]
+Its workspace is $\widetilde O_p(n(r+1)+w)$ bits, apart from a retry
+counter. The certificate has $O_p(nr+n\log n)$ bits and can be
+verified in $\widetilde O_p(n(w+n))$ bit work.
+For bounded-degree graph matrices, $w=O(n)$, giving expected
+$\widetilde O_p(n^2(r+1))$ bit work. These assertions include the
+zero matrix and nonsingular matrices. No numerical gap or generic
+rank profile is assumed.
+\end{theorem}
+
+\subsection{Extension field and primary preconditioning inputs}
+Choose the least positive $s$ for which
+\[
+ q=p^s\ge64(n+1)^6,
+\]
+and construct $K=\F_q=\F_p[z]/(h(z))$ once, reusing it across trials,
+using a verified monic irreducible polynomial of degree $s$.
+Rank and corank are unchanged
+by this scalar extension.
+In a fresh trial draw independent
+\[
+ D=\operatorname{diag}(d_1,\ldots,d_n),\quad d_i\text{ uniform in }K^*,
+ \quad u,v\text{ uniform in }K^n,\qquad T=DM.
+\]
+The following are distinct primary results, both valid in the fixed
+characteristic $p$, however small relative to $n$.
+Chen et al.\ \cite[Theorem 4.2]{Chen} give
+\begin{equation}\label{fk:eq:cyc}
+ \Prob(T\text{ not cyclic on its nonzero primary part})
+ \le\frac{n(n-1)}{2(q-1)}.
+\end{equation}
+Their Theorem 4.5, using symmetry of $M$, gives
+\begin{equation}\label{fk:eq:nil}
+ \Prob(T\text{ has a nilpotent zero block of size }>1)
+ \le\frac r{q-1}.
+\end{equation}
+No independence between these two events is required for their union
+bound. The squarefree conclusion of their Theorem 4.3 has a
+characteristic restriction and is \emph{not} invoked.
+
+On their common good event,
+\[
+ K^n=\ker T\oplus\operatorname{im}T,
+ \qquad T|_{\operatorname{im}T}\text{ invertible and cyclic of dimension }k.
+\]
+Repeated nonzero roots of its minimal polynomial cause no problem.
+
+\subsection{A certifying trial, including unlucky choices}
+Compute exactly the $2n$ scalars
+\begin{equation}\label{fk:eq:seq}
+ a_j=u^TT^{j+1}v,\qquad 0\le j<2n.
+\end{equation}
+Use Berlekamp--Massey to obtain their true shortest recurrence length
+$\ell$ and monic polynomial $g$, of degree $\ell$.
+If the implementation returns connection coefficients in backward
+recurrence order, reverse them before the Horner polynomial evaluation.
+The zero sequence has length $0$ and $g=1$.
+Reject the trial immediately if $g(0)=0$.
+
+\begin{lemma}[Unconditional lower-rank certificate]\label{fk:lem:lower}
+For every $T,u,v$, the finite-sequence complexity in~\eqref{fk:eq:seq}
+satisfies $\ell\le\rank T=k$.
+\end{lemma}
+\begin{proof}
+$Tv$ lies in the invariant subspace $\operatorname{im}T$, of
+dimension $k$. Cayley--Hamilton on that subspace yields an infinite
+recurrence of order at most $k$ and therefore one of that order on
+the finite prefix. The minimal prefix length cannot exceed $k$.
+This includes singular matrices with nilpotent blocks.
+\end{proof}
+
+Set $\widehat r=n-\ell$. Generate at most $n+1$ fresh independent
+uniform $b\in K^n$. For each, compute
+\[
+ y=g(T)b
+\]
+by Horner's rule. Verify $My=0$ exactly, and retain $y$ only if it
+is linearly independent of previously retained verified vectors.
+Stop and accept the trial when $\widehat r$ independent verified
+vectors have been obtained. If $\widehat r=0$, accept with the empty
+basis immediately. If the cap is exhausted, discard the trial and
+start another independent one.
+
+Acceptance is sound on \emph{every} random choice. The verified
+independent vectors give $\rank M\le n-\widehat r=\ell$;
+Lemma~\ref{fk:lem:lower} gives the reverse inequality. Thus acceptance
+certifies $\ell=k$ and a complete extension-field kernel basis.
+An underestimated rank cannot pass: it asks for more independent
+kernel vectors than exist. A bad polynomial action cannot pass
+without the explicit kernel and independence checks.
+
+\subsection{Good-trial probability, probes, and expected work}
+Conditional on~\eqref{fk:eq:cyc}--\eqref{fk:eq:nil} being good, random
+left and right probes retain the minimum polynomial of the invertible
+cyclic $k$-dimensional restriction with failure probability at most
+$2k/q$. This follows from the nonzero degree-$k$ controllability and
+observability determinant polynomials and Schwartz--Zippel.
+The restriction's projected scalar minimum polynomial is determined
+exactly by the first $2n$ terms, since its degree is at most $n$;
+this is the scalar Wiedemann recurrence fact \cite[Section II]{Wiedemann}.
+Hence on the combined good event $\mathcal G$,
+\[
+ \ell=k,\quad g(0)\ne0,\quad
+ g(T)=g(0)P_{\ker T\parallel\operatorname{im}T},
+\]
+and
+\begin{equation}\label{fk:eq:bad}
+ \Prob(\mathcal G^c)
+ \le\frac{n(n-1)/2+r}{q-1}+\frac{2k}{q}
+ =O(n^2/q).
+\end{equation}
+For $k=0$ the statement means $g=1$ and the projection is the identity.
+
+Thus each $g(T)b$ on a good trial is an independent uniform vector
+in the $r$-dimensional kernel (up to a nonzero scalar).
+The expected number of draws to span it, without a cap, is
+\[
+ \sum_{j=0}^{r-1}\frac1{1-q^{j-r}}\le r+2,
+\]
+with zero draws when $r=0$.
+After $n+1$ draws, the failure probability is at most
+\begin{equation}\label{fk:eq:cap}
+ \frac{q^r-1}{q-1}\,q^{-(n+1)}
+ \le\frac1{q(q-1)}.
+\end{equation}
+Indeed a proper span is contained in a hyperplane, and there are
+$(q^r-1)/(q-1)$ such hyperplanes, all samples lying in a given one with probability
+$q^{-(n+1)}$. Our field size makes each trial succeed with
+probability at least $1/2$, uniformly over fixed $M$.
+
+\paragraph{Charging an entire trial.}
+The sequence, dot products, and recurrence require
+$O(n(w+n))$ field operations, $2n$ applications of $T$, and
+$O(n)$ temporary field storage. One polynomial action requires
+$O(n(w+n))$ field operations. Kernel verification costs $O(w)$
+per candidate. Maintaining independent verified columns costs
+$O(nj)$ operations when $j$ columns have already been retained.
+On a good trial these costs total in expectation
+\[
+ O\bigl(n(w+n)(r+1)+nr(r+1)\bigr)
+ =O\bigl(n(w+n)(r+1)\bigr).
+\]
+Even on a bad trial the cap gives the deterministic work bound
+$O(n^2(w+n))$. By~\eqref{fk:eq:bad}, its expected contribution is
+$O(n^4(w+n)/q)$, absorbed by the displayed good-trial bound.
+At all times there are at most $r$ retained vectors, since they
+are verified and independent, even on bad trials.
+
+Independent retries satisfy the renewal identity
+$\E W=\E W_{\mathrm{trial}}/\Prob(\mathrm{accept})$.
+They therefore terminate almost surely with the asserted expected
+field work on \emph{every fixed matrix}, including all exceptional
+graphs. No rational fallback or high-probability corank-one event
+is hidden in this Las Vegas assertion.
+
+\subsection{Descent to the base field and deterministic verification}
+Let $B\in K^{n\times r}$ be an accepted full kernel basis.
+Find row indices $J$ with $B_{J,:}$ invertible and compute
+\[
+ C=B(B_{J,:})^{-1},\qquad C_{J,:}=I_r.
+\]
+This costs $O(nr^2+r^3)$ field operations, bounded by
+$O(n(w+n)(r+1))$, and $O(nr)$ additional storage.
+
+\begin{lemma}[Canonical normalization descends]\label{fk:lem:descent}
+Every entry of $C$ belongs to the embedded base field $\F_p$.
+\end{lemma}
+\begin{proof}
+The kernel is defined by $M$ with base-field coefficients, so applying
+the coefficientwise Frobenius $x\mapsto x^p$ to $C$ yields another
+kernel basis with the same identity on $J$. Restriction to these
+pivot coordinates is a bijection from the kernel to $K^r$.
+Consequently this normalized basis is unique, and $C^{(p)}=C$.
+The fixed elements of this Frobenius in $K$ are precisely $\F_p$.
+\end{proof}
+
+In the polynomial representation, check that all positive-degree
+coefficients of $C$ vanish, read off the base-field entries, and
+verify $MC=0$ in $\F_p$. These are exact checks, not an assumption
+that arbitrary extension-field vectors can simply be enumerated as
+base-field vectors.
+
+The certificate comprises the irreducible polynomial $h$, $D,u,v$,
+$\ell$, the base-field matrix $C$, and its pivot rows $J$.
+A verifier checks the representation sizes and bounds on $q$, tests
+irreducibility, recomputes~\eqref{fk:eq:seq} and its exact BM length,
+and checks
+\[
+ r=n-\ell,\qquad MC=0,\qquad C_{J,:}=I_r.
+\]
+These give the lower and upper rank bounds deterministically, without
+trusting the random preconditioner or the polynomial projection.
+Verification needs $O(n(w+n)+wr+r^2)$ field/base operations, within
+the theorem's bound. It does not recompute a dense elimination.
+
+\subsection{Field construction, bit work, and storage}
+The extension degree is $s=O_p(\log(n+1))$. Draw monic degree-$s$
+polynomials over $\F_p$ and test irreducibility deterministically.
+The standard irreducible-polynomial count gives success probability
+at least $1/(2s)$, so the expected number of draws is $O(s)$.
+One may use Rabin's exact criterion \cite{Rabin}, or the elementary
+version checking
+\[
+ \gcd\bigl(h,X^{p^i}-X\bmod h\bigr)=1
+ \quad\text{for all }1\le i\le\lfloor s/2\rfloor.
+\]
+A reducible degree-$s$ polynomial has an irreducible factor of degree
+at most $s/2$, so this version is sufficient and necessary.
+Successive modular Frobenius powers and classical polynomial gcd
+give polynomial work in $s$, hence polylogarithmic bit work in $n$.
+Every accepted field construction is correct; randomness only
+controls its running time.
+
+Represent elements by $s$ base-field coefficients. Addition,
+multiplication modulo $h$, and inversion by extended Euclid each
+cost a polynomial in $s$, hence $\widetilde O_p(1)$ bit operations.
+Independent uniform field choices use $O(\log q)$ random bits in
+expectation per element; rejecting zero for diagonal entries has
+bounded expected overhead. This charges all field construction,
+randomness, polynomial actions, and basis arithmetic in
+Theorem~\ref{fk:thm:kernel}. Workspace is $O(n(r+1)+w)$ field/base
+elements; each has $O_p(\log(n+1))$ bits. Retry-counter storage can
+be treated separately and has finite expected size.
+
+\subsection{Exact partition listing from a single corank moment}
+Let $M_{\mathbb Z}=A-\lambda I$ for a simple graph of maximum degree
+$d$ and a known integer $|\lambda|\le d$, and let $M$ be its reduction modulo
+the fixed odd prime $p$. Compute the full base-field kernel by
+Theorem~\ref{fk:thm:kernel}. Enumerate all $p^r$ coefficient vectors
+$a\in\F_p^r$ and their images $Ca$.
+Retain only those with last coordinate $1$ and every coordinate in
+$\{1,-1\}$. Lift these residues uniquely to integer signs and
+check exactly
+\[
+ \one^T\sigma=0,\qquad M_{\mathbb Z}\sigma=0.
+\]
+Return every passing sign vector, with the orientation $\sigma_n=1$.
+The list is complete on every input: every true balanced integer
+sign kernel vector reduces to a vector of this finite-field kernel.
+Its integer verification eliminates all modular artifacts.
+
+\paragraph{The enumeration factor is charged without an extra $r$.}
+Use a base-$p$ odometer or Gray ordering and maintain the current
+image $Ca$. In the full run, the number of digit changes is at most
+$p^r\sum_{j\ge0}p^{-j}=O_p(p^r)$.
+Each digit change adds a known basis column in $O(n)$ base operations.
+All sign, balance, and integer degree checks cost $O_d(n)$ per
+candidate. The full enumeration therefore costs
+\[
+ \widetilde O_{d,p}(n p^r)
+\]
+bit operations, including the list entries. Recomputing every image
+by a fresh $nr$ multiplication would be an invalid expectation
+shortcut: $\E p^r<\infty$ need not bound $\E(rp^r)$.
+
+\begin{corollary}[Moment-to-full-list theorem]\label{fk:cor:moment}
+Suppose a bounded-degree random-graph model satisfies, for one fixed
+odd prime $p$,
+\[
+ \sup_n\E\bigl[p^{\dim\ker_{\F_p}(A-\lambda I)}\bigr]\le C<\infty.
+\]
+Then the preceding algorithm lists all balanced integer sign kernels
+of $A-\lambda I$, up to global exchange, in unconditional expected
+$\widetilde O_{d,p,C}(n^2)$ bit work. It has no algorithmic error
+and does not assume real or modular corank one. Its expected working
+storage is $\widetilde O_{d,p,C}(n)$ bits and its expected output
+size is $O_{d,p,C}(n)$ bits.
+\end{corollary}
+\begin{proof}
+The per-input conditional expected work is
+\[
+ \widetilde O_{d,p}\bigl(n^2(r+1)+n p^r\bigr).
+\]
+Since $r+1\le O_p(p^r)$, the stated raw moment bounds its expectation
+by $\widetilde O(n^2)$ and gives the storage/output bounds as well.
+This averages a valid all-input Las Vegas bound, so exceptional
+graphs incur no unjustified dense fallback cost.
+\end{proof}
+

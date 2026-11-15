@@ -1,0 +1,194 @@
+CERTIFIED FULL FINITE-FIELD KERNELS: THE ROOT PROPOSAL PASSES
+15 November 2026
+
+Main result
+===========
+
+certified-full-kernel.tex / certified-full-kernel.pdf proves:
+
+For EVERY fixed symmetric sparse M over one fixed odd prime field F_p,
+with size n, w nonzeros and corank r, a certified Las Vegas algorithm
+computes its COMPLETE F_p kernel in expected
+  ~O_p(n(w+n)(r+1)) BIT operations.
+For bounded degree, this is ~O_p(n^2(r+1)). There is no real or modular
+corank-one promise, and exceptional input ranks do not cause failure
+to terminate. The proof includes zero and full-rank matrices.
+
+The basis has identity on selected pivot rows. Together with a shifted
+Berlekamp-Massey rank lower bound, this yields a deterministic certificate
+of the COMPLETE kernel. Verification costs ~O_p(n(w+n)) bits, with no
+extra corank factor or dense rank recomputation.
+
+The algorithmic theorem received a full independent manuscript audit:
+  final-manuscript-audit.txt: PASS, no substantive errors.
+Separate primary-source/finite-field and proof audits:
+  primary-field-audit.txt, independent-proof.txt.
+
+Exact primary preconditioner, including rank-deficient inputs
+============================================================
+
+Let q=p^s>=64(n+1)^6, s=O_p(log n). Work in a VERIFIED extension F_q,
+and choose independent uniform nonzero diagonal entries D. Put T=DM.
+Chen et al. 2002 gives TWO distinct theorems:
+
+* Theorem 4.2: T is cyclic on its nonzero primary part except with
+  probability <=n(n-1)/(2(q-1)), over ANY field.
+* Theorem 4.5: because M is symmetric, zero is semisimple except with
+  probability <=r/(q-1), again over ANY field.
+
+Both use the same D; their union bound requires no independence.
+Theorem 4.3's characteristic restriction is NOT invoked. In particular,
+the fixed characteristic p may be much smaller than n. Repeated
+NONZERO roots are harmless and included in the cyclic polynomial.
+
+Primary published paper:
+https://kaltofen.math.ncsu.edu/bibliography/02/CEKSTV02.pdf
+
+The all-input certificate and projection
+========================================
+
+Generate 2n scalars u^T T^(j+1)v, j=0,...,2n-1, and run exact BM.
+Its TRUE finite shortest-register length ell ALWAYS satisfies
+  ell <= rank(T),
+because Tv lies in the invariant space im(T), whose dimension is rank.
+Reject if the returned monic recurrence g has g(0)=0.
+
+On good preconditioning and probes, ell=rank(T)=k, deg(g)=k, g(0)!=0,
+and
+  g(T)=g(0) P_(ker T parallel im T).
+Fresh random vectors are consequently mapped uniformly onto ker(M).
+
+Verify EVERY candidate with My=0 and retain it only if independent.
+Stop only after n-ell independent verified vectors have accumulated.
+These vectors give rank(M)<=ell, matching the unconditional lower bound.
+Acceptance is therefore CERTAINLY correct even on bad preconditioners,
+bad scalar probes, accidental projections, or extra kernel dimensions.
+
+An underestimated rank requests too many independent true kernel
+vectors, so it can never pass. There is no probabilistic rank verifier.
+
+Cap each trial at n+1 candidate probes, then retry independently.
+On good trials, expected probes<=r+2 and cap failure<=1/[q(q-1)].
+Good-trial work is O(n(w+n)(r+1)) extension-field operations.
+Bad trials have deterministic cost O(n^2(w+n)); their probability is
+O(n^2/q), giving expected contribution O(n^4(w+n)/q), absorbed above.
+Each trial succeeds with probability>=1/2 for EVERY fixed symmetric M.
+The renewal identity proves the genuine all-input Las Vegas expectation.
+
+Descent and all bit charges
+==========================
+
+An arbitrary extension-field basis cannot simply be enumerated over F_p.
+Normalize a full basis B on r pivot rows J:
+  C=B*(B[J,:])^-1, C[J,:]=I_r.
+Coefficientwise Frobenius preserves ker(M) and the pivot identity.
+Uniqueness of this normalized basis forces C^p=C, so all entries lie
+in the BASE field F_p. Check zero higher polynomial coefficients,
+extract base entries, and verify MC=0 and the pivot identity exactly.
+Descent costs O(nr^2+r^3)<=O(n^2(r+1)) field operations.
+
+Extension construction is fully charged. Random monic degree-s search
+has success probability>=1/(2s). Deterministic Frobenius/gcd tests
+certify irreducibility. Thus field construction takes expected polylog(n)
+bit work, not an uncharged irreducibility oracle. Field operations,
+inversion, uniform field choices, all polynomial actions, basis storage,
+descent and verification have their polynomial-logarithmic bit costs
+included. Working storage is ~O_p(n(r+1)+w) bits, apart from counters.
+
+Primary field-construction source:
+Rabin, Probabilistic Algorithms in Finite Fields, 1980:
+https://doi.org/10.1137/0209024
+https://publications.csail.mit.edu/lcs/pubs/pdf/MIT-LCS-TR-213.pdf
+
+What the raw moment buys, exactly
+=================================
+
+Assume the actual simple-graph distribution satisfies
+  sup_n E[p^r] <= C, r=dim ker_Fp(A-lambda I),
+for ONE fixed odd prime and a known bounded integer lambda.
+
+Enumerate the COMPLETE base-field kernel and keep only +/-1 residues
+with final coordinate1; lift signs and verify integer eigenvector,
+degree and balance equations. This lists ALL admissible parameter-fixed
+partitions up to global exchange, on EVERY input, with no algorithmic
+error. The planted vector is always included in a planted input.
+
+Use an odometer/Gray update, maintaining the current n-vector. The
+total digit changes across p^r coefficient vectors are O_p(p^r), so
+generation plus exact integer checks costs O_d,p(n*p^r), INCLUDING
+outputs. Do NOT charge naive O(n*r*p^r) and silently average it:
+bounded E[p^r] need not bound E[r*p^r].
+
+Conditional per-input expected work is
+  ~O_d,p(n^2(r+1)+n*p^r).
+Since r+1<=p^r, the raw moment gives UNCONDITIONAL expected ~O(n^2)
+bit work, expected near-linear storage, and expected O(n) output bits.
+This is valid even on extra-real-eigenspace graphs; there is no dense
+rational fallback weighted by a merely qualitative o(1) failure rate.
+
+The moment remains an EXPLICIT INPUT here. This packet does not re-audit
+the entire new all-target configuration mixing proof or the cubic moment.
+If their raw moment holds directly in the configuration model, conditioning
+on simplicity with probability bounded below transfers it by division by
+that probability. Qualitative contiguity alone would NOT suffice.
+
+For the root's regular block model with known a,b and lambda=a-b, integer
+sign verification is exactly the condition of a same-side and b opposite-
+side neighbors per vertex. If the returned list has one partition, recover
+it. If it has more, return the complete ambiguity list. There is no further
+computational abstention. No ambiguity probability is proved in this note.
+
+Scope and risks resolved / remaining
+====================================
+
+RESOLVED: rank-deficient preconditioning in fixed characteristic;
+genuine lower-rank certification; bad-trial stopping/time; all-input
+Las Vegas; exact extension construction; descent to the base field;
+basis memory; complete-list enumeration without a stronger moment.
+
+REMAINING INPUT: a uniform bounded RAW p^r moment for the actual graph
+law. High-probability real simplicity is not an adequate replacement.
+This result assumes known lambda. Expected full-kernel enumeration over
+other integer shifts needs moments for those shifts or a separate filter.
+Odd p is needed to distinguish the two integer signs. Symmetry is needed
+for the quoted zero-semiplicity preconditioner. None is silently dropped.
+
+Novelty boundary: the black-box preconditioners, Wiedemann recurrences,
+and finite-field operations are classical. This is their proved,
+fully charged algorithmic assembly for the supplied graph moment.
+Historical priority for the resulting RSBM theorem must be assessed
+with the separate graph proofs; no new general linear-algebra primitive
+is claimed here.
+
+Exact prototype and validation
+==============================
+
+full_kernel.py is standalone for recovery/verification, with exact integer
+polynomial field arithmetic. Its test driver imports only the earlier
+packet's graph sampler and disables bytecode writes. Run:
+  uv run python full_kernel.py
+
+full-kernel-checks.json records:
+  * exhaustive irreducible counts over F3 in degrees2,3,4;
+  *160 rank-lower-bound checks in small characteristic;
+  *complete certified kernels for zero, identity, corank1, corank2,
+   and symmetric NILPOTENT matrices in characteristic3;
+  *rejection of a deliberately bad nilpotent preconditioner;
+  *base-field descent with exact identity pivot blocks;
+  *rejection of altered rank, nonbase basis entries, wrong prime,
+   and reducible extension-polynomial certificates;
+  *an n=12 RSBM with real and modular corank2: 9 field vectors give
+   2 exact partitions, matching exhaustive sign search;
+  *the cubic N=8 fixture with EXACT REAL CORANK TWO and UNIQUE sign
+   partition: the algorithm certifies its F3 corank2, enumerates only
+   9 field vectors, and recovers exactly the planted partition.
+
+The last example directly demonstrates recovery where the prior
+corank-one acceptor would abstain. Its exact integer kernel witnesses
+and a modular rank certificate are saved together in
+  unique-degenerate-example-certificate.json.
+The ambiguous example is in full-kernel-example-certificate.json.
+Both certificates can be deterministically rechecked.
+
+The manuscript PDF compiles cleanly. All writes remain in this directory;
+frozen papers are unchanged. The root input moment is not overstated.

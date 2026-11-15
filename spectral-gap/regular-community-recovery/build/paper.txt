@@ -1,0 +1,1160 @@
+              Exact algebraic recovery in regular block models
+                        without spectral separation
+                                         Research manuscript
+
+                                          November 15, 2026
+
+
+                                                Abstract
+         For every fixed pair of integers a > b > 0, we prove polynomial-time exact recovery in the
+     two-class regular stochastic block model at every admissible size, with probability 1 − O(N −2 ).
+     We use algebraic constraints rather than separation of the planted eigenvalue from the remaining
+     spectrum. Two complementary arguments are developed. A configuration-model count bounds
+     a fixed finite-field kernel moment by a polynomial; exact enumeration then reduces recovery
+     to uniqueness of sign eigenvectors. A separate argument applies strong finite-field mixing to
+     independent internal graphs and excludes exact collisions with every fixed quotient eigenvalue,
+     uniformly over prescribed cross graphs. It yields exact rational recovery for general fixed sym-
+     metric degree frames, including repeated and irrational quotient eigenvalues. The statements
+     distinguish the random-cross model from the prescribed-cross model, and sign uniqueness from
+     real eigenspace simplicity. All algorithms include their algebraic and bit costs. Aggregate-fiber
+     entropy gives an O(N 24 ) binary kernel moment for every fixed degree pair, yielding an O(n28 )
+     bounded-work recovery algorithm. The finite-field mixing and contiguity inputs are classical;
+     no claim of historical priority is made.
+
+
+Contents
+1 Models, statements, and proof routes                                                                   2
+
+2 Aggregate-fiber entropy and the polynomial moment                                                      4
+  2.1 Configurations and ordered profiles . . . . . . . . . . . . . . . . . . . . . . . . . . . .        4
+  2.2 Group by aggregate tables, not local types . . . . . . . . . . . . . . . . . . . . . . . .         5
+  2.3 Uniform factorial bounds . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .         6
+  2.4 The entropy cancellation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .       6
+  2.5 Conditioning gives exactly the uniform-simple model . . . . . . . . . . . . . . . . . .            7
+
+3 Boolean rigidity at every admissible size                                                              7
+  3.1 A conditional-variance entropy deficit, including degree two . . . . . . . . . . . . . .           8
+  3.2 Uniform small-support exclusion . . . . . . . . . . . . . . . . . . . . . . . . . . . . .          9
+
+4 Exact recovery algorithms and their costs                                                       10
+  4.1 Binary affine enumeration . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 10
+  4.2 Odd-prime and rational alternatives . . . . . . . . . . . . . . . . . . . . . . . . . . . 11
+
+
+
+
+                                                    1
+5 Exact quotient eigenspaces for prescribed cross graphs                                             11
+  5.1 The imported strong mixing theorem . . . . . . . . . . . . . . . . . . . . . . . . . . .       11
+  5.2 The reference first moment . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .     12
+  5.3 Reduction of every fixed real target . . . . . . . . . . . . . . . . . . . . . . . . . . . .   13
+  5.4 Event transfer and its uniform quantifiers . . . . . . . . . . . . . . . . . . . . . . . .     14
+  5.5 Rational row clustering recovers the whole frame . . . . . . . . . . . . . . . . . . . .       14
+
+6 Odd-size extension for prescribed two-class cross graphs                                           15
+  6.1 Vertex insertion and its output distribution . . . . . . . . . . . . . . . . . . . . . . .     15
+  6.2 Keep at least three untouched matching colors . . . . . . . . . . . . . . . . . . . . .        16
+  6.3 Conditional first moment . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .     16
+  6.4 Transfer in the required order . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .   17
+
+7 Certified recovery with nearly quadratic expected bit work                                       18
+  7.1 A shifted recurrence is a rank certificate . . . . . . . . . . . . . . . . . . . . . . . . . 18
+  7.2 Success probability, primes, and charged cost . . . . . . . . . . . . . . . . . . . . . . 19
+
+8 Scope, comparison, and remaining questions                                                         20
+
+
+1    Models, statements, and proof routes
+Let a > b > 0 be fixed integers, D = a + b, and δ = a − b. The two-class regular stochastic
+block model has two planted classes V+ , V− of size N . Each class contains an independent uniform
+simple a-regular graph. Independently, the cross edges form a uniform simple b-regular bipartite
+graph. All limits are through admissible sizes, in particular aN is even. A uniformly hidden planted
+partition can be obtained by a final independent relabeling; every algorithm below receives only
+the relabeled adjacency matrix and the fixed degree parameters. Set n = 2N and σ = (1N , −1N )
+before relabeling. For every realization,
+
+                                     A1n = D1n ,       Aσ = δσ.                                      (1)
+
+A sign vector τ ∈ {−1, 1}n satisfies Aτ = δτ if and only if each vertex has a neighbors with its own
+sign and b with the opposite sign. Such a vector is automatically balanced: D1T τ = 1T Aτ = δ1T τ
+and D − δ = 2b > 0. The unavoidable ambiguity is the exchange of the two signs.
+
+Theorem 1.1 (Recovery in the random-cross model). For every fixed pair of integers a > b >
+0, there is a deterministic algorithm with polynomial worst-case bit complexity which, given the
+adjacency matrix of the two-class model and a, b, returns the planted partition up to exchange with
+probability 1 − Oa,b (N −2 ). This holds at every admissible block size and requires no inequality
+placing δ outside the remaining spectrum. The algorithm uses OD (n28 ) elementary work and O(n2 )
+storage; its untruncated expected work is Oa,b (n25 ).
+    An untruncated version lists all sign vectors satisfying Aτ = δτ , up to global sign, with expected
+polynomial work. In particular, the planted partition is the unique such partition with probability
+1 − Oa,b (N −2 ).
+
+   The proof of Theorem 1.1 has two independent parts. First, a finite-field moment makes the
+candidate list polynomial with high probability. Second, Boolean rigidity makes the verified list
+unique. Neither step asserts that kerR (A − δI) is a line.
+
+
+
+                                                   2
+Theorem 1.2 (Polynomial moment). Fix a ≥ 2, b ≥ 1, and a prime p. For the independent
+uniform-simple factors above, at all sufficiently large admissible N ,
+
+                  E kerFp (A − δI) ≤ Ca,b,p (N + 1)κa,b,p ,        κa,b,p = 5p2 + p + 2.           (2)
+
+In particular the binary moment is Oa,b (N 24 ), independently of the fixed values of a, b. The theorem
+also holds in the unconditioned configuration model.
+   The configuration count proving this theorem is valid in characteristic two as well as at odd
+primes. Recovery will use a binary affine parity system, followed by exact integer verification. No
+growing-prime estimate is used.
+Theorem 1.3 (Boolean rigidity). In the random-cross model, the probability of a sign vector other
+than σ, −σ at eigenvalue δ is
+                                     Oa,b N −(D−2)(δ+1) .
+                                                       
+                                                                                              (3)
+This holds at every admissible size.
+    The proof includes the cubic pair (a, b) = (2, 1), where the displayed exponent is two. A
+conditional-variance argument gives a strict Boolean entropy deficit even at a = 2, where a simpler
+mutual-information coefficient vanishes. Aggregate fibers give the same binary moment exponent
+throughout the parameter range.
+    We next state a stronger spectral conclusion under different assumptions. For two classes,
+replace the random cross graph by any prescribed simple b-regular bipartite graph, independent of
+the internal randomness. For even N and a ≥ 3, the entire real eigenspace at δ is the planted line
+with high probability, uniformly over that cross graph. There is a corresponding result for general
+degree frames.
+    Fix k ≥ 1 and a symmetric matrix Q = (dij )ki,j=1 ∈ Zk×k
+                                                           ≥0 with dii ≥ 3. Its off-diagonal frame
+graph has edge ij whenever dij > 0; assume this graph is connected, with the usual vacuous
+convention when k = 1. There are k classes of equal even size N . Internal adjacency blocks Ci are
+independent uniform simple dii -regular graphs. For i < j, Bij is any prescribed zero-one matrix
+with every row and column sum dij , and Bji = Bij T . The graph is globally regular exactly when Q
+
+has constant row sum. Let
+
+                                Jc = (c1 1N , . . . , ck 1N ),   W = im J.                         (4)
+
+Then AJ = JQ deterministically. We call W the old spectral space.
+Theorem 1.4 (Uniform fixed-target exclusion). For every fixed real λ, writing ℓ = dimR ker(Q −
+λI), one has
+                       sup P{kerR (A − λI) ̸= J kerR (Q − λI)} −→ 0                         (5)
+                           (Bij )
+
+as even N → ∞. In particular all the finitely many quotient eigenspaces have exactly their old
+multiplicities simultaneously with high probability. The same conclusion holds for cross matrices
+with any joint law independent of all internal blocks.
+Corollary 1.5 (Rational recovery for a known frame). Under Theorem 1.4, given A and the fixed
+frame Q, the planted k classes can be recovered up to permutation with probability 1 − o(1) by a
+deterministic polynomial-time exact rational algorithm, uniformly over the permitted cross matrices.
+   The algorithm computes kerQ mQ (A), where mQ is the squarefree minimal polynomial of Q,
+and groups identical rows of a rational basis. It handles repeated and irrational frame eigenvalues
+without computing those eigenvalues numerically.
+
+                                                        3
+Corollary 1.6 (Two-class prescribed cross graph). For fixed a ≥ 3 and b ≥ 1, even N , and every
+prescribed simple b-regular cross graph independent of the internal factors,
+
+                                  sup P{kerR (A − (a − b)I) ̸= Rσ} −→ 0.
+                                   B
+
+Consequently exact rational nullspace computation recovers the planted classes with high probability,
+uniformly in B. Assortativity a > b is unnecessary for this statement. For even a ≥ 6 and
+a > b > 0, the same two-class conclusion holds through odd N .
+
+    The last assertion follows from an odd-vertex insertion argument in Section 6. It does not cover
+a = 4 at odd N . Theorem 1.1 does cover that case when the cross factor is random, through its
+different moment-and-rigidity proof.
+
+Relation to earlier work. Brito, Dumitriu, Ganguly, Hoffman and Tran introduced this regular
+model and proved rigidity, spectral recovery in a parameter regime, and bootstrapping results [1].
+Barucca studied equitable graphs and proposed full recovery beyond the usual adjacency outlier
+regime, supported by numerical evidence [2]. The algebraic mixing input in our prescribed-cross
+theorem is Mészáros’s strong fixed-group distribution theorem [4]; its use of finite-field moments
+and fixed primes follows an established method. The model transfer is the contiguity theory of
+Greenhill–Janson–Kim–Wormald and its predecessors [5, 6, 7].
+    Zhu and Zhu’s Lemma 9.1 states simplicity of the two planted eigenvalues for the random-
+cross model [3]. Thus a simplicity statement for that model already appears in print. Its cited
+argument uses a random-lift spectral bound; such a bound by itself does not exclude an exact
+collision with a planted eigenvalue lying in the bulk. We give the complete finite-field argument
+and state the stronger uniform prescribed-cross quantifiers explicitly. The present paper does not
+certify historical novelty. Section 8 records the precise scope of each conclusion and the distinction
+between recovery and eigenspace simplicity.
+
+
+2     Aggregate-fiber entropy and the polynomial moment
+2.1   Configurations and ordered profiles
+Give each vertex a distinguished internal stubs and b distinguished cross stubs. Independently pair
+the aN internal stubs in each class, and choose a uniform bijection between the two sets of bN
+cross stubs. There are ((aN − 1)!!)2 (bN )! equally likely configurations. A loop contributes two to
+its diagonal adjacency entry and to its neighbor sum. We use (−1)!! = 1 throughout.
+    Let S be a fixed finite alphabet. For now its labels belong to Fp , and local sums are in that
+field. A plus profile is
+                                                                      a
+                                                                      X            b
+                                                                                   X
+                       ω = (x; y1 , . . . , ya ; z1 , . . . , zb ),         yi +         zj = δx.   (6)
+                                                                      i=1          j=1
+
+It records the root coordinate, then the coordinates at the partners of its ordered internal and cross
+stubs. Define minus profiles in the same way. There are S = pD profiles on each side: the root and
+all but one internal label determine the last label uniquely.
+    Let n+     −                                                                ±             ±
+          ω , nω be the profile counts, each summing to N , and write π± = n /N . Let muv count
+                                                                             +
+internal stubs whose root label is u and requested partner label is v. Let huv count plus cross stubs
+whose root label is u and requested minus label is v, and let h−vu count minus cross stubs with the
+
+
+                                                               4
+reverse request. Feasibility requires m± to be symmetric with even diagonal and h+     −
+                                                                                 uv = hvu . Write
+h for the plus-oriented common table, and put
+
+                          m±                  h                 Y             Y
+                   Q± =      ,        R=        ,     W (m) =         muv !    (muu − 1)!!.                 (7)
+                          aN                 bN                 u<v           u
+
+The two marginals of Q± are the corresponding root law µ± ; the marginals of R are µ+ , µ− .
+
+Lemma 2.1 (Exact count). In the configuration model,
+                                                                                       Q
+                                          X          N!     N ! W (m+ )W (m− )             u,v huv !
+             E | kerFp (A − δI)| =                  Q + Q −                     2
+                                                                                                       .    (8)
+                                                  −
+                                     feasible n+ ,n  ω nω ! ω nω ! ((aN − 1)!!)         (bN )!
+
+The same formula counts sign eigenvectors if the alphabet is {−1, 1} and profiles are restricted to
+the integer identity (6).
+
+Proof. The two multinomial factors assign profiles to labeled vertices. For an assigned internal
+table, pair the muv stubs to the mvu reverse stubs by a bijection when u < v, giving muv !. Pair
+each diagonalQclass internally, giving (muu − 1)!!. For the cross table, biject each class to its reverse
+class, giving huv !. These choices include loops and multiple edges. Every configuration and kernel
+vector determine a unique profile at each ordered vertex star. Conversely, every compatible choice
+counted here satisfies every local eigenvector equation. Thus neither edge orientation nor root-label
+multiplicity requires an extra factor. The reasoning uses only equality of requested endpoint labels
+and the local constraint, so it also proves the assertion for integer signs.
+
+2.2   Group by aggregate tables, not local types
+The local-type identity is exact but counting all its local types would introduce a degree-dependent
+polynomial exponent. We instead group every ordered profile assignment by its three edge tables.
+For a feasible triple (m+ , m− , h) let Ω(m+ , m− , h) be the set of all ordered arrays of N plus profiles
+and N minus profiles having those tables. Thus all assignments of local types to labeled vertices
+are already included in Ω. Grouping the same exact count gives
+                                                                                Q
+                                         X
+                                                    +    −     W (m+ )W (m− ) u,v huv !
+                E| kerFp (A − δI)| =          |Ω(m , m , h)|                              .           (9)
+                                        + −
+                                                                ((aN − 1)!!)2     (bN )!
+                                       m ,m ,h
+
+Empty fibers contribute zero. In particular there is no additional local-type count or multinomial
+factor in (9).
+    Choose an array uniformly from a nonempty fiber. The fiber is invariant under independent
+permutations of vertex positions in each block and under independent permutations of internal and
+cross slots at each vertex. Each such map preserves the local sum and every aggregate table. Thus
+all plus vertices have the same slot-symmetric profile law π+ , and all minus vertices have the same
+law π− . Their one-slot edge laws are exactly Q+ , Q− , R of (7): invariance makes every position’s
+expected contribution equal, while the total contribution is fixed by the fiber. Subadditivity of
+entropy over the 2N vertex profiles gives
+
+                                       log |Ω| ≤ N {H(π+ ) + H(π− )}.                                      (10)
+
+This uses no independence between vertices or blocks. The same statements hold for fibers of
+integer sign profiles, including fibers restricted to fixed root counts in each block.
+
+                                                       5
+2.3    Uniform factorial bounds
+All logarithms are natural and 0 log 0 = 0. Write H for entropy. The elementary estimates
+
+                     r log r − r ≤ log(r!) ≤ r log r − r + 1 + log(r + 1),          r ≥ 0,                  (11)
+
+hold with the usual interpretation at zero. For even r use (r − 1)!! = r!/(2r/2 (r/2)!).
+
+Lemma 2.2 (Zero-safe pairing bounds). Let q = p(p + 1)/2. For every feasible internal table of
+total T = aN , and every cross table of total bN ,
+                                                                   
+                           W (m)        q+1        q+1      T
+                                    ≤ e (T + 1)        exp − H(m/T ) ,                    (12)
+                          (T − 1)!!                         2
+                            Q
+                              huv !      2          2
+                                    ≤ ep (bN + 1)p exp[−bN H(R)].                         (13)
+                            (bN )!
+
+The multinomial factor for a profile law π is at most eN H(π) .
+
+Proof. For an off-diagonal class the leading term in log(muv !) is muv log muv − muv . For a diagonal
+class the leading  term in log((muu − 1)!!) is (muu /2) log muu − muu /2. Summing, their leading
+terms are 21 u,v muv log muv − T /2. The denominator has leading term (T /2) log T − T /2. There
+             P
+are q numerator classes and one denominator. Applying (11), or its double-factorial consequence,
+bounds the upper remainder by (q + 1)(1 + log(T + 1)). This proves (12), including empty classes.
+For the cross ratio the leading terms leave −bN H(R) and the p2 numerator factorials cost at most
+p2 (1 + log(bN + 1)); a lower factorial bound suffices in the denominator. Finally the probability of
+a type under its own product law is at most one, which gives the multinomial entropy bound.
+
+    Consequently each summand of (8) is bounded by a fixed polynomial factor times eN Φ , where
+                                             a
+                        Φ = H(π+ ) + H(π− ) − {H(Q+ ) + H(Q− )} − bH(R).                                    (14)
+                                             2
+All these bounds are uniform at the boundary of type space. No central limit theorem, nondegen-
+erate Hessian, or asymptotic saddle constant will be needed.
+
+2.4    The entropy cancellation
+Independently average each profile law over permutations of its a internal positions and its b cross
+positions. The constraint, aggregated tables, and root laws are preserved. Profile entropy can only
+increase. It suffices to upper-bound the resulting symmetrized Φ.
+    For the plus law write its random profile as (X; Y1 , . . . , Ya ; Z1 , . . . , Zb ). Internal table symmetry
+and cross table consistency imply
+
+                                  L(X) = L(Yi ) = µ+ ,         L(Zj ) = µ− .
+
+The analogous minus profile has root law µ− , internal law µ− , and cross law µ+ . The constraint
+determines Ya from the root and the retained neighbors. Thus
+
+                H(π+ ) = H(µ+ ) + (a − 1)H(Y1 | X) + bH(Z1 | X) − J+ ,                 J+ ≥ 0,              (15)
+
+where J+ is conditional total correlation among the retained slots. Define J− in the same way. Put
+
+        I+ = 2H(µ+ ) − H(Q+ ),        I− = 2H(µ− ) − H(Q− ),         I× = H(µ+ ) + H(µ− ) − H(R).
+
+                                                       6
+These are the internal and cross mutual informations and are nonnegative. Substitution in (14)
+gives the exact identity
+                                 a    
+                           −Φ =     − 1 (I+ + I− ) + bI× + J+ + J− .                      (16)
+                                  2
+In particular Φ ≤ 0 whenever a ≥ 2, over every finite field. For an unsymmetrized law its original
+exponent is at most the symmetrized exponent, so this upper bound remains valid.
+    Apply this entropy inequality to the uniform-fiber laws in (10). We obtain
+                                   h na                               oi
+                         |Ω| ≤ exp N      (H(Q+ ) + H(Q− )) + bH(R) .                         (17)
+                                        2
+Multiplying by the pairing bounds cancels this exponential exactly. There are at most (aN +
+    2         2
+1)2p (bN + 1)p table triples, bounding each entry independently and ignoring symmetry, parity,
+and totals. Equation (9) therefore gives
+                                                  2                     2            2
+                E | kerFp (A − δI)| ≤ ep(p+1)+2+p (aN + 1)p(p+1)+2+2p (bN + 1)2p .             (18)
+
+Its total power of N is 5p2 + p + 2, independent of the fixed degrees. In particular,
+
+                     E 2dimF2 ker(A−δI) ≤ e12 (aN + 1)16 (bN + 1)8 = Oa,b (N 24 ).             (19)
+
+The fiber step avoids any prefactor for enumerating local profiles; its cardinality was bounded
+directly by entropy, not by a sum of type-by-type estimates.
+
+2.5   Conditioning gives exactly the uniform-simple model
+Every simple labeled internal a-regular graph has (a!)N distinguished-stub realizations. Every
+simple labeled b-regular bipartite graph has (b!)2N cross-bijection realizations. Conditioning the
+three independent factors on simplicity therefore gives exactly the three independent uniform-
+simple laws in our model. At fixed degrees their joint simplicity probability is bounded below by
+a positive constant along all admissible sizes. This follows, for example, from the ordinary and
+bipartite configuration criteria in Janson [8, Theorems 1.1 and 5.1]; the latter theorem credits the
+bipartite criterion to Blanchet and Stauffer. For a nonnegative random variable Z and the joint
+simplicity event S, E[Z | S] ≤ EZ/P(S). Applying this to (18) proves Theorem 1.2. This transfer
+uses bounded-probability conditioning, rather than contiguity between different graph models.
+
+
+3     Boolean rigidity at every admissible size
+We now use the same exact count with sign labels and integer local equations. Fix an alternative
+sign eigenvector τ . It is balanced by (1), so it differs from σ on the same number k of vertices in
+each planted class. Replacing τ by −τ allows 0 ≤ k ≤ N/2. Set α = k/N . The root laws are
+
+                    µ+ (1) = 1 − α,      µ− (1) = α,       Var(µ± ) = 4α(1 − α).               (20)
+
+We treat macroscopic k by a uniform entropy deficit and small k by a support exploration.
+
+
+
+
+                                                      7
+3.1    A conditional-variance entropy deficit, including degree two
+The coefficient of I+ + I− in (16) is zero at a = 2. It is therefore useful to retain the internal
+conditional law in an auxiliary product distribution instead of forcing it to be independent of the
+root.
+
+Lemma 3.1 (Quantitative sign deficit). For every feasible sign type with overlap α as in (20),
+every a > b > 0 satisfies
+                                         2b2
+                                  Φ ≤ − 4 α2 (1 − α)2 .                                   (21)
+                                          a
+Proof. Symmetrize the two profile laws as in Section 2; it suffices to prove the bound for their
+larger exponent. Let P be the law of the retained plus star (X, Y1 , . . . , Ya−1 , Z1 , . . . , Zb ). Define T
+as follows. Keep the same root law. Given that root, draw the a−1 internal neighbors independently
+with their original conditional law L(Y1 | X). Draw the b cross neighbors independently with the
+root-independent law µ− , independently of the internal neighbors. Expanding relative entropy gives
+
+                               DKL (P ∥T ) = J+ + bI× ≤ L,           L = −Φ,                              (22)
+
+by (16) and a ≥ 2. Every positive P atom has positive corresponding conditional and marginal
+probabilities under T , so this identity is valid with zero marginals as well. Conditional laws at
+zero-probability roots can be chosen arbitrarily.
+    Put
+                                                                      X        b
+                                                                               X
+              m(X) = E[Y1 | X], v(X) = Var(Y1 | X), U = δX −             Yi −    Zj .
+                                                                              i<a      j=1
+
+Under P , the integer constraint makes U the omitted internal sign Ya . Exchangeability of the
+internal slots therefore gives EP (U − m(X))2 = Ev(X). Under T , conditional independence gives
+
+                                VarT (U | X) = (a − 1)v(X) + b Var(µ− ).
+
+The squared conditional-mean contribution is nonnegative. Consequently
+
+           ET (U − m(X))2 − EP (U − m(X))2 ≥ (a − 2)Ev(X) + b Var(µ− ) ≥ b Var(µ− ).                      (23)
+
+On both distributions |U | ≤ δ + (a − 1) + b = 2a − 1 and |m(X)| ≤ 1. The function (U − m(X))2
+therefore lies in [0, 4a2 ]. The bounded-range expectation inequality and Pinsker’s inequality yield
+                                                     p                     p
+                    b Var(µ− ) ≤ 4a2 ∥P − T ∥TV ≤ 4a2 DKL (P ∥T )/2 ≤ 4a2 L/2.
+
+Substituting (20) and squaring proves (21). The proof did not require positive internal mutual-
+information coefficients and thus includes (a, b) = (2, 1).
+
+    Let Zk count sign eigenvectors with k flips in each block. Restrict each aggregate fiber to those
+root counts. Its uniform law is still invariant under vertex and slot permutations, and its root laws
+are exactly (20). Lemma 3.1 strengthens the fiber bound by the factor exp[−(2b2 /a4 )N α2 (1 − α)2 ].
+The alphabet has two symbols, regardless of their integer values, so the same factorial and table
+counts as at p = 2 give the explicit configuration-model bound
+
+                                                              2b2
+                                                                             
+                              12           16        8               2      2
+                      EZk ≤ e (aN + 1) (bN + 1) exp − 4 N α (1 − α) .                            (24)
+                                                              a
+
+
+                                                      8
+This is an integer-sign count; it does not reduce the two signs modulo two. All choices of root signs
+are already in the restricted fibers. For any fixed η > 0, summing over the macroscopic range gives
+                           E#{τ : Aτ = δτ, ηN ≤ k ≤ N/2} ≤ e−ca,b,η N                           (25)
+for sufficiently large N . The strictly negative exponential dominates the polynomial prefactor and
+the N possible overlaps. Conditioning on simplicity costs only a bounded factor.
+
+3.2   Uniform small-support exclusion
+Lemma 3.2 (Small-support eigenvectors). For fixed a > b > 0 there is ε = ε(a, b) > 0 such that,
+in the uniform-simple model,
+                  P{∃v ̸= 0 : Av = δv, | supp v| ≤ εN } = Oa,b N −(D−2)(δ+1) .
+                                                                            
+                                                                                           (26)
+Proof. We first obtain deterministic necessary conditions in a simple D-regular graph. Since 0 <
+δ < D, every such eigenvector has coordinate sum zero and has both positive and negative entries.
+At its largest positive entry, the eigenvector equation requires at least δ positive neighbors: each
+is at most that entry and all other contributions are nonpositive. The analogous observation at
+its most negative entry requires at least δ negative neighbors. Simplicity makes these neighbors
+distinct from their roots. Thus
+                                      | supp v| ≥ q0 := 2(δ + 1).                               (27)
+Let S = supp v, |S| = q, and let T be its exterior neighbor set. Every vertex of T has at least
+two incident edges from S; one nonzero summand cannot satisfy its zero-coordinate eigenvector
+equation.
+    For a fixed S, explore the configuration pairings incident to its Dq stubs, skipping any stub
+whose partner has already been exposed. Call an exposure a collision if its partner lies in S or at
+an exterior vertex already reached. If i exposed edges lie in S, j leave S, and t distinct exterior
+vertices are reached, then
+                  Dq = 2i + j,      t ≤ j/2,     #collisions = i + j − t ≥ Dq/2.
+This counts an edge within S only once, though it consumes two support stubs.
+    For q ≤ εN and sufficiently small fixed ε, each relevant internal-pairing or cross-bijection pool
+retains Θa,b (N ) stubs throughout this exploration. There are only OD (q) stubs at vertices of S
+and previously reached exterior vertices. Conditional on every previous exposure, each collision has
+probability at most Ca,b q/N . The exposure rule can choose any unpaired support stub; uniform
+pairings and bijections retain the required conditional law. Pad the exploration to Dq steps with
+deterministic noncollisions. A union bound over sets of at least Dq/2 collision positions gives
+                P{S has the necessary exterior condition} ≤ 2Dq (Ca,b q/N )Dq/2 .
+Multiplying by 2N
+                  
+                q   and enlarging a fixed constant bounds the probability of any such set of size
+q by                                 q h  q
+                         fq := Ka,b             ,  h = (D − 2)/2 > 0.                       (28)
+                                       N
+Indeed fq+1 /fq ≤ Ka,b eh ((q + 1)/N )h . Choose ε so this is at most 1/2 throughout the range.
+Summing from q0 to εN gives O(N −hq0 ) = O(N −(D−2)(δ+1) ).
+   The minimum-support condition (27) was used only for the desired simple-graph event. The
+necessary-set exploration was bounded in the unconditioned configuration model. Conditioning its
+three factors on simplicity costs a bounded factor and gives exactly the requested law, proving the
+lemma.
+
+                                                 9
+Proof of Theorem 1.3. For an alternative with 1 ≤ k ≤ εN/2, the nonzero eigenvector τ − σ has
+support 2k ≤ εN and is excluded by Lemma 3.2. The remaining alternatives satisfy εN/2 ≤ k ≤
+N/2 and are excluded with exponentially small probability by (25). Combining the two bounds
+proves (3). The smallest possible exponent is two, attained at (a, b) = (2, 1).
+
+
+4     Exact recovery algorithms and their costs
+4.1   Binary affine enumeration
+Theorem 1.2 at p = 2 gives
+
+                          E2r2 = Oa,b (N 24 ),    r2 = dimF2 ker(A − δI).                        (29)
+
+For bits zi encode
+             P     signs as τi = (−1)zi . At vertex i, the parity of the number of opposite-sign
+neighbors is j∼i (zi + zj ) = ((A + DI)z)i over F2 . Every desired assignment therefore solves
+
+                                (A + DI)z = (b mod 2)1        over F2 .                          (30)
+
+Since D + δ = 2a is even, its homogeneous matrix is A − δI modulo two. The planted assignment
+guarantees consistency in the promised model.
+    The algorithm first verifies that its input is a simple D-regular graph, or reports failure, and
+solves (30) by exact binary elimination. If inconsistent, it reports failure. Otherwise write the
+affine solution set as z0 + ker(A + DI). If 2r2 > n27 , report failure. Enumerate the remaining affine
+solutions in Gray-code order and, for each, count opposite-sign neighbors over the integers. Return
+the first vector with exactly b such neighbors at every vertex, or failure if none passes.
+    Each accepted vector satisfies Aτ = δτ exactly and is balanced. Checking parity alone would
+be insufficient: it permits spurious modular candidates, especially at small characteristic. By (29)
+and Markov’s inequality,
+                                     P{2r2 > n27 } = Oa,b (N −3 ).                               (31)
+On the complementary event the candidate list contains the planted vector, and on the rigidity
+event every accepted vector is ±σ. Theorem 1.3 then proves Theorem 1.1, including its O(N −2 )
+total failure bound.
+    Binary elimination costs O(n3 ) elementary bit operations and O(n2 ) storage using ordinary
+dense elimination. In Gray order one basis vector is added per step, costing O(n) bit operations;
+the integer neighbor check costs OD (n) operations on bounded integers. An r2 -bit counter also
+costs at most O(n) per step. Thus elimination and enumeration together cost
+
+                                           OD (n3 + n2r2 ),                                      (32)
+
+and the cutoff gives OD (n28 ) elementary work on every input. This is a polynomial bit bound. In
+a sequential storage model the addressing overhead is at most an additional polynomial factor; in
+the usual bit-operation or word-RAM models the displayed bound, up to logarithmic address costs,
+is immediate. There are no large uncontrolled rational numbers in this algorithm.
+    Without the cutoff, the same procedure lists every passing assignment. Suppress one represen-
+tative of each global-sign pair, for example by requiring its first sign to be positive. Equation (29)
+and (32) give expected work Oa,b (n25 ), including output checks and a streamed output list. The
+runtime can be exponential on rare inputs; the cutoff version supplies the worst-case polynomial
+bound in the theorem.
+
+
+                                                 10
+4.2   Odd-prime and rational alternatives
+One can instead fix p = 3 and compute a basis U for kerFp (A − δI) of dimension rp . Choose rp
+coordinate rows J such that UJ is invertible. Each kernel vector is uniquely determined by its
+values at these rows. Enumerate ε ∈ {−1, 1}rp and form U UJ−1 ε in the field. Keep only vectors
+all of whose coordinates belong to {−1, 1}, lift their signs to integers, and check Aτ = δτ exactly.
+Every real sign solution is included. The moment bound controls prp and hence 2rp , so the same
+truncation principle gives a polynomial algorithm. The exact integer check is necessary even when
+p is smaller than D.
+    There is also a purely rational spectral enumeration. Let r = dimQ ker(A − δI). Integer-minor
+reduction gives r ≤ rp for every prime p: a nonzero modular minor is nonzero as an integer.
+Choose a rational basis U and r rows J with UJ invertible. Enumerating U UJ−1 ε for every ε ∈
+{−1, 1}r and checking all coordinates enumerates all Boolean eigenvectors,  √ without a real-kernel
+simplicity assumption. The row Euclidean norms of A − δI are at most D + δ 2 , so Hadamard’s
+inequality bounds all its minors by exp(Oa,b (n)). Standard fraction-free elimination and Cramer’s
+rule representations use polynomially many bits; exact reconstruction and verification therefore have
+polynomial bit complexity. Applying the modular moment to 2r ≤ prp gives the same expected
+and truncated polynomial guarantees, with conservative exponents.
+    The binary algorithm is the most direct implementation of the main theorem. The rational al-
+ternative explains why a logarithmic real eigenspace dimension, rather than dimension one, already
+suffices for exact sign recovery.
+
+
+5     Exact quotient eigenspaces for prescribed cross graphs
+This section proves Theorem 1.4 and Corollary 1.5. Its hypotheses and conclusion differ from those
+of the main recovery theorem: all internal degrees are at least three, block sizes are even, and cross
+graphs can be arbitrary prescribed simple biregular graphs. The conclusion identifies whole real
+eigenspaces, rather than only their sign vectors.
+
+5.1   The imported strong mixing theorem
+Initially let Ci be the sum of di = dii independent uniform perfect-matching adjacency matrices on
+N vertices. All matchings in all blocks are independent. This intermediate model permits repeated
+edges. Fix an odd prime p, put s(x) = 1TN x, and define
+                                      (
+                                       1{r=di c1N } ,             x = c1N ,
+                          qi (x, r) =   −(N −1)
+                                                                                              (33)
+                                       p        1{s(r)=di s(x)} , x nonconstant.
+Let Pi (x, r) = P(Ci x = r) and
+                                                                        X
+                     ei (x) = sup |Pi (x, r) − qi (x, r)|,   εN = max          ei (x).           (34)
+                                r                                  i
+                                                                        x∈FN
+                                                                           p
+
+
+Mészáros’s Theorem 1.6 [4] implies εN → 0 for each fixed odd p and each fixed frame. Here is the
+exact specialization. A nonconstant vector over the prime field has full minimal affine coset. The
+theorem’s symmetric tensor condition is vacuous over Fp for odd p: the subgroup generated by
+u ⊗ v + v ⊗ u is the whole tensor group, since two is invertible. The remaining reference support is
+precisely the scalar-sum hyperplane in (33); constants have their deterministic image. Both actual
+and reference masses are zero outside their exact support, so the maximum can be over every r.
+The summed maximum-atom error is unscaled. Neither p ∤ di nor p ∤ N is required.
+
+                                                     11
+Lemma 5.1 (Replacement for coupled targets). For arbitrary target functions ri (x1 , . . . , xk ), re-
+placing all Pi (xi , ri ) by qi (xi , ri ) changes their summed product by at most
+
+                                     kεN (2p + εN )k−1 = op,Q (1).                                    (35)
+
+The bound is uniform over every choice of target functions.
+
+Proof. The summed maximum atoms satisfy
+          X                                                       X
+              sup qi (x, r) = p + (pN − p)p−(N −1) ≤ 2p,                  sup Pi (x, r) ≤ 2p + εN .
+             x   r                                                    x    r
+
+
+Telescope the product. In a term replacing factor i, bound its absolute difference by ei (xi ) and
+each other factor by its maximum atom, which depends only on its own xj . The unrestricted sum
+then factorizes. Its bound is εN (2p + εN )k−1 per replacement. No reference kernel is being treated
+as a random linear map.
+
+5.2   The reference first moment
+For θ ∈ Fp put ℓp = dimFp ker(Q − θI). Independence gives
+                                                                        
+                                          X Y                   X
+                     E| kerFp (A − θI)| =        Pi xi , θxi −   Bij xj  .
+                                            x1 ,...,xk i                  j̸=i
+
+Use Lemma 5.1 and split the reference sum according to which xi are constant.
+   If every block is nonconstant, the ith reference condition is
+                                       X
+                dii s(xi ) = θs(xi ) −   dij s(xj ), or equivalently (Q − θI)s = 0.
+                                     j̸=i
+
+For each prescribed sum, there are exactly pN −1 vectors, at most p of which are constant. This
+remains true when p | N . Thus the all-nonconstant contribution is between pℓp (1 − p2−N )k and pℓp ,
+and is pℓp +o(1). If every block is constant, write xi = ci 1N ; the equations are exactly (Q−θI)c = 0.
+This contribution is exactly pℓp .
+   For mixed patterns we use a rank bound which holds in every field.
+
+Lemma 5.2 (Disjoint row supports). If B is a zero-one square matrix of order N with all row and
+column sums d ≥ 1, then over every field
+                                                         N
+                                       rank B ≥                  .                                    (36)
+                                                    1 + d(d − 1)
+
+Proof. Each row support meets at most d(d − 1) other row supports. Greedily select at least
+N/[1 + d(d − 1)] rows with pairwise disjoint nonempty supports. They are linearly independent
+over every field, since each has a coordinate equal to one absent from the other selected rows.
+
+    Let S be the nonempty proper set of nonconstant blocks and T its complement. Connectedness
+supplies an edge ij with i ∈ T , j ∈ S, and dij > 0. The deterministic equation at constant block i
+forces                                                             
+                           X                            X
+                               Bir xr = (θ − dii )ci −      dir cr  1N .                     (37)
+                            r∈S                            r∈T \{i}
+
+
+                                                     12
+The concatenated coefficient matrix contains Bij and hence has rank at least γN , with
+
+                                γ=     min [1 + dij (dij − 1)]−1 > 0.
+                                     i<j:dij >0
+
+
+For fixed constants, (37) permits at most p|S|N −γN old-vector tuples. Each nonconstant reference
+factor is at most p−(N −1) and each constant factor at most one. The whole pattern contributes at
+most pk−γN , after summing the p|T | constants. Ignore all other equations, which can only reduce
+this count. There are 2k − 2 mixed patterns; when k = 1 there are none.
+    Combining the three cases proves the sharp matching-model moment
+
+                                E| kerFp (A − θI)| = 2pℓp + op,Q (1),                           (38)
+
+uniformly over all permitted cross matrices and over θ ∈ Fp . More explicitly, for k > 1 the absolute
+error is at most
+                          kpℓp p2−N + (2k − 2)pk−γN + kεN (2p + εN )k−1 .
+This is a first moment in the matching-sum model only. We transfer a vanishing real failure event,
+rather than this unbounded moment, to the uniform-simple model below.
+
+5.3   Reduction of every fixed real target
+For integer λ, put ℓ = nullityQ (Q − λI). Outside finitely many primes, quotient rank is preserved:
+all larger integer minors vanish, and one nonzero minor of order k − ℓ remains nonzero modulo
+p. The old modular kernel has dimension ℓ. Real nullity at least ℓ + 1 makes all minors of order
+kN − ℓ of A − λI vanish, forcing modular nullity at least ℓ + 1 for every prime. If Kp is the modular
+nullity, the deterministic lower bound Kp ≥ ℓ gives
+
+                                                       EpKp − pℓ
+                                     P(Kp ≥ ℓ + 1) ≤             .                              (39)
+                                                       pℓ+1 − pℓ
+
+Equation (38) yields a limiting upper bound 1/(p−1) on real failure, uniformly in the cross matrices.
+First let N → ∞ at fixed good odd p, then take arbitrarily large such primes. This proves the
+integer-target assertion.
+    We give the elementary algebraic extension to avoid an unnecessary integer-eigenvalue restric-
+tion.
+
+Lemma 5.3 (Root primes). For every nonconstant f ∈ Z[t] there are arbitrarily large primes at
+which f has a root, avoiding any prescribed finite set.
+
+Proof. Choose an integer c = f (b) ̸= 0 and enlarge the forbidden set to include two and the prime
+divisors of c. Let M be their product. Expansion gives f (b + cM t) = ch(t), where h ∈ Z[t] is
+nonconstant and is congruent to one at every forbidden prime. Choose an integer t with |h(t)| > 1.
+A prime divisor of h(t) lies outside that set and makes b + cM t a residue root of f . This is the
+elementary Schur prime-divisor argument; it asserts no density or effective rate.
+
+Lemma 5.4 (Good reductions of the quotient). Let λ be a real algebraic integer, f its monic
+irreducible minimal polynomial, and ℓ = nullityR (Q − λI). There is a nonzero integer m such that
+for every prime p ∤ m and every root θ ∈ Fp of f , one has nullityFp (Q − θI) = ℓ.
+
+
+
+
+                                                  13
+Proof. Each minor of Q − tI has integer coefficients. Minors of order k − ℓ + 1 vanish at λ, hence
+are divisible by f in Z[t]. For ℓ = 0 that assertion is vacuous. Choose a minor g(t) of order k − ℓ
+nonzero at λ; use the empty minor g = 1 when ℓ = k. Irreducibility gives gcd(f, g) = 1 over Q[t].
+Clearing denominators in Bézout’s identity yields U f + V g = m ̸= 0 with U, V ∈ Z[t]. At every
+residue root of f outside the prime divisors of m, the chosen minor is nonzero and all larger minors
+vanish, proving the claim.
+
+    If nullityR (A − λI) ≥ ℓ + 1, every minor of order kN − ℓ of A − tI vanishes at λ. Its polynomial
+is divisible by the monic f in Z[t], so at every residue root θ it vanishes modulo p. Hence modular
+nullity is at least ℓ + 1. Lemma 5.4 identifies the old modular dimension at the good primes;
+(39) applies with (38). Lemma 5.3 supplies arbitrarily large good odd root primes, completing
+the same order of limits. Finally, a real number which is not an algebraic integer cannot be an
+eigenvalue of any integer matrix, including A or Q. This proves the fixed-real-target assertion in
+the matching-sum model.
+
+5.4   Event transfer and its uniform quantifiers
+For each fixed d ≥ 3 and even N , the union of d independent uniform perfect matchings is mutually
+contiguous with the regular configuration model conditioned to have no loops. The all-degree-one
+specialization is included in the loopless exception of Greenhill–Janson–Kim–Wormald [5, Theorem
+1.3]. Their Corollary 1.1 supplies the corresponding simple-graph contiguity. Earlier factorization
+results and a direct account of the transfer chain appear in [6, 7].
+    Here is why finite products of these model changes are legitimate. If νN is contiguous with
+respect to µN and 0 ≤ gN ≤ 1, then
+
+                                  EµN gN → 0      =⇒      EνN gN → 0.                             (40)
+
+Indeed Markov transfers {gN > η} as a vanishing event for each η > 0, and Eν gN ≤ η + ν(gN > η);
+then let η ↓ 0. Apply this to sections of the failure event while changing the independent internal
+block laws one at a time. Conditioning loopless configurations on simplicity costs a bounded
+factor and gives uniform simple internal graphs. Equivalently one can condition matching sums on
+simplicity first and use the simple-graph contiguity directly. Neither route asserts that a simple
+matching sum is itself uniform.
+    For every deterministic sequence of permitted cross matrices the failure probability therefore
+tends to zero in the target model. If its supremum did not tend to zero, choose a violating de-
+terministic sequence, contradicting that conclusion. This proves the uniformity in (5). Averaging
+gives any joint random cross law independent of the internal factors. It does not give simultaneous
+success for all cross matrices on the same internal realization, or permit selecting cross matrices
+after inspecting the internals. The transfer concerns the bounded failure event; contiguity alone
+does not transfer (38) as an expectation. This completes Theorem 1.4.
+
+5.5   Rational row clustering recovers the whole frame
+Let χQ be the characteristic polynomial and put
+
+                                                     χQ (t)
+                                     mQ (t) =                        ,                            (41)
+                                                gcd(χQ (t), χ′Q (t))
+
+with monic gcd. Because Q is symmetric and integral, this is its minimal polynomial, is squarefree,
+and belongs to Z[t]. Its roots are all the distinct real quotient eigenvalues and its degree is at most
+
+                                                   14
+k. Always mQ (A)J = JmQ (Q) = 0. Apply Theorem 1.4 to the finitely many roots of mQ . Real
+diagonalizability of A gives, with probability 1 − o(1) uniformly in the cross matrices,
+                                               M
+                              kerR mQ (A) =         kerR (A − λI) = W.                   (42)
+                                            λ∈spec Q
+
+Compute a rational basis matrix V for this kernel. On this event V = JT for an invertible
+k × k matrix T . Its rows are equal exactly within each planted class: distinct rows of T cannot
+coincide because T is invertible. Grouping equal rational rows recovers the classes without choosing
+individual irrational eigenvectors or splitting repeated eigenspaces.
+    All coefficients
+          P r         and degrees of mQ are fixed. If the maximum      total degree of A is ∆Q and
+             cr t , every absolute row sum of mQ (A) is at most r |cr |∆rQ = OQ (1). Its minors are
+                                                                 P
+mQ (t) =
+therefore bounded by exp(OQ (kN )) by Hadamard’s inequality. Forming this fixed-degree matrix
+polynomial and using fraction-free rational elimination have polynomial bit complexity. This proves
+Corollary 1.5.
+    Within the promised frame model, finding exact nullity nullityQ mQ (A) = k certifies (42),
+because the old k-dimensional space is always included. The algorithm assumes the frame is known;
+unknown-frame identifiability is a different problem.
+    For the homogeneous frame Q = (a − b)Ik + b1k 1Tk , with a ≥ 3, b ≥ 1, and k > 1, its two
+distinct eigenvalues are a + (k − 1)b and a − b, the latter of multiplicity k − 1 when k > 1. Then
+mQ (t) = (t − a − (k − 1)b)(t − a + b) for k > 1. This supplies recovery for every fixed number of
+equal even classes, without an assortativity or outlier condition. In particular k = 2 proves the
+even-size part of Corollary 1.6.
+
+
+6     Odd-size extension for prescribed two-class cross graphs
+We prove the odd-size assertion of Corollary 1.6. Fix an even internal degree a ≥ 6 and 0 < b < a.
+The cross matrix remains any prescribed simple b-biregular matrix. Unlike the configuration-fiber
+recovery theorem, this extension proves real eigenspace simplicity and uses a matching-sum transfer.
+
+6.1   Vertex insertion and its output distribution
+Let L = N − 1 be even and s = a/2. From a simple a-regular graph G on [L], choose uniformly s
+vertex-disjoint edges, remove them, add the fixed new vertex N , and join it to their a endpoints.
+The result H is a simple a-regular graph on [N ]. This is a standard odd-order insertion construction;
+see also the odd-order argument in [9]. We supply its needed distributional justification.
+    Uniformly over bounded-degree loopless multigraphs with m = aL/2 edge copies, the number
+of s-edge matchings is
+                                         ms
+                                             (1 + Oa (L−1 )).                                     (43)
+                                          s!
+After each of the fixed number of selected edges, only Oa (1) edge copies meet their endpoints.
+Counting ordered selections proves (43). For a given simple output H, a preimage is a pairing of
+its a root-neighbors into pairs which are nonedges of H − N . Let h(H) be the number of such
+valid pairings and K = (a − 1)!!. Then 0 ≤ h(H) ≤ K, with equality whenever the root lies in no
+triangle. For uniform simple a-regular H, its root-triangle probability is Oa (L−1 ), by exposing a
+bounded neighborhood in the configuration model and conditioning on simplicity.
+    By (43), the output mass from uniform simple G is proportional to h(H)(1 + Oa (L−1 )), with
+uniform relative error wherever h(H) > 0. Under the target uniform law µN , EµN h = K(1 −
+
+
+                                                 15
+Oa (L−1 )). Thus the law with density h/EµN h differs from µN in total variation by Oa (L−1 ), and
+normalization of the uniform relative error adds the same order. The insertion output is therefore
+within Oa (L−1 ) total variation of uniform simple H.
+
+6.2   Keep at least three untouched matching colors
+First generate the even-order G as a sum of a independent uniform perfect matchings, with colors
+distinguishing repeated edge copies. Independently sample with replacement s colors and s starting
+vertices, each uniformly, thereby selecting s oriented colored edges. Let V mean that these edges
+are vertex-disjoint. Uniformly in the colored union, P(V | G) = 1 − Oa (L−1 ). Conditional on G, V,
+each unordered s-edge matching has exactly s!2s ordered orientations and therefore is uniform.
+The auxiliary experiment conditioned on V differs by Oa (L−1 ) total variation from the original
+colored-union law with its uniform edge-selection kernel: its marginal on G is reweighted only by
+1 + Oa (L−1 ).
+    Expose the sampled colors, all matchings with those colors, and the sampled vertices. The
+event V is determined by this data. At least a − s = a/2 ≥ 3 untouched matching colors remain
+independent and uniform. After insertion, the conditional internal adjacency is
+                                         
+                               M +F u
+                                            ,     F 1L = (a − r)1L − u,                        (44)
+                                 uT     0
+
+where M is a sum of r ≥ a/2 ≥ 3 untouched independent matchings, F is fixed symmetric, and u
+indicates the a distinct old neighbors of the new root. The two blocks have independent untouched
+matchings conditional on their respective exposed data.
+
+6.3   Conditional first moment
+Fix an odd prime p ∤ b. For every possible r use the reference kernel (33), with di = r and size L.
+The maximum of its summed errors over the finitely many r ∈ [a/2, a] is εL → 0. Denote the two
+stars in (44) by u, z, and split the prescribed cross matrix as
+                                                
+                                           B0 v
+                                    B=             ,    ξ ∈ {0, 1}.
+                                           wT ξ
+
+Then B0 1 = b1 − v, B0T 1 = b1 − w, and 1T v = 1T w = b − ξ. An eigenvector at δ = a − b is
+(x, α; y, β). Its old-vertex equations are
+
+                                 M1 x = (δI − F1 )x − uα − B0 y − vβ,                         (45)
+                                 M2 y = (δI − F2 )y − zβ − B0T x − wα,                        (46)
+
+and its two root equations are
+
+                                         uT x + wT y + ξβ = δα,                               (47)
+                                          T      T
+                                         v x + z y + ξα = δβ.                                 (48)
+
+   For every fixed shift c, a single-block affine reference sum obeys
+                                    X
+                                        q (r) (x, (δI − F )x + c) ≤ 2.                        (49)
+                                     x
+
+
+
+
+                                                     16
+For nonconstant x, the reference constraint is (b1 − u)T x = 1T c. This functional is nonzero for
+sufficiently large L, since p ∤ b and u has bounded support. There are at most pL−1 inputs, each of
+mass p−L+1 . For x = c0 1, the vector equation requires c = c0 (b1 − u), allowing at most one scalar
+c0 . The corresponding actual affine sum is at most 2 + εL . For each fixed root pair (α, β), replace
+the two independent old-vertex probability factors in the kernel sum by their references. Drop the
+root indicators when bounding errors and apply (49); the total replacement error over root pairs is
+
+                                              p2 (4εL + ε2L ).                                    (50)
+
+   If both x, y are nonconstant, the reference sum constraints, after using the root equations, both
+become 1T x + 1T y + α + β = 0. For each fixed root pair the three coefficient rows
+
+                                (1T , 1T ),     (uT , wT ),       (v T , z T )
+
+are independent for sufficiently large L. A coordinate in the first block outside supp u ∪ supp v kills
+the first coefficient in a dependence; a coordinate of supp u \ supp v kills the second, since a > b;
+finally z ̸= 0 kills the third. There are at most p2L−3 old-vector pairs for each of the p2 root pairs,
+each with reference mass p−2L+2 . Their contribution is at most p.
+    If both old vectors are constant, write x = c1, y = e1. The first old equation becomes
+
+                                b(c + e)1 + (α − c)u + (β − e)v = 0.
+
+Outside its bounded supports it forces c + e = 0; on supp u \ supp v it forces α = c. The other
+old equation forces β = e in the same way. These are exactly the p planted modular vectors, and
+satisfy both root equations.
+    If only x = c1 is constant, its old equation forces B0 y = −bc1 − (α − c)u − vβ. For each of
+p scalar choices there are at most pL−rank B0 choices of y, with remaining mass at most p−L+1 .
+ 3
+
+Including the other orientation gives at most 2p4−rank B0 . Lemma 5.2 implies
+                                                                   N
+                           rankFp B0 ≥ rankFp B − 2 ≥                      − 2.
+                                                              1 + b(b − 1)
+Therefore, uniformly in all exposed data and cross matrices,
+
+                        E| kerFp (A − δI)| ≤ 2p + 2p4−rank B0 + p2 (4εL + ε2L ).                  (51)
+
+Average over the exposed data. Real nullity at least two forces all integer minors of order 2N − 1
+to vanish and hence modular nullity at least two. For fixed p, Markov and (51) give limiting failure
+at most 2/p. Taking arbitrarily large fixed primes after L → ∞ proves vanishing failure in the
+auxiliary colored insertion model.
+
+6.4   Transfer in the required order
+The mixing estimate was obtained before conditioning colored unions on simplicity, which would
+destroy the independent untouched colors. First use the O(L−1 ) comparison to the original colored-
+union law with uniform selected edge matching. Condition those original unions on simplicity; their
+simplicity probabilities are bounded below at fixed degree, so the already vanishing failure remains
+vanishing. On a simple union the edge-selection kernel is precisely the ordinary uncolored uniform
+s-edge matching kernel.
+    Use simple matching-union contiguity to replace each original union by a uniform simple even-
+order regular graph. A common attached Markov kernel preserves the needed event transfer: its
+
+                                                    17
+conditional failure probability is bounded between zero and one, so (40) applies. Finite prod-
+ucts handle the two independent blocks. Finally the O(L−1 ) output comparison of the insertion
+construction gives the uniform simple odd-order laws. Fixing any deterministic cross sequence
+throughout and selecting a violating sequence if a supremum failed proves uniformity over B. This
+proves the odd assertion of Corollary 1.6.
+   For a = 4, two selected edges can touch two different colors, leaving only two untouched
+matchings with nonvanishing probability. The imported degree-at-least-three mixing theorem does
+not cover that case. No effective rate of convergence follows from the qualitative mixing and
+contiguity used here.
+
+
+7     Certified recovery with nearly quadratic expected bit work
+The all-parameter recovery theorem uses polynomial enumeration and does not establish real nullity
+one. When that stronger spectral property is available, classical black-box linear algebra gives a
+faster exact algorithm with a deterministic certificate. We give the reduction and charge prime gen-
+eration, recurrence extraction, and verification. The computational primes in this section grow with
+n; their justification is a deterministic minor bound, independent of the fixed-prime probabilistic
+mixing argument.
+    Let A be a simple D-regular graph on n vertices, with fixed D, and let an integer |λ| ≤ D be
+specified. Put
+                      M = A − λI, m = n − 1, H = M[m],[m] , c = −M[m],n .                       (52)
+Lemma 7.1 (Every pin is nonsingular). If kerQ M = Qσ for a sign vector σ, every principal minor
+of order n − 1 is nonzero and H −1 c = (σ1 /σn , . . . , σm /σn )T .
+Proof. Symmetry and rank n − 1 imply that the nonzero adjugate of M is ασσ T for some α ̸= 0.
+Every diagonal cofactor is therefore ασi2 = α ̸= 0. The claimed solution follows from M σ = 0.
+
+Theorem 7.2 (Certified answer or abstention). For 0 < η < 1/2, an exact randomized algorithm
+returns either Unresolved or a balanced sign vector σ̂ with a deterministic certificate that
+
+                                   M σ̂ = 0,       rankQ M = n − 1.                                (53)
+
+It accepts no false certificate, on any input. Under the promise of a one-dimensional balanced
+sign kernel, it returns ±σ with probability at least 1 − η. Its expected bit work on every input is
+OeD (n2 log(1/η)). A certificate uses OD (n log n) bits and is deterministically checked in O
+                                                                                            eD (n2 ) bit
+work. Working storage, apart from the input, is O   eD (n) + O(log log(2/η)) bits.
+
+7.1   A shifted recurrence is a rank certificate
+For an odd prime p, reduce H, c modulo p. Independently choose a diagonal R with uniform nonzero
+entries and uniform vectors u, v ∈ Fm
+                                    p . Let T = RH and form the 2m scalars
+
+                                sj = uT T j+1 v,     j = 0, . . . , 2m − 1.                        (54)
+
+Compute their shortest recurrence and finite linear complexity by exact Berlekamp–Massey. Reject
+unless that complexity is m and the monic recurrence polynomial f (t) = tm + fm−1 tm−1 + · · · + f0
+has f0 ̸= 0.
+Lemma 7.3 (Shifted full complexity). If (54) has finite linear complexity m, then T is nonsingular
+and f is its characteristic polynomial.
+
+                                                   18
+Proof. The vector T v lies in the invariant subspace im T of dimension rank T . Cayley–Hamilton on
+that subspace gives an infinite recurrence of order at most rank T ; every prefix has complexity at
+most that order. Thus complexity m forces full rank. For a sequence generated by an m-dimensional
+operator, its first 2m terms determine its minimum recurrence, of degree at most m; this is the
+scalar Wiedemann/Berlekamp–Massey fact in [10, Section II]. Complexity m forces that degree to
+be m. The scalar minimum polynomial divides the characteristic polynomial, so they coincide.
+
+   The shift is substantive: it places the generating vector in the range of T . Full complexity of
+an unshifted sequence alone would not exclude a singular cyclic matrix. Once the trial passes, use
+Cayley–Hamilton to solve
+                                            m
+                                            X
+                                x = −f0−1         fi T i−1 (Rc),   fm = 1.                           (55)
+                                            i=1
+
+Evaluate by Horner’s rule and check Hx = c in the field. Reject unless all coordinates of x are 1
+or −1; uniquely lift them to integer signs, append a final 1, and obtain σ̂. Verify over the integers
+that M σ̂ = 0 and 1T σ̂ = 0.
+     The certificate consists of p, R, u, v, σ̂; the verifier may recompute f . It checks lengths, residue
+encodings, and the specified prime interval before testing primality. It checks that every coordinate
+of σ̂ is an integer sign, then checks nonzero diagonal entries, the shifted sequence’s exact complexity,
+and the two integer identities. Lemma 7.3 proves det H ̸= 0 (mod p), hence rankQ M ≥ n − 1; the
+nonzero integer kernel vector proves the opposite inequality. Certificate soundness is deterministic
+and does not rely on a Monte Carlo rank estimate.
+
+7.2   Success probability, primes, and charged cost
+For any nonsingular H over Fp , random nonzero diagonal scaling makes RH cyclic with failure
+probability at most m(m − 1)/(2(p − 1)), by Chen–Eberly–Kaltofen–Saunders–Turner–Villard [11,
+Theorem 4.2]. For cyclic nonsingular T , the two Krylov determinants for random u, v are nonzero
+polynomials of degree m each. Their failure probability is at most 2m/p by Schwartz–Zippel. Since
+T is invertible, replacing v by T v does not change its cyclic-vector property. These facts ensure full
+shifted scalar complexity with the stated probability.
+    Let                                p
+                         RD = max{2, D + D2 },          P = ⌈128(D + 1)2 n2 ⌉.
+Under the promise, Lemma 7.1 and Hadamard give 0 < | det H| ≤ RD           m . At most m log R / log P
+                                                                                                 D
+primes in (P, 2P ] divide this integer. The classical interval estimate [12, Corollary 3, p. 69] π(2P ) −
+π(P ) > 3P/(5 log P ) for P ≥ 20.5 therefore bounds the bad-prime probability for a uniform interval
+prime by 5m log RD /(3P ) = OD (n−1 ). For a good prime, add the diagonal and probe failure bounds
+above. Every independent trial succeeds with probability at least 1/2 for all sufficiently large n,
+depending only on fixed D. On a successful trial, the unique modular pinned solution is the
+normalized planted sign vector, so every exact check passes.
+    Generate the prime exactly by uniform integer sampling in (P, 2P ] and trial division up to the
+square root. Conditional on primality the accepted prime is uniform. The interval estimate gives
+O(log P ) expected draws. Each primality test costs OD (n) divisions on OD (log n)-bit integers, for
+OeD (n) expected prime-generation bit work per trial. This rejection sampler terminates almost
+surely and has finite expectation; it is not a deterministic worst-case time bound.
+    Each application of T uses OD (n) field operations and O(n) field-element storage. Sequence
+generation, Berlekamp–Massey, and Horner solving together use O(n) sparse matrix-vector products
+
+
+                                                      19
+and O(n2 ) other field operations. Field elements have OD (log n) bits, so total expected trial work
+   eD (n2 ). Uniform random choices and exact integer candidate checks fit within this bound.
+is O
+Run at most ⌈log2 (1/η)⌉ independent trials, returning Unresolved if none passes. This proves
+Theorem 7.2; finitely many smaller dimensions can be handled by exact elimination.
+
+Corollary 7.4 (Prescribed-cross algorithmic consequence). Under the two-class hypotheses of
+Corollary 1.6, the certified algorithm with λ = a − b recovers the partition with probability at
+                                         ea+b (N 2 log(1/η)). Its certificate establishes uniqueness of
+least 1 − o(1) − η and expected bit work O
+the entire real eigenspace whenever it returns an answer. The graph failure term is qualitative and
+uniform over the prescribed cross matrices.
+
+    Repeating trials until success is Las Vegas under the promised simple sign kernel, with ex-
+pected nearly quadratic work. On other inputs it may never accept, so Theorem 7.2 instead caps
+the number of trials and permits abstention. Adding a general exact elimination fallback does not
+preserve a nearly quadratic unconditional expected bound merely from a qualitative o(1) graph fail-
+ure probability. The all-admissible-size recovery theorem in Section 4 has a separate, deterministic
+polynomial cutoff and needs no simple-kernel promise.
+    For even N and a ≥ 3, the fixed-target theorem also excludes every integer t ∈ [−D, D] \ {D, δ}
+with high probability. Thus if only D is supplied, one may try the OD (1) integers t ∈ [−D, D) and
+allocate trial error across them. With probability 1 − o(1) − η, the planted partition is returned
+and no other balanced sign kernel is returned, in the same fixed-degree expected work. Each
+certificate concerns its reported eigenvalue; the absence of other integer eigenvalues is a probabilistic
+consequence of Theorem 1.4, not part of that individual certificate.
+
+
+8      Scope, comparison, and remaining questions
+The two proof routes answer different questions. In the original random-cross model, aggregate-fiber
+entropy and sign rigidity supply full fixed-degree recovery at all admissible sizes. For prescribed
+cross matrices, strong internal mixing gives the stronger exact quotient-eigenspace conclusion, with
+restrictions on internal degree and block parity. The assumptions and output guarantees are col-
+lected below. All high-probability statements are asymptotic with the degrees and number of classes
+fixed.
+
+    Result                     Model and size                           Guarantee
+    All-parameter two-class    Fixed known a > b > 0; independent       Failure   Oa,b (N −2 ); bounded
+                                                                              28
+    recovery                   uniform simple internal and cross fac-   OD (n ) elementary work; uncut
+                               tors; all admissible N                   expected Oa,b (n25 )
+    Boolean rigidity           Same two-class model                     Ambiguity                 probability
+                                                                        Oa,b (N −(D−2)(δ+1) );    no    real-
+                                                                        nullity-one inference
+    Fixed-frame recovery       Fixed known connected symmetric in-      All quotient eigenspaces exactly old
+                               teger frame; dii ≥ 3; equal even         with probability 1 − o(1); exact ra-
+                               classes; prescribed cross matrices       tional row clustering
+    Odd two-class spectral     Even a ≥ 6, 0 < b < a; odd N ; pre-      Planted real eigenvalue simple with
+    extension                  scribed cross matrix                     probability 1 − o(1)
+    Certified         nearly   Specified integer eigenvalue and one-    Expected O  eD (n2 log(1/η)) bit work;
+    quadratic algorithm        dimensional balanced sign kernel         success 1 − η under the promise; no
+                               promise                                  false certificates
+
+
+
+                                                      20
+   The polynomial enumeration exponents are proof bounds, not claims of practical efficiency. In
+particular the nearly quadratic certified bound is not the runtime proved for the all-parameter
+theorem. The all-parameter theorem does not require uniqueness of all real eigenvectors, and its
+proof does not establish that uniqueness.
+
+Exact collision versus a numerical gap. The frame theorem excludes equality of a new eigen-
+value with any fixed quotient target. It gives no quantitative distance to nearby new eigenvalues.
+Exact rational computation and modular certificates therefore have a different justification from
+floating-point eigenvector approximation. There is no claim of noise stability, robustness to edge
+errors, or finite-precision rounding guarantees.
+
+Uniformity and independence. Uniformity over prescribed cross matrices means the supre-
+mum of the failure probability tends to zero. It does not mean one draw of the internal graphs
+succeeds simultaneously against every possible cross matrix. An adaptive cross matrix chosen after
+seeing the internal graphs is outside the model. Conversely, the full all-admissible-size recovery
+theorem uses the randomness of its independent bipartite configuration factor in its exact count; it
+does not establish that theorem for arbitrary prescribed cross graphs. A globally regular equitable
+graph chosen adversarially need not identify a designated planted partition.
+
+Classical inputs and prior statements. The moment-and-rigidity route uses configuration
+counting, entropy subadditivity, mutual information, Pinsker’s inequality, and the usual small-
+support exploration principle. The uniform-simple conditioning criterion is due to Janson in the
+ordinary case and Blanchet–Stauffer in the bipartite case, as recorded in [8]. The fixed-target
+route imports Mészáros’s strong distribution theorem and classical regular-model contiguity. The
+algebraic root-prime reduction is the elementary Schur argument combined with Bézout and integer
+minors. The fast algorithm uses Wiedemann recurrences, classical diagonal preconditioning, and a
+prime-interval estimate. These are credited inputs rather than newly claimed primitives.
+    Brito et al.’s explicit spectral recovery theorem assumes (a − b)2 > 4(a + b − 1) and even in-
+ternal degree in the cited version [1, Theorem 2]; its rigidity theorem is stated for sufficiently large
+fixed degrees. Barucca’s work proposes recovery throughout the assortative range and presents
+numerical evidence [2]. Zhu–Zhu’s cited version both records the full-range efficient-recovery con-
+jecture in its introduction and states unqualified planted-eigenvalue simplicity in Lemma 9.1 [3].
+The latter statement overlaps a random-cross specialization of our fixed-target result and must be
+acknowledged when discussing priority. The cited random-lift norm bound only separates a planted
+eigenvalue when it lies outside the allowed new-spectrum interval; an additional argument is needed
+for an exact bulk collision. Our prescribed-cross proof gives that argument under its stated parity
+and degree hypotheses. We make no assertion that all the derived results here are historically first.
+
+Unresolved extensions. The all-parameter recovery theorem concerns fixed known positive
+integers a > b, equal class sizes, and the exact independent-factor model. The frame theorem
+concerns fixed known symmetric integer frames with equal even classes. Growing degrees, growing
+numbers of classes, unequal block sizes, unknown general frames, correlated factors, noisy observa-
+tions, effective spectral-gap estimates, and optimal practical runtimes require further arguments.
+In particular the present prescribed-cross eigenspace proof leaves odd block size at internal degree
+four and the internal-degree-two spectral question outside its coverage. Those spectral limitations
+do not remove any parameter pair from the random-cross recovery theorem.
+
+
+
+                                                  21
+References
+ [1] G. Brito, I. Dumitriu, S. Ganguly, C. Hoffman, and L. V. Tran, Recovery and rigidity in a
+     regular stochastic block model, Proceedings of SODA (2016), 1589–1601. Version consulted:
+     arXiv:1507.00930v4, Theorems 1–3 and Section 4. https://arxiv.org/pdf/1507.00930v4.
+ [2] P. Barucca, Spectral partitioning in equitable graphs, Physical Review E 95 (2017),
+     062310. https://doi.org/10.1103/PhysRevE.95.062310. Author manuscript: https://
+     arxiv.org/abs/1610.02668.
+ [3] X. Zhu and Y. Zhu, Non-backtracking eigenvalues and eigenvectors of random regular graphs
+     and hypergraphs, arXiv:2312.03300v3, September 25, 2026. Introduction 1.3, Theorem 3.10,
+     and Lemma 9.1. https://arxiv.org/html/2312.03300v3.
+ [4] A. Mészáros, The distribution of sandpile groups of random regular graphs, Transac-
+     tions of the American Mathematical Society 373 (2020), 6529–6594. Version consulted:
+     arXiv:1806.03736v4, Theorem 1.6 and preceding definitions. https://arxiv.org/pdf/1806.
+     03736v4. https://doi.org/10.1090/tran/8127.
+ [5] C. Greenhill, S. Janson, J. H. Kim, and N. C. Wormald, Permutation pseudographs and con-
+     tiguity, Combinatorics, Probability and Computing 11 (2002), 273–298. Theorem 1.3 and
+     Corollary 1.1. https://web.maths.unsw.edu.au/~csg/papers/gjkw-revised.pdf.
+ [6] M. S. O. Molloy, H. Robalewska, R. W. Robinson, and N. C. Wormald, 1-Factorizations of
+     random regular graphs, Random Structures & Algorithms 10 (1997), 305–321. Theorem 3.
+     Author source: https://www.cs.utoronto.ca/~molloy/webpapers/1fact.ps.
+ [7] H. H. Nguyen and M. M. Wood, Cokernels of adjacency matrices of random r-regular graphs,
+     arXiv:1806.10068v2, Section 4. https://arxiv.org/pdf/1806.10068v2.
+ [8] S. Janson, The probability that a random multigraph is simple, II, arXiv:1307.6344v1, Theorems
+     1.1, 5.1, and 5.3. Theorem 5.1 is attributed there to J. Blanchet and A. Stauffer. https:
+     //arxiv.org/pdf/1307.6344v1.
+ [9] L. Hollom, L. Lichev, A. Mond, J. Portier, and Y. Wang, Approximate Itai–Zehavi conjecture
+     for random graphs, Random Structures & Algorithms 69 (2026), e70095. Odd-order regular-
+     graph insertion argument. https://doi.org/10.1002/rsa.70095. https://arxiv.org/abs/
+     2506.23970.
+[10] D. H. Wiedemann, Solving sparse linear equations over finite fields, IEEE Transactions on In-
+     formation Theory 32 (1986), 54–62. Section II. https://www.csd.uwo.ca/~mmorenom/CS424/
+     Ressources/WIEDEMANN-IEEE-1986.pdf.
+[11] L. Chen, W. Eberly, E. Kaltofen, B. D. Saunders, W. J. Turner, and G. Villard, Efficient
+     matrix preconditioners for black box linear algebra, Linear Algebra and its Applications 343–
+     344 (2002), 119–146. Theorem 4.2. https://kaltofen.math.ncsu.edu/bibliography/02/
+     CEKSTV02.pdf.
+[12] J. B. Rosser and L. Schoenfeld, Approximate formulas for some functions of prime
+     numbers, Illinois Journal of Mathematics 6 (1962), 64–94. Corollary 3, p. 69.
+     https://projecteuclid.org/journals/illinois-journal-of-mathematics/volume-6/
+     issue-1/Approximate-formulas-for-some-functions-of-prime-numbers/10.1215/ijm/
+     1255631807.full.
+
+
+                                                22
+

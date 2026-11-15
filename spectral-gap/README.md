@@ -10,6 +10,42 @@ The preceding [close-pair transition round](close-pair-transition-round-01/READM
 
 Official target: [problem 21](https://competition.sair.foundation/competitions/mathathon/problems/21), checked November 14, 2026. It asks for an intuitive proof of Bordenave's Proposition 28, its connection to the biregular proof, and explanations of the surrounding theory.
 
+## Hidden-group recovery manuscript
+
+The completed [60-page research manuscript](regular-community-recovery/regular-community-recovery.pdf)
+proves exact recovery for its specified sparse random graph models, with
+certified expected nearly quadratic listing work. The
+[six-page plain-language explanation](regular-community-recovery/plain-language/results-explained.pdf)
+describes the problem, algorithm, potential importance, and limits. A
+[two-page technical guide](regular-community-recovery/reading-guide.pdf) and
+[source and verification index](regular-community-recovery/INDEX.txt) accompany it.
+These internally reviewed research results do not certify historical firstness
+or external peer review. This paper does not claim to prove Proposition 28.
+Further breakthrough work has stopped at the user's request.
+
+## Single-edge spectral response research
+
+The [two-page reading guide](single-edge-response/reading-guide.pdf) and
+[integrated working manuscript](single-edge-response/single-edge-response.pdf)
+([source](single-edge-response/main.tex)) study relative fractional
+Laplacian corrections after a single positive edge edit. Its results include
+sharp unrestricted rank budgets and unweighted bipartite realization,
+worst-case rank of order log-squared on paths and cycles versus inverse
+tolerance at maximum degree three. For every fixed d>=3, the exact
+inverse-tolerance coefficient is alpha*log(2d/(d+2)), already attained by
+bipartite bridge examples. Extremal sequences have the d-regular tree as
+their rooted local limit. A gap-free expected-nearly-linear construction
+attains the same sharp leading rank with two-sided relative error.
+Individual proofs and actual-source
+independent reviews are retained outside the imported snapshot. The
+[coordination and evidence record](RESEARCH_SESSION_2026-11-15.txt) distinguishes
+proved statements, numerical diagnostics, source reading and priority limits.
+These are internally reviewed research results, not an external novelty or
+seminal-breakthrough certificate.
+
+The user's additional spectral-partitioning direction produced the recovery
+manuscript above. Separate session folders preserve its proof development.
+
 ## Selected manuscript round
 
 Scope reconciliation: the [workspace-wide audit](../../spectral-reconciliation-2026-11-14/README.md) distinguishes this moment manuscript from the earlier phase-sensitive K4 lift and complex-Laplacian solver proposal. That broader proposal is not complete. It also maps the original batch orchestrator, historical graph results and a separate directed-regular-graph branch. The frozen manuscript and package retain their exact reviewed scope and bytes.

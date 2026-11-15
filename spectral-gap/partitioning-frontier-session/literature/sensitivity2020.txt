@@ -1,0 +1,1002 @@
+                                                                 Average Sensitivity of Spectral Clustering
+                                                                       Pan Peng                                                            Yuichi Yoshida
+                                                          Department of Computer Science                                           National Institute of Informatics
+                                                              University of Sheffield                                                        JST, PRESTO
+                                                              p.peng@sheffield.ac.uk                                                     yyoshida@nii.ac.jp
+
+                                        ABSTRACT                                                                             each other. The obtained sensor network may be untrustwor-
+                                        Spectral clustering is one of the most popular clustering methods                    thy because some sensors might be unable to communicate
+                                        for finding clusters in a graph, which has found many applications                   due to power shortage or obstacles temporarily put between
+                                        in data mining. However, the input graph in those applications may                   them.
+                                        have many missing edges due to error in measurement, withholding                   • In manifold learning, given a set of vectors, we construct
+
+
+
+
+arXiv:2006.04094v1 [cs.DS] 7 Jun 2020
+                                        for a privacy reason, or arbitrariness in data conversion. To make                   a graph whose vertices correspond to the vectors, and we
+                                        reliable and efficient decisions based on spectral clustering, we                    connect two vertices if the corresponding vectors have a
+                                        assess the stability of spectral clustering against edge perturbations               distance below a certain threshold. The choice of the thresh-
+                                        in the input graph using the notion of average sensitivity, which is                 old is arbitrary, and the obtained graph can vary with the
+                                        the expected size of the symmetric difference of the output clusters                 threshold.
+                                        before and after we randomly remove edges.
+                                           We first prove that the average sensitivity of spectral clustering        If the output clusters are sensitive to edge perturbations, we may
+                                        is proportional to λ 2 /λ23 , where λi is the i-th smallest eigenvalue       make a wrong decision or incur some cost to cancel or update
+                                        of the (normalized) Laplacian. We also prove an analogous bound              the decision. Hence, to make a reliable and efficient decision using
+                                        for k-way spectral clustering, which partitions the graph into k             spectral clustering under these situations, the output clusters should
+                                        clusters. Then, we empirically confirm our theoretical bounds by             be stable against edge perturbations.
+                                        conducting experiments on synthetic and real networks. Our results               One might be tempted to measure the size of the symmetric
+                                        suggest that spectral clustering is stable against edge perturbations        difference of the output clustering before and after adversarial
+                                        when there is a cluster structure in the input graph.                        edge perturbations. However, spectral clustering is sensitive to
+                                                                                                                     adversarial edge perturbations. For example, suppose that we have
+                                        CCS CONCEPTS                                                                 a connected graph G with two “significant” clusters S, S, i.e., the
+                                        • Information systems → Clustering; • General and refer-                     subgraphs induced by S and S are well-connected inside while
+                                        ence → Reliability.                                                          there are few edges between S and S. It is known that the spectral
+                                                                                                                     clustering will output a set, which, together with its complement,
+                                        KEYWORDS                                                                     corresponds to a bipartition that is close to the partition {S, S } [15].
+                                        Spectral clustering, Laplacian, average sensitivity                          However, deleting all the edges incident to any vertex v will result
+                                                                                                                     in a new graph G ′ on which the spectral clustering will output v, or
+                                                                                                                     equivalently, the partition {{v}, {v}}. That is, the output clustering
+                                        1   INTRODUCTION                                                             in the original graph is very different from the one in the perturbed
+                                        Spectral clustering is one of the most popular graph clustering              graph.
+                                        methods, which finds tightly connected vertex sets, or clusters, in              In general, spectral clustering is sensitive to the noisy “dangling
+                                        the input graph using the eigenvectors of the associated matrix              sets”, which are connected to the core of the graph by only one
+                                        called the (normalized) Laplacian. It has been used in many appli-           edge [26]. This suggests that the above way of measuring the sta-
+                                        cations such as image segmentation [21], community detection in              bility of spectral clustering might be too pessimistic.
+                                        networks [8], and manifold learning [3]. See [25] for a survey on
+                                        the theoretical background and practical use of spectral clustering.
+                                           In those applications, however, the input graph is often untrust-         1.1     Our contributions
+                                        worthy, and the decision based on the result of spectral clustering          In this work, we initiate a systematic study of the stability of spectral
+                                        may be unreliable and inefficient. We provide some examples below.           clustering against edge perturbations, using the notion of average
+                                            • A social network is a graph whose vertices correspond to               sensitivity [24], which is the expected size of the symmetric differ-
+                                              users in a social network service (SNS), and two vertices              ence of the output clusters before and after we randomly remove a
+                                              are connected if the corresponding users have a friendship             few edges. Using average sensitivity is more appropriate in many
+                                              relation. However, users may not report their friendship               applications, in which the aforementioned adversarial edge pertur-
+                                              relations because they do not actively use the SNS, or they            bations rarely occur. Furthermore, if we can show that the average
+                                              want to keep the relationship private.                                 sensitivity is at most β, then by Markov’s inequality, for the 99% of
+                                            • A sensor network is a graph whose vertices correspond to               possible edge perturbations, the symmetric difference size of the
+                                              sensors allocated in some space, and two vertices are con-             output cluster is bounded by 100β, which further motivates the use
+                                              nected if the corresponding sensors can communicate with               of average sensitivity.
+                                                                                                                 1
+                                                                                and normalized Laplacians in Sections 4 and 5, respectively. We
+                                                                                discuss the average sensitivity of k-way spectral clustering in Sec-
+                                                                                tion 6. We provide our empirical results in Section 7 and conclude
+                                                                                our work in Section 8.
+
+
+
+
+         (a)                      (b)                      (c)
+                                                                                2    RELATED WORK
+                                                                                Huang et al. [12] considered manifold learning, in which we con-
+Figure 1: Cycle graph with 8 vertices and the result of 2-way
+                                                                                struct a graph G on n vertices from a set of n vectors v 1 , . . . , vn
+clustering. The output clusters are drastically different be-
+                                                                                by connecting the i-th vertex and the j-th vertex by an edge with
+tween (a) the original graph and (b), (c) the graphs with some
+                                                                                weight determined by the distance ∥vi − v j ∥, and then apply spec-
+edges removed.
+                                                                                tral clustering on G. They analyzed how the (weighted) adjacency
+                                                                                matrix of G, the normalized Laplacian L of G, and the second
+    We first consider the simplest case of partitioning a graph into            eigenvalue/eigenvector of L change when we perturb the vectors
+two clusters: the algorithm computes the eigenvector correspond-                v 1 , . . . , vn . Our work is different in two points. Firstly, we consider
+ing to the second smallest eigenvalue of Laplacian and then outputs             random edge perturbations rather than perturbation to the vector
+a set according to a sweep process over the eigenvector. For both               data. Hence, we can apply our framework to more general con-
+unnormalized and normalized Laplacians, we show that if the input               texts, such as social networks and sensor networks. Secondly, we
+graph has a “significant” cluster structure, then the average sensi-            directly analyze the output clusters rather than the intermediate
+tivity of spectral clustering is proportional to λ 2 /λ23 , where λi is         eigenvalues and eigenvectors.
+the i-th smallest eigenvalue of the corresponding Laplacian.                         Bilu and Linial introduced the notion of stable instances for clus-
+    This result is intuitively true because if λ 2 /λ23 is small, then by       tering problems to model realistic instances with an outstanding
+higher-order Cheeger’s inequality [15], the graph can be partitioned            solution that is stable under noise [4]. In their setting, for a cluster-
+into two intra-dense clusters with a few edges between them. That               ing problem (e.g., sparsest cut) and a parameter α ≥ 1, a graph with
+is, the cluster structure is significant. Hence, we are likely to output        edge or vertex weights is said to be α-stable if the optimal solution
+the same cluster after we randomly remove a few edges.                          does not change when we perturb all the edge/vertex weights by a
+    In contrast, a typical graph with a high λ 2 /λ23 is an n-cycle (Fig-       factor of at most α. It has been shown that some clustering problems
+ure 1). We can observe that the spectral clustering is not stable on            are solvable in polynomial time on stable instances. Karrer et al. [13]
+this graph because we get drastically different connected compo-                considered the robustness of the community (or cluster) structure
+nents depending on the choice of removed edges.                                 of a network by perturbing it as follows: Remove each edge with
+    Next, we consider k-way spectral clustering: the algorithm com-             probability p, and replace it with another edge between a pair of
+putes the first k eigenvectors of Laplacian, and then outputs a                 vertices (i, j), chosen at random with an appropriate probability.
+clustering by invoking the k-means algorithm on the embedding                   They used modularity-based methods to find clusters of the origi-
+corresponding to the eigenvectors. We consider the spectral clus-               nal unperturbed graph and the perturbed one, and measured the
+tering algorithm that exploits the normalized Laplacian, which was              variation of information between the corresponding two partitions.
+popularized by Shi and Malik [21]. We show    p that the average sensi-         Gfeller et al. [9] considered the robustness of the cluster structure of
+tivity of the algorithm is proportional to λk /λk +1 , which again              weighted graphs where the perturbation is introduced by randomly
+matches the intuition.                                                          increasing or decreasing the edge weights by a small factor. In con-
+    Finally, using synthetic and real networks, we empirically con-             trast to modeling stable instances for clustering [4] or studying the
+firm that the average p sensitivity of spectral clustering correlates           stability of a partition against random perturbations [9, 13], our
+well with λ 2 /λ23 or λk /λk , and that it grows linearly in the edge           study focuses on the stability of the spectral clustering algorithms.
+removal probability, as our theoretical results indicate.                            Our work is also related to a line of research on eigenvalue
+    Our theoretical and empirical findings can be summarized as                 perturbation, which studies how close (or how far) the eigenvalues
+follows.                                                                        of a matrix M + H to those of M, where H is “small” in some sense
+                                                                                and M + H is viewed as a perturbation of M [22]. The classical
+     We can reliably use spectral clustering: It is stable against              theorem due to Weyl (see Theorem 3.6) bounds, for each i ≤ n,
+  random edge perturbations if there is a significant cluster                   the differences between the i-th eigenvalue of M + H and that of
+  structure in a graph, and it is irrelevant otherwise.                         M by the spectral norm of H . Eldridge et al. recently gave some
+                                                                                perturbation bounds on the eigenvalues and eigenvectors when
+                                                                                the perturbation H is random [6]. There also exist studies on the
+                                                                                eigenvalues (and eigenvectors) of M(ε) that is a matrix function of a
+1.2    Organization                                                             parameter ε and is analytic in a small neighborhood of some value
+We discuss related work in Section 2, and we introduce notions that             ε 0 , satisfying M(ε 0 ) = M (e.g., [14]). However, we cannot apply
+will be used throughout this paper in Section 3. Then, we study the             such results to our setting, as even for a single edge deletion, we
+average sensitivity of 2-way spectral clustering with unnormalized              need to consider beyond the small neighborhood.
+                                                                            2
+3     PRELIMINARIES                                                                           Algorithm 1: Sweep algorithms
+Let 1 ∈ Rn be the all-one vector. When all the eigenvalues of a                              1 Procedure sweepα (v)
+matrix A ∈ Rn×n are real, we denote by λi (A) the i-th smallest                              2    Reorder the vertices in G in non-decreasing order in terms
+eigenvalue of A. Also, we denote by λ min (A) and λ max (A) the small-                             of v, i.e., v 1 ≤ v 2 ≤ · · · ≤ vn ;
+est and largest eigenvalues of A, respectively.                                              3    return the set with the minimum cut ratio among the sets
+   We often use the symbols n, m, and ∆ to denote the number of                                    of the form {1, . . . , i} (1 ≤ i ≤ n − 1).
+vertices, the number of edges, and the maximum degree, respec-
+                                                                                             4 Procedure sweepϕ (v)
+tively, of the graph we are concerned with, which should be clear
+from the context. For a graph G = (V , E) and a vertex set S ⊆ V ,                           5    Reorder the vertices in G in non-decreasing order in terms
+G[S] denotes the subgraph of G induced by S. The volume vol(S) of                                  of v, i.e., v 1 ≤ v 2 ≤ · · · ≤ vn ;
+S is the sum of degrees of vertices in S.                                                    6    return the set with the minimum conductance among the
+                                                                                                   sets of the form {1, . . . , i} (1 ≤ i ≤ n − 1).
+3.1     Average Sensitivity
+In order to measure the sensitivity of spectral clustering algorithms,                       the cut ratio of G is defined to be α(G) = min ∅⊊S ⊊V αG (S). The
+which partition the vertex set of a graph into k clusters for k ≥ 2, we                                                                             |E(S,S )|
+adapt the original definition of average sensitivity [24] as follows.                        conductance of a set S is defined to be ϕG (S) =                       ,
+                                                                                                                                               min{vol(S ),vol(S )}
+   Let G = (V , E) be a graph. For an edge set F ⊆ E, we denote by                           and the conductance of G is defined to be ϕ(G) = min ∅⊊S ⊊V ϕG (S).
+G − F the graph (V , E \ F ). For p ∈ [0, 1], we mean by F ∼p E that                         For an integer k, let ρG (k) be the k-way expansion defined as
+each edge in E is included in F with probability p independently
+                                                                                                           ρG (k) :=              min               max ϕG (Si ).
+from other edges.                                                                                                      S 1, ...,S k : partition of V 1≤i ≤k
+   For vertex sets S,T ⊆ V , Let S△T denote the symmetric dif-
+                                                                                                The adjacency matrix AG ∈ {0, 1}n×n of G is defined as (AG )i j =
+ference between two vertex sets S,T . Let P = {P 1 , . . . , Pk } and
+                                                                                             1 if and only if (i, j) ∈ E. The degree matrix DG ∈ Rn×n of G
+Q = {Q 1 , . . . , Q k } be two k-partitions of V . Then, the distance of
+                                                                                             is the diagonal matrix with (DG )ii = di , where di is the degree
+P and Q with respect to vertex size (resp., volume) is defined as
+                                                                                             of the i-th vertex. The Laplacian LG ∈ Rn×n of G is defined as
+                                                                                             LG = DG − AG . The normalized Laplacian LG ∈ Rn×n of G is
+follows:
+                                            k
+                                            Õ                                                defined as LG = DG   −1 L = I − D −1 A .1 It is well known that all
+                                                                                                                      G        G G
+                      d size (P, Q) = min         |Pi △Q σ (i) |,                            the eigenvalue of LG and LG are nonnegative real numbers. We
+                                      σ
+                                            i=1
+                                                                                             sometimes call LG the unnormalized Laplacian of G.
+                                             k
+                                            Õ                                                   We omit subscripts if they are clear from the context.
+             (resp., d vol (P, Q) = min           vol(Pi △Q σ (i) )),
+                                      σ
+                                            i=1                                              3.2.2 Cheeger’s inequality. We can use unnormalized and normal-
+where σ ranges over all bijections σ : {1, . . . , k} → {1, . . . , k}. It is                ized Laplacians to find vertex sets with small cut ratio and con-
+easy to see that d size and d vol satisfy the triangle inequality. When                      ductance, respectively. Consider procedures in Algorithm 1, which
+k = 2 and P = {P, P } and Q = {Q, Q }, we simply write d size (P, Q)                         keep adding vertices in the order determined by the given vector
+and d vol (P, Q) instead of d size (P, Q) and d vol (P, Q).                                  v, and then return the set with the best cut ratio and conductance.
+   For an algorithm A that outputs a k-partition and a real-valued                           Then, the following inequality is known.
+function β on graphs, we say that the p-average sensitivity with                                Lemma 3.1 (Cheeger’s ineqality [1, 2]). We have
+respect to vertex size (resp., volume) of A is at most β if
+                                                                                                       λ2              p                  ν2             √
+                                                                                                          ≤ α(G) ≤ 2∆λ 2 and                  ≤ ϕ(G) ≤ 2ν 2 ,
+                        E [d size (A(G), A(G − F ))] ≤ β(G),                                           2                                   2
+                      F ∼p E
+                                                                                             where λ 2 = λ 2 (LG ) and ν 2 = λ 2 (LG ). In particular, α(sweepα (v 2 )) ≤
+            (resp.,     E [d vol (A(G), A(G − F ))] ≤ β(G)).                                 √                                   √
+                      F ∼p E                                                                   2∆λ 2 and ϕ(sweepϕ (v̄ 2 )) ≤ 2ν 2 hold, where v 2 and v̄ 2 are the
+                                                                                             eigenvectors of LG and LG corresponding to λ 2 and ν 2 , respectively.
+We note that this definition is different from the original one [24]
+in that we remove each edge with probability p independently                                     The following variant of Cheeger’s inequality is also known.
+from others whereas the original one removes k edges without
+                                                                                                Lemma 3.2 (Improved Cheeger’s ineqality [15]). For any
+replacement for a given integer parameter k.
+                                                                                             k ≥ 2, we have
+                                                                                                                       √ !
+3.2     Spectral Graph Theory                                                                                      kλ 2 ∆
+                                                                                                                                                            
+                                                                                                                                                        kν 2
+                                                                                              α(sweepα (v 2 )) = O p       , and ϕ(sweepϕ (v̄ 2 )) = O √       ,
+3.2.1 Notions from spectral graph theory. Let G = (V , E) be an                                                        λk                                νk
+n-vertex graph. We always assume that the vertices are indexed by
+                                                                                             where λk = λk (LG ), νk = λk (LG ), and v 2 and v̄ 2 are the (right)
+integers, i.e., V = {1, . . . , n}. For a vertex set S, we denote by S the
+                                                                                             eigenvectors of LG and LG corresponding to λ 2 and ν 2 , respectively.
+complement set V \ S.
+   For two vertex sets S,T ⊆ V , E(S,T ) denotes the set of edges                               As λk ≥ λ 2 and νk ≥ ν 2 , the bounds in Lemma 3.2 are always
+between S and T , that is, E(S,T ) = {(i, j) ∈ E : i ∈ S, j ∈ T }.                           stronger than those in Lemma 3.1. We note that the original proof
+                                                                 |E(S,S )|
+The cut ratio of S ⊆ V is defined to be αG (S) =                                 , and       1 In some literature, L is called the random-walk Laplacian.
+                                                               min{ |S |, |S | }
+                                                                                         3
+ Algorithm 2: Spectral Clustering                                                             We remark that in [20], the above theorem was stated in terms
+                                                                                          of the spectral clustering algorithm that uses the eigenvectors of
+ 1 Procedure USC 2 (G)
+ 2    Compute the second eigenvector v 2 of LG ;                                          L sym := I − D −1/2AD −1/2 , which turns out to be equivalent to
+                                                                                          N SC k -means .
+ 3    return sweepα (v 2 ).
+ 4 Procedure N SC 2 (G)                                                                   3.3    Stable Instances
+ 5    Compute the second eigenvector v 2 of L;
+                                                                                          We introduce the notion of stable instances, which is another tool
+ 6    return sweepϕ (v 2 ).
+                                                                                          we need to analyze average sensitivity of spectral clustering.
+                                                                                             For ε ∈ (0, 1), and two sets S,T ⊆ V , we call the corresponding
+                                                                                          bipartitions S = {S, S } and T = {T ,T } are ε-close with respect to
+ Algorithm 3: Spectral Clustering with k clusters                                         size (resp., volume) if
+ 1 Procedure N SC k−means (G)
+ 2    Compute the first k eigenvectors v 1 , . . . , vk of LG ;                                    d size (S, T ) ≤ εn    (resp., d vol (S, T ) ≤ ε · vol(G)).
+ 3    Embedding each vertex u ∈ V to                                                      We call a graph G = (V , E) (ρ, ε)-stable with respect to cut ratio
+       f (u) = (v 1 (u), . . . , vk (u));                                                 (resp., conductance) if any ρ-approximate solution S ⊆ V , that
+ 4    return k-means(f (u 1 ), . . . , f (un )).                                          is, αG (S) ≤ ρ · α(G) (resp., ϕG (S) ≤ ρ · ϕ(G)), is ε-close to any
+                                                                                          optimal solution with respect to size (resp., volume). The following
+                                                                                          is known.
+of [16] only handled the normalized case. However, their proof can
+be easily adapted to the unnormalized case, which we discuss in                              Lemma 3.5 (Corollary 4.17 in [16]). Let G = (V , E) be a graph.
+Appendix A.1.                                                                             For any ρ ≥ 1, G is
+   For k-way expansion, the following higher-order Cheeger in-                                                        !!
+                                                                                                     ρλ 2 (LG )∆1/2
+equality is known.                                                                             ρ, Θ                      -stable with respect to cut ratio, and
+                                                                                                       λ 3 (LG )3/2
+    Theorem 3.3 ([18]). We have                                                                                    !!
+                                                                                                      ρλ 2 (LG )
+                     λk (LG )                                                                  ρ, Θ                   -stable with respect to conductance.
+                                             p           
+                              ≤ ρG (k) ≤ O k 2 λk (LG ) .                                            λ 3 (LG )3/2
+                         2
+3.2.3 Spectral Clustering. In this work, we consider the spectral                            Although Kwok et al. [16] showed Lemma 3.5 only for the nor-
+clustering algorithms described in Algorithm 2. In the unnormalized                       malized case, we can easily modify the proof for the unnormalized
+case (USC 2 ), we first compute the second eigenvector v 2 ∈ Rn                           case, which we provide in Appendix A.2.
+of the Laplacian of the input graph and then return the set com-
+puted by running the sweepα procedure on v 2 . In the normalized                          3.4    Tools from Matrix Analysis
+case (N SC 2 ), we replace v 2 with the second eigenvector of the
+                                                                                          We will make use of the following results.
+normalized Laplacian and give it to the sweepϕ procedure.
+    Algorithm 3 is a variant of Algorithm 2 that partitions the graph                        Theorem 3.6 (Weyl’s ineqality). Let A, H ∈ Rn×n be sym-
+into k clusters. Here, we first compute the top k eigenvectors                            metric matrices. Let {λi }, {λi′ } be the eigenvalues of A and A + H ,
+v 1 , . . . , vk , and embed each vertex u ∈ V to a point (v 1 (u), . . . , vk (u))       respectively. Then for any 1 ≤ i ≤ n, we have
+in Rk . Then, we apply the k-means algorithm [19] to obtain k
+clusters. This algorithm (N SC k −means ), that makes use of LG =                                                        λi − λi′ ≤ ∥H ∥ ,
+I − DG   −1 A , was popularized by Shi and Malik [21]. There are also
+               G                                                                          where ∥H ∥ is the spectral norm of H .
+other versions of spectral clustering based on the k-means algo-
+                                                                                             Theorem 3.7 (Theorem 5.1.1 in [23]). Let X = Ti=1 X i , where
+                                                                                                                                                     Í
+rithm (see [25]). We remark that the one we are analyzing is pre-
+ferred in practice. For example, in the survey [25], it is said “In                       Xi ∈ R n×n  (1 ≤ i ≤ T ) are independent random symmetric matrices.
+our opinion, there are several arguments which advocate for using                         Assume that 0 ≤ λ min (X i ) and λ max (X i ) ≤ R for any 1 ≤ i ≤ T . Let
+normalized rather than unnormalized spectral clustering, and in the                       µ max = λ max (E[X ]). Then for any ε > 0,
+normalized case to use the eigenvectors of L rw (i.e., LG as we consider                                                                         µ max /R
+                                                                                                                                         eε
+                                                                                                                                   
+                                                −1/2       −1/2
+here) rather than those of L sym (i.e., I − DG AG DG ).”                                        Pr[λ max (X ) ≥ (1 + ε)µ max ] ≤ n
+    The following bound is known for N SC k-means .                                                                                  (1 + ε)1+ε
+                                                                    λ   (L )
+    Theorem 3.4 ([20], rephrased). Let G be a graph with kρ+1 (k)G =                      4     SPECTRAL CLUSTERING WITH
+                                                                            G
+Ω(k 3 ). Let {S 1∗ , . . . , Sk∗ } be a k-partition of G achieving ρG (k) and                   UNNORMALIZED LAPLACIAN
+let {A1 , . . . , Ak } be the output of N SC k -means . If the approximation              In this section, we analyze the p-average sensitivity of USC 2
+ratio of k-means (in terms of the objective function of k-means) is α,                    for p ∈ [0, 1]. For a graph G, let λi (G) denote the i-th smallest
+then we have                                                                              eigenvalue of the Laplacian associated with a graph G, that is,
+                                                                                          λi (G) = λi (LG ). The goal of this section is to show the following
+                                                           3                 
+                                                           αk ρG (k)
+    d vol ({S 1∗ , . . . , Sk∗ }, {A1 , . . . , Ak }) = O             · vol(G) .
+                                                           λk+1 (LG )                     under Assumption 4.2, which we will explain in Section 4.1.
+                                                                                      4
+  Theorem 4.1. Let G = (V , E) be a graph and p ∈ [0, 1]. If As-                      Lemma 4.3. Let G = (V , E) be a graph and p ∈ [0, 1], and let
+sumption 4.2 holds, then the p-average sensitivity of USC 2 is                      F ∼p E. If Assumption 4.2(i) holds, then
+                                             
+                            λ 2 (G)                                                                                        λ 3 (G)
+                       O             · ∆n + 1   .                                                               λ 3 (G − F ) ≥
+                            λ 3 (G)2                                                                                          2
+   We discuss Assumption 4.2 and its plausibility in Section 4.1.                   holds with probability at least 1 − n .
+                                                                                                                         −10
+
+Before proving Theorem 4.1, we first discuss the sensitivity of                         We define Eab ∈ {0, 1}n×n as the matrix such that (Eab )cd = 1
+the eigenvalues in Section 4.2. Then, we prove Theorem 4.1 in                       if and only if c = a and d = b. For each edge e = (i, j) ∈ E, we let
+Section 4.3.                                                                        Ee = Eii +E j j −Ei j −Ei j . For a set F ⊆ E of edges, let E F = e ∈F Ee ,
+                                                                                                                                                     Í
+                                                                                    that is, E F is the Laplacian matrix of the graph with vertex set V
+4.1    Assumptions                                                                  and edge set F . Note that
+Given a graph G and a value p ∈ [0, p], the reliability C(p) of G is the
+                                                                                      LG−F = DG−F − AG−F
+probability that if each edge fails with probability p, no connected
+component of G is disconnected as a result [5]. There exists a fully                            Õ                             Õ
+                                                                                       =D−            (Eii + E j j ) − ­A −          (Ei j + E ji )® = LG − E F .
+                                                                                                                       ©                           ª
+polynomial-time randomized approximation scheme for C(p) [10].
+We will derive a bound on p-average sensitivity under the following                          (i, j)∈F                  «    (i, j)∈F               ¬
+assumption. Let pfail := O(max{λ 2 (G)/λ 3 (G)2 , n−1 }).                              The following directly follows from Theorem 5 in [6].
+Assumption 4.2. We assume the following properties hold.                               Lemma 4.4. Let G = (V , E) be a graph, F ⊆ E, and 1 ≤ t ≤ n.
+      (i) λ 3 (G) ≥ max{24p∆, 48 log n}; (ii) pfail ≤ 1;                            Let h be such that x ⊤ E F x ≤ h for any unit vector x ∈ Rn in V ′ :=
+      (iii) C(p) ≥ 1 − pfail .                                                      span(vt , . . . , vn ), where vi is the eigenvector corresponding to λi (G).
+                                                                                    Then, we have λt (G − F ) ≥ λt (G) − h.
+    Plausibility of Assumptions. Although the conditions in Assump-
+tions 4.2 are technical, they conform to our intuitions about graphs                   Next, we prove the following.
+with low average sensitivity. A graph satisfying those conditions is
+                                                                                       Lemma 4.5. Let G = (V , E) be a graph and p ∈ [0, 1]. Then, with
+naturally composed of two vertex disjoint intra-dense subgraphs
+                                                                                    probability 1 − n−10 over F ∼p E, we have
+S ∗ and S ∗ , with no or few crossing edges between them. More
+generally,                                                                                            x ⊤ E F x ≤ max {6pλn (G), 24 log n} .
+      • Assumption 4.2(i) and (ii) imply that λ 2 is small but λ 3 is               for any unit vector x ∈ Rn .
+        large, which imply that the graph has at most one out-
+        standing sparse cut by the higher-order Cheeger inequal-                       Proof. For an edge e ∈ E, let X e be the indicator random vari-
+        ity [15, 18]. It has been discussed that the (normal vectors of             able of the event that e is included in F . Note that
+                                                                                                               Õ         Õ
+        the) eigenspaces of Laplacian with such a large eigengap are                                    EF =        Ee =     X e · Ee .
+        stable against edge perturbations [25]. To better understand                                              e ∈F       e ∈E
+        Assumption 4.2(i), let us consider an example. Suppose that                    By the fact that Pr[X e = 1] = p, we have E[E F ] = e ∈E pEe =
+                                                                                                                                                  Í
+        G can be partitioned into two clusters S and S such that                    pLG . Let µ max := λ max (E[E F ]) = pλ max (LG ) = pλn .
+        |S | = Θ(|S |), and the induced subgraphs G[S] and G[S] have                   Note that the variables X e (e ∈ E) are independent and thus E F
+        conductance at least Ω(1) (i.e., the cluster structure of G is              is a sum of independent random variables X e · Ee . Further note
+        significant), and the degree of each vertex in both subgraphs               that 0 ≤ λ min (X e · Ee ) ≤ λ max (X e · Ee ) ≤ 1. Now by the matrix
+        is in [∆/4, ∆]. Then it holds that λ 2 (G[S]), λ 2 (G[S]) = Ω(∆)            Chernoff bound (Theorem 3.7), for any ε > 0, we have that
+        (see e.g. [11]). This further implies that λ 3 (G) = Ω(∆) [18],                                                                      µ max
+                                                                                                                                     eε
+                                                                                                                               
+        and thus G satisfies the assumption as long as ∆ = Ω(log n).                      Pr[λ max (E F ) ≥ (1 + ε)µ max ] ≤ n
+      • Assumption 4.2 (iii) corresponds to the intuition that each                                                              (1 + ε)1+ε
+                                                                                                                                    24 log n
+        connected component of the graph remains connected after                        If µ max ≤ 4 log n, then by setting ε = µ max − 1 ≥ 2e − 1,
+        removing a small set of random edges with high probability.
+                                                                                                                                                 1
+        If this is not the case, then intuitively the graph contains                       Pr[λ max (E F ) ≥ (1 + ε)µ max ] ≤ n2−(1+ε )µ max ≤ 10
+        many “dangling sets” that are loosely connected to the core                                                                             n
+        of the graph, in which case the algorithm is not stable [26].               If µ max > 4 log n, then by setting ε = 5, we have that
+    Note that if the graph G satisfying Assumption 4.2 is not con-                                                                                  1
+                                                                                              Pr[λ max (E F ) ≥ (1 + ε)µ max ] ≤ n2−(1+ε )µ max ≤ 10
+nected, i.e., λ 2 (G) = 0, then (ii) is trivially satisfied. Then essentially                                                                      n
+the conditions become that the graph has large λ 3 (G), and thus has                    Thus with probability at least 1−n−10 , for any unit vector x ∈ Rn ,
+two connected components S ∗ , S ∗ and p is reasonably small that
+                                                                                         x ⊤ E F x ≤ max{6µ max , 24 log n} = max {6pλn , 24 log n} .               □
+the corresponding perturbation will not disconnect G[S ∗ ] or G[S ∗ ]
+with high probability.                                                                   Proof of Lemma 4.3. By Lemma 4.5, Lemma 4.4 and the fact
+                                                                                    that λn (G) ≤ 2∆, it holds that with probability at least 1 − n −10 ,
+4.2    Average Sensitivity of Eigenvalues of LG                                     λ 3 (G −F ) ≥ λ 3 (G)−max{12p∆, 24 log n}. Then, the inequality in the
+The goal of this section is to show the following.                                  statement of the lemma directly follows from Assumption 4.2(i). □
+                                                                                5
+4.3     Average Sensitivity of USC 2                                                                              λ 2 (G − F )∆1/2
+                                                                                                                                       !
+                                                                                                                                                        λ 2 (G)∆
+                                                                                          ε 3 := Θ APP ·                                   = Θ ­­ q                      ®,
+                                                                                                                                                ©                        ª
+In this section, we prove Theorem 4.1.                                                                                           3/2
+                                                                                                                  λ 3 (G − F )
+                                                                                                                                                                         ®
+                                                                                                                                                                       3
+   For a graph G = (V , E), we say a set S ∗ ⊆ V is an optimum                                                                                  «  λ 3 (G)λ  3 (G − F )  ¬
+solution of G with respect to cut ratio if αG (S ∗ ) = α(G) and |S ∗ | ≤                                             
+                                                                                                                                                             
+                                                                                                                                                              
+|V |/2. We first show the following.                                                                                         λ 2 (G)∆          λ 2 (G − F )∆ 
+                                                                                                                                                             
+                                                                                        ε⋆ = max {εi } = Θ ­max q                            ,                  ®.
+                                                                                                                 ©   
+                                                                                                                                                             ª
+                                                                                                                 ­
+                                                                                               1≤i ≤3                                                       2 ®
+                                                                                                                                               λ   (G − F )
+    Lemma 4.6. Suppose that Assumption 4.2 holds. Let F ∼p E. Let
+                                                                                                                     
+                                                                                                                      λ 3 (G)λ 3 (G − F )
+                                                                                                                                          3     3            
+                                                                                                                                                              
+S ∗ and S F∗ be optimum solutions of G and G − F with respect to cut
+                                                                                                                 «                                           ¬
+                                                                                          By Lemmas 3.1 and 3.2, S is an O( ∆/λ 3 (G))-approximation
+                                                                                                                                   p
+ratio, respectively. Then the following holds with probability at least
+1 − pfail :                                                                           of S ∗ . Thus, wephave d size (S, S ∗ ) ≤ ε 1n by Lemma 3.5. Simi-
+                                                                                      larly, S F is an O( ∆/λ 3 (G − F ))-approximation of S F∗ , and we have
+      • if G is not connected, then S F∗ = S ∗ and (S F∗ , S F∗ ) is the unique       d size (SF , SF∗ ) ≤ ε 2n.
+        cut with cut ratio 0;                                                             By Lemma 4.6, S ∗ is an APP-approximation of S F∗ , and hence
+      • otherwise, then λ 2 (G − F ) > 0, and                                         we have d size (S ∗ , SF∗ ) < ε 3n. Since λ 2 (G − F ) ≤ λ 2 (G) (by the
+            αG−F (S F∗ ) ≤ αG−F (S ∗ ) ≤ APP · αG−F (S F∗ ),                          monotone property of λ 2 ; see e.g., [7]),we have
+
+                           λ 2 (G)
+                                                                                            d size (S, SF ) ≤ d size (S, S ∗ ) + d size (S ∗ , SF∗ ) + d size (SF∗ , SF )
+                                        ∆
+                                   q      
+        where APP = O λ (G−F       ) λ (G)
+                                             .
+                              2           3                                                                      
+                                                                                                                                                            
+                                                                                                                                                             
+                                                                                                                          λ 2 (G)              λ 2 (G − F ) 
+                                                                                                                                                            
+                                                                                                                                           ,
+                                                                                                                 
+                                                                                                                                                            
+     Proof. We first consider the former case. Since λ 3 (G) ≥ Ω(log n),                     ≤ 3ε⋆n ≤ max q                                                2
+                                                                                                                                                                · O(∆n)
+                                                                                                                  λ 3 (G)λ 3 (G − F )3 λ 3 (G − F ) 
+                                                                                                                                                            
+S ∗ and S ∗ induce two connected components of G. By Assump-
+                                                                                                                                                            
+                                                                                                                                                           
+tion 4.2(iii), with probability 1 − pfail , (G − F )[S ∗ ] and (G − F )[S ∗ ]
+                                                                                                    
+                                                                                                      λ 2 (G)
+are still connected. Thus S F∗ = S ∗ , which corresponds to the unique                       ≤O                · ∆n
+                                                                                                      λ 3 (G)2
+cut with cut ratio 0.
+                                                                                           Then, we have
+     Now we consider the latter case. By Assumption 4.2(iii), with
+probability 1 − pfail , the resulting graph G − F is connected, i.e.,                         E [d size (USC 2 (G), USC 2 (G − F ))] =                    E [d size (S, SF )]
+                                                                                           F ∼p E                                                       F ∼p E
+λ 2 (G − F ) > 0.                                                                                                                                     
+                                                                                                        λ 2 (G)                        λ 2 (G)
+     By definition of cut ratio and Lemma 3.2, it holds that                                ≤O              · ∆n   + n · 2p fail = O            · ∆n + 1   ,
+                                                          s          !                            λ 3 (G)2                             λ 3 (G)2
+                ∗             ∗         ∗                       ∆
+       αG−F (S F ) ≤ αG−F (S ) ≤ αG (S ) = O λ 2 (G)                   .              where in the inequality we used the fact that if E does not hold,
+                                                             λ 3 (G)                  then d size (S, S F ) ≤ n.                                             □
+  Furthermore by Lemma 3.1, λ 2 (G − F )/2 ≤ α(G − F ) = αG−F (S F∗ )
+and thus we have
+                                                                                      5      SPECTRAL CLUSTERING WITH
+                                  s                      !                                   NORMALIZED LAPLACIAN
+               ∗         λ 2 (G)        ∆             ∗                               In this section, we analyze the p-average sensitivity of N SC 2 (with
+        αG−F (S ) = O                       · αG−F (S F ) .        □
+                      λ 2 (G − F ) λ 3 (G)                                            respect to volume) for p ∈ [0, 1]. For a graph G, let νi (G) denote
+                                                                                      the i-th smallest eigenvalue of the normalized Laplacian associated
+   Proof of Theorem 4.1. Let F ∼p E. Let S ∗ and S F∗ be optimum                      with a graph G, that is, νi (G) = λi (LG ). The goal of this section is
+solutions of G and G − F with respect to cut ratio, respectively. Let                 to show the following under Assumption 5.2, which we will explain
+S (resp. S F ) be the output of USC 2 (G) (resp. USC 2 (G − F )). We                  in Section 5.1.
+further let S ∗ = {S ∗ , S ∗ } be the bipartitioning corresponding to S ∗ .
+                                                                                         Theorem 5.1. Let G = (V , E) be a graph and p ∈ [0, 1]. If Assump-
+We define SF∗ , S, SF similarly.
+                                                                                      tion 5.2 holds, then the p-average sensitivity of N SC 2 with respect
+   Let E denote the event that all the statements of Lemma 4.3
+                                                                                      to volume is
+and 4.6 hold. Then Pr[E] ≥ 1 − n −10 − pfail ≥ 1 − 2pfail . We first                                           
+                                                                                                                 ν 2 (G)
+                                                                                                                                       
+assume that E holds.                                                                                        O             · vol(G) + 1   .
+                                                                                                                 ν 3 (G)2
+   In the case that G is not connected, by Lemma 3.1, the partition
+S (resp. SF ) is equivalent to S ∗ (resp. SF∗ ). Thus, by Lemma 4.6,                     We discuss Assumption 5.2 and its plausibility in Section 5.1, and
+                                                                                      then prove Theorem 5.1 in Section 5.2.
+                  d size (USC 2 (G), USC 2 (G − F )) = 0.
+    Now, we assume that G is connected. Let APP be the approxima-                     5.1       Assumptions
+tion ratio as specified in Lemma 4.6. Let                                             Let G = (V , E) be a graph with minimum degree τ and maximum
+                                        !                                             degree ∆. Recall that C(p) is the reliability of G given that each edge
+               ∆1/2                                                                                                  ′ := O(max{ν (G)/ν (G)2 , (2m)−1 }).
+                                                          
+                          λ 2 (G)∆1/2            λ 2 (G)∆                             fails with probability p. Let pfail
+  ε 1 := Θ              ·                 =Θ                 ,                                                                         2     3
+            λ 3 (G)1/2 λ 3 (G)3/2                λ 3 (G)2                             Assumption 5.2. We assume the following properties hold.
+                                                 !
+                  ∆1/2                                                                      (i) ν 3 (G) ≥ Ω(τ −1 log n); (ii) pfail
+                                                                                                                               ′ ≤ 1;
+                                                                         
+                                λ 2 (G − F )∆1/2            λ 2 (G − F )∆
+  ε 2 := Θ                    ·                      =Θ                     ,
+            λ 3 (G − F )1/2 λ 3 (G − F )3/2                 λ 3 (G − F )2                   (iii) p ≤ O(∆−1 log n) and C(p) ≥ 1 − pfail
+                                                                                                                                    ′ .
+
+                                                                                  6
+   Plausibility of Assumptions. The Assumption 5.2(i), (ii) and (iii)                  significant cluster structure, i.e., it has a k-way partition for which
+can be justified similarly as in Section 4.1. Note that (i) implicitly                 every cluster has low conductance.
+require that the minimum degree τ = Ω(log n), as ν 3 (G) ≤ 2.
+                                                                                       6.2     Proof of Theorem 6.1
+5.2     Average Sensitivity of N SC 2                                                  Similar to the proof of Theorem 5.3, we have the following lemma
+The following gives a bound on the average sensitivity of eigen-                       regarding the perturbation of νk +1 (G). The only difference is that
+values of normalized Laplacian. We defer the proof to Appendix                         we use our new assumption on νk +1 (G).
+B.
+                                                                                          Lemma 6.3. Let G = (V , E) be a graph and F ∼p E. If Assump-
+   Theorem 5.3. Let G = (V , E) be a graph and F ∼p E. If Assump-                                                                                      ν k +1 (G)
+                                                                                       tion 6.2(i) and (iii) hold, then we have νk +1 (G − F ) ≥                  with
+tion 5.2(i) and (iii) hold, then we have ν 3 (G − F ) ≥ ν 3 (G)/2 with                                                                                      2
+probability at least 1 − n −7 .                                                        probability at least 1 − n −7 .
+
+    Now we give the sketch of the proof of Theorem 5.1.                                   We will make use the following lemma whose proof is provided
+                                                                                       in Appendix C.
+   Proof Sketch of Theorem 5.1. The proof is analogous to that
+in Section 4.3. Here we mainly sketch the differences.                                    Lemma 6.4. Let G = (V , E) be a graph. For any c ≥ 1, G is
+   We will consider the optimum solutions S ∗ and S F∗ of G and                                                 3
+                                                                                                                  ck ρG (k)
+                                                                                                                             
+G − F with respect to conductance, respectively. Let S (resp. S F )                                        c, Θ                 -stable
+                                                                                                                   νk +1 (G)
+be the output of N SC 2 (G) (resp. N SC     2 (G − F )). We define   ε1 =
+                                                                                       with respect to conductance.
+                                                              
+     ν 2 (G)            ν 2 (G−F )                ν 2 (G)
+                                
+Θ          2 , ε2 = Θ            2 , ε3 = Θ √                   , similarly
+    ν 3 (G)             ν 3 (G−F )                ν 3 (G)ν 3 (G−F )
+                                                            3
+
+as in the proof of Theorem 4.1.                                                           For a graph G, we say a k-partition S ∗ = {S 1∗ , . . . , Sk∗ } an op-
+     By Lemmas 3.1, 3.2, and 3.5, for bipartitions S = {S, S } and                     timum solution of G with respect to k-way expansion, if ρG (S ∗ ) =
+S ∗ = (S ∗ , S ∗ ), it holds that d vol (S, S ∗ ) ≤ ε 1 vol(G). For bipartitions       ρG (k). Now we give the sketch of the proof of Theorem 6.1.
+SF = {S F , S F } and SF∗ = {S F∗ , S F∗ }, it holds that d vol (SF , SF∗ ) ≤
+ε 2 vol(G − F ) ≤ ε 2 vol(G).                                                             Proof Sketch of Theorem 6.1. We will consider the optimum
+     Analogously to the proof of Lemma 4.6, we can show that S ∗ is a                  solutions S ∗ = {S 1∗ , . . . , Sk∗ } and SF∗ = {S 1,
+                                                                                                                                          ∗ , . . . , S ∗ } of G and
+                                                                                                                                             F         k, F
+good approximation of S F∗ in G−F , and that d vol (S ∗ , SF∗ ) ≤ ε 3 vol(G).          G − F with respect to k-way expansion, respectively. Let the k-
+By bounding the expectation as before, we can obtain the p-average                     partitions S = {S 1 , . . . , Sk } (resp. SF = {S 1, F , . . . , Sk, F }) be the
+sensitivity of N SC 2 , as stated in the theorem.                              □       output of N SCk -means (G) (resp.     N SC k -means (G − F )).
+                                                                                                                         ρ (k )                           ν    (G)
+                                                                                         Let ε 1 := Θ αk 3 · ν G (G) . By the assumption that ρk +1(k ) =
+                                                                                                              k +1                                  G
+6     SPECTRAL CLUSTERING WITH k                                                       Ω(k 3 ), and Theorem 3.4, d vol (S, S ∗ ) ≤ ε 1 vol(G).
+      CLUSTERS                                                                                                ρ
+                                                                                                       
+                                                                                                                     (k )
+                                                                                         Let ε 2 := Θ αk 3 · ν G −F(G−F )
+                                                                                                                            . By Lemma 6.3, the assumption
+                                                                                                                         k +1
+In this section, we consider the p-average sensitivity of N SC k -means .
+                                                                                       νk+1 (G)/ρG (k) = Ω(k 3 ), and the fact that ρG−F (k) ≤ ρG (k) (as
+For a graph G, let νi (G) denote the i-th smallest eigenvalue the nor-
+                                                                                       ρG (k) is a monotone property),
+                                                                                                                     we have    νk +1 (G − F )/ρG−F (k) =
+malized Laplacian LG . We now prove the following.                                                                          
+                                                                                       Ω(k 3 ). By Theorem 3.4, d vol SF , SF∗ ≤ ε 2 vol(G).
+  Theorem 6.1. Let G = (V , E) be a graph and p ∈ [0, 1]. If As-                         Similarly to the proof of Lemma 4.6, by Assumption (iii) and (iv),
+sumption 6.2 holds, then the p-average sensitivity of N SC k -means                    we can show that with probability 1−pfail , if G contains k connected
+with respect to volume is                                                              components, then SF∗ = S ∗ ; and otherwise, νk (G − F ) > 0 and
+                          p                   !
+                      αk 5 νk (G)
+                   O              · vol(G) + 1 ,                                                      ρG−F (SF∗ ) ≤ ρG−F (S ∗ ) ≤ APP · ρG−F (SF∗ ),
+                        νk +1 (G)
+                                                                                                              ρ (S ∗ )          ρ (k )
+where α is the approximation ratio of k-means.                                         where APP = ρ G (S ∗ ) = ρ G (k ) . That is, S ∗ is an APP-approximation
+                                                                                                             G −F    F          G −F
+                                                                                       of SF∗ in G − F .
+6.1     Assumptions                                                                                              
+                                                                                                                       ρ (k)      ρ
+                                                                                         Thus, we can set ε 3 = Θ k 3 ρ G (k ) · ν G −F
+                                                                                                                                         (k )
+                                                                                                                                              
+                                                                                                                                                = Θ
+                                                                                                                                                     3
+                                                                                                                                                       k ρ G (k )
+                                                                                                                                                                   
+                                                                                                                                                                     .
+                                                                                                                     G −F        k +1 (G−F )        ν k +1 (G−F )
+Let G = (V , E) be a graph with minimum  degree τ and maximum                                              
+degree ∆. Let pfail
+                ′′ := O(max{k 5 ν (G)/ν
+                                p                     −1                               By Lemma 6.4, d vol S , SF ≤ ε 3 vol(G). Thus
+                                                                                                               ∗  ∗
+                                  k     k +1 (G), (2m) }).
+
+Assumption 6.2. We assume the following properties hold.                                  d vol (N SC k -means (G), N SC k -means (G − F ))
+      (i) νk +1 (G) ≥ Ω(τ −1 log n); (ii) pfail
+                                           ′′ ≤ 1;
+                                                                                           = d vol (S, SF ) ≤ (3 max εi ) · vol(G)
+                     −1                         ′′ ;                                                                     1≤i ≤3
+      (iii) p ≤ O(∆ log n) and C(p) ≥ 1 − pfail                                                                                   p                   !
+                                                                                                                              αk 5 νk (G)
+                                                                                                                                 
+      (iv) νk +1 (G)/ρG (k) = Ω(k ).
+                                   3                                                                αk 3 ρ   G (k)
+                                                                                           =O                  vol(G) + 1 = O             · vol(G) + 1 .
+                                                                                                     νk +1 (G)                 νk +1 (G)
+   The plausibility of the above assumptions can be justified almost
+the same as in Section 4.1 and 5.1, except that we have one additional                    Finally, by bounding the expectation as before, we can obtain the
+condition (iv), which further assumes that the input graph has a                       p-average sensitivity of N SC k -means as stated in the theorem. □
+                                                                                   7
+                                100                                                                                           100                                                                                       100
+
+                               10 1                                                                                          10 1                                                                                      10 1
+                               10 2                                                                                          10 2                                                                                      10 2
+
+
+
+
+Average Sensitivity / vol(G)                                                                  Average Sensitivity / vol(G)                                                              Average Sensitivity / vol(G)
+                               10 3                                                                                          10 3                                                                                      10 3
+
+                               10 4                                                                                          10 4                                                                                      10 4
+                               10 5                                                                                          10 5                                                                                      10 5
+                               10 6                                                                                          10 6                                                                                      10 6
+
+                                 0                                                                                             0                                                                                         0
+
+                                  10 2             10 1                    100        101                                       10 2        10 1      100           101         102                                       10 2   10 1        100      101   102
+                                                                2/ 32                                                                                 2/ 32                                                                                  2/ 32
+
+
+                                                          (a) SBM2                                                                                 (b) LFR                                                                              (c) Twitter
+
+
+                                                             Figure 2: Average sensitivity of N SC 2-means and ν 2 /ν 32 . Each point represents a graph.
+
+Table 1: Datasets: #, n, m, ν 2 , ν 3 are the number of graphs, the                                                                                           the implementation provided by the authors2 to generate graphs
+average number of vertices, the average number of edges,                                                                                                      with 100 vertices, average degree d, the maximum degree 50, and
+the average of the second smallest eigenvalue (of the nor-                                                                                                    the mixing parameter µ for each choice of d ∈ {4, 5, . . . , 20} and
+malized Laplacian), the average of the third smallest eigen-                                                                                                  µ ∈ {0.01, 0.02, . . . , 0.1}.
+value, respectively.                                                                                                                                             The Twitter dataset is a collection of ego-networks in the Twitter
+                                                                                                                                                              network provided at SNAP3 . As the original dataset was a collection
+                                         Name               #                n        m           ν2                                   ν3                     of directed graphs, we discarded directions of edges.
+                                                                                                                                                                 We provide basic information about these datasets in Table 1.
+                                         SBM2              80           100.00   1532.04    0.183                                   0.713
+                                         SBM3              80           100.00   1122.86    0.216                                   0.239
+                                                                                                                                                              7.2     Results
+                                         SBM4              80           100.00    918.49    0.233                                   0.259
+                                         LFR              170           100.00   1173.62    0.045                                   0.165                        Average sensitivity of 2-way clustering. Figure 2 shows the re-
+                                         Twitter          273           131.12   1684.22    0.057                                   0.169                     lation between p-average sensitivity and ν 2 /ν 32 , where each point
+                                                                                                                                                              represents a graph in the corresponding dataset. The red lines were
+                                                                                                                                                              computed by applying linear regression on graphs with positive
+7                                 EXPERIMENTS                                                                                                                 average sensitivity. For the SBM2 dataset, we can observe a clear
+In this section, we show our experimental results to validate our                                                                                             phase transition phenomenon: The average sensitivity dramatically
+theoretical results. Here, we focus on spectral clustering with nor-                                                                                          increases when ν 2 /ν 32 approaches to one. In all the datasets, we can
+malized Laplacian (N SC k -means ) because it is advocated for prac-                                                                                          observe that average sensitivity increases as ν 2 /ν 32 increases. These
+tical use, as we mentioned in Section 3.2.3. We obtained similar                                                                                              results empirically confirm the validity of Theorem 5.1.
+results for spectral clustering with unnormalized Laplacian.
+                                                                                                                                                                 Average sensitivity of k-way clustering. Figure 3 shows the rela-
+   As it is computationally hard to calculate the exact value of                                                                                                                                                        √
+average sensitivity, we took the average of 1000 trials, where each                                                                                           tion between the average sensitivity of N SC k −means and νk /νk +1
+trial samples a set of edges F ∼p E and removes F from the graph                                                                                              on the SBMk datasets, which are collections of graphs with k clus-
+to compute the symmetric difference size. Also in our plots, we                                                                                               ters. As with the results for the SBM2 dataset in Figure 2, we can
+                                                                                                                                                              again observe a phase transition phenomenon. These results suggest
+divided the average sensitivity by vol(G) so that we can compare                                                                                                                   √
+graphs with different sizes. We set edge removal probability p to be                                                                                          that the parameter νk /νk +1 is critical for the average sensitivity
+10−3 in all the experiments.                                                                                                                                  of spectral clustering, as indicated in Theorem 6.1.
+
+7.1                                   Datasets                                                                                                                   Average sensitivity and edge removal probability. Figure 4 shows
+                                                                                                                                                              the relation between average sensitivity grows and edge removal
+In our experiments, we study five datasets, SBM2, SBM3, SBM4,
+                                                                                                                                                              probability p, where a bold line shows the median of average
+LFR, and Twitter, which are explained below.
+                                                                                                                                                              sensitivities of graphs in the corresponding dataset, and the top
+   For k ∈ {2, 3, 4}, the SBMk dataset is a collection of graphs with
+                                                                                                                                                              and bottom of the filled region show the 0.6-quantile and 0.4-
+k clusters generated with the stochastic block model. Specifically,
+                                                                                                                                                              quantile, respectively. We can observe that average sensitivity
+we generate graphs of 100 vertices with k equal-sized clusters by
+                                                                                                                                                              grows almost linear in p. Such a linearity relation has been im-
+adding an edge for each vertex pair within a cluster with probability
+                                                                                                                                                              plicit in our theoretical analysis. For example, under our Assump-
+p and adding an edge for each vertex pair between different clusters
+                                                                                                                                                              tion 6.2, the proof of Lemma 6.3 (which is similar to the proof
+with probability q for each choice of p ∈ {0.3, 0.4, . . . , 0.9} and
+                                                                                                                                                              of Theorem 5.3) actually gives νk +1 (G − F ) ≥ νk +1 (G) − 4p for
+q ∈ {0.01, 0.02, . . . , 0.1}.
+   The LFR dataset is a collection of graphs generated with the                                                                                               2 https://www.santofortunato.net/resources
+
+Lancichinetti-Fortunato-Radicchi (LFR) benchmark [17]. We run                                                                                                 3 http://snap.stanford.edu/index.html
+
+                                                                                                                                                     8
+                                                                                                                                                                                                ACKNOWLEDGMENTS
+                                 100                                                                            100
+
+                                10 1                                                                           10 1                                                                             Y. Y. is supported by was supported by JST, PRESTO Grant Number
+                                10 2                                                                           10 2                                                                             JPMJPR192B, Japan.
+
+Average Sensitivity / vol(G)                                                    Average Sensitivity / vol(G)
+                                10 3                                                                           10 3
+
+                                10 4                                                                           10 4
+                                10 5                                                                           10 5                                                                             REFERENCES
+                                10 6                                                                           10 6                                                                              [1] Noga Alon. 1986. Eigenvalues and expanders. Combinatorica 6, 2 (1986), 83–96.
+                                   0                                                                                  0                                                                          [2] Noga Alon and V D Milman. 1985. λ 1 , Isoperimetric inequalities for graphs, and
+                                   10 1                    100            101                                           10 1                                 100                      101
+                                                                                                                                                                                                     superconcentrators. Journal of Combinatorial Theory, Series B 38, 1 (1985), 73–88.
+                                                            3/ 4                                                                                              4/ 5                               [3] Mikhail Belkin and Partha Niyogi. 2001. Laplacian Eigenmaps and Spectral
+                                                                                                                                                                                                     Techniques for Embedding and Clustering. In NIPS. 585–591.
+                                                        (a) SBM3                                                                                     (b) SBM4
+                                                                                                                                                                                                 [4] Yonatan Bilu and Nathan Linial. 2012. Are stable instances easy? Combinatorics,
+                                                                                                                                                                                                     Probability and Computing 21, 5 (2012), 643–660.
+                                                 √                                                                                                                                               [5] Charles J Colbourn. 1987. The combinatorics of network reliability. Oxford
+Figure 3: Average sensitivity of N SC k-means and νk /νk +1 on                                                                                                                                       University Press, Inc.
+the SBMk dataset. Each point represents a graph.                                                                                                                                                 [6] Justin Eldridge, Mikhail Belkin, and Yusu Wang. 2018. Unperturbed: spectral
+                                                                                                                                                                                                     analysis beyond Davis-Kahan. In Algorithmic Learning Theory. 321–358.
+                                                                                                                                                                                                 [7] Miroslav Fiedler. 1973. Algebraic connectivity of graphs. Czechoslovak mathe-
+                                                                                                                                                                                                     matical journal 23, 2 (1973), 298–305.
+                                              SBM2
+                                              LFR
+                                                                                                                             1.0
+                                                                                                                                                                                                 [8] Santo Fortunato. 2010. Community detection in graphs. Physics Reports 486, 3-5
+                                10 2          Twitter
+                                                                                                                             0.8
+                                                                                                                                                                                                     (2010), 75–174.
+
+
+
+ Average Sensitivity / vol(G)
+                                                                                                                                                                                                 [9] David Gfeller, Jean-Cédric Chappelier, and Paolo De Los Rios. 2005. Finding
+                                10 3                                                                                         0.6                                                                     instabilities in the community structure of complex networks. Physical Review E
+                                                                                                               Reliability                                                                           72, 5 (2005), 056135.
+                                                                                                                             0.4
+                                                                                                                                          q=1                                                   [10] Heng Guo and Mark Jerrum. 2019. A polynomial-time approximation algorithm
+                                10 4                                                                                                      q=0.8
+                                                                                                                             0.2          q=0.6
+                                                                                                                                          q=0.4                                                      for all-terminal network reliability. SIAM J. Comput. 48, 3 (2019), 964–978.
+                                                                                                                                          q=0.2
+                                                                                                                                          q=0                                                   [11] Shlomo Hoory, Nathan Linial, and Avi Wigderson. 2006. Expander graphs and
+                                                                                                                             0.0
+                                       10 3
+                                                           p
+                                                                   10 2                                                            0.00       0.02    0.04
+                                                                                                                                                               p
+                                                                                                                                                                     0.06   0.08   0.10              their applications. Bull. Amer. Math. Soc. 43, 4 (2006), 439–561.
+                                                                                                                                                                                                [12] Ling Huang, Donghui Yan, Michael I. Jordan, and Nina Taft. 2008. Spectral
+                                                                                                                                                                                                     Clustering with Perturbed Data. In NIPS. 705–712.
+Figure 4: Average sensitivity                                                                     Figure 5: Quantile curves of                                                                  [13] Brian Karrer, Elizaveta Levina, and Mark EJ Newman. 2008. Robustness of
+of N SC 2-means and edge re-                                                                      reliability of graphs in the                                                                       community structure in networks. Physical review E 77, 4 (2008), 046119.
+                                                                                                                                                                                                [14] Tosio Kato. 2013. Perturbation theory for linear operators. Vol. 132. Springer
+moval probability p.                                                                              Twitter dataset.                                                                                   Science & Business Media.
+                                                                                                                                                                                                [15] Tsz Chiu Kwok, Lap Chi Lau, Yin Tat Lee, Shayan Oveis Gharan, and Luca
+                                                                                                                                                                                                     Trevisan. 2013. Improved Cheeger’s inequality: Analysis of spectral partitioning
+p = O(∆−1 log n) and νk +1 (G) ≥ Ω(τ −1 log n). Furthermore, the                                                                                                                                     algorithms through higher order spectral gap. In STOC. 11–20.
+proof of Theorem 6.1 implies that for small enough p, the aver-                                                                                                                                [16] Tsz Chiu Kwok, Lap Chi Lau, Yin Tat Lee, Shayan Oveis Gharan, and Luca
+                                           √                                                                                                                                                        Trevisan. 2013. Improved Cheeger’s Inequality: Analysis of Spectral Partitioning
+                                      α k 5 ν k (G)                                                                                                                                                  Algorithms through Higher Order Spectral Gap. arXiv preprint arXiv:1301.5584
+age sensitivity of N SC k -means is O ν (G−F      )
+                                                    · vol(G) + 1   =
+                                        k +1                                                                                                                                                         (2013).
+       √                         
+    αk ν
+      5                                                                                                                                                                                         [17] Andrea Lancichinetti, Santo Fortunato, and Filippo Radicchi. 2008. Benchmark
+                            
+O νk +1 k · vol(G) 1 + νk +1 + 1 , which is linear in p.
+                         5p
+                                                                                                                                                                                                     graphs for testing community detection algorithms. Physical Review E 78, 4
+                                                                                                                                                                                                     (2008).
+                                                                                                                                                                                                [18] James R Lee, Shayan Oveis Gharan, and Luca Trevisan. 2014. Multiway spectral
+                                                                                                                                                                                                     partitioning and higher-order cheeger inequalities. J. ACM 61, 6 (2014), 37.
+    Reliability. To confirm our assumptions (Assumptions 4.2, 5.2,                                                                                                                              [19] J. MacQueen. 1967. Some methods for classification and analysis of multivariate
+and 6.2) hold in practice, for each edge failure probability p ∈                                                                                                                                     observations. In Proceedings of the 5th Berkeley Symposium on Mathematical
+{0.001, 0.002, . . . , 0.1}, we computed the reliability of the 273 graphs                                                                                                                           Statistics and Probability. Vol. I: Statistics, pp. 281–297.
+                                                                                                                                                                                                [20] Richard Peng, He Sun, and Luca Zanetti. 2017. Partitioning Well-Clustered
+in the Twitter dataset and calculated the q-quantile of the reliabil-                                                                                                                                Graphs: Spectral Clustering Works! SIAM J. Comput. 46, 2 (2017), 710–743.
+ities for each q ∈ {0.01, 0.02, . . . , 1}. Figure 5 shows the results.                                                                                                                         [21] Jianbo Shi and J. Malik. 2000. Normalized cuts and image segmentation. IEEE
+                                                                                                                                                                                                     Transactions on Pattern Analysis and Machine Intelligence 22, 8 (2000), 888–905.
+As we can observe, most of the graphs in the Twitter dataset are                                                                                                                                [22] G.W. Stewart and J.G. Sun. 1990. Matrix Perturbation Theory. ACADEMIC PRESS,
+connected after removing a 10% of edges with high probability,                                                                                                                                       INC.
+which confirm the plausibility of the assumptions.                                                                                                                                              [23] Joel A Tropp et al. 2015. An introduction to matrix concentration inequalities.
+                                                                                                                                                                                                     Foundations and Trends® in Machine Learning 8, 1-2 (2015), 1–230.
+                                                                                                                                                                                                [24] Nithin Varma and Yuichi Yoshida. 2019. Average Sensitivity of Graph Algorithms.
+                                                                                                                                                                                                     CoRR abs/1904.03248 (2019). arXiv:1904.03248
+8                                      CONCLUSIONS                                                                                                                                              [25] Ulrike von Luxburg. 2007. A tutorial on spectral clustering. Statistics and
+                                                                                                                                                                                                     Computing 17, 4 (2007), 395–416.
+To make the decision process more reliable and efficient, we initiate                                                                                                                           [26] Yilin Zhang and Karl Rohe. 2018. Understanding regularized spectral clustering
+the study of the stability of spectral clustering by using the notion                                                                                                                                via graph conductance. In NeurIPS. 10631–10640.
+of average sensitivity. We showed that 2-way spectral clustering
+with both unnormalized and normalized Laplacians has average                                                                                                                                    A MISSING PROOFS OF SECTION 3
+sensitivity proportional to λ 2 /λ23 , and k-way spectral clustering
+with                                                                                                                                                                                            A.1 Proof Sketch of Lemma 3.2
+p normalized Laplacian has average sensitivity proportional to
+  λk /λk +1 , where λi is the i-th smallest eigenvalue of the corre-                                                                                                                            We slightly modify the proof of Lemma 3.2 for the normalized
+sponding Laplacian. We empirically confirmed these theoretical                                                                                                                                  case [16], which is given as Theorem 1.2 in Section 3.1 in [16].
+bounds using synthetic and real networks. These results imply that                                                                                                                                 We now start with v 2 , the second eigenvector of the (unnormal-
+we can reliably use spectral clustering because it is stable against                                                                                                                            ized) Laplacian L, with corresponding second smallest eigenvalue λ 2 .
+random edge perturbations if there is a significant cluster structure                                                                                                                           By an analogous argument in the proof of Corollary 2.2 of [16], we
+in a graph.                                                                                                                                                                                     can find a non-negative function f : {1, . . . , n} → R with Rayleigh
+                                                                                                                                                                                            9
+quotient R(f ) ≤ λ 2 and |supp(f )| ≤ n/2, and ∥ f ∥ 22 = 1, where we              We need the following assumption:
+identify f with a vector in Rn and the Rayleigh quotient R : Rn → R
+                                                                                   Assumption B.1.                 ν 3 (G) ≥ 6p ⋄ .
+of G is defined as R(x) = x x L⊤Gx x .
+                              ⊤
+
+
+    Then we can find a (2k+1)-step function д that well approximates                  Note that any graph G satisfying Assumption 5.2(i) and (iii)
+f . By analogous argument in the proof of Lemma 3.1 in [16], we can                also satisfies Assumption B.1. This is true as ν 3 (G) ≥ Ω(τ −1 log n),
+find such a step function д : {1, 2, . . . , n} → R such that ∥ f − д∥ 22 ≤        Γ ≤ τ∆2 and p = O(∆−1 log n), which gives that
+4R(f )
+ λ k , where λk is the k-th smallest eigenvalue of L. (In our case,
+                                                                                                         s                                      
+we need to consider ∥ f − д∥ 2 , rather than the quantity ∥ f − д∥ w
+                                                                                                       
+                                                                                                             1              log n           log n
+                                                                                         p ⋄ = O ­max            + Γ log n,                          ,
+                                                                                                       
+                                                                                                                                 ª
+                                                                                                                                  
+                                                                                                          p                         ®≤O
+                                                                                                  ©
+that takes the degree of each vertex into account as in [16]: e.g., in                                      τ                τ               τ
+                                                                                                  «                               ¬
+inequality (3.2) in [16], we do not need the factor w(v). Furthermore,
+we also need the fact that for any k disjointly supported functions                and thus that ν 3 (G) ≥ 6p ⋄ . Therefore, Theorem 5.3 follows from
+f 1 , . . . , fk , we have λk ≤ 2 max1≤i ≤k R(fi ), whose proof directly           the following theorem, which we prove in the rest of this section.
+follows from the proof of Lemma 2.3 of [16].)                                         Theorem B.2. Let G = (V , E) be a graph and F ∼p E. If Assump-
+     Then, we can also find a function h : {1, 2, . . . , n} → R that              tion B.1 holds, then we have ν 3 (G − F ) ≥ ν 3 (G)/2 with probability at
+defines the same sequence of threshold sets as f (and thus we have                 least 1 − n −7 .
+α(sweepα (h)) = α(sweepα (f ))), and satisfies that
+        Í
+                                           √ √                                         We first introduce some definitions. For each e = (i, j) ∈ E, we
+            u∼v |h(u) − h(v)|
+                                                                                   let E 1,e = Eii + E j j and E 2,e = Ei j + E ji . Note that e ∈E E 1,e = D
+                                                             p
+                              ≤ 4kR(f ) + 4 2k ∆ ∥ f − д∥ 2 R(f ).
+                                                                                                                                                  Í
+                 Í
+                   v h(v)
+                                                                                   and e ∈E E 2,e = A. For a set of edges F , let E 1, F = e=(i, j)∈F E 1,e ,
+                                                                                         Í                                                       Í
+                                                                                   E 2, F = e ∈F E 2,e . Note that E F = E 1, F − E 2, F is the unnormalized
+This follows from an analogous argument for proving the Proposi-                            Í
+tion 3.2 in [16]. (The main difference is that, again, we use the ∥·∥ 2            Laplacian of a graph (V , F ). We will make use of the following
+norm rather than the ∥·∥ w norm, and after the third inequality of                 matrix Chernoff bound.
+the proof of Proposition 3.2 on page 16 in [16], we will use the fact
+                                                                                       Theorem B.3 (Corollary 6.1.2 in [23]). Let X = Ti=1 X i , where
+                                                                                                                                                  Í
+that u∼v (| f (u) − д(u)| 2 + |(f (v) − д(v))| 2 ) ≤ 2∆ ∥ f − д∥ 22 .)
+         Í
+     Then finally, we use the fact that for any non-negative func-                 X i ∈ Rn×n (1 ≤ i ≤ T ) are independent random matrices. Assume
+tion     h such that |supp(h)| ≤ n2 , it holds that α(sweepα (h)) ≤                that ∥X i − E[X i ]∥ ≤ L holds for every 1 ≤ i ≤ T . Let Yi = X i − E[X i ]
+                                                                                   and ν (X ) = max         i E[Yi Yi ] ,
+                                                                                                                     ⊤
+                                                                                                                             i E[Yi Yi ] . Then for any t >
+                                                                                                                                     ⊤
+ Í                                                                                                        Í                Í
+  u∼vÍ|h(u)−h(v) |
+                 . (This follows directly from the proof of Lemma
+       v h(v)                                                                      0, we have
+2.4 in [16]). Then, we have α(sweepα (f )) = α(sweepα (h)), which
+                    √ √             √
+                                                                                                                                                   
+                                                                                                                                           t 2 /2
+is at most 4kλ 2 + 8 2k ∆ λλ2 ≤ 12 2kλ 2 λ∆ .
+                                            q
+                                                                                              Pr[∥X − E[X ]∥ ≥ t] ≤ 2n · exp −                        .
+                               k                  k                                                                                   ν (X ) + Lt/3
+A.2     Proof of Lemma 3.5
+                                                                                      Now we give some claims.
+Consider an arbitrary optimal solution T ⊆ V with |T | ≤ n/2, and
+let α = α(T ). Suppose that there exists a set S ⊆ V with |S | ≤ n/2                  Claim B.4. With probability at least 1 − n −8 ,
+and α(S) ≤ ρα satisfying that d size (S,T ) ≥ ε for some 0 < ε ≤ 1/2.
+Let S 1 be either S \ T or T \ S, whichever of a larger size. Let S 2                                           D −1 E 2, F ≤ p ⋄ .                         (1)
+be either S ∩ T or V \ (S ∪ T ), whichever of a larger size. Then
+                                                                                      Proof. For any e ∈ E, let X e be the indicator random variable
+by our assumption, we have that n/2 ≥ |S 1 | ≥ |S△T |/2 ≥ εn/2,
+                                                                                   of the event that e is included in F . Note that
+|S 2 | ≥ (n − |S△T |)/2 ≥ εn/2 and |S 2 | ≤ max{|S ∩T |, |V \ (S ∪T )|} ≤                   Õ          Õ                                 Õ
+max{n/2, (1 − ε)n} = (1 − ε)n. Furthermore, for each i = 1, 2,                     E 2, F =    E 2,e =      X e · E 2,e =⇒ D −1 E 2, F =   X e · D −1 E 2,e .
+|E(Si , V \ Si )| ≤ |E(S, V \ S)| + |E(T , V \ T )| ≤ α |T | + ρα |S | ≤                   e ∈F          e ∈E                               e ∈E
+                                      (1+ρ)α n/2
+(1 + ρ)αn/2. Therefore, α(Si ) ≤ εn/2 ≤ (1 + ρ)α/ε.                                Then by Pr[X e = 1] = p, we have E              2, F ] = pD
+                                                                                                                              [D −1 E          −1 Í
+                                                                                                                                                   e ∈E E 2,e =
+    Now let S 3 = V \ (S 1 ∪ S 2 ), which is one of the four sets T , S, V \       pD −1A.
+T , V \ S, and thus α(S 3 ) ≤ ρα/ε. Therefore, λ 3 ≤ 2 maxi α(Siq) ≤                  Now note that the variables X e (e ∈ E) are independent and
+            ρλ 2 p                                                                 thus D −1 E 2, F is a sum of independent random variables S e :=
+                   ∆/λk , for some constant c 0 > 0. Thus ε ≤ c 0 ρλ 2 ∆/λk3 .
+2ρα
+  ε ≤ c0 ε
+                                              q                                    X e · D −1 E 2,e . We further note that E[S e ] = pD −1 E 2,e .
+This further implies that G is (ρ, Θ(ρλ 2 ∆/λ33 ))-stable.
+                                                                                                                                                             1
+                                                                                   ∥S e − E[S e ]∥ = (X e − p) D −1 E 2,e ≤ max{1−p, p}· D −1 E 2,e ≤          ,
+B     PROOF OF THEOREM 5.3                                                                                                                                   τ
+Now we prove Theorem 5.3. Instead of proving that the statement                    as we assume that minv deg(v) ≥ τ .
+                                                                                                         2 =E
+                                                                                      Now we note that E 2,e
+of the theorem holds under Assumption 5.2, we prove it under a                                                 1,e and thus
+weaker assumption.
+   Let G = (V , E) be a graph with minimum degree τ and Γ :=                                (S e − E[S e ])(S e − E[S e ])⊤ = (X e − p)2 D −1 E 2,e
+                                                                                                                                                2
+                                                                                                                                                    D −1
+maxi ∈V j:(j,i)∈E d j−2 . Let                                                                = (X e − p)2 D −1 E 1,e D −1 = (X e − p)2 D −2 E 1,e .
+         Í
+                   s 
+                 
+                           1
+                                
+                                        log n                                     Thus
+    q := Θ ­max              + Γ log n,         ® and p ⋄ := p + q.
+                 
+                                             
+                                              ª
+                      p
+           ©                                                                                                                                    
+                 
+                 
+                          τ               τ 
+                                              ¬                                    E[(S e − E[S e ])(S e − E[S e ])⊤ ] = p(1 − p)2 + p 2 (1 − p) D −2 E 1,e .
+           «
+                                                                              10
+                 e E 1,e = D. We have that
+                 Í
+Recall that                                                                         Thus by similar analysis as before, we have
+        Õ                                                                                             Õ                                                                  p
+             E[(S e − E[S e ])(S e − E[S e ])⊤ ]                                                             E[(S e − E[S e ])⊤ (S e − E[S e ])] ≤                         .
+        e                                                                                               e
+                                                                                                                                                                         τ
+                               Õ                      p                               Then the rest follows the same as before.                                                           □
+     = p(1 − p)2 + p 2 (1 − p)     D −2 E 1,e ≤ p D −1 ≤ .
+                                 e
+                                                        τ                              Proof of Theorem B.2. We set p ⋄ to be the maximum of the
+                                  ⊤
+                                                                                    RHS of Ineq. (1) and the RHS of Ineq. (2). Then by the above two
+  Similarly, (S e − E[S e ]) (S e − E[S e ]) = (X e           D −2 E 2,e
+                                                               − p)2 E              claims, we have D −1 E 2, F ≤ p ⋄ and D −1 E 1, F ≤ p ⋄ with prob-
+                                                        Í 2,e
+holds. Recall that Γ = maxi ∈V j:(j,i)∈E d12 . Note that e E 2,e D −2 E 2,e
+                                 Í
+                                                           j
+                                                                                    ability at least 1 − 2 · n −8 . We will condition on the above two
+is a diagonal matrix such that each diagonal entry is at most Γ. Then               inequalities in the following.
+            Õ                                                                          We have
+                 E[(S e − E[S e ])⊤ (S e − E[S e ])]                                              −1
+                                                                                      LG−F = I − DG−F AG−F = I − (D − E 1, F )−1 (A − E 2, F )
+             e
+                                                                                                                     −1
+                                      Õ                                               = I − (I − D −1 E 1, F ) D −1 (A − E 2, F )
+            = p(1 − p)2 + p 2 (1 − p)     E 2,e D −2 E 2,e ≤ pΓ.                              Õ                 i
+                                                  e                                     =I−       (D −1 E 1, F ) · D −1 (A − E 2, F ) (by D −1 E 1, F ≤ p ⋄ < 1)
+                                                                                              i ≥0
+   By the matrix Chernoff bound (Theorem B.3) with X i = S e ,                                                                    !
+X = D −1 E 2, F , ν (X ) = p max{1/τ , Γ}, L = 1/τ , we have that for any                             Õ
+                                                                                                               −1             i
+                                                                                        =I− I+               (D E 1, F )              D −1 (A − E 2, F )
+t > 0,                                                                                                i ≥1
+                                                                   
+                                                           t 2 /2                                                                                !
+     Pr D −1 E 2, F − pD −1A ≥ t ≤ 2n · exp −
+                                      
+                                                                                                                                      i
+                                                                                                            Õ
+                                                                                                 −1                   −1                   −1
+                                                      ν (X ) + Lt/3                     =I− D          +           (D E 1, F ) D                     (A − E 2, F )
+                              2
+                                           !                                                                i ≥1
+                             t /2                                                                                                                          i
+                                             .
+                                                                                                                                  Õ
+     ≤ 2n exp −                                                                         = I − D −1A + D −1 E 2, F −                       (D −1 E 1, F ) · D −1 (A − E 2, F )
+                      p max{ τ1 , Γ} + 3τt
+                                                                                                                                  i ≥1
+By setting t = q, we have that with probability at least 1 − n−8                                                                             i
+                                                                                                                    Õ
+                                                                                        = L + D −1 E 2, F −                (D −1 E 1, F ) · D −1 (A − E 2, F )
+                           −1                −1                                                                     i ≥1
+                          D E 2, F − pD A ≤ q.
+Thus,                                                                               Now, we have that
+
+                     D −1 E 2, F ≤ p D −1A + q ≤ p + q = p ⋄ .            □                                            i
+                                                                                                       Õ
+                                                                                         D −1 E 2, F −   (D −1 E 1, F ) · D −1 (A − E 2, F )
+                                                                                                             i ≥1
+   Claim B.5. With probability at least 1 − n −8
+                                                                                                                                                 i
+                                                                                                                    Õ
+                                                                                                 −1
+                                                                                           ≤ D E 2, F +                     D −1 E 1, F               D −1 (A − E 2, F )
+                                D −1 E 1, F ≤ p ⋄                        (2)
+                                                                                                                    i ≥1
+                                                                                                                              i
+                                                                                                                                                          p i⋄ ≤ p ⋄ + p ⋄ < 3p ⋄,
+   Proof. The proof is similar to the above. Note that                                               Õ
+                                                                                                               −1
+                                                                                                                                                     Õ                3
+                        Õ              Õ                                                   ≤ p⋄ +            D E 1, F              ≤ p⋄ +
+          D −1 E 1, F =   D −1 E 1,e =   X e · D −1 E 1,e                                            i ≥1                                            i ≥1
+                                                                                                                                                                      2
+                              e ∈F                    e ∈E                          where the penultimate inequality follows from the assumption that
+That is, since the variables X e (e ∈ E) are independent, D −1 E 1, F is            p ⋄ ≤ 16 ν 3 (G) ≤ 13 .
+a sum of independent random variables S e := X e · D −1 E 1,e . Note                    Finally, by Weyl’s inequality,
+that E[S e ] = p · D −1 E 1,e . We further note that
+                                                                                                                                                                     i
+                                                                                                                                            Õ
+                                 Õ                                                  ν 3 (G − F ) ≥ ν 3 (G) − D −1 E 2, F −                            (D −1 E 1, F ) · D −1 (A − E 2, F )
+             E[D −1 E 1, F ] = p     D −1 E 1,e = p · D −1 D = p                                                                            i ≥1
+                                      e ∈E
+                                                                                                        ν 3 (G)
+  Then by similar calculations to the proof of the previous claim,                   > ν 3 (G) − 3p ⋄ ≥         ,
+                                                             2 =E ,                                         2
+we bound ∥S e − E[S e ]∥ ≤ τ1 and further by the fact that E 1,e 1,e
+                                                                                    where the last inequality follows from Assumption B.1.                                                  □
+we have
+              Õ                                        p                            C     MISSING PROOFS OF SECTION 6
+                  E[(S e − E[S e ])(S e − E[S e ])⊤ ] ≤ .
+               e
+                                                       τ                            Now we sketch the proof of Lemma 6.4.
+Now since E 1,e , E 1, F    , D −1 are all diagonal matrices, we have                  Proof Sketch of Lemma 6.4. The proof follows by adapting
+           Õ                                                                        the proof of Lemma 3.5, i.e., Corollary 4.17 in [16], which considers
+                 E[(S e − E[S e ])⊤ (S e − E[S e ])]                                the case k = 2. For k > 2, we only need to start with an optimum
+                 e                                                                  solution S ∗ = {S 1∗ , . . . , Sk∗ } with ρG (S) = ρG (k). Then we assume
+                                          Õ
+                 = p(1 − p)2 + p 2 (1 − p)    E 1,e D −2 E 1,e                      the instance is not (c, ε)-stable, and then construct as in [16] a
+                                                       e                            (k + 1)-partition T1 , . . . ,Tk +1 such that νk +1 (G) ≤ 2 maxi ϕ(Ti ) =
+                                                                                    O(ck 3 ρG (k)/ε). Then we conclude that ε = O(ck 3 ρG (k)/νk +1 (G)).
+                                          Õ
+                 = p(1 − p)2 + p 2 (1 − p)    E 1,e D −2
+                                                       e                                                                                                    □
+                                                                               11
+

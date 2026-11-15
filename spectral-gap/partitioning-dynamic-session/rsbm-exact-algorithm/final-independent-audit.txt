@@ -1,0 +1,112 @@
+FINAL INDEPENDENT AUDIT: certified-rsbm-recovery.tex
+15 November 2026
+
+Scope
+=====
+
+Read the complete current certified-rsbm-recovery.tex, the even-block RSBM baseline, and the published Chen et al. 2002 PDF. Checked the deterministic reduction, shifted-sequence certificate, preconditioning probability, prime sampler, bit/space costs, known-eigenvalue consequence, and new integer-eigenvalue-isolation calculation.
+
+Verdict
+=======
+
+The mathematical arguments pass independent audit. The unknown-eigenvalue isolation proposition and its enumeration consequence are justified by the supplied fixed-prime mixing input and the qualitative contiguity transfer. The certified algorithm has the stated nearly quadratic expected bit work at fixed degree and never certifies an incorrect answer. The graph-level success guarantee remains qualitative 1-o(1)-eta, as stated.
+
+The initial inspected draft had one factual citation typo: Rosser--Schoenfeld Corollary 3 (3.8) applies for x>=20.5, not x>=sqrt(20). Its P is much larger, so correcting the threshold does not change any argument. The source now uses20.5, declares the corollary environment, and compiles. The typo is also corrected in blackbox-primary-audit.txt.
+
+The verifier now explicitly rejects p outside (P,2P] and malformed/noncanonical residue encodings before primality testing and the Krylov computation. This secures the advertised verification cost on malformed certificates too; the prototype checks the prime range as well.
+
+1. Pinned-coordinate reduction
+==============================
+
+Symmetry and rank n-1 imply adj(M)=a sigma sigma^T with a!=0. Since sigma has no zero coordinates, every diagonal cofactor is nonzero. Thus the chosen principal minor H is nonsingular over Q, and H^-1 c is exactly the normalized sign vector. This does not require any analytic spectral separation.
+
+The converse certificate is sound on every integer input: full modular rank of H implies a nonzero integer (n-1)-minor, hence rank_Q(M)>=n-1; the verified nonzero integer kernel vector implies rank_Q(M)<=n-1. Therefore acceptance certifies the unique rational/real kernel line. Checking the integer kernel equation and balance after lifting the modular signs is necessary and correctly included.
+
+2. Shifted scalar sequence and finite-prefix conventions
+=======================================================
+
+For s_j=u^T T^(j+1)v, the initial reachable vector Tv lies in im(T), and im(T) is invariant under T. If rank(T)=r, Cayley--Hamilton on T restricted to im(T) gives an infinite recurrence of order at most r. Hence exact finite-prefix linear complexity L cannot exceed r, and L=m certifies nonsingularity deterministically.
+
+The proof applies even to singular T with nilpotent blocks. The shift is what removes the possible extra zero-eigenvalue direction. Without the shift, full complexity alone would not certify rank; the separate nonzero constant term test would then be essential.
+
+Once L=m, the infinite scalar minimum recurrence also has degree m. Its first 2m terms determine it exactly, and it divides chi_T. Thus the recovered monic f equals chi_T, has nonzero f_0, and gives the stated inverse-polynomial formula. The sign and polynomial orientation in equation (solve) are correct.
+
+Implementation must use the actual Berlekamp--Massey register length/finite-sequence complexity, not the displayed degree of a polynomial padded with zeros. The manuscript specifies finite-sequence linear complexity, so its mathematical statement uses the correct convention.
+
+3. Primary diagonal-preconditioning theorem
+===========================================
+
+Inspected the published article:
+  L. Chen, W. Eberly, E. Kaltofen, B. D. Saunders, W. J. Turner,
+  G. Villard, Efficient matrix preconditioners for black box linear
+  algebra, Linear Algebra and its Applications 343--344 (2002),
+  119--146.
+  https://kaltofen.math.ncsu.edu/bibliography/02/CEKSTV02.pdf
+  Theorem 4.2, printed p.130.
+
+It states diagonal scaling is cyclic up to nilpotent blocks with probability at least 1-m(m-1)/(2|S|), for a matrix over any field and entries chosen uniformly and independently from a finite set S. When H and D are nonsingular, no zero eigenvalue remains and this yields cyclicity. There is no generic-leading-minor, symmetry, or characteristic restriction in this nonsingular application. The manuscript correctly distinguishes this theorem from the additional squarefree conclusion of Theorem 4.3.
+
+For a cyclic T, det[v,Tv,...,T^(m-1)v] is a nonzero polynomial of total degree m in v; the dual observability determinant has degree m in u. Schwartz--Zippel gives total probe failure at most 2m/p. Since T is invertible, v cyclic is equivalent to Tv cyclic, so this bound applies to the shifted sequence. The sum of the diagonal/probe failure probabilities in the manuscript is valid.
+
+4. Computational primes and prime generation
+============================================
+
+Each row of H has norm at most sqrt(d+lambda^2)<=R_d=sqrt(d+d^2), for the stated simple regular graph and |lambda|<=d. Hadamard therefore bounds the nonzero determinant by R_d^m. Its number of distinct prime divisors in (P,2P] is at most m log(R_d)/log(P).
+
+The exact Rosser--Schoenfeld bound on the prime count is
+
+  pi(2P)-pi(P) > 3P/(5 log P),  P>=20.5.
+
+Dividing the bad-divisor bound by this prime count gives exactly 5m log(R_d)/(3P). With P=ceil(128(d+1)^2 n^2), this is O_d(1/n). This justifies a growing computational prime on every fixed integer instance satisfying the promise. It is logically independent of the random-graph fixed-prime mixing theorem.
+
+Uniform integer rejection sampling followed by exact trial division gives an exactly uniform interval prime. Since sqrt(2P)=O_d(n), each primality test costs soft-O_d(n) bit work; O(log P) expected candidates cost soft-O_d(n) altogether and logarithmic workspace. This elementary sampler meets the claimed time and space bounds without an uncharged primality oracle. Its random running time has finite expectation on every graph and is independent of graph simplicity.
+
+The source's d=0 corner would make log R_d undefined, but the planted balanced simple-kernel promise is absent in that case for growing n. For a fully general graph theorem one can harmlessly define R_d=max(2,sqrt(d+d^2)); the RSBM application already has d>=4, so this is immaterial there.
+
+5. Work, memory, and error model
+================================
+
+There are exactly 2m T applications for the shifted sequence, O(m^2) dot-product/BM work, and at most m-1 further T applications for Horner solution evaluation. Each T application costs O(dn) field operations. Residual, sign, and integer balance/kernel checks are linear at fixed degree. All residues have O_d(log n) bits, and elementary arithmetic, including inversion, has polylogarithmic bit cost. The resulting soft-O_d(n^2) per-trial bit work is valid.
+
+The procedure stores only a constant number of length-O(n) field vectors and recurrence arrays. Thus working storage is soft-O_d(n) bits, apart from the input, and the certificate has O_d(n log n) bits. The certificate check is deterministic and quadratic up to logarithms, rather than nearly linear or interactive. No Monte Carlo rank estimate is silently treated as a proof.
+
+With success probability at least 1/2 conditional on the deterministic simple-sign-kernel promise, ceil(log_2(1/eta)) independent trials fail with probability at most eta. The expected total bit cost on every graph is soft-O_d(n^2 log(1/eta)), because the number of algebraic trials is bounded. As usual, an explicit trial counter adds O(loglog(1/eta)) bits if eta is allowed arbitrarily tiny; this does not affect the customary eta=n^-c regime or any time claim.
+
+The distinction between promise-Las-Vegas and all-input abstention is correct and important. An unconditional retry-until-success algorithm can fail to terminate on singular H. A dense exact fallback has polynomial worst-case cost, but its unconditional expectation cannot be called nearly quadratic using only the qualitative o(1) graph failure rate. The manuscript explicitly avoids that error.
+
+6. Integer-eigenvalue isolation: detailed independent check
+=========================================================
+
+Fix t outside {d_1+d_2,d_1-d_2}, set a=d_1-t, and choose an odd fixed prime not dividing the nonzero integer a^2-d_2^2. There are arbitrarily large such fixed primes. Excluding primes dividing d_2 as well would be harmless if desired for exact alignment with the way the companion initially states its mixing setup; the actual reference-mass calculation itself only needs the displayed determinant condition.
+
+For the affine reference sum, at most p^N nonconstant vectors contribute, each with mass p^-N+1, so their contribution is at most p. The constant vectors contribute at most p. This proves the uniform 2p bound even when a=0. Adding the aggregate mixing error gives the actual-probability 2p+e_N bound.
+
+In the two-block kernel first moment, replacing the first factor costs at most (2p+e_N)e_N; replacing the second costs at most 2p e_N. Thus the combined bound 4p e_N+e_N^2 is correct uniformly over B.
+
+For both nonconstant vectors, the two reference constraints are exactly
+
+  a s(x)+d_2 s(y)=0,   d_2 s(x)+a s(y)=0.
+
+Their determinant a^2-d_2^2 is nonzero modulo p, so s(x)=s(y)=0. There are at most p^(2N-2) such pairs; multiplying their atom masses p^-2N+2 gives at most one.
+
+For both constant vectors, the same invertible 2-by-2 system applies to their constant values, forcing x=y=0. This contributes exactly one. For a mixed pair x=c1 and nonconstant y, By=-ac1 has at most p^(N-r_B) solutions for each c; multiplying by p choices of c and the remaining nonconstant atom mass gives at most p^(2-r_B). The opposite orientation has the same bound. Hence the displayed expectation upper bound is correct.
+
+The deterministic disjoint-row-support rank bound r_B>=N/(d_2(d_2-1)+1) holds over every field, including primes dividing d_2. It uses disjoint nonempty zero-one row supports, so no modular cancellation is possible in the selected rows.
+
+An integer matrix singular over R is singular modulo every prime. Therefore its mod-p kernel has at least p elements on the real-singularity event. Markov gives limsup probability at most 2/p for each fixed admissible p. Letting these fixed primes tend to infinity proves vanishing probability in the matching model. The error e_N is never required to be uniform in p.
+
+Only after obtaining a genuinely vanishing probability does the proof invoke contiguity and simplicity conditioning. This avoids the invalid inference that a constant 2/p bound transfers quantitatively through qualitative contiguity. The deterministic-sequence argument gives uniformity over the cross graph B, exactly as in the companion. Independent random B follows by conditioning.
+
+Finally, d is fixed, so there are only finitely many other integers in [-d,d]. A finite union gives integer-spectrum isolation with no effective error rate.
+
+7. Unknown degrees/eigenvalue enumeration
+========================================
+
+Enumerating t in [-d,d) includes the true lambda_*=d_1-d_2 and excludes the trivial eigenvalue d. On the high-probability isolation event, no other enumerated integer is an eigenvalue, so its exact integer kernel check cannot pass. On the true simple-kernel event the planted trial succeeds with the stated conditional algorithmic probability. The finite union and allocation eta/(2d+1) are safe, and the O(d) factor is absorbed by fixed degree.
+
+The final probability statement 1-o(1)-eta combines graph randomness and independent algorithmic randomness correctly. It does not imply an effective convergence rate, does not cover odd block sizes for even internal degree, and does not settle (d_1,d_2)=(2,1). These limitations are stated.
+
+Conclusion on scope
+===================
+
+The supplement supplies a complete certified algorithmic consequence of the companion's qualitative simplicity input, and its new integer-shift first moment justifies unknown-eigenvalue enumeration. The exact-linear-algebra ingredients remain classical. No numerical eigengap, growing-prime mixing theorem, quantitative contiguity rate, or cubic rank-verification step is needed.

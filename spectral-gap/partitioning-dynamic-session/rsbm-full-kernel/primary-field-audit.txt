@@ -1,0 +1,139 @@
+PRIMARY FIELD/PRECONDITIONER AUDIT FOR FULL-KERNEL RECOVERY
+15 November 2026
+
+Read: spectral-gap/rsbm-nearquadratic-full-kernel-root.txt.
+Writes confined to this rsbm-full-kernel directory.
+
+Conclusion
+==========
+
+The required rank-deficient diagonal preconditioner follows jointly from Chen et al. 2002, Theorems 4.2 and 4.5. Both apply over a fixed-characteristic extension field; Theorem 4.3 and a characteristic-greater-than-n assumption are unnecessary. A polynomial-size extension of one fixed prime field can be constructed by random monic polynomial search with a fully deterministic irreducibility test in expected polylogarithmic bit work. Canonical normalization on pivot rows descends an extension-field kernel basis to the prime field with the proposed O(n r^2+r^3) extension-operation cost, followed by exact base-field verification.
+
+This audit does NOT establish the root's random-graph moment assumption. All averaging conclusions below are conditional on a uniform bound E[p0^r]<=C for the actual simple-graph model, where r is the prime-field corank. No quantitative contiguity transfer or growing-prime inference is used here.
+
+1. PRIMARY PRECONDITIONING INPUT AND ITS PRECISE SCOPE
+====================================================
+
+L. Chen, W. Eberly, E. Kaltofen, B. D. Saunders, W. J. Turner,
+G. Villard, Efficient matrix preconditioners for black box linear
+algebra, Linear Algebra and its Applications 343--344 (2002), 119--146.
+Primary published PDF inspected:
+https://kaltofen.math.ncsu.edu/bibliography/02/CEKSTV02.pdf
+
+Theorem 4.2, printed p.130:
+For any square matrix over any field, a random diagonal D with independent uniform entries in a finite set S makes DM cyclic up to nilpotent blocks, with failure probability at most n(n-1)/(2|S|). The term means that the characteristic polynomial divided by the matrix minimum polynomial is a monomial in x; all nonzero primary factors occur in a single cyclic part.
+
+Theorem 4.5, printed pp.131--132:
+For symmetric M of rank n-r, with diagonal entries chosen independently and uniformly from S contained in the nonzero field elements, DM has no zero Jordan block of size greater than one except with probability at most r/|S|. The theorem is stated over any field; odd characteristic is allowed and causes no difficulty. The theorem's proof uses a nonzero determinant polynomial formed from left/right nullspace bases; it does not assume that some prescribed principal rank minor is nonsingular.
+
+Use the SAME D in both events, with S=K^*, |S|=q-1. Independence of those events is not required. A union bound gives joint failure at most
+
+  [n(n-1)/2+r]/(q-1) <= (n^2+n)/(2(q-1)).                 (1)
+
+On joint success, zero is semisimple and the nonzero part is cyclic. In particular, with ell=n-r,
+
+  chi_T(x)=x^r g(x),   g(0)!=0,   deg(g)=ell,
+
+and the restriction of T=DM to im(T) has minimum polynomial g. For r>0, minpoly(T)=x g(x); for r=0, minpoly(T)=g(x). The nonzero polynomial g need NOT be squarefree, and the argument does not require it to be squarefree. Large nonzero Jordan blocks are harmless because the complete cyclic polynomial g includes their multiplicities.
+
+For uniform independent probes u,v in K^n, a scalar shifted sequence u^T T^(j+1)v retains the rank-ell nonzero minimum polynomial with failure probability at most 2ell/q. One can apply the usual scalar projection lemma to im(T), or use the two nonzero Krylov determinant polynomials of degree ell. Uniform v maps uniformly onto im(T) under T, and restriction of uniform u gives a uniform linear functional on that space.
+
+Thus preconditioner plus probe failure is O(n^2/q), uniformly for every fixed symmetric input M. In particular q>=n^6 gives O(n^-4), with harmless fixed constants. This statement is valid in characteristic p0 even when p0 is constant and smaller than n.
+
+2. EXACT PROJECTION AND SOUND RANK CERTIFICATION
+===============================================
+
+On the preceding good event, g(T) annihilates im(T) and equals g(0)I on ker(T). Since zero is semisimple,
+
+  K^n = ker(T) direct-sum im(T).
+
+Therefore P=g(T)/g(0) is the exact projection onto ker(T)=ker(M). For uniform w, g(T)w is uniform on the kernel (multiplication by the nonzero scalar g(0) does not change uniformity).
+
+The root's stopping rule is sound even when random preconditioning or probing fails. For EVERY T, the finite linear complexity ell of the shifted sequence is at most rank(T), because Tv lies in the invariant range im(T). If n-ell independently verified kernel vectors have been accumulated, then rank(T)<=ell. Together these inequalities certify equality and a full kernel basis. Every candidate must be checked with Mx=0 (equivalently Tx=0 since D is invertible) before being counted. Polynomial display degree padded with zeros is not a substitute for exact finite-sequence Berlekamp--Massey complexity.
+
+For rank zero, use g=1; the projection is the identity. For corank zero, the verified basis is empty as soon as ell=n. These cases require no exceptional mathematical convention beyond the constant polynomial's degree zero.
+
+3. PRIMARY FINITE-FIELD CONSTRUCTION INPUT
+==========================================
+
+M. O. Rabin, Probabilistic Algorithms in Finite Fields,
+SIAM Journal on Computing 9(2) (1980), 273--280.
+Published DOI: https://doi.org/10.1137/0209024
+Author's primary MIT report version inspected visually:
+https://publications.csail.mit.edu/lcs/pubs/pdf/MIT-LCS-TR-213.pdf
+
+The report is image-scanned. Its Section 1, printed p.7 / PDF p.11, Lemma 1, states the exact deterministic irreducibility criterion below. Its printed p.9 / PDF p.13, Lemma 2, bounds the number of monic irreducibles of a specified degree and underpins random monic search. Printed pp.6--7 describe the quotient-polynomial representation of extension fields. The report is a primary author version; the displayed lemma numbering refers to that report rather than asserting identical numbering in the eight-page journal version.
+
+For monic h in F_p0[X] of degree s, let ell range over the distinct prime divisors of s. Rabin's criterion is
+
+  h divides X^(p0^s)-X,
+  gcd(h, X^(p0^(s/ell))-X)=1 for every such ell.          (2)
+
+This is a deterministic equivalence, not a randomized probable-irreducibility test. The first condition also enforces squarefreeness, since X^(p0^s)-X is squarefree. The gcd conditions rule out every proper divisor degree. Factoring the small integer s by deterministic trial division is polylogarithmic in the graph dimension.
+
+For reference, V. Shoup, Fast Construction of Irreducible Polynomials over Finite Fields, Journal of Symbolic Computation 17 (1994), 371--391, is another primary construction paper:
+https://doi.org/10.1006/jsco.1994.1025
+https://cr.yp.to/bib/1994/shoup-irred.pdf
+Its sophisticated construction bounds are unnecessary here because the required extension degree is only O(log n).
+
+4. AN ELEMENTARY, FULLY CHARGED CONSTRUCTION
+===========================================
+
+Fix the root's odd prime p0. Choose
+
+  s=max(1,ceil(log_(p0)(n^6))),   q=p0^s.
+
+For n>=2, n^6<=q<p0 n^6, so s=O_(p0)(log n) and an element of K has O(log n) bits. One may replace n^6 by a fixed constant times n^6 if a preferred finite-dimensional probability margin is needed.
+
+Generate h=X^s+a_(s-1)X^(s-1)+...+a_0 with independent uniform base-field coefficients, and accept it ONLY if it passes (2). Define K=F_p0[X]/(h). Accepted field construction is always correct.
+
+Random monic search needs O(s) expected trials. Besides Rabin's counting lemma, an elementary proof sufficient here is: among p0^s elements of an abstract degree-s extension, the elements in proper subfields number at most sum_(d=1)^floor(s/2) p0^d. For p0>=3 and s>=2 this is at most p0^s/2. Thus at least p0^s/2 elements have full degree s, giving at least p0^s/(2s) monic irreducibles and acceptance probability at least 1/(2s). Degree one is immediate. This count uses only the usual finite-field existence/counting theorem, not a large-base-field asymptotic.
+
+To implement (2), compute the residues H_i=X^(p0^i) mod h for i=1,...,s by repeatedly taking the fixed p0-th power modulo h. Schoolbook polynomial arithmetic costs O_(p0)(s^2) base-field operations per step, hence O_(p0)(s^3) per irreducibility test. At the indices s/ell, perform Euclidean gcd tests; O(log s) such tests of degree at most s are within the same polynomial-logarithmic budget. The residue H_s must equal X mod h.
+
+Consequently the complete random search costs at most O_(p0)(s^4) expected elementary base-field operations, plus polynomially smaller degree-factoring and sampling costs. Since p0 is fixed, this is expected polylog(n) BIT work. It uses O(s^2) expected random base-field coefficients overall; no probabilistic error is introduced.
+
+Representation and operation costs in K are also fully charged. Store each element as its s base-field coefficients modulo h. Addition is O(s) base operations; multiplication followed by reduction is O_(p0)(s^2). Inversion can use extended Euclid, or conservatively a^(q-2) with O(log q)=O(s) multiplications, giving O_(p0)(s^3) base operations. Equality, zero tests, Frobenius a->a^p0, and uniform sampling all have polylogarithmic bit cost. Uniform nonzero diagonal entries can be sampled by rejecting the zero coefficient vector, with constant expected overhead.
+
+No extension-field arithmetic, irreducibility oracle, or exact random-field-element oracle is free. All are nevertheless polylogarithmic in n, as required.
+
+5. DESCENT BY CANONICAL PIVOT NORMALIZATION
+==========================================
+
+Let B be an n by r matrix over K whose independent columns form the full verified kernel of the base-field matrix M. Choose r pivot rows I for which B_I is invertible and set
+
+  C=B (B_I)^-1,   C_I=I_r.                              (3)
+
+Row selection and elimination cost O(n r^2) extension operations; inversion of B_I costs O(r^3), and multiplication in (3) costs O(n r^2). The proposed total O(n r^2+r^3) is valid.
+
+Here is the descent proof. Entrywise Frobenius phi(z)=z^p0 preserves ker_K(M), because M has base-field entries. Thus phi(C) is another basis of the same space, and its rows I are again I_r. The basis of a fixed r-dimensional subspace normalized to identity on fixed pivot rows is unique: restriction to those rows is an isomorphism, so each column is the unique vector with its specified pivot coordinates. Hence phi(C)=C. The fixed field of phi inside K is exactly F_p0, since the roots of z^p0-z are exactly the p0 base-field constants. Every entry of C is therefore in F_p0.
+
+Extract the base-field coefficient from each entry, checking all nonconstant polynomial-basis coefficients vanish. Alternatively explicitly check phi(C)=C first. Denote the extracted matrix by C0. Verify M C0=0 over F_p0 and C0_I=I_r; these cost O(nnz(M) r+n r)=O_d(n r) base operations for the sparse fixed-degree matrix. The identity rows certify independence. Rank is unchanged under field extension, since nonzero minors remain nonzero and zero minors remain zero. Therefore C0 is a full base-field kernel basis, rather than just a collection of valid base-field nullvectors.
+
+The proof does not assume the randomly found extension-field basis already has base-field entries. It establishes and verifies that property only after canonical normalization.
+
+6. PROBE CAP, EXPECTATIONS, AND ENUMERATION CHARGING
+==================================================
+
+Conditional on a good preconditioner and good scalar probes, candidate projection vectors are independent uniform kernel vectors. The expected number needed to span an r-dimensional kernel is
+
+  sum_(i=0)^(r-1) 1/(1-q^(i-r)) <= r+q/(q-1)^2.
+
+For q>=3 this is below r+1. With n+1 candidate vectors, rank failure is at most
+
+  sum_(i=0)^(r-1) q^(i-(n+1)) <= 1/[q(q-1)],
+
+since r<=n. Thus a cap of n+1 is more than sufficient to give an additional O(q^-2) failure probability on good trials.
+
+On arbitrary failed trials, the cap permits O(n^3) extension operations, including candidate polynomial actions and independence maintenance. The failure probability from (1) and the scalar probes is O(n^2/q)=O(n^-4), so this bad-trial contribution is negligible in expected work. Good trials cost O(n^2(r+1)) extension operations, with all polynomial evaluations charged. Repeating independent capped trials until a full certified basis is obtained therefore has expected soft-O(n^2(r+1)) bit work for each fixed M; unlike the corank-one acceptor, a good preconditioner exists at every rank and no exceptional input rank creates nontermination with positive probability. The finite-field construction is performed once and its expected polylogarithmic cost is added.
+
+If E[p0^r]<=C is established for the root's actual graph model, then every fixed polynomial moment of r is bounded, because r^k<=C_(p0,k) p0^r. This controls the polynomial-in-r basis/descent costs and gives the proposed expected nearly quadratic basis work after averaging. This audit does not itself prove that raw moment estimate or its transfer to simple graphs.
+
+CAUTION: E[p0^r]<=C does NOT imply a bounded E[r p0^r]. Do not recompute a fresh kernel combination in O(nr) work for each of p0^r coefficient vectors. Maintain the current n-vector while advancing a base-p0 counter or a Gray code. Across the entire counter enumeration the total number of digit changes is O_(p0)(p0^r); each change adds a scalar multiple of one basis column in O(n) base-field work. Thus candidate generation and exact integer checks cost O_d(n p0^r) overall. This is controlled by the supplied raw moment without any stronger exponential moment.
+
+Every genuine integer sign eigenvector maps injectively into the base-field kernel because p0 is odd. Exact integer degree, eigenvector, and balance checks discard modular false positives. Enumerating the COMPLETE base-field kernel and applying those checks therefore gives a complete list of the requested sign partitions, with global-exchange duplicates removable deterministically. Statistical ambiguity and the underlying moment theorem remain separate from the exact-linear-algebra certificate.
+
+Novelty boundary
+================
+
+The preconditioners, scalar recurrence methods, irreducibility criterion, and finite-field descent are classical algebraic tools. This note verifies their precise scope and charges their construction and use. Any new graph-recovery conclusion additionally depends on the root's independently audited bounded moment and ambiguity results.

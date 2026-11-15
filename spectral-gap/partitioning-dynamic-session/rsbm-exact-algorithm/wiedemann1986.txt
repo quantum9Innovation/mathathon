@@ -1,0 +1,639 @@
+54                                                                       IEEt.   TRANSACTIONS   ON INFORMATION   THEORY,   VOL.   IT-32,   NO.   1, JANUARY   1986
+
+
+
+                    Solving Sparse Linear Equations Over
+                                Finite Fields
+                                                 DOUGLAS H. WIEDEMANN, MEMBER,IEEE
+
+
+
+   Ahstruct-A “coordinate recurrence” method for solving sparse systemsfor a column vector x with A a given sparse matrix and b
+of linear equations over finite fields is described. The algorithms discussed
+                                                                       any column vector. The entries will be assumed to lie in
+all require O( n,( w + nl) logkn,) field operations, where nI is the maxi-
+mum dimension of the coefficient matrix, w is approximately the number some finite field E = GF(q). The parameter to describe
+                                                                       sparsity will be w, the number of nonzero entries in A. It
+of field operations required to apply the matrix to a test vector, and the
+                                                                       can be assumed that A is stored in w memory locations
+value of k depends on the algorithm. A probabilistic algorithm is shown to
+                                                                       and that A can be applied to a row or column vector in at
+exist for finding the determinant of a square matrix. Also, probabilistic
+algorithms are shown to exist for finding the minimum polynomial and rank
+                                                                       most 2w operations. In fact, the methods here will not
+with some arbitrarily small possibility of error.
+                                                                       require representation of A to be manipulated, and they
+                                                                       will work when A is any linear operator that requires O(o)
+                         I. INTR~DUCTI~N
+                                                                       operations to apply. Various special cases of (1) will be
+      HIS ARTICLE presents a random method of solving investigated.
+T     a nondegenerate linear system in n equations and n                  The next section gives practical algorithms for the solu-
+unknowns over a finite field in O(nw) field operations, tion of the simplest case. It is expected that typical prob-
+where w is the total number of nonzero coefficients in all lems can be made to fit this case.Subsequentsections show
+the equations. The method requires O(n) spacein addition that more complex versions of the same method can be
+to that required to store the coefficient matrix. The prob- used to solve very singular cases we well as to find the
+lem of solving sparse linear systems has been discussedin determinant, minimum polynomial, and rank, although we
+application to the discrete logarithm problem [l] and the only know how to solve the last two problems mentioned
+problem of factoring large integers [2]. Experts have real- up to some arbitrarily small possibility or error. Throughout
+ized that fast algorithms for solving sparse systems bring this paper we used the notation log for natural logarithm,
+several algorithms for these two problems to roughly the log, for logarithm to base q, and lg for log,.
+same computational complexity. Thus the complexity
+exp ((1 + o(l))(log, n log, log, n)“‘) for factoring integers                     II. THENONSINGULARSQUARECASE
+close to n and computing discrete logarithms in finite fields
+                                                                          The simplest case is when A is square (say n x n) and
+with approximately n elements, for the most general cases
+                                                                       known to be nonsingular. In this case, (1) has a unique
+of these problems, has become something of an apparent
+                                                                       solution for each b. Let S be the space spanned by
+“barrier” [3].
+                                                                       { A’bli = 0, 1,2, . . . } with A0 defined to be the identity
+    The method for sparsesystemsdescribed here was devel-
+                                                                       matrix. Then A acts in a nonsingular way on S. Let A,
+oped after the NSF-CBMS Regional Conference in Com-
+                                                                       denote the operator A restricted to S, and let the minimum
+plexity Theory at Eugene, OR. At this conference methods
+                                                                       polynomial of A, be f(z), normalized so that the trailing
+proposed by Coppersmith, Karmarkar, and Odlyzko were
+                                                                       coefficient is one. BecauseA, is nonsingular, z is not a
+mentioned. These previous methods are finite-field adapta-
+tions of two methods for solving sparselinear systemsover factor of f(z).           .
+                                                                                         Let d = deg f and f[i] denote the coeffi-
+                                                                       cient of z’ m f(z). Provided f can be found, the solution
+the reals, the Lanczos, and conjugate gradient algorithms.
+The method described here was developed directly for to (1) can quickly be constructed. In fact, f(A,)b = 0, so
+finite fields.                                                        f( A)b = 0. Then rearranging terms shows that A applied
+                                                                       to
+    The method of this article is based on the fact that, when                                         d
+a square matrix is repeatedly applied to a vector, the                                       x = - zf[i]A’-‘b
+resulting vector sequenceis linear recursive. The problem is                                                                     69
+                                                                                                     r=l
+to solve the linear system
+                                                                       gives 6. Note d = dim S I n, so that (2) can be computed
+                               Ax = b                             (1) in 2n (w + 1) field operations. Also, the storage required to
+                                                                       do this is no more than a small constant times n in
+                                                                       addition to the storage required for A. The first algorithm
+   Manuscript received November 30, 1984; revised March 18, 1985.
+   The author is with the Math CO Department, University of Waterloo,
+                                                                      we give for finding f also has the property that the storage
+Waterloo, ON, Canada N2L 3Gl.                                          required is small; however, this algorithm is a probabilistic
+   IEEE Log Number 8406092.                                           one.
+
+                                               OOlS-9448/86/0100-0054$01.00 01986 IEEE
+WII:I~I:MANN:   SOLVING   SPARSE LINEAR   EQUATIONS                                                                       55
+
+    Let u be any column vector, and let (,) denotevector dot n log n log log n)) operations but requires 2n2 extra mem-
+ product. The sequence(u, A’b) satisfies the linear recur- ory locations.
+ rence whose associatedpolynomial is f. This may not be
+ the linear recurrenceof smallestspan of this sequence.Let Algorithm 2
+f,, be the polynomial indicating the smallest span linear
+ recurrence of the sequence {(u, Aib)}~co. Call f, the             1) Compute A’b for i = 0, 1,. . . ,2n - 1, and save all
+                                                                       results.
+ m inimum polynomial of the sequence,and normalizef, to
+                                                                   2)  Set k = 0 and g,(z) = 1.
+ have trailing coefficient one. It follows from elementary
+                                                                   3)             to be the k + 1st unit vector.
+ considerationsthat f,]f. It is well-known that (1) f, can be          Set  uk+l
+
+                                                                   4)  Extract from the result of step 1 the sequence
+ computed from the first 2n terms of the sequence(u, A’b)
+ using the Berlekamp-Massey algorithm [4]-[7] in tim e                 {(u k+l, A’b)};:;‘.
+                                                                   5)  Apply gk(z) to this sequence.
+ 0( n *) field operations and (2) the m u ltiplicative constant
+                                                                   6) Set fk+l      to be the m inimum polynomial of the
+ is small. It follows from the work in [8] that asymptotically
+                                                                       sequenceproduced in step 5.
+ much faster ways exist of finding the m inimum poly-
+ n o m ial, but using these probably gives no significant im-      7) Set gk+l =fk+&k.
+ provement in the total tim e taken by the algorithms de-          8) Set k = k + 1; and then if deg( gk) < n and k < n
+                                                                       go to step 3.
+ scribed later. A method that solves (1) is to select u
+                                                                   9)  Using f = g, and the table computed in step 1,
+ repeatedly at random, computef,, assumethat f, = f, and
+                                                                       compute the solution x by (2).
+ compute x by (2). W ith probability one this will eventually
+ achievea solution to (1); proposition 3 in SectionVI shows        Some comments are required to see that Algorithm 2
+ the expectednumber of passesis O(logn).                        runs in the claimed time. In step 5 a polynomial is applied
+    A better algorithm is to use the factors of f as they are to a sequence.G iven a polynomial g(z) of degreed and a
+ found. Let 6, = b and fi = f,. Then if b, = f,(A)b, # 0, sequence{ ~i}~=o, let
+ the procedure can be restartedwith b, in place of b,. That
+ is, a vector u2 is selected,and the m iniumum polynomial                                  s(z)= 1 s;zi,
+fi of the sequence(u,, A’b,) is computed. If b, = f2(A)bl                                         i=O
+  # 0, the procedure continues. Eventually, some b, = 0 = and say that by definition the result of applying g to the
+fk ... f,(A)b,,     in which case f = fk . . * fi can be com- sequenceis
+ puted and the solution found by (2). A more efficient
+ version of this is to compute the solution as a byproduct.                       {(d-1>4z>)[il}11,“.                       (4
+ For any polynomial g, define g-(z) = (g(z) - g(O))/z.
+                                                                   Clearly, applying a polynomial to a sequencecan be
+                                                                done by m u ltiplying polynomials. In step 5 fast polynomial
+Algorithm 1
+                                                                m u ltiplications taking 0( n log n log log n) operations [9]
+    1) Set b, = b, k = 0, y. = 0, and do = 0.                   are used. The sequenceproduced in step 5 is in fact
+    2) If b, = 0, then the solution is x = -y, and stop.        (U k+ i, A’g,( A)b), and it follows that the m inimum poly-
+    3) Select uk+ t at random.                                  n o m ial extracted in step 6 is a factor of f(z)/gk(z).
+    4) Compute the first 2(n - dk) terms of {( uk+i,               To bound the work in step 6, the additional observation
+        A’b,)}:,.                                               must be used that if the Berlekamp-Masseyalgorithm is
+    5) Set fk+l(z) to the m inimum polynomial of the se- applied to a sequenceof length 2n to obtain a polynomial
+        quence of step 4.                                       of degree d, the number of operationsis O(nd). The total
+    6) Set ykil = yk + f,L+l(A)bkT bk+l = b. + Ayktly and work in step 6 is O(n2), becausethe sum of the degreesof
+        d k+l = dk + d&f,+,).                                   the factors extracted in step 6 is degf I n.
+    7) Set k = k + 1 and go to step 2.
+                                                                            III. SINGULARANDNONSQUARECASES
+    The only reasonfor introducing the y, is that it avoids a
+ separatecomputation of (2) at the end. If it is only desired      If A is square and singular, b must lie in a proper
+ to compute f, bk+l = f,+,( A)b, can be computeddirectly subspaceof E” for a solution to (1) to exist. If b is selected
+ in step 6. To find f an initial estimate of one is set to the at random, then with probability at least 1 - l/q 2 l/2
+ polynomial in step 1, and in step 6 the current value should there will be no solution. If (1) has no solution, then
+ be m u ltiplied by fk+l.                                       applying either of the algorithms will result in a proof that
+    Note that the computation in step 4 can be done in 4n A is singular. In this case, one of the coordinate recur-
+ memory locations if the vectors A’b, are not kept as they renceswill have zero constant term, becausethis is the only
+ are generated. Although this is recommended,it requires way the algorithms can fail to produce a solution to (1). If
+ recomputation of A’b, in step 6. In SectionVI it is proved zlf(z) then A(f-(A))b            = f(A)b = 0 so the vector fP(A)b
+ that Algorithm 1 stops after three passeswith probability provides a linear combination of the columns resulting in
+ at least 70 percent. Selectinguk to be the kth unit vector, zero. Moreover, f-(A)b # 0, by m inimality of f.
+ can convert the Algorithm 1 to a deterministic algorithm.         If a column that is dependent on the other columns is
+ The following algorithm always completes in O(n( o + found, it can be eliminated from the system. Also, if a
+56                                                          11:1:1 TRANSACTIONS   ON INFORMATION   THEORY,   VOL.   IT-32,NO. 1, JANUARY   1986
+
+ dependent row is located, it can be eliminated along with length k and weight at most i exist in their leading k
+ the corresponding entry of b, after checking that the coordinates, and the result follows.
+ eliminated equation is consistent with the equations with
+                                                                 Proposition 2: If C is a linear vector spaceof dimension
+ which it is dependent.W e havejust seenhow dependencies
+                                                               k in E”, and
+ can be found in squarematrices. By transposingif neces-
+ sary and ignoring excesscolumns, finding dependenciesin
+                                                                                           u(r) = i a[j]rj,
+ nonsquare matrices can always be reduced to the case of                                           j=o
+ finding a column dependencyin an n X (n + 1) matrix,
+ say M . Remove the final column from M , breaking it into then for 0 I r I 1, a(r) I (1 + (q - l)r)k.
+ an n x n matrix A and a column vector b. Then applying
+ algorithms of the previous section produceseither a solu- )A+1 Proof: G iven the constraints on r, the numbers ri -
+ tion to Ax = b or a column dependencyof A. In either              , i = O ,l;..         n - 1, are non-negative. Summing the
+case, a column dependencyof M has been produced.               inequalities    of   pioposition     1 with these weights and the
+    A method for solving singular or nonsquaresystemsis to     inequality  at   i  =   n   with weight r” gives
+continue eliminating dependentrows and columns until an                   ,, - 1
+inconsistency or a square nonsingular system is obtained.                  1 (ri - r’“)          i u[j] + r” 5 u[j]
+This can be done deterministically if Algorithm 2 is used,                i=o                   j=O            j=o
+and we note that the elimination of rows or columns does                             n-1
+not otherwise changethe coefficient matrix, so this matrix                        < C (ri - ri+l 1 li j:)k          1)’
+need not be m o d ified. A difficulty with this method is that                        i=O               j=O
+the work becomeslarge if many rows and columns must be
+eliminated. Another possible difficulty is that it requires                          +r” j=o(i    $4    - 1)‘.
+application of the transposeof the coefficient matrix to
+column vectors, a possibly inconvenient operation.             Collecting coefficients of rj on both sidesgives
+    Let A be an m X n matrix, and let no = m in (m, n) and
+n r = max (m, n). A random method will now be described
+for finding a solution to Ax = b if one exists.This method           a(r) I t ri T (q - l)‘= (1 + (q - 1)r)“.
+                                                                                j=O       i 1
+requires that rank (A) = n, and will require O(n,(w +
+n, log nl)) field operationsto find a solution with probabil-    Assume that a matrix A is m X n with m < n and rank
+ity l/2. The idea is to extend A to an n, X n, nonsingular A = m. The strategy for completing A to a squarenonsin-
+matrix B by adjoining randomly selectedrows or columns. gular matrix is to generatea row i for i = m + 1, m +
+If m > n, the extension will have extra variables but no 2; f *, n as follows. For each i a parameter wi I 1 - q-l
+extra equations. The solution to the extendedsystemBy = will be chosenin advance.Selecteach entry of row i to be
+b will set to zero the extra variables and will therefore 0 with probability 1 - wi; otherwise, set that entry to a
+restrict to a solution of the original equations.If m < n the uniform randomly selected nonzero element of E. All
+extra rows correspond to extra equations that may be random selectionsare to be m a d e independently.
+taken to be homogeneous.The solution to the extendedset          Any vector of H a m m ing weight j has probability (q -
+must also be a solution to the original set. The following l))iw,i(l - wi)‘-j of being selected.Let a be the weight
+propositions are useful elementaryinequalities for bound- enumerator polynomial of the subspacespanned by the
+ing the number of sparsevectors that are included in a first i - 1 rows. By proposition 2 the probability that row i
+subspace.The number of nonzero entries in a vector is lies in this subspaceis
+called its H a m m ing weight.
+    Proposition 1: Let C be any linear vector space of
+dimension k in E”. Let a[j] denote the number of ele-
+ments of C with H a m m ing weight j. Then for each i,                            I(1 - w,)“(l + w/(1 - wi))i-l
+                       Oliln,                                                        = (1 - W i)n-(i--l).
+
+                                                             If the first i - 1 rows are linearly independentand row i
+                                                          happens not to be in the span of the previous i - 1 rows,
+     Proof: Consider a k x n matrix whose rows span C. then the first i rows are linearly independent. Let wI =
+Permute the columns, if necessary,so that the matrix can m in(l - q-‘,2(logn)/(n           + 1 - i)). If wi = 2(logn)/(n
+be written in the form (F, G), where F is a nonsingular    +  1  -   i),  then   (1 - w~)~-(~-‘  ) I (1 - 2(log n)/(n + 1 -
+k X k matrix. Column permutation does not alter the       9) ‘ +‘-‘I       exp(-210gn)     =  n -‘. O n the other hand, if
+                                                          w, =   l-      q-l, (1 - W i)n-(i-l) = q-(n+l-i)s Let j = n + 1
+weight distribution of the rowspace. Each vector is now -
+uniquely determined by its leading k coordinates,and any      i. The conditional probability that the first i rows are
+vector of weight at most i has weight at most i in its    independent,        given that the first i - 1 rows are indepen-
+                                                          dent, is at least 1 - (ne2 + q-j). By m u ltiplying all these
+leading k coordinates.Exactly c’J.= o  (q - l)j vectorsof together the probability that the whole n X n matrix is
+WII:DI:MANN:   SOLVING   SPARSE LINEAR   EQUATIONS                                                                   51
+
+nonsingular is at least                                  ability at least l/4 < (1 - q-‘)(l - q-‘)(l - qp3) . . . ,
+ PI                                                      and the weight bound is obviously satisfied. As it is, fill in
+              2 + q-j)) = (1 - ne2)”
+I-J(1- b-                                                the final c2 rows uniformly at random. Let z = 1 -
+                                                         c3(log n)/k. For eachentry of the first k rows, the method
+                                                         sets that entry to zero with probability z and to a randomly
+                                                         selected element of GF(q) otherwise. The weight bound
+                                                         with an appropriate cr is satisfied with high probability. It
+This bound does not depend on the value of m, and must be shown that when A is adjoined to the first k rows
+through some calculation it can be shown to be greater the result has rank m + k with probability bounded away
+than l/7 for n 2 3 and q 2 2. Furthermore, the expected from zero.
+number of nonzero entries in the rows beyond the first m    The probability that a particular sum of the first k
+is                                                       generatedrows with j nonzerocoefficientsyields a particu-
+                                                         lar vector of weight i is
+
+
+This does not exceed 2n(log n)(l + log (n - m)) I
+2n(log n)(l + log n). Furthermore, the variance of the
+                                                                        (
+                                                                        ,j+ ;(I - zj))n-i( i(l - zj))i.          (5)
+
+                                                           Let a be the weight enumerator polynomial of the row
+weight of any componentis at most l/4, so the varianceof
+                                                           space of A. Let p be the probability that the m + k rows
+the weight of the entire matrix is at most n2/4. By
+                                                           are linearly dependent.By (5) and the union bound,
+Chebyshev’s inequality the probability that the m e a n is
+exceededby more than 8n is less than l/256.
+                                                                     p 5 5 u[i]             i: (r)(q         - 1)’
+  Theorem I: For any integers n > m 2 0 a random pro-                     i=O              j=l
+cedure exists for generatingn - m row vectors of length n
+such that if A is an m X n matrix of rank m, then with                    .       zj+~(l-zi))np'(~(l-zi))i
+probability at least l/8, both of the following statements                    i
+are true. 1) The n x n matrix formed by A and thesesrows
+is nonsingular. 2) The total H a m m ing weight of the ad-           ~~~~(~j(q-l)j~zj+t(l-zii~fl
+ditional rows is at most 2n(2 + log n)2.
+      Proof: For n 2 3 the aforementionedprocedure pro-                                q-l(1 _ zj)      i
+duces a nonsingular matrix with probability at least l/7.                * i$04il (z’ + q-y1 - zj)) .
+The procedure produces additional H a m m ing weight of                           i                   I
+more than 2n(2 + log n)2 2 2n(log n)(l + log n) + 8n By proposition 2
+with probability less than l/256. Therefore,the probability
+of satisfying statements1 and 2 is at least l/7 - l/256 >
+l/8. To complete the proof, only the cases n = 1,2 re-             P~~~(~~(q-l)~jz~+~(l-z~)
+m a in; but then statement 2 will always hold, and if the
+additional entries are selecteduniformly at random, state- Now zJ I exp( -c,j(log n)/k). Let p = j/k and c3 =
+ment 1 is satisfied with probability at least l/4.          3c,, and since q < n2, zj I (nq)-Q8. Then
+   Theorem 1 is not asymptotically the best possible. The
+following improvement was m a d e mostly through the ef-
+forts of one of the referees,and the author is grateful for
+being permitted to include it.
+                                                               Split the summation in (6) into two pieces, p. for
+   Theorem 1’: Numbers c > 0 and c1 exist, both inde- j < k/3, and p1 for j 2 k/3,, where & > 0 is a constant to
+pendent of q, with the following property. For any integers be determined later. It will be shown that eachpiece can be
+n > m 2 0 a random procedureexistsfor generatingn - m m a d e less than l/3. If p 2 &,, then for cq sufficiently
+row vectors of length n such that if A is an m X n matrix large,
+of rank m, then with probability at least C, the resulting
+n x n matrix is nonsingularand the total H a m m ing weight (1 + (q - l)(nq)-““p)“-m
+of the generatedrows is at most 1 + cIn log n.                                   5 exp((q - l)(n - m)(nq)-““‘)     I 2
+      Proof: Assume first that q I n2, sincelarger valuesof
+                                                            and therefore
+q will be handled by a different method. W e may suppose
+n=m+k+c,,         where k > c3log n and c2, cg are con-            p1 2 2q-‘n-m’ j;p       ($4  - 1)’ 5 wc2,
+stants to be selectedlater. If n - m would be smaller than                               0
+this, simply generateall n - m rows uniformly at random,
+and the resulting matrix will be nonsingular with prob- and this is less than l/3 for c2 2 3.
+58                                                         Il:EE   TRANSACTIONS   ON INFORMATlON   THEORY,   VOL.   IT-32,NO. 1, JANUARY   1986
+
+                                                               nonzero entries with probability at least 6. Assume that A
+     In order to bound pO, invoke the inequality           I
+                                                               with M’ adjoined has such a transversal.
+(l/(pp(l     - P)‘-P))k [lo, lemma 10.71and with (6) obtain       Let M be a matrix formed by replacing each one-entry
+                                                         \\k   of M’ with a different GF(q) indeterminate. Let B be the
+                                                               n x n matrix consisting of A with M adjoined. Under the
+                                                               assumption of the preceding paragraph, det (B) does not
+                                                               identically vanish. Because det (B) is a polynomial of
+                                                               degree at most n, a result of Schwartz [ll] shows that if
+   Consider the function f(q) = (q - l)p(q- l + (1 - each variable entry of B is replaced by an independently
+q-l)(nq)p?).       It will be shown that if cq is sufficiently selected random element of GF( q), det (B) f 0 with prob-
+large, 0 < p < l/4, n 2 1, and q 2 2, then f(q) I f(2). ability at least 1 - n/q > 1 - n-‘. The overall procedure
+Differentiating with respect to q, we have that                of selecting M’ and an instance of M produces a nonsin-
+        q2(4
+          - wwq>                                               gular matrix with probability at least 6(1 - n-l).
+
+            =- P4 + p(nq)y8q            - I
+                                                                                     IV.    HIGHLY SINGULAR CASES
+               q-1                                                 If A is m x n, m < n, and rank A = m, the following
+               - c,/Iq( nq)-‘4B + (c$     + l)(nq)-c4P.   (8)   method is better than completing A to an n X n matrix
+                                                                when m is much smaller than n/2. Suppose a sparse
+ To show that (8) is negative, we first have                    n x m matrix Q can be found such that det (AQ) # 0.
+                                                                Then the unique solution y to A& = b can be found, and
+                 (P4 - c,Pq + c4P)(nq>Yp < 0
+                                                                x = Qv will solve the equation Ax = b. A similar proce-
+ because cq 3 2 implies c,(q - 1) > q. When this is sub- dure will find a solution to an overdetermined system, say
+ tracted from (7) the remainder                                 ATx = b, where AT denotes the transpose of A. Now QT is
+                   /?q(q - 1)-l - 1 + (nq)-c4p                  a sparse m X n matrix such that det ( QTAT) # 0. Applying
+                                                           (9)
+                                                                QT to both sides of the equation gives Q?tTx = QTb,
+ is also negative. Clearly (9) is decreasingin n and q; so which can now be solved for x. The unique solution of this
+ replace n by 1 and q by 2, giving 2/? - 1 + 2-c4fl. Let derived equation then must solve the original systemif it is
+ 2-(‘4 = e-4. A Taylor expansion and 0 < 4b < 1 give            consistent.
+       2p - 1 + e-48 < -2p + S/I2 < -2p + 2p = 0.                  Fortunately, Q can be generated by the method de-
+                                                                scribed in the previous section. In fact, let V be the
+ In fact, this means (9) and (8) are negative for all values of subspace of En spanned by the rows of A. Let VI be the
+ c4 2 4 log2, 0 < /3 x 14, n 2 1, and q 2 2; therefore, the (n - m)-dimensional space of vectors having zero dot
+claim is proved.
+                                                                product with all members of I’. If Q is an n x m matrix,
+    In (7), p 2 l/k, so n-l 5 p. Hence                          then det (QTAT) # 0 if any only if the row space of QT
+                          f(2) I ; + $‘“P.                      together with I” generates all of E ‘. This is because a
+Using pB = 1 + /3 logp,                                         nonzero vector u of length m such that uQTAT = 0 exists if
+                                                                and only if there is a nonzero combination of the rows of
+  p-q      - p)-“-p)                                            QT that has zero dot product with each row of A and
+                         f(2) 5 1 + (tc4 - 1)PW       + a>
+                                                                therefore lies in Y’ . It follows that Q can be constructed
+as /3 --, O+. It follows that for some PO, 0 < &, < 1, for exactly as if completing an (n - m) X n matrix to a non-
+sufficiently large c4, n-l 5 /3 < PO implies p-p(l -            singular square matrix. In this case, the (n - m) x n ma-
+p)-‘l-9(2)        < /Ifi. Th en for sufficiently small &, and trix would represent a basis of I” .
+sufficiently large c4,                                             In solving the systems with coefficient matrix QTAT or
+                                                                AQ, the two matrices never need be multiplied, becausewe
+      p. I                                          -=cl/3      may first apply one and then the other.
+             1 sj<k/$,         j=l                                Now let A be the m X n coefficient matrix, with m and
+                                                                n unrestricted. Let n, = min(m, n) and n, = max(m, n),
+as required.                                                    as in the previous section. We have not yet given a method
+    Having completed the case q I n2, we use a different that will find a solution for the caserank A < n,. Suppose
+method for q > n2. Begin by forming n - m rows as the that the rank is known to be r. A method is to select r x m
+method would produce for q = 2, and call the resulting and n x r matrices P and Q, respectively, such that
+0 - 1 matrix M’. The matrix A must contain an m X m det (PAQ) f 0. The selection of P and QT can be made
+nonsingular submatrix. Such a submatrix must have at according to Theorem 1’and the probability that PAQ is
+least one transversal with only nonzero entries. Let A’ be a nonsingular is bounded away from zero. Once the two
+matrix over GF(2) with ones at positions corresponding to matrices have selected,the solution to PAQy = Pb can be
+the transversal and zeros elsewhere. Since A’ with M’ found, and x = Qr can be tested in (1). If PAQ is nonsin-
+adjoined has nonzero determinant with probability at least gular, then a solution to (1) will be found, provided one
+6 > 0, A with M’ adjoined possessesa transversal of exists.
+WII.DI:MANN:   SOLVING   SPARSE LINEAR   EQUATIONS                                                                         59
+
+   If the rank r is unknown, then it can be arrived at using zero for n sufficiently large. This method may be advanta-
+binary search.As a guess,s, s x m, and n x s matrices P geous for r 4~ n.
+and Q are selected,and PAQ is tested probabilistically for            In this section some possibility of error was due to not
+singularity. If s > r the result will always be singular. knowning rank A and some was due to not being certain
+After being repeatedseveraltimes the question,“Is s > r?” that a matrix is nonsingular. The next section gives a
+can be answered with probability of error at most l/3. method of proving a sparsesquarematrix is nonsingular.
+This allows conducting a binary search with a constant
+level of uncertainty for each reply. The value of r can                            V. FINDINGTHEDETERMINANT
+therefore be guessedwith probability of error at most l/3
+                                                                      G iven a sparsen X n matrix A, a random algorthim has
+by conducting O(log n,) tests of values s. O f course,more
+                                                                  been given for establishingthat the determinant is zero. A
+certainly can be obtained by a small increasein the num-
+                                                                  more difficult problem is to find the determinant of A
+ber of tests. All this leadsto an 0( n O(o + n, log n,) log n O)
+                                                                 when it is not zero. Let fA be the m inimum polynomial of
+expectedtim e method of producing a solution to any linear
+                                                                 A, and let fh be the m inimum polynomial of A, where S
+system, providing a solution exists. W e do not consider it
+                                                                 is the space generated from the column vector b as in
+obvious that binary searchof a spaceof size no can still be
+                                                                  Section II. Each of the two algorithms in that section
+done in O(log no) queries even if each answer has a
+                                                                 provides a method of computation of fh for any given b.
+bounded probability of being incorrect. However, prob-
+                                                                  Since f” is the lowest degree of polynomial such that
+lems close to this are discussedby Rivest et al. [12], and
+the method of that paper extendsto solve our problem.
+                                                                 f  A(A)b = 0 for all b, fA is the least common m u ltiple
+                                                                  (lcm) of all the f “. In fact, it will be shown in the next
+   In highly singular systems,it may be desired to produce
+                                                                  section that selecting O(1) values of b uniformly at ran-
+more than one solution. In the remainder of this section
+                                                                  d o m and computing the lcm of the resulting fh will nearly
+methods will be given for extracting uniform randomly
+                                                                  always give f A. This method finds the m inimum poly-
+selected solutions to (1). One method is to find r and an
+                                                                 n o m ial of A with arbitrarily high probability. Let cA
+r x m matrix P such that rank( PA) = r. Then (1) is
+                                                                  denote the characteristicpolynomial of A. If cA = fA, A is
+equivalent to solving (PA)x = Pb. Extend PA to an n X n
+                                                                  said to be nonderogatory.This happensif and only if f A
+matrix G by adjoining sparserows as in Theorem 1’. If G
+                                                                 has degreen. Wheneverthe Icm of the fh has degreen, the
+can be shown singular, then another G must be con-
+                                                                 m inimum and characteristic polynomial have been de-
+structed. Continue until a G that is thought to be nonsin-
+                                                                 termined with certainty.
+gular is found. Assuming G is nonsingular, solve Gx = g,
+                                                                     If cA has been found, then normalizing it to have
+where g is a column vector whosefirst r entries are Pb and
+                                                                 leading coefficient one, and evaluating at zero gives
+whose remaining entries are filled in at random. The unique
+                                                                 ( - 1)“det (A). WheneverA is nonderogatory,det (A) can
+solution to Gx = g must also solve (PA)x = Pb. Since a
+                                                                 be evaluated by finding fA. This will take an expected
+one-to-one correspondenceexists between solutions to
+                                                                 number of field operations that is 0( n( o + n)). If it is
+(PA)x = Pb and the vectors g, a uniform random solution
+                                                                 suspectedthat A is derogatory,one can randomly permute
+is selectedby selecting g uniformly at random.
+                                                                 the rows of A and try to compute the determinant of the
+   A second method may be better. Assume an r X m
+                                                                 result. The two determinantsare related by a known sign
+matrix P and an n X r matrix Q have been found such
+                                                                 factor. However, some matrices cannot be permuted to
+that PAQ is nonsingular. Extend Q to a squarematrix M
+                                                                 form a nonderogatory matrix. An example of this is any
+as shown:
+                                                                 sufficiently large identity matrix. To overcomethis diffi-
+                          M= Q ;
+                                         II 1                    culty    a slightly cumbersomemethod that may involve field
+                                                                 extensionsis now described.
+                                                                     If cA is square-free,then f” = cA becauseevery irre-
+where I denotes the identity matrix of size n - r. Suppose ducible factor of cA must appear in f”. Note that cA is
+M is nonsingular. Random solutions to PAMy = Pb can square-free if and only if its discriminant disc(cA) is a
+easily be found becausethe first r columns of PAM form nonzero element of E.
+PAQ, a nonsingular matrix. Thus the last n - r coordi-
+                                                                     Lemma: If A is an n X n matrix over E and all leading
+nates of y can be set to any value, and the initial r
+                                                                 principal m inors of A, including A itself, are nonsingular,
+coordinates can be subsequentlyfilled in by solving an
+                                                                 then the discriminant of the characteristic polynomial of
+r x r system to yield a solution to PAMy = Pb. This again
+                                                                 A * diag(y,;..,       y,,) is not the zero polynomial in
+gives a method of uniform random selection of solutions
+x = My to (1). There is a problem in using Theorem 1’ to         Y13’  . .) Y,,.
+select Q : both PAQ and the first r X r m inor of Q must                Proof (mathematical induction): The statementis obvi-
+be nonsingular. The theorem bounds the probability of ous for n = 1 where the discriminant is identically one.
+each event away from zero but not necessarilytheir inter- Assume that it is true for (n - 1) X (n - 1) matrices,
+section. However, the proof of Theorem 1’can be m o d ified n > 1. Then substitute zero for y, in det (~1 - A diag
+to show that the sametype of procedurewill produce a set (Yl,. . ., y,)) to obtain z det (zl’ - A’diag (yl;.*,
+of row vectors that completes both of two matrices to y,,-t)), where I’ is an (n - 1) x (n - 1) identity matrix
+nonsingular matrices with probability bounded away from and A’ is a leading principal m inor. The discriminant of
+60                                                           IELE   TRANSACTIONS   ON INFORMATION   THEORY,   VOL.   IT-32, NO.   1, JANUARY   1986
+
+this is                                                     the lemma. Furthermore, the degree of the discriminant is
+                                                            at most 6kn(n - 1). Now select all the parameters uni-
+det2(A’diag(y,;..,      y,-i))
+                                                            formly randomly from a field of order I containing E.
+                   .disc(det(zI’-   A’diag(y,;..,  y,-i))). Then yi . .. y, disc ( ) evaluatesto a nonzero element with
+The first factor equals .det’ (A’)yf . . . y,“_i and is not probability at least 1 - 6kn2/1. In such casesdet (AY) can
+identically zero by hypothesis. By the induction hypothesis be found by finding its characteristic polynomial, and
+the second factor is not identically zero.                  det(A) = y;’ ..a y;‘det(AY).
+
+    The result of Schwartz [II] used in Section III states that        Theorem 2: Let A be an n X n matrix over a finite
+for any polynomial of total degreed over a field of order I,        field. There is a random algorithm that with probability at
+if the variables are substituted with uniform random field          least l/2 will evaluate det (A). The algorithm requires
+elements, the result is zero with probability no more than          0( n( w + n log n)) field operations in an extension field
+d/l, provided the polynomial is not the zero polynomial.            having at least 50n2 lg n elements, where it requires o
+Applying this and the lemma to y1y2 * * * y, times the              operations to apply A to a vector. The additional storage
+discriminant of A diag (yi; * *, y,) if A and all of its            required is O(n log n) elements of the extension field.
+leading principal minors are nonsingular, then the y,                     Proof In the foregoing discussion, which applied to a
+can be selected uniformly at random from any sufficiently           nonsingular matrix with size a power of two, applying Y
+large extension field of E, and with high probability               required 0( n log n) field operations, so Algorithm 1 may
+A diag(y,; * ., y,) will be nonderogatory and nonsingular.          be applied to find the minimum polynomial in the required
+Then det(Adiag(y,;..,         y,)) can be evaluated, and by         number of operations. If A is singular this can be estab-
+dividing this by yi . . . y,,, det A is found.                      lished separately by the method in Section III, but it will
+    If A is nonsingular there is some permutation matrix P          also become known when a minimum polynomial of A Y
+such that AP has only nonsingular leading principal                 that has zero constant term is found. If n is not a power of
+minors. This is easily proven by induction or by ordering           two, A can be extended to be E x E, where ti is a power of
+the columns as they would be used in a Gaussian reduction           two. Since E may be nearly 2n, requiring that the extension
+of A. To incorporate the unknown permutation P into a               field have size at least I = 50n2 lg n forces 6n2 lg ii/l -c 2/3
+probabilistic algorithm, we find a parametric family of             for any reasonably large value of n. Then the probability
+nonsingular matrices that gives P for some setting of the           of success of the entire procedure is bounded away from
+parameters. Consider the matrix product                             zero. Repeating this a fixed number of times will provide
+                                                                    det (A) with probability at least l/2.
+
+                                                                                      VI.    PROBABILISTICANALYSIS
+This product is always nonsingular; in fact, its determinant           In this section we prove statements previously made
+is always one. For (a, b, c) = (O,O,0) the result is the            concerning the probability that the minimum polynomial is
+identity permutation matrix, and for (a, b, c) = (1, - 1,l)         obtained. Let A be any n x n matrix, possibly singular. As
+the result is the transposition permutation matrix except           in Section II let b be any column vector in E”, let
+that one entry is negated. Negation of some entries as they         S = span{b, Ab, A’b;..     } and let A, be the operator A
+are permuted is unimportant because the result will be              restricted to S. Define fb(z) to be the minimum poly-
+ultimately multiplied by an arbitrary diagonal matrix.              nomial of A,. An important fact is that the elements of S
+    For n > 2 any, possibly incomplete, pairing on n entries        can be identified with the elements of the ring R =
+of a vector can be taken and an independent member of               E[z]/(fh(z)).  This is established by means of a mapping
+(10) applied to each pair. For n a power of two, a highly           from E [z] to S defined such that one is mapped to b and
+structured sequenceof pairings exists [13] such that each           multiplication by z corresponds to application of A in S.
+permutation on n elementsis achievedby interchanging or             The kernel of this mapping is the principal ideal ( fh( z)),
+leaving unchanged each of the pairs. There are such “per-           and reduction by this kernel produces the bijection I+!I:
+muting networks” for n not a power of two, but there is             R + S.
+the option of extending the matrix A to have size a power              The set of linear functionals from R to E, R*, may be
+of two by adding diagonal ones and zeros elsewhere.If A is          identified with R by a bijection 77: R + R* defined as
+extended in this way, the determinant will not change.              follows. Let d = deg fh 2 1 and define ~(1) so that
+    Let n = 2k, k > 1, in the following.The permuting net-          T)7(l)(z‘-l) = 1 and q(l)(z’) = 0 for each value of i such
+work will have 2k - 1 levels or pairings. The result of all         that 0 I i < d - 1. The definition of 71 can then be
+the associated applications of (10) is a matrix P in a large        uniquely extended to all of R such that q(zg)(h) =
+number of variables with each entry of total degree no              q(g)(zh) for all g, h E R. It is easily established that n is
+more than 6k - 3. Multiply this by diag ( y,, . . . , y,), where    injective and therefore a bijection, since R and R* have
+Yl,’ . .> y, are n new parameters, and call the resulting           the same dimension over E. Associated with J, is the dual
+matrix Y. By the lemma, if A is nonsingular, disc,(det (zl          map $.J*: S* + R* defined by the equation #*(Z)(g) =
+ - A Y)) is not identically zero, becausefor some substitu-         (f)($(g)) for any I E S* and g E R. Note that #* is also
+tion of the parameters of P, AP is in the form required by          a bijection.
+WIEDEMANN:   SOLVING   SPARSE LINEAR   EQUATIONS                                                                                        61
+
+    Now if u is any vector in E”, dot product with u defines Note that for k > 1
+ a linear functional c(u) on S. The m a p p ing [: E” + S* is
+                                                                                 Q(f)      2 1 - Cq-kd,
+ clearly surjective. It follows that if u is selecteduniformly
+ at random, then l(u) is uniform random in S*. If g is the                                                 1               2
+
+unique member of R such that #*(S(u)) = n(g), the fol-                                     >l-           $k          + +2k     + ...
+lowing sequencesin E are equal:                                                                        i
+                                                                                                                     k-l
+                                                                                                                  4
+     {(u,   A’b)}zo       =  {hdw}:~           = (~CWd}p”=,,.                              =    1  -   log       k-l     _ 1 ’
+                                                                                                             ( 4             1
+The maximum polynomial of any of these sequencesis
+called f,“. By virtue of the last sequence, f,” = Even for k = 2 this is more than 0.3, so Algorithm 1 has at
+f ‘/gcd ( f ‘, g). This is true becauseh = f ‘/gcd ( f ‘, g) is least a 30 percent chance of succeedingafter the second
+ the lowest degreepolynomial such that in R, hz’g = 0 for pass.
+ all nonnegative values of i. In fact, it is the lowest degree          Now we move on to a probability calculation for the
+polynomial such that hg = 0. Therefore, the probability             m  inimum      polynomial of A itself, f ‘. What is the probabil-
+ that f,” = fb is the probability that a randomly selected          ity,  for   b selected    at random, that f b = f A? A lower bound
+ element of R is a unit. In analogywith the computation of          on    this   probability      is obtained using the fact that for at
+ the Euler phi-function of an integer, this fraction can be         least     one vector     v,  f”   = f A. This fact can be easily proved
+ calculated by the following formula:                               by    consideration        of    the  rational canonical form of A or
+                                                                    from first principles.
+                         @(fb) = jJ(1 - q-4)                  (I11      Proposition 4: For b,, . . . , b, selecteduniformly at ran-
+                                         i
+                                                                    dom, the probability that lcm(fhl; . 1, f ‘“) =fA is at
+ where d, is the degreeof the ith irreducible factor of f ‘, least Qk( f A).
+ and in (11) each irreducible factor of fh appearsexactly
+once.                                                                       Proof: Let A be an arbitrary n X n matrix and u a
+    Proposition 3: If degf I q + * * * +qj for j a positive         length     n vector such that f” = f A. For vectors b,, . . *, b,,
+ integer, then Q(f) 2 1/(6j).                                       let  f;:   be  the m inimum polynomial of {(bj, A’u)}y=“=,.Let h
+                                                                    be the Icm of the fi. It is known that h = f” = f” with
+        Proof: Since the factorization of zq’- z includes each probability            exactly ak( f A).
+ irreducible polynomial of degreei, the number of irreduci-             Let B be the transpose of A. Since {(b,, A%I)}?-~ =
+ bles of degree Z ’is at most qi/i. Let X,(q’/i) be the {(u, B’b,)}$,                      h is the m inimum degreepolynomial such
+ number of irreducibles of degreei that divide f. Then              that (u, h( B)B’b,) is zero for all i and j. Therefore,if g is
+                            O IX;Sl                             (*) the m iniumum degreepolynomial such that g( B)b, = 0 for
+                      00                                            all j, then hlg. However, g divides the m inimum poly-
+                     c xiqi 2 degf s q + ..a +qj.             (**)  n o m ial of B, f B = f A. Thus if h = f A, g = f ‘, so with
+                    i=l                                             probability at least Qk(f ‘) the lowest degreepolynomial
+ G iven the constraints in (*) and (**), the maximum g, such that g(B)bj = 0 for j = 1,2; . ., k, equalsf B. This
+ possible value of C~=ixi/i is Hj = l/l + l/2 + . . * + l/j. p roves the theorem for the transposeof an arbitrary square
+ This is becausethe constraint coefficients q’ are increasing matrix         . A, and so the theorem holds for every square
+ in i and the objective functional coefficients l/i are de- matr1x.
+ creasingin i, so the maximum value is obtained by setting
+ the first j variables xi to one and all others to zero. Now                             VII. CONCLUDINGREMARKS
+ since q 2 2                                                            Some applications require the solution of sparselinear
+                 log Q(f) = c log(1 - q-l)xiqi/i                    equations       over the integers m o d u lo m. Using the Chinese
+                                     i                              remainder theorem, we can reduce this to the problem of
+                                                                    finding a solution to a sparsesystemm o d u lo pk for each
+                              2 - C(q-’ + q-2i)x1qi/i
+                                                                    prime p dividing m. Supposewe wish to solve (1) m o d u lo
+                              2 - xxi/i     - log2.                 pk where A is squareand det (A) # 0 (mod p). F irst find a
+                                                                    solution y to (1) m o d u lo p. Then if x is a solution to the
+ Thus log Cp( f ) 2 - Hj - log 2. Exponentiating and using original equation, A(x - y) = b - Ay (mod pk). Each
+ H, < 1 + log j gives the result.                                   coordinate of the right-hand side is divisible by p. Then
+    This result shows that, after a reasonablenumber of dividing each side by P reduces the problem to solving
+ choices of u, one can be found such that f,” = f b. How- AZ = b’ (mod P k-1 ). Once this is solved, x = y + pz solves
+ ever, Algorithm 1 will find f b faster in generalbecause,in the original equation. Repetition of this reduction allows
+ effect, it computes the lcm of severalof the f,“. Supposef,” solving the original problem by solving k equations mod-
+ is computed for k randomly selected values of u. In ulo p.
+ analogy with (11) the probability that the lcm of the k                For the most part, the algorithms in this paper are
+ polynomials is fb is                                               probabilistic, and it would be of some interest to have
+                                                                    deterministic versionsand, more importantly, to removein
+                         Ok(f) = fl(l      - q-kd$             (12) some algorithms the possibility of error. In addition, it
+                                       i
+62                                                              IllEli   TRANSACTIONS   ON INFORMATION   THEORY,   VOL.   IT-32, NO. 1, JANUARY   1986
+
+
+ would be of interest to know if there is a fast method of of this sequencewith an arbitrary fixed sequenceis such an
+ computing the inverse of a sparsematrix. Another question operator. The author has not been able to find an example
+ to ask is whether a rapid method exists for finding the of a linear operator that is easy to apply but whose
+ characteristic polynomial. This seems likely because the transpose is difficult to apply. If it can be shown that no
+ minimum polynomial can be computed, and the character- such operator exists, then the restriction to application to
+ istic polynomial can be evaluated at any specific value.     column vectors is of little importance.
+    With one exception the methods in this paper apply the
+ coefficient matrix to column vectors and not to row vec-
+                                                                                        ACKNOWLEDGMENT
+ tors. For sparse matrices the distinction is probably unim-
+ portant, but situations may arise where application of a
+                                                                 The author is grateful for the advice of M. Kaminski,
+ row vector may be difficult. At the beginning of Section III
+                                                              R. C. Mullin, A. M. Odlyzko, and an anonymous refereein
+ a technique of finding a dependent row in an (n + 1) x n
+                                                              preparing this article.
+ matrix M was given. This involved transposing A4 and
+ removing the final column, say b, to obtain a square matrix
+A. Attempting to solve Ax = b produced a row depend-                                         REFERENCES
+ ency in M.
+    Briefly, we indicate how to salvage this technique when PI D. Coppersmith, “Fast evaluation of logarithms in fields of char-
+                                                                   acteristic two.” IEEE Trans.       Inform. Theorv.
+                                                                                                        .           , , vol. IT-30, pp.
+ M can only be applied to column vectors. If A is the               587-594,1984.
+ operator formed earlier, it is easy to apply AT to any PI C. Pomerance, “Analysis and comparison of some integer factoring
+ column vector. Then let us estimate the minimum poly-             algorithms,” in Computational Number Theov, part 1, H. W. Lenstra,
+                                                                   Jr., and R. Tijdeman, Eds. Amsterdam, The Netherlands: Math.
+ nomial of AT to be, say, g(z), with very small chance of          Centre, 1982, pp. 89-139.
+ error. The minimum polynomial of A is the same poly:          [31 A. M. Odlyzko, “On the complexity of computing discrete loga-
+nomial. If g(0) # 0, A can be assumed to be nonsingular            rithms and factoring integers, ” in Fundamental Problems in Com-
+                                                                   munication and Computation, B. Gopinath and T. Loven, Eds. New
+ and the final row of M is dependent on the others, because        York: Springer, to appear.             -
+Ax = b will have a solution. Suppose g(0) = 0. Then A .        141 E. R. Berlekamu. Akebruic CodinPY Theorvi New York: McGraw-
+g-(A) = 0, but g-(A) is not the zero matrix. Since A is            Hill, 1968.       I     ”
+easily applied to row vectors, products #‘g-(A), where or      [51 J. L. Massey, “Shift-register synthesis and BCH decoding,” IEEE
+                                                                    Trans. Inform. Theory, vol. IT-15, pp. 122-127, 1969.
+is any row vector, can be computed in O(n( w + n)) oper- 161 W. H. Mills, “Continued fractions and linear recurrences,” Math.
+ations. Beginning with a randomly selected or such that            Comput., vol. 29, pp. 173-180, Jan. 1975.
+this product is nonzero, and using binary search, a unit       [71 N. Zierler, “Linear-recurring sequences and error-correcting codes,”
+                                                                   in Error Correctina Codes. H. B. Mann. Ed. New York: Wiley,
+vector elr is found such that el?g-(A) # 0. This means             1968, pp. 47-59. -
+e,Tg-(A)ej # 0 for some unit vector ej. Then x = g-(A)ej       PI R. P. Brent, F. G. Gustavson, and D. Y. Y. Yun, “Fast solution of
+                                                                   Toeplitz systems of equations and computation of Pade approxi-
+is a nonzero solution to Ax = 0. Furthermore, if e, has a          man&,” J. Algorithms, vol. 1, pp. 259-295, 1980.
+one at position i, the ith component of x is nonzero, so the   [91 A. Schijnhage, “Schnelle Multiplikation       von Polynomen fiber
+i th row of M is dependent on the others.                          K&pen der Charakteristik 2,” Acta Inform., vol. 7, pp. 395-398,
+                                                                   1977.
+    The method just described is not as nice as the method DOI F.      J. MacWilliams and N. J. A. Sloane, The Theory of Error-Cor-
+that permits application of row vectors to M. A much more          recting Codes. New York: North-Holland, 1977.
+ambitious task is to find a fast algorithm for solving Pll J. T. Schwartz, “Fast probabilistic algorithms for verification of
+                                                                   polynomial identities,” J. Ass. Comput. Much., vol. 27, pp. 701-717,
+x’A = bT by application of A to column vectors only. We            Oct. 1980.
+do not have an algorithm that does this.                      1121 R. L. Rivest, A. R. Meyer, D. J. Kleitman, and K. Winklmann,
+    Linear operators do exist that are easy to apply but           “Coping with errors in binary search procedures,” J. Comput. Syst.
+                                                                   Sci., vol. 20, p. 396-404, 1980.
+whose matrices are not sparse. For example, x may be [I31 V. E. Benes, “Optimal rearrangeable multistage connecting net-
+considered as a sequenceof field elements,and convolution          works,” Bell Syst. Tech. J., vol. 43, pp. 1641-1656, 1964.
+

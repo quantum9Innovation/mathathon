@@ -1,0 +1,373 @@
+INDEPENDENT ACTUAL-SOURCE AUDIT: CERTIFIED FULL FINITE-FIELD KERNELS
+==================================================================
+2026-11-15. Full mathematical/runtime reconstruction, including actual
+primary-source inspection. Only this new audit file was written.
+No algorithm/proof source, prototype, or existing test artifact was edited.
+
+VERDICT
+-------
+PASS. The manuscript gives an always-correct, almost-surely terminating
+Las Vegas full-kernel algorithm on EVERY fixed sparse symmetric input
+over a fixed odd prime field. Its expected bit cost is
+
+  soft-O_p(n(w+n)(r+1)), w=nnz(M), r=corank_Fp(M),
+
+with the stated storage and certificate bounds. The algorithm does not
+presume corank one, real/modular rank agreement, semisimplicity on bad
+trials, or a numerical gap. Rare unlucky trials are explicitly capped
+and charged, rather than assigned an unbounded dense fallback.
+
+Given a bounded RAW moment sup_n E p^r<infinity for the actual simple
+bounded-degree graph law and one known bounded integer shift, complete
+integer sign-kernel listing has unconditional expected soft-O(n^2)
+bit work, expected soft-O(n) workspace, and O(n) expected output bits.
+The complete odometer enumeration has no extra multiplicative r.
+
+No fatal or substantive mathematical gap found. This audit proves the
+algorithmic implication; it does not independently reprove the separate
+sharp all-parity/cubic raw-moment papers. The manuscript appropriately
+states that moment as an input. The earlier coarse N^24 moment alone
+would NOT justify the near-quadratic averaging conclusion.
+
+1. ACTUAL SOURCES AND SCOPE OF INSPECTION
+----------------------------------------
+Complete actual manuscript read and independently reconstructed:
+spectral-gap/partitioning-dynamic-session/rsbm-full-kernel/
+certified-full-kernel.tex
+SHA256 bb6ec1086a2d46f4a1d0b66c69aadc2d120b07157ba8e95f3c08ffb187843473
+
+Also inspected its actual field construction, BM, capped kernel trial,
+pivot normalization, deterministic verifier, odometer, and sign-filter
+implementation in
+spectral-gap/partitioning-dynamic-session/rsbm-full-kernel/full_kernel.py
+SHA256 d57957a6d4c5535513ce700609ed5336a15e60284c578053c86f56a7c501b3ed
+No test-driver run or new numerical validation is asserted here; the
+mathematical audit does not rely on the reported prototype PASS.
+
+Actual primary Chen et al. PDF opened and its Theorems 4.2 and 4.5,
+their proofs, and the adjacent characteristic-restricted statements read:
+https://kaltofen.math.ncsu.edu/bibliography/02/CEKSTV02.pdf
+The local extraction additionally checked is
+spectral-gap/partitioning-dynamic-session/rsbm-exact-algorithm/chen2002.txt
+SHA256 bcde97971b6aac1314c62168bf2ff2cb197a71689429ced46c8614b0cd8b51a5
+
+Actual Wiedemann Section II was read from the local primary-paper
+extraction/PDF; its PDF is
+spectral-gap/partitioning-dynamic-session/rsbm-exact-algorithm/wiedemann1986.pdf
+SHA256 8ec0b8a8b35c02bd4a84236129ab991fdbcca4b4feb8332c22b08dbdefc1218a
+Primary DOI: https://doi.org/10.1109/TIT.1986.1057137
+
+The field construction below is also independently proved directly;
+no uncharged irreducibility or extension-arithmetic oracle is used.
+The separate authors' audit files were not substituted for this review.
+
+2. THE PRIMARY PRECONDITIONERS HAVE THE REQUIRED EXACT SCOPE
+------------------------------------------------------------
+Take K=F_q, D with independent uniform entries in K*, and T=DM.
+Chen et al. Theorem 4.2 applies over any field and gives failure at
+most n(n-1)/(2(q-1)) for cyclicity away from zero. Their Theorem 4.5
+applies to symmetric M over any field, preserves rank, and bounds
+nontrivial nilpotent zero blocks by r/(q-1). Their Theorem 4.3 has
+a characteristic restriction and is not needed. The quoted statements
+and the manuscript's application agree.
+
+Thus, on the common good event, K^n=ker(T) direct-sum im(T), with
+T restricted to im(T) invertible and cyclic of dimension k=rank M.
+The SAME random D is used by both results; only a union bound is
+needed, not independence of their success events. D is invertible,
+so ker(T)=ker(M) and rank(T)=rank(M).
+
+Zero semisimplicity supplies the direct sum and its k-dimensional
+invertible part. Cyclicity supplies a degree-k minimal polynomial of
+that part. Nonzero repeated roots are allowed: polynomial annihilation
+and its nonzero constant coefficient suffice for every later step.
+No diagonalizability/squarefreeness assertion is being silently used.
+
+3. SHIFTED FINITE-SEQUENCE COMPLEXITY IS AN UNCONDITIONAL CERTIFICATE
+--------------------------------------------------------------------
+For arbitrary D,u,v, consider a_j=u^T T^(j+1)v, 0<=j<2n.
+The vector Tv lies in the invariant image space of T, of dimension
+rank T. Cayley-Hamilton on that space gives a recurrence of order
+at most rank T for the ENTIRE infinite scalar sequence and therefore
+for this finite prefix. Exact BM shortest length ell consequently
+satisfies
+
+  ell<=rank(T)<=rank(M).
+
+For the sampled invertible D equality holds in the last inequality.
+This lower-rank certificate is valid even with nontrivial nilpotent
+zero blocks, hidden modes, or arbitrary unlucky scalar probes.
+It does not require that the returned polynomial annihilate all of T.
+
+BM must supply its TRUE finite shortest-register length, with the
+associated monic FORWARD recurrence polynomial of degree ell. If
+connection coefficients are returned in backward order they must be
+reversed; transient cases may have zero final connection coefficient.
+The manuscript explicitly handles this and rejects g(0)=0. The
+prototype retains the BM length separately, pads coefficients through
+that length, reverses them for Horner evaluation, and rejects that
+zero constant case. The zero sequence gives ell=0,g=1.
+
+Suppose the trial has n-ell independent VERIFIED kernel columns.
+They give rank(M)<=ell, exactly matching the unconditional lower bound.
+Acceptance therefore ALWAYS means rank(M)=ell and a complete kernel
+basis, even on every random draw outside the good event. If ell
+underestimates rank, the requested n-ell columns exceed the actual
+kernel dimension and no such trial can accept. If an erroneous
+polynomial action misses the kernel, its residual check prevents
+insertion; zero/dependent columns cannot inflate the verified rank.
+
+When n-ell=0, the empty kernel is sound because ell=n already proves
+full rank. Rejecting first if g(0)=0 can only postpone an otherwise
+sound result; it cannot introduce false acceptance.
+
+4. GOOD-PROBE PROBABILITY AND EXACT PROJECTION POLYNOMIAL
+---------------------------------------------------------
+Condition on a good diagonal preconditioner. Let C denote the
+invertible cyclic k-dimensional image restriction. The projected
+start Tv is uniform on im(T), and u restricts to a uniform linear
+functional there. This holds even if im(T) is isotropic for the
+ambient dot product: restriction of arbitrary ambient functionals
+onto its dual is still surjective.
+
+Controllability and observability determinants are nonzero degree-k
+polynomials in v and u, respectively. Existence follows from cyclicity
+of C and its transpose. Schwartz-Zippel bounds their combined failure
+by 2k/q. If both are nonzero the leading k-by-k scalar Hankel matrix
+is nonsingular, so the prefix complexity is at least k. Section 3
+gives the matching upper bound. Its monic recurrence is uniquely fixed
+by the first 2k terms and equals the actual minimal polynomial of C.
+The 2n computed terms are sufficient since k<=n. This also reconstructs
+the scalar recurrence fact independently of any strengthened reading
+of the Wiedemann citation.
+
+Hence the event G satisfies
+
+  Prob(G^c)<=[n(n-1)/2+r]/(q-1)+2k/q=O(n^2/q),
+  ell=k, g(0)!=0, g(T)=g(0)P_(ker T parallel im T).
+
+The polynomial identity follows by evaluating on the direct-sum
+components; it remains valid with repeated nonzero roots. At k=0
+the image is zero, g=1, and the identity projection is obtained.
+
+Fresh independent uniform b give independent uniform g(T)b in the
+r-dimensional kernel. No dependence on the prior scalar-probe event
+is introduced because these b are fresh and G does not involve them.
+Their uncapped expected span time is
+
+  sum_(j=0)^(r-1) 1/(1-q^(j-r)) <= r+2.
+
+The r=0 case needs no samples. After n+1 samples, a union bound over
+the (q^r-1)/(q-1) hyperplanes gives failure probability
+
+  [(q^r-1)/(q-1)] q^[-(n+1)] <=1/[q(q-1)].
+
+This includes the worst case r=n. Consequently every fixed input
+matrix has per-trial acceptance probability at least 1/2 for the
+chosen q>=64(n+1)^6. No input matrix is stranded outside a hidden
+generic-rank promise.
+
+5. EVERY TRIAL IS CAPPED AND ITS EXPECTED WORK IS FULLY CHARGED
+--------------------------------------------------------------
+Computing 2n shifted terms uses 2n sparse applications of T and
+O(n^2) dot-product work. BM costs O(n^2) field operations and O(n)
+field storage. Together these cost O(n(w+n)). A degree-ell Horner
+action needs at most ell<=n applications, with the same O(n(w+n))
+upper bound, including its vector additions. Residual verification
+costs O(w+n); incremental independence costs O(n(j+1)) when j
+columns are retained, including its initial nonzero scan.
+
+On G, the truncated span procedure is no longer than its uncapped
+span time. Since it retains at most r columns, its expected costs
+are bounded by
+
+  O(n(w+n)(r+1)+nr(r+1))=O(n(w+n)(r+1)).
+
+On ANY bad trial, at most n+1 polynomial probes are attempted and
+at most r verified independent vectors can be stored. This caps
+its arithmetic at O(n^2(w+n)), including all independence operations.
+Thus its bad-event contribution to expected arithmetic is
+
+  O(n^2(w+n))*O(n^2/q)=O(n^4(w+n)/q),
+
+absorbed by the stated bound. The cap also applies when ell is too
+small to be certifiable or g(T) has an unfavorable range. An early
+g(0)=0 rejection is cheaper than this bound.
+
+Random-field sampling uses rejection only with uniformly bounded
+expected overhead. The deterministic cap here is an arithmetic/
+accepted-field-sample count; the bit-sampling implementation may
+have an unbounded rejection count. This does not break the charge:
+standard rejection's trial count is independent of its accepted
+uniform value, so its conditional expected bit cost remains bounded
+even on the bad algebraic event. Alternatively use uniform base-field
+coefficients with the same property. Thus no rare-event conditioning
+silently multiplies an uncontrolled random-bit cost.
+
+Independent retries, conditional on the fixed verified extension,
+obey E(total)=E(one trial)/Prob(one trial accepts), even when work
+and acceptance within a trial are correlated. Since acceptance is
+uniformly >=1/2, this proves finite expected work and almost-sure
+termination for every fixed M. There is no graph-probability event
+or dense rational fallback in this all-input Las Vegas argument.
+
+Boundary cases check directly. At M=0, ell=0,g=1 and the algorithm
+collects n independent uniform vectors; its possibly cubic work fits
+n(w+n)(r+1) with r=n,w=0. At full rank, good trials certify ell=n
+and accept an empty basis after the sequence work. Symmetric inputs
+that are nilpotent before preconditioning remain within the theorem.
+
+6. EXTENSION CONSTRUCTION AND BIT COMPLEXITY
+-------------------------------------------
+The least s with q=p^s>=64(n+1)^6 has s=O_p(log(n+1)) and
+q<64p(n+1)^6. Rank is unchanged under extension since the same
+nonzero minors determine it. Sample monic degree-s polynomials
+and accept only after an EXACT irreducibility test.
+
+The elementary test in the manuscript is valid as written: require
+gcd(h,X^(p^i)-X mod h)=1 for EVERY 1<=i<=floor(s/2). Any reducible
+degree-s polynomial has an irreducible factor of degree at most s/2,
+which appears in its corresponding test; an irreducible degree-s
+polynomial fails none. Repeated-factor cases are caught as well.
+For s=1 all monic linear polynomials are irreducible. Hence this
+all-small-degrees test does not need an additional Frobenius-at-s
+condition; it is a valid elementary alternative to the abbreviated
+prime-divisor criterion.
+
+The monic irreducible count is at least p^s/(2s), so search succeeds
+with probability >=1/(2s) per candidate. One elementary proof uses
+p^s=sum_(d|s)d I_p(d) and bounds the proper-divisor contribution by
+sum_(j<=s/2)p^j<=p^s/2 for fixed odd p and s>=2. Thus O(s) expected
+candidates suffice. Successive modular p-th powers and classical
+polynomial gcd take polynomial(s) deterministic bit work per test.
+Construction is therefore expected polylog(n) bit work and almost
+surely terminates, independently of any matrix rank.
+
+Represent elements as s base-field coefficients. Schoolbook modular
+polynomial operations, extended-Euclid inversion (or exponentiation),
+zero tests, and uniform sampling cost polynomial(s)=polylog(n) bits
+for fixed p. This justifies soft-O rather than unit-cost arithmetic
+over an unbounded field. Construction is done once and reused; the
+trial probability bounds hold for every field obtained this way.
+
+7. CANONICAL DESCENT, MEMORY, AND THE DETERMINISTIC CERTIFICATE
+-------------------------------------------------------------
+An accepted B in K^(n by r) spans the full extension kernel. Select
+r rows J with B_J invertible and set C=B(B_J)^(-1). Then C_J=I_r.
+Frobenius x->x^p preserves the kernel because M has base coefficients,
+and preserves this pivot identity. Restriction to J is an isomorphism
+of the kernel onto K^r, so each normalized basis column is uniquely
+determined by its pivot coordinates. Hence C^(p)=C and every entry
+is in F_p. This proves descent of the normalized basis, not of each
+arbitrary extension-field probe separately.
+
+Row selection, inversion and multiplication cost O(nr^2+r^3), bounded
+by O(n(w+n)(r+1)) because r<=n. Storage is O(nr) field elements.
+Check the nonconstant representation coefficients vanish, extract
+the base entries, and recheck MC=0 exactly. The prototype's maintained
+canonical pivot columns implement the same normalization incrementally.
+
+The certificate contains h,D,u,v,ell,C,J. Its size is O_p(nr+n log n)
+bits: C is over the fixed base field, while the three extension
+vectors have O(n log n) bits; J costs at most O(n log n). A verifier
+enforces the prescribed least extension degree/field-size bounds and
+encodings (as the prototype explicitly does), tests irreducibility,
+recomputes the shifted sequence and exact BM length, and checks
+
+  r=n-ell, MC=0, C_J=I_r, valid distinct pivot rows J.
+
+These checks alone give both rank inequalities deterministically.
+The verifier need not trust g(T), the preconditioner probability,
+Frobenius descent, or the generation algorithm. It need not perform
+dense elimination or any O(nr^2) rank test: the pivot identity already
+certifies independence. Cost is O(n(w+n)+wr+r^2) field/base operations,
+within soft-O_p(n(w+n)) bits since r<=n.
+
+Workspace throughout is O(n(r+1)+w) field/base elements: input sparse
+storage, D,u,v, sequence/BM data, current probes, and <=r retained
+columns. Temporary normalization r^2 data fit within nr. Each has
+O_p(log(n+1)) bits, with sparse indices covered by the same soft
+bound. A retry counter may be stored separately; its expected size
+is finite under the uniform geometric success bound. No complete
+Krylov matrix or exponentially long output list is needed as scratch.
+
+8. COMPLETE BASE-FIELD ENUMERATION WITHOUT AN EXTRA r
+----------------------------------------------------
+Enumerate a in F_p^r and maintain its image Ca in base-field
+arithmetic. In an odometer, changing a digit from p-1 to zero is
+also addition of one modulo p, so a carry is just one further
+basis-column addition. Across a full pass, the TOTAL digit changes
+are at most p^r sum_(j>=0)p^(-j)=O_p(p^r). Each costs O(n).
+Initialization/counter management is absorbed by O(n p^r), since
+r<=n. No fresh O(nr) matrix-vector multiply is done per candidate.
+
+Retain only vectors whose coordinates are 1 or -1 and whose final
+coordinate is 1. For odd p the residues lift uniquely to integer
+signs, and global sign exchange has precisely one such orientation.
+Check balance and M_Z sigma=0 over the INTEGERS; modular residuals
+alone would be insufficient. At bounded degree and bounded known
+lambda these checks and writing a passing vector cost O_{d,p}(n)
+bits per candidate (or the same soft bound under a conventional
+counter implementation). The full generation/check/output charge
+is therefore O_{d,p}(n p^r), with no r*p^r moment required.
+
+Every integer sign kernel maps to a base-field kernel vector, and
+different signs remain distinct modulo odd p. Thus the list is
+complete on every input, including matrices with extra real or
+modular kernel dimensions. At r=0 the single field vector is zero
+and correctly produces no sign vector for n>=1. Odd graph orders
+can simply produce no balanced sign solutions.
+
+9. AVERAGING IS VALID UNCONDITIONALLY, WITH THE STATED RAW INPUT
+--------------------------------------------------------------
+For fixed bounded-degree input and actual base corank r, the
+conditional expected total work is
+
+  soft-O_(d,p)(n^2(r+1)+n p^r).
+
+This bound is valid for EVERY fixed input matrix, with uniform
+constants. Since r+1<=O_p(p^r), a single actual-law raw moment
+sup_n E p^r<=C controls its expectation and proves unconditional
+expected soft-O_(d,p,C)(n^2) bit work. It also controls expected
+basis workspace and output bits by soft-O(n) and O(n), respectively.
+Returning a streamed list avoids using output as scratch; even if
+the list is stored, its expected size is covered by the same moment.
+
+If the raw bound is proved in the exact configuration model and
+simplicity probability is bounded below, its transfer is the direct
+inequality E[p^r|simple]<=E[p^r]/Prob(simple). This is legitimate for
+an unbounded random variable. Qualitative contiguity or high-probability
+real corank one would NOT supply this expectation bound; the source
+explicitly avoids both shortcuts. An asymptotic bounded moment plus
+the finitely many initial admissible sizes gives a finite supremum.
+
+For regular RSBM parameters a,b, d=a+b, lambda=a-b, an integer sign
+eigenvector has exactly a same-side and b opposite-side neighbors.
+Balance imposes the equal-block partition requirement. Thus the
+verified list is exactly the full admissible partition list for these
+KNOWN parameters. The planted assignment is always included.
+Returning the unique partition when unique, otherwise its complete
+ambiguity list, has no algorithmic error or computational abstention;
+any ambiguity is a property of the graph distribution. A separate
+Boolean-rigidity theorem supplies high-probability uniqueness if desired.
+
+10. FINAL SCOPE CHECK
+---------------------
+Verified all-input algorithmic assumptions: symmetric input; one fixed
+odd base prime; exact finite-field arithmetic; prescribed extension
+construction; known bounded integer shift for sign listing; bounded
+graph degree for its near-quadratic specialization. Verified retries,
+bad projections, nilpotent failures, zero/full ranks, all-candidate
+residuals, independence, pivot descent, certificate verification,
+random bits, and enumeration/output costs.
+
+The near-quadratic graph conclusion remains conditional on a RAW
+bounded exponential corank moment for the ACTUAL graph law. This
+audit does not derive it from the earlier polynomial-moment theorem
+or certify a newly referenced sharp graph proof without reviewing it.
+No nearly quadratic unknown-frame/multiple-shift algorithm follows
+without suitable moments for those additional operators or a separately
+charged filter. No new preconditioner, historical-priority certificate,
+noisy-data guarantee, or practical runtime is asserted.
+
+No critical mathematical or runtime defect found in the actual source.

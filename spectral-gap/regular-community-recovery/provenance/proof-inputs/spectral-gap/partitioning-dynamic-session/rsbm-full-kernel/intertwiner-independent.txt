@@ -1,0 +1,202 @@
+INDEPENDENT AUDIT: NONSYMMETRIC VECTOR INTERTWINERS
+15 November 2026
+
+Verdict
+=======
+
+The proposed symmetric block linearization is valid over the fixed prime field and its computational extensions. It preserves the desired right kernel without an isotropy assumption. Computing the full symmetric kernel costs expected soft-O(D^2(2h+1)) bit work for each fixed square K of order D and corank h, assuming the previously audited full-kernel routine. Projection and canonical selection of the right kernel fit the same bound. Only the h-dimensional RIGHT kernel should be enumerated. This preserves an assumed E[p0^h] bound without introducing E[p0^(2h)].
+
+There is an important quotient/balance compatibility condition: if A is undirected and all cells have the same nonzero cardinality, an exact quotient R must be symmetric. A genuinely nonsymmetric quotient is compatible with unequal prescribed cell sizes satisfying the edge-count balance identities below. The algebraic reduction itself permits any R.
+
+This audit does not prove a random-model bound for h. Any statement E[p0^h]<=C is an additional supplied model input. No new primary theorem is needed: the existing symmetric full-kernel routine is applied to the explicitly symmetric linearization.
+
+1. Dimensions and vectorization conventions
+==========================================
+
+Let A be n by n and symmetric. Let R be t by t, and X be n by t. Use COLUMN-STACKED vectorization:
+
+  vec(X)=(X_:,1; X_:,2; ...; X_:,t) in F^(tn).
+
+Put D=tn and
+
+  K = I_t tensor A - R^T tensor I_n.                    (1)
+
+Then
+
+  K vec(X) = vec(AX-XR).
+
+Thus the transposition on R in (1) is correct. Replacing it by R would instead encode AX-XR^T. Since A=A^T,
+
+  K^T = I_t tensor A - R tensor I_n,
+  K^T vec(Y) = vec(AY-YR^T).                            (2)
+
+Both black boxes are available explicitly. No transpose oracle or assumption that R is symmetric is hidden in this formulation.
+
+When t, the graph degree, and R are fixed, the number of nonzeros satisfies
+
+  nnz(K) <= t nnz(A) + n nnz(R) = O(n)=O(D).
+
+Possible overlap/cancellation only reduces this count. Direct structured multiplication costs O(t nnz(A)+n t^2), which is O(n) for fixed t and degree. The same bound holds for K^T. One can use the structured formulas without constructing the Kronecker matrix.
+
+For a bit statement, the integer entries of R must be fixed or explicitly bounded in bit length. For a fixed-degree graph quotient they are nonnegative neighbor counts bounded by the degree, so this requirement is automatic. Unbounded growing integer entries would introduce a dependence on their bit size, especially in the final exact checks.
+
+2. Symmetric linearization, rank, and kernel
+==========================================
+
+Define the 2D by 2D matrix
+
+  S = [ 0    K  ].                                      (3)
+      [ K^T  0  ]
+
+For a block vector (a,b),
+
+  S(a,b)=(Kb,K^T a).
+
+Consequently
+
+  ker(S)=ker(K^T) direct-sum ker(K),
+  rank(S)=rank(K)+rank(K^T)=2 rank(K).
+
+If h=D-rank(K), then dim ker(S)=2h, and projection onto the BOTTOM coordinate block maps ker(S) surjectively onto ker(K). These identities are elementary block linear algebra and hold over every field. They remain true after extension from F_p0 to F_(p0^s), since matrix rank is unchanged by field extension.
+
+A matvec with S uses one K and one K^T matvec, with no change in sparsity order. S is symmetric even when K and R are not. Therefore the previously audited Chen et al. Theorems 4.2 and 4.5 apply to random diagonal left scaling of S. Choose the computational extension size relative to 2D, for example q>=(2D)^6; this remains polynomial in n at fixed t and has O(log n)-bit elements. There is no characteristic-greater-than-dimension assumption.
+
+3. Why K^T K is not a sound replacement
+=======================================
+
+Over finite fields, a nonzero vector can be isotropic. For example over F_5,
+
+  K = [1 0],    rank(K)=1,
+      [2 0]
+
+but K^T K is the zero 2 by 2 matrix because 1^2+2^2=0 modulo 5. Thus ker(K^T K) is strictly larger than ker(K). The real-positive-definite identity used for Gram matrices does not hold in this setting. The symmetric block matrix (3) avoids this error and has rank exactly two in this example.
+
+4. Full symmetric-kernel computation and averaging
+==================================================
+
+Let the previously audited symmetric full-kernel algorithm act on S of order 2D. Its corank parameter is 2h. Substitution into its per-input expected bound gives
+
+  soft-O((2D)^2(2h+1)) = soft-O(D^2(h+1)).               (4)
+
+This routine computes a basis; it does not enumerate its 2h-dimensional kernel. Therefore its computational expectation over a graph distribution needs only E[h], not E[p0^(2h)]. An assumed E[p0^h]<=C implies E[h]<=C_(p0) C and is more than sufficient for (4).
+
+All preconditioning/probing retries and extension-field arithmetic charges remain as in the prior full-kernel audit. The raw bounded moment is not altered by constructing S, because no probabilistic graph theorem is being applied to S. Applying a graph moment result to the symmetric linearization as though it were a graph adjacency matrix would be unjustified and is unnecessary.
+
+5. Extracting and certifying the base-field right basis
+======================================================
+
+Suppose the symmetric routine returns a deterministically verified full basis B_S over F_p0, with 2h columns, together with its shifted-sequence lower-rank certificate. If its internal basis was initially over an extension, first use the previously audited canonical Frobenius descent, or perform the equivalent right-space normalization described below after projection.
+
+Let J be the D by 2h matrix consisting of the BOTTOM D rows of B_S. Its column span is exactly ker_Fp0(K), and its rank is h. Do not simply take its first h columns: some may be zero or dependent.
+
+Use exact elimination to select h independent columns of J. This costs O(D h^2) base-field operations. Denote the selected D by h matrix by B. Choose h pivot rows I with B_I nonsingular and normalize
+
+  C = B (B_I)^-1,    C_I=I_h.                           (5)
+
+Row selection, inversion, and multiplication together cost O(D h^2+h^3) operations. Verify K C=0 over the base field and verify the identity pivot rows. For fixed t and degree the kernel multiplication check costs O(D h) operations.
+
+The full-S certificate proves rank(S)=2D-2h; the block rank identity therefore proves rank(K)=D-h. The h columns in (5) are independent because of their identity pivot rows, and are verified right-kernel vectors. Hence they constitute a COMPLETE right-kernel basis. This is a deterministic certificate; no probabilistic estimate of the right rank is substituted for a proof.
+
+If one projects an extension-field basis before descending, the same normalized right basis is fixed by the p0-Frobenius: its subspace is ker(K), K has base-field entries, and identity normalization on fixed pivot rows is unique. Thus its entries descend to F_p0. Extract and verify those entries explicitly. Either ordering has the stated cost.
+
+Because h<=D,
+
+  D h^2+h^3 <= 2D^2 h,
+
+so projection, basis selection, and canonicalization fit the pointwise bound D^2(h+1). This establishes the claim that the computational averaging needs only E[h]. The h=0 case returns the empty right basis and needs no pivot selection.
+
+The certificate may retain the full-S rank/basis certificate plus C and its pivot rows. A checker reconstructs S through (1)--(3), checks that certificate, and checks K C=0 and C_I=I_h. Its work has the same order as (4), with all field construction/irreducibility checks included. Complete right rank follows from the certified full-S rank and the exact block identity.
+
+6. Enumerate only the right kernel
+==================================
+
+Enumerate the p0^h coefficient vectors in F_p0^h and their images under C. NEVER enumerate the p0^(2h) vectors in ker(S). The left-kernel component is computational scaffolding, not part of a candidate assignment.
+
+Use a base-p0 counter or a Gray code while maintaining the current D-vector. Across all p0^h counter states the total number of coordinate changes is O_(p0)(p0^h). Each change adds a scalar multiple of one basis column in O(D) base operations. Hence candidate generation costs O(D p0^h), not O(D h p0^h). This distinction is necessary because a bound on E[p0^h] alone does not imply a bound on E[h p0^h].
+
+Reshape each candidate according to column-stacked vec into X in F_p0^(n by t). Require each row to have exactly one entry equal to 1 and all other entries equal to 0. Checking merely that its row sum is 1 is insufficient. Lift an accepted field row uniquely to its integer zero-one row, and then check OVER THE INTEGERS
+
+  A X = X R,
+
+as well as the exact prescribed cell sizes or balance conditions. The modular equation alone is not sufficient, since neighbor counts could agree only modulo p0. Exact checks eliminate all modular false positives.
+
+For fixed t, degree, and integer R, candidate scans and exact intertwining/balance checks cost soft-O(D) bits per candidate. Thus total enumeration/check work is soft-O(D p0^h), and its graph expectation is controlled directly by the assumed E[p0^h] bound. Every genuine integer one-hot intertwiner maps into this base-field kernel, and zero and one are distinct modulo p0. Complete right-kernel enumeration and exact checks therefore produce a complete list of admissible assignments.
+
+If assignments are identified up to label permutations, deduplicate only according to the intended quotient-label convention. For a fixed prescribed R, arbitrary column permutations need not preserve AX=XR; the relevant permutations must preserve or simultaneously relabel R and the prescribed cell sizes. At fixed t this bookkeeping costs at most a constant factor.
+
+7. Balance compatibility for nonsymmetric R
+===========================================
+
+Let N_i be the size of cell i in a nonempty one-hot assignment. Exact AX=XR means R_ij is the number of neighbors in cell j of every vertex in cell i. Since A is symmetric, counting the same undirected crossing edges from its two sides gives
+
+  N_i R_ij = N_j R_ji.                                 (6)
+
+Thus diag(N_1,...,N_t) R must be symmetric. If all N_i are the same positive N, (6) forces R=R^T. A genuinely nonsymmetric R requires unequal cell sizes (or a corresponding prescribed mass convention) satisfying (6). It cannot describe a nonempty equal-cardinality equitable partition of an undirected graph.
+
+The algorithm may simply test any specified balance demand and return an empty list if incompatible, but the probabilistic model and any claimed planted candidate must respect this constraint. The vectorization and symmetric-linearization arguments do not impose equal sizes and remain valid in the general case.
+
+Final scope
+===========
+
+For constant t and fixed degree, D=tn=Theta(n), so (4) is soft-O(n^2(h+1)). Together with E[h]=O(1), complete-basis computation has nearly quadratic expected bit work. Enumerating only the h-dimensional right kernel costs soft-O(n p0^h), controlled by the supplied exponential moment. No squaring of that moment, no Gram-matrix kernel identity, and no symmetry assumption on R is needed. Statistical moment and identifiability/ambiguity assertions remain external inputs to this deterministic-algebra audit.
+
+8. OPTIONAL RANDOM WEIGHTED GRAM ROUTE: INDEPENDENT AUDIT
+=======================================================
+
+The optional route is ALSO valid and can avoid computing a doubled symmetric kernel. Its soundness relies on random row weights and verification against K itself, not on the false unweighted Gram identity discussed in Section 3.
+
+Let K be an m by n matrix over the base field F_p0, of rank k and right corank h=n-k. Work in the verified computational extension F_q. Choose
+
+  E=diag(e_1,...,e_m), e_i independent uniform in F_q^*,
+  G=K^T E K.                                           (7)
+
+Then G is symmetric, rank(G)<=k deterministically, and ker(K) is contained in ker(G). To show rank preservation with high probability, choose any k independent columns J of K. By Cauchy--Binet,
+
+  det(G_J,J)=sum_(|I|=k) det(K_I,J)^2 product_(i in I)e_i. (8)
+
+Some coefficient is nonzero because K_:,J has rank k. Different index sets I give distinct squarefree monomials in the row-weight variables, so no cancellation can make (8) the zero polynomial. Its total degree is k. Schwartz--Zippel over F_q^* therefore gives
+
+  Prob(rank(G)<k) <= k/(q-1).                           (9)
+
+This remains valid over small characteristic and uses no positivity. If k=0, rank preservation is automatic and the zero-degree determinant convention need not be invoked in an implementation. On rank preservation, the inclusion ker(K) subset ker(G) and equal dimensions imply ker(G)=ker(K) over the extension.
+
+Now choose a FRESH independent random nonzero diagonal D of order n. Apply Chen et al. Theorems 4.2 and 4.5 to the symmetric G, conditional on E. Their joint failure probability is O(n^2/q), regardless of the extension-field entries of G. On their good event, T=DG has zero semisimple and cyclic nonzero part. Shifted probes and the polynomial kernel projection proceed exactly as in the symmetric full-kernel routine.
+
+The unconditional stopping certificate uses a particularly clean chain. If the shifted sequence has exact finite complexity ell, then
+
+  ell <= rank(T)=rank(G) <= rank(K).                    (10)
+
+Count only independent candidate vectors satisfying Kx=0. If n-ell such vectors have been obtained, their independence gives rank(K)<=ell. Thus ALL inequalities in (10) are equalities. The resulting basis is the COMPLETE right kernel of K, even if the initial E, diagonal preconditioner, or scalar probes were unlucky. A rank-deficient weighted Gram matrix cannot falsely pass: then ell<k and n-ell>h independent verified K-kernel vectors cannot exist.
+
+It is essential to verify Kx=0, not merely Gx=0 or Tx=0. Without the K check, a failed row-weight trial could certify the larger, wrong Gram kernel.
+
+Descent requires careful wording. G generally has extension-field entries, so its kernel is not a priori Frobenius-stable merely from its matrix definition. On ACCEPT, however, (10) and the candidate checks establish that the computed space is exactly ker(K), which IS defined over the base field. Canonical identity normalization on pivot rows therefore makes this accepted basis Frobenius-fixed, by the previous descent proof. Extract and verify the base-field coefficients. Do not justify descent by incorrectly calling G a base-field matrix.
+
+A final certificate can contain E,D,u,v, the verified irreducible extension modulus, and the normalized base-field right basis B0. The checker recomputes the shifted sequence for T=DK^T E K, obtains ell, checks that B0 has n-ell identity-normalized independent columns, and checks K B0=0 over the base field. Equation (10) then deterministically proves completeness. No certificate for the unused left kernel is required.
+
+Implicit products and costs
+--------------------------
+
+Never construct G densely. One T matvec consists of
+
+  z -> Kz -> E(Kz) -> K^T E(Kz) -> D K^T E(Kz).
+
+With sparse K and its transpose available, this costs O(w+m+n) extension operations, where w=nnz(K). Forming the scalar sequence and BM costs O(n(w+m+n)); each polynomial projection costs the same order. Sampling E and all other randomness is charged within this bound.
+
+On good trials, expected O(h+1) kernel probes suffice, giving
+
+  O(n(w+m+n)(h+1)) extension operations.                (11)
+
+Independence maintenance and canonical descent cost O(n h^2+h^3), at most O(n^2 h), and fit (11) because w+m+n>=n. With the n+1 probe cap, an arbitrary failed trial costs O(n^2(w+m+n)). Its probability from the row weights, symmetric preconditioner, and scalar probes is O(n^2/q). For q>=n^6, the expected bad-trial work is negligible compared with (11). Good-trial cap exhaustion has probability O(q^-2). Repeating capped trials until the complete right-kernel certificate passes therefore gives expected soft-O(n(w+m+n)(h+1)) bit work per fixed K, with verified extension arithmetic charged as before.
+
+For the square intertwiner K of order D with w=O(D), (11) is soft-O(D^2(h+1)). This route has the same expected-order guarantee as symmetric linearization, while avoiding the doubled kernel basis. The linearization remains the simpler deterministic rank identity and does not require auditing (8)--(9) in the main theorem.
+
+Why direct left/right diagonal scaling of K is insufficient
+----------------------------------------------------------
+
+For
+
+  K=[0 1],
+    [0 0]
+
+every invertible diagonal product D1 K D2 remains a nonzero nilpotent matrix whose zero eigenvalue is not semisimple. Thus diagonal row/column scaling of an arbitrary nonsymmetric K does not justify the semisimplicity at zero needed by the kernel-projection routine. The Chen theorem for symmetric matrices cannot be applied directly to nonsymmetric K. Both the symmetric block linearization and the random weighted Gram route restore a symmetric matrix before that theorem is used.

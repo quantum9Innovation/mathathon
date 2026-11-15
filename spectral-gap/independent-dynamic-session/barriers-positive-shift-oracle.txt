@@ -1,0 +1,240 @@
+Positive-shift access barriers for relative fractional updates
+Independent dynamic session, 2026-11-15
+
+Status and scope
+----------------
+This file proves restricted access barriers. It proves no impossibility
+for algorithms given the explicit graph, arbitrary-right-hand-side solves,
+an exact shifted-solve oracle, or an unshifted vector solve. In particular,
+it supplies no lower bound against all nearly-linear graph algorithms.
+The input notes' log-determinant identity is a rank/existence statement;
+none of the arguments below strengthens that identity to a graph
+computational lower bound.
+
+1. A finite positive-shift quadrature misses a hidden relative scale
+-------------------------------------------------------------------
+Let A_a=diag(a,1), u_a=(sqrt(a z_1),sqrt(z_2)), with fixed z_1,z_2>0,
+z_1+z_2=tau, and a down to zero. Put B_a=A_a+u_a u_a^T. Then
+
+  C_a=A_a^{-alpha/2}(B_a^alpha-A_a^alpha)A_a^{-alpha/2}
+
+has (1,1) entry converging to
+
+  c=((1+tau)/(1+z_2))^alpha-1 > 0.
+
+This is the n=2 separated-scale lemma of the relative-response note.
+For any fixed finite collection t_j>0 and finite weights omega_j,
+the resolvent quadrature correction
+
+  F_a=sum_j omega_j (A_a+t_j I)^{-1}u_a u_a^T(A_a+t_j I)^{-1}
+                    /[1+u_a^T(A_a+t_j I)^{-1}u_a]
+
+has relative (1,1) entry
+
+  a^{1-alpha} z_1 sum_j omega_j/[(a+t_j)^2(1+h_a(t_j))] -> 0.
+
+Consequently its relative norm error has liminf at least c. This also
+applies to shifts and weights scaled by ||u_a||^2, provided their
+normalized finite limits have positive shifts and finite weights: that
+scale tends to z_2. An absolute-error rule normalized at the edit norm
+therefore does not automatically provide relative error.
+
+This is a failure of finite predetermined scales, not a lower bound on
+adaptive rational Krylov construction. Tiny raw components can be
+amplified by exact arithmetic and adaptively placed poles. A finite
+relative approximation rank is not itself contradicted.
+
+2. Adaptive noisy positive-shift oracle: a genuine restricted barrier
+------------------------------------------------------------------------
+Fix alpha in (0,1), tau>0, s=tau/2, and u=sqrt(s)e_1 in R^2. The
+algorithm knows n=2, alpha, tau, u, ||A||=1, and ||u||^2=s. It does
+not receive entries of A. It may make adaptive queries of either form:
+
+ (a) endpoint H=A or H=B=A+uu^T, shift t>0, tolerance eta>0:
+     obtain a vector y with
+       ||y-(H+tI)^{-1}u||_{H+tI}
+           <= eta ||(H+tI)^{-1}u||_{H+tI};
+
+ (b) exact scalar leverage u^T A^{-1}u=tau.
+
+The oracle may choose any admissible answers. No query has eta=0 or
+t=0 in (a). The output is one fixed explicit symmetric matrix F, or
+fixed explicit factors whose matrix product is F. For a two-factor
+nonsymmetric output, replace it by its symmetric part; this cannot
+increase the norm error to the symmetric target.
+
+THEOREM. Write
+
+  c=((1+tau)/(1+tau/2))^alpha-1.
+
+For every 0<eps<c, no deterministic algorithm with a uniform finite
+query bound q can guarantee, on all SPD inputs in this model and all
+admissible oracle answers,
+
+  ||A^{-alpha/2}(B^alpha-A^alpha-F)A^{-alpha/2}|| <= eps.
+
+This also excludes the stronger one-sided condition
+0 <= B^alpha-A^alpha-F <= eps A^alpha. The statement allows arbitrary
+computation between queries, adaptive shifts and adaptive positive
+tolerances. Therefore positive tolerance chosen extremely small at a
+query does not repair this access model uniformly across all scales.
+
+Proof. For 0<a<1/2 set p_a=a/(1-a), and put
+
+  w_a=sqrt(p_a)e_1+sqrt(1-p_a)e_2,
+  A_a=I-(1-a)w_a w_a^T,
+  B_a=A_a+uu^T.
+
+The eigenvalues of A_a are a and 1, and ||A_a||=1. Directly,
+
+  u^T A_a^{-1}u=s[p_a/a+(1-p_a)]=2s=tau.
+
+Thus all disclosed data are exactly the same for every a. In the
+eigenbasis (w_a,w_a-perp), the squared update components are
+
+  a z_1(a), z_2(a),
+  z_1(a)=s/(1-a), z_2(a)=s(1-2a)/(1-a).
+
+Here z_1(a)+z_2(a)=tau and both tend to s. The same dominated
+convergence proof as the separated-scale lemma gives
+
+  w_a^T(B_a^alpha-A_a^alpha)w_a/a^alpha -> c,
+
+and the off-diagonal entry of that raw fractional difference in this
+eigenbasis tends to zero. In fact the relative off-diagonal is
+O_alpha,tau(a^{(1-alpha)/2}).
+
+Use the following common transcript, independent of a:
+
+  at A,t return y_A^0(t)=u/(1+t),
+  at B,t return y_B^0(t)=u/(1+s+t),
+  at the scalar leverage query return tau.
+
+For A, let h_a(t)=u^T(A_a+tI)^{-1}u. Exact calculation gives
+
+  h_a(t)=s/(1+t)+s a/[(a+t)(1+t)],
+
+and the squared relative energy error of y_A^0 is exactly
+
+  ||y_A^0-(A_a+tI)^{-1}u||_{A_a+tI}^2 / h_a(t)
+       = a(1-a)/[(1+t)(t+2a)] -> 0
+
+for every fixed t>0. Therefore every fixed positive tolerance eventually
+permits the common A answer.
+
+For B, Sherman-Morrison gives
+
+  (B_a+tI)^{-1}u=(A_a+tI)^{-1}u/(1+h_a(t)).
+
+The right side converges in Euclidean norm to u/(1+s+t). Since
+||B_a+tI|| <= 1+s+t, its squared error in (B_a+tI)-energy tends to
+zero. Its exact squared solution energy is h_a(t)/(1+h_a(t)), tending
+to s/(1+s+t)>0. Hence every fixed positive tolerance eventually permits
+the common B answer too. The scalar leverage answer is exact.
+
+Run the deterministic algorithm on this transcript. Every finite prefix
+has positive queried shifts and tolerances, so every answer in that
+prefix is admissible for every sufficiently small a. If the algorithm
+did not stop by query q, its first q+1 actions would contradict its
+uniform bound on one such valid A_a input. It therefore stops by q and
+returns some fixed F. All its queries and output are now fixed; choose
+a sufficiently small to make their common answers admissible.
+
+It remains to prove that any fixed F fails for all sufficiently small
+a. Suppose to the contrary that the desired relative norm inequality
+holds along a sequence a down to zero. Testing the low eigenvector
+forces F_22=0, since the raw target low quadratic form and eps a^alpha
+both tend to zero, and w_a -> e_2. Testing the cross entry between
+the low and high eigenvectors forces F_12=0: the allowed raw cross
+error is eps a^{alpha/2} -> 0, and the target raw cross entry tends to
+zero. It follows that
+
+  w_a^T F w_a/a^alpha=p_a F_11/a^alpha -> 0,
+
+because alpha<1. The target low quadratic form divided by a^alpha
+tends to c, contradicting eps<c. Thus for this fixed F there is a
+positive a_F below which all inputs fail. Choose a below a_F and below
+the finitely many oracle-admissibility thresholds. This establishes the
+claimed failure on one genuine SPD input. QED.
+
+What precisely bypasses the theorem?
+
+* Exact vector queries have eta=0 and can read the tiny raw component.
+* A t=0 vector query along u has an e_2 component of order a^{-1/2},
+  exposing the hidden scale; its energy error ratio under the common
+  answer does not tend to zero. Known scalar leverage is much weaker.
+* Arbitrary right-hand sides, e.g. e_2, also expose the low eigenvalue.
+* Explicit input entries reveal a. So do sufficiently informative static
+  data structures prepared from A; their cost must be separately charged.
+* The matrices are SPD, not asserted unit-mass graph Laplacians. Their
+  spectral path realizations do not preserve an indistinguishable oracle
+  transcript or fixed disclosed u. Such a transfer would need a new proof.
+
+The theorem is a deterministic bounded-query statement against permitted
+oracle errors. It does not assert a lower bound against randomized
+algorithms with an exact oracle, and does not manufacture a log(kappa)
+lower bound. The proved conclusion is that this restricted approximate
+oracle admits no bound uniform over all positive a.
+
+3. Standard energy-solve accuracy alone cannot certify relative factors
+-------------------------------------------------------------------------
+This obstruction occurs already for ordinary unit-mass graphs, although
+it is not a computational lower bound.
+
+Let L_a be the 3-vertex path with conductances w_12=1,w_23=a, and
+increase edge 12 by d=tau>0. Then u=sqrt(d)(e_1-e_2) and
+u^T L_a^dagger u=tau exactly because edge 12 is a bridge. The smaller
+positive eigenvalue lambda_a tends to zero. Let w_a be a corresponding
+unit eigenvector in 1-perp. Fix t=1, v_a=(L_a+I)^{-1}u, and eta>0.
+The approximate solution
+
+  vhat_a=v_a+eta ||v_a||_{L_a+I}/sqrt(1+lambda_a) w_a
+
+has exactly the permitted relative (L_a+I)-energy error eta. Moreover,
+||v_a||_{L_a+I} stays bounded above and bounded away from zero.
+
+As a -> 0, w_a tends to the weak-cut vector proportional to (1,1,-2),
+which is orthogonal to u, and hence w_a^T v_a -> 0. Therefore, for
+every fixed positive weight omega,
+
+  w_a^T (L_a^dagger)^{alpha/2}
+      [omega vhat_a vhat_a^T]
+          (L_a^dagger)^{alpha/2} w_a -> infinity.
+
+The true relative update norm is bounded by (1+tau)^alpha-1, by
+L_a+uu^T <= (1+tau)L_a on the support and operator monotonicity.
+So treating an arbitrary energy-accurate shifted solution as a raw
+factor cannot give a gap-independent relative factor guarantee at
+fixed eta. A valid algorithm needs a stronger error structure, a filter,
+or a separate certification argument. This shows insufficiency of one
+solver contract, not impossibility for graph solvers as algorithms.
+
+4. Cost and prior art checks
+---------------------------
+Explicit factors with n rows and r columns require Omega(nr) output
+writes under that output convention. The determinant sharpness result
+forces r of order alpha log(1+tau)/eps in the worst case. A claimed
+nearly-linear update cost must therefore specify whether it means
+roughly (m+n)r up to logarithms, m+nr up to logarithms, an implicit
+representation, or an amortized maintenance cost. The output-size fact
+does not force a graph gap or conductance condition-number logarithm.
+
+Primary sources consulted:
+
+* Beckermann, Cortinovis, Kressner, Schweitzer, Low-rank updates of
+  matrix functions II: Rational Krylov methods (2021),
+  https://arxiv.org/abs/2008.11501 . The paper develops rational Krylov
+  update methods and rational exactness/convergence analysis. It is not
+  being cited as a relative graph construction lower bound.
+* Massei and Robol, Rational Krylov for Stieltjes matrix functions:
+  convergence and pole selection,
+  https://arxiv.org/abs/1908.02032 . The paper analyzes pole selection
+  for actions of Stieltjes functions of SPD matrices. Its upper bounds
+  do not prove condition dependence necessary for every access model.
+* Koutis, Miller, Peng, A nearly-mlogn time solver for SDD systems,
+  https://arxiv.org/abs/1102.4842 . The solver's stated accuracy is
+  relative system-energy error. Section 3 above explains why this
+  contract cannot silently be substituted for relative fractional
+  factor accuracy.
+
+No claim of historical priority is made for these elementary barriers.

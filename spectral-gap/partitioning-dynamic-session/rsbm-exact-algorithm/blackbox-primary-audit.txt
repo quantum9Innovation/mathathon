@@ -1,0 +1,130 @@
+PRIMARY BLACK-BOX EXACT-LINEAR-ALGEBRA AUDIT
+15 November 2026
+
+Conclusion
+==========
+
+A certified ~O(n^2)-bit recovery algorithm is available, conditional on the real planted eigenvalue being simple. The existing qualitative RSBM simplicity theorem then supplies overall success 1-o(1); no rate for that graph event is inferred. The black-box ingredients are classical. Certification does not require n right-hand sides or cubic elimination.
+
+The clean certificate is: generate the actual scalar sequence u^T T^i v for i=0,...,2m-1, run Berlekamp--Massey, and accept nonsingularity only when the resulting MINIMUM polynomial has degree m and nonzero constant term. Here T is an m by m matrix obtained from the desired minor by explicitly invertible preconditioners. This is deterministic certification, not a Freivalds-style probabilistic verification.
+
+PRIMARY SOURCES READ
+====================
+
+1. D. H. Wiedemann, Solving Sparse Linear Equations Over Finite Fields,
+   IEEE Transactions on Information Theory 32(1) (1986), 54--62.
+   DOI: https://doi.org/10.1109/TIT.1986.1057137
+   Published scan read:
+   https://www.csd.uwo.ca/~mmorenom/CS424/Ressources/WIEDEMANN-IEEE-1986.pdf
+   Local files: wiedemann1986.pdf and wiedemann1986.txt.
+
+   Section II, printed p.55, states recovery of the scalar sequence's minimum polynomial from its first 2n terms using Berlekamp--Massey, with O(n^2) field operations. Section V, printed p.59, explicitly explains why reaching degree n certifies the characteristic polynomial with certainty. Its diagonal-discriminant lemma assumes nonzero leading principal minors. Theorem 2, printed p.60, gives a determinant algorithm with success probability at least 1/2 in O(n(w+n log n)) operations, over a field of size at least 50 n^2 log_2 n; its invertible switching-network preconditioning applies in O(n log n) operations. This provides an alternative to the Toeplitz route below, with O(n) calls to the original matrix.
+
+2. E. Kaltofen and B. D. Saunders, On Wiedemann's Method of Solving Sparse
+   Linear Systems, AAECC-9, LNCS 539 (1991), 29--38.
+   Author-hosted primary text read:
+   https://kaltofen.math.ncsu.edu/bibliography/91/KaSa91.pdf
+   Local files: kaltofen-saunders1991.pdf and .txt.
+   The hosted copy identifies itself as a Preliminary Report and identifies
+   the above conference publication in its first-page footnote.
+
+   Lemma 1 (PDF p.3) bounds scalar-projection failure by deg(f^{A,b})/|S|. The analogous random-column bound follows immediately from the same argument, as noted on PDF p.4. Their Minimum Polynomial algorithm (PDF p.4), Step 3, accepts a scalar polynomial of degree d when d is a known upper bound for the vector minimum degree. Theorem 2 (PDF p.6; proof pp.7--8) uses random unit upper/lower triangular Toeplitz multipliers U,L: all leading minors through rank r are nonzero with probability at least 1-r(r+1)/|S|. Multiplication by U or L is a polynomial multiplication. Theorem 3's general rank output is Monte Carlo; do not relabel it as a deterministic rank certificate. Our full-degree/nonzero-constant acceptance rule is what supplies certification.
+
+3. J. B. Rosser and L. Schoenfeld, Approximate formulas for some functions
+   of prime numbers, Illinois Journal of Mathematics 6 (1962), 64--94.
+   Primary published scan read:
+   https://denisevellachemla.eu/Rosser-Schoenfeld-1962.pdf
+   Local files: rosser-schoenfeld1962.pdf and .txt.
+
+   Section 3, printed p.69, Corollary 3, equation (3.8), gives
+       pi(2x)-pi(x) > 3x/(5 log x),  x >= 20.5.
+   Thus a polynomial-sized interval contains enough primes for an explicit bad-divisor estimate. A deterministic sieve can be charged within the requested quadratic-up-to-logarithms bit cost; a primality oracle is unnecessary.
+
+WHY THE DEGREE-m TEST IS A CERTIFICATE
+====================================
+
+For any actual m by m T over a field, the infinite sequence s_i=u^T T^i v has minimum generating polynomial f_s dividing the minimum polynomial of T, hence dividing chi_T. Its degree is at most m. The first 2m terms determine f_s exactly by the standard linearly generated sequence/Berlekamp--Massey theorem used in both sources.
+
+If the recovered polynomial f has degree m, divisibility and degree imply f=chi_T. If additionally f(0) is nonzero, T is nonsingular. This implication is deterministic for every u,v and every preconditioner, including unlucky choices. A verifier may recompute the 2m scalar terms and BM, using the same O(m) matrix calls and O(m^2) extra field work. No dense Krylov matrix inversion is needed.
+
+One may equivalently reason through the Hankel matrix H=(s_{i+j})_{0<=i,j<m}. Full scalar minimum degree means the reachability and observability matrices both have rank m, so H is nonsingular. This observation is not an instruction to compute det(H) by cubic elimination.
+
+IMPORTANT: an arbitrary degree-m polynomial satisfying f(T)v=0, even with f(0) nonzero, is NOT a certificate of invertibility. For example T=diag(0,1), v=e_2, f=(x-1)^2 has those properties while T is singular. The polynomial must be the actual scalar MINIMUM polynomial and have full degree, or an equivalent cyclicity certificate must be supplied.
+
+EXPLICIT CERTIFIED TRIAL OVER F_p
+===============================
+
+Let G be an m by m matrix given by a sparse matvec black box. Let p be an odd prime and S=F_p^*, so |S|=p-1. Draw independently:
+
+  * unit upper and lower triangular Toeplitz U,L, with their 2m-2 free entries uniform in S;
+  * X=diag(x_1,...,x_m), with x_i uniform in S;
+  * u,v uniform in F_p^m.
+
+Set T=U G L X. Every multiplier is deterministically invertible. Compute the first 2m terms s_i=u^T T^i v. Run BM. If deg(f)<m or f(0)=0, return FAIL for this trial. If deg(f)=m and f(0) is nonzero, accept G as nonsingular. This conclusion has zero probability of being incorrect.
+
+Success analysis, assuming G is nonsingular:
+
+  (a) KS Theorem 2 gives a leading-minor-profile failure probability at most m(m+1)/(p-1).
+  (b) Conditional on that profile, Wiedemann's Section V lemma says that disc(chi_{UGLX}) is a nonzero polynomial in the diagonal variables. Its total degree is at most m(m-1). Schwartz--Zippel over S bounds squarefreeness failure by m(m-1)/(p-1).
+  (c) A squarefree characteristic polynomial makes T nonderogatory. Random v and then random u preserve its degree-m minimum polynomial with total failure at most 2m/p, by KS Lemma 1 and its column analogue.
+
+Consequently the success probability of this certified trial is at least
+
+  1 - 2m^2/(p-1) - 2m/p >= 1 - 4m^2/(p-1).
+
+This is a conservative derived bound, not a quoted theorem. No claim is made that diagonal scaling alone cyclicizes every nonsingular matrix: the preceding generic-leading-minor preconditioner is necessary for this particular proof.
+
+Each T matvec calls G once, adds O(m) diagonal work, and performs two Toeplitz matvecs. The source implements these by polynomial multiplication in O(m log m loglog m) field operations. Thus the sequence and BM together use O(m) calls to G and O(m^2 log m loglog m) additional field operations.
+
+SOLVING ONE RIGHT-HAND SIDE AFTER CERTIFICATION
+=============================================
+
+For G z=b, first solve T y=U b and return z=L X y. Since the accepted f=chi_T and f(0) is nonzero, Cayley--Hamilton gives
+
+  y = -f(0)^-1 sum_{i=1}^m f_i T^{i-1} (U b),
+  f(x)=f(0)+sum_{i=1}^m f_i x^i.
+
+Evaluate this by Horner in at most m-1 further T applications. The total number of calls to the original sparse G is below 3m, up to harmless endpoint conventions. An explicit residual check is cheap and may be included. There is no n-right-hand-side solve.
+
+APPLICATION TO THE SIMPLE PLANTED RSBM EIGENVALUE
+===============================================
+
+Let A have n=2N vertices, fixed total degree D=d_1+d_2, planted lambda=d_1-d_2, and M=A-lambda I. Form the principal (n-1) by (n-1) minor G obtained by deleting row and column 1. If the real kernel of M is exactly span(sigma), with every sigma_i in {+1,-1}, then G is nonsingular over Q. Indeed M is symmetric of rank n-1, and adj(M)=c sigma sigma^T with c nonzero; its (1,1) cofactor is nonzero.
+
+Use a prime p for which det(G) is nonzero modulo p, certify that fact by the trial above, and solve
+
+  G x_rest = -M_{rest,1},   x_1=1.
+
+On this real-simplicity event, the solution is exactly sigma/sigma_1 modulo p. Decode residues 1 and p-1 as signs. Check over the INTEGERS that the resulting sign vector has balanced blocks and satisfies A sigma=lambda sigma. Reject if either test fails.
+
+Acceptance is unconditional certification: a nonzero mod-p minor implies a nonzero integer minor, hence rank_Q(M)>=n-1; the verified integer kernel vector implies rank_Q(M)<=n-1. Therefore the real kernel is one-dimensional, the verified sign vector spans it, and the admissible partition is unique up to global exchange. This also prevents an accidental finite-field eigenvector from being mistaken for an integer sign vector.
+
+POLYNOMIAL-SIZE PRIME AND FULL BIT CHARGING
+=========================================
+
+For fixed degree, each row of G has Euclidean norm at most
+
+  R=sqrt(D+lambda^2),
+
+so Delta=det(G), if nonzero, satisfies |Delta|<=R^m. Among primes in [P,2P], the number dividing Delta is at most m log(R)/log(P). Rosser--Schoenfeld's cited bound gives at least 3P/(5 log P) primes in that interval. Thus a uniformly chosen prime from the interval is bad with probability at most
+
+  5m log(R)/(3P).
+
+Take, for example,
+
+  P=ceil(100 n^2 (1+ceil(log_2(max(2,R))))).
+
+This is Theta_{D,lambda}(n^2), ensures p has O(log n) bits, makes the bad-prime probability O(1/n), and makes the preconditioning/projection failure probability below a fixed small constant. Finite exceptional small n can be handled by direct exact elimination.
+
+A fully explicit prime sampler is to sieve through 2P once and list primes in [P,2P], then choose uniformly from that list. Sieve cost is ~O(P)=~O(n^2) bit operations and O(P) bits plus the prime list; this quadratic-space choice is acceptable if only the requested time bound is imposed. It removes any reliance on a primality-testing oracle or uncharged prime search. Standard binary arithmetic on O(log n)-bit residues costs polylog(n) bits per field operation, including inversion, so each trial and its one-right-hand-side solve cost ~O(n^2) bit operations in fixed degree.
+
+Repeat the entire certified trial with fresh prime and preconditioner a bounded O(log(1/epsilon)) number of times. Conditional on det(G) nonzero, each trial has success probability greater than 1/2 for all sufficiently large n, so the chance of returning FAIL is at most epsilon. The time is ~O(n^2 log(1/epsilon)); for epsilon=n^{-c} this is ~O(n^2). Every accepted output is correct.
+
+DISTINGUISH GRAPH FAILURE FROM ALGORITHMIC FAILURE
+================================================
+
+If det(G)=0 over Q, no prime/preconditioner can pass the nonsingularity certificate. Therefore an uncapped retry-until-success loop is NOT an unconditional expected-time Las Vegas algorithm on the entire random-graph distribution: the exceptional graph event has positive probability. Use the bounded-attempt correct-or-FAIL algorithm, or state expected time only conditional on real simplicity.
+
+The baseline kernel theorem's fixed-prime mixing and qualitative contiguity establish real simplicity with probability 1-o(1). The large prime p used in this algorithm is justified separately by the deterministic Hadamard/bad-divisor argument above. It is not substituted into the fixed-prime mixing theorem. Overall recovery probability is 1-o(1)-epsilon, and no polynomial rate for the first o(1) term is claimed.
+
+Novelty boundary: this is an explicit specialization and certification/bit-complexity assembly of classical Wiedemann and preconditioning results. It is not a new sparse exact linear algebra algorithm. Any research novelty must come from the independently justified RSBM simplicity theorem or a genuinely new extension of its parameter range.

@@ -1,0 +1,68 @@
+\section{Exact recovery algorithms and their costs}\label{sec:enumeration}
+
+\subsection{Binary affine enumeration}
+Theorem~\ref{thm:general-moment} at $p=2$ gives the bounded moment
+\begin{equation}\label{eq:binary-moment}
+ \E 2^{r_2}=O_{a,b}(1),\qquad
+ r_2=\dim_{\F_2}\ker(A-\delta I).
+\end{equation}
+For bits $z_i$ encode signs as $\tau_i=(-1)^{z_i}$. At vertex $i$,
+the parity of the number of opposite-sign neighbors is
+$\sum_{j\sim i}(z_i+z_j)=((A+DI)z)_i$ over $\F_2$.
+Every desired assignment therefore solves
+\begin{equation}\label{eq:binary-affine}
+ (A+DI)z=(b\bmod2)\one\quad\text{over }\F_2.
+\end{equation}
+Since $D+\delta=2a$ is even, its homogeneous matrix is
+$A-\delta I$ modulo two. The planted assignment guarantees consistency
+in the promised model.
+
+The algorithm first verifies that its input is a simple $D$-regular
+graph, or reports failure, and solves \eqref{eq:binary-affine} by exact
+binary elimination. If inconsistent, it reports failure. Otherwise
+write the affine solution set as $z_0+\ker(A+DI)$.
+If $2^{r_2}>n^{\nu+1}$, report failure. Enumerate the remaining affine
+solutions in Gray-code order and, for each, count opposite-sign
+neighbors over the integers. Return the first vector with exactly
+$b$ such neighbors at every vertex, or failure if none passes.
+
+Each accepted vector satisfies $A\tau=\delta\tau$ exactly and is
+balanced. Checking parity alone would be insufficient: it permits
+spurious modular candidates, especially at small characteristic.
+By \eqref{eq:binary-moment} and Markov's inequality,
+\begin{equation}\label{eq:cutoff-prob}
+ \Prob\{2^{r_2}>n^{\nu+1}\}=O_{a,b}(N^{-\nu-1}).
+\end{equation}
+On the complementary event the candidate list contains the planted vector, and on
+the rigidity event every accepted vector is $\pm\sigma$.
+Theorem~\ref{thm:boolean} then proves the deterministic assertion
+of Theorem~\ref{thm:main-recovery}, with total failure $O(N^{-\nu})$.
+
+Binary elimination costs $O(n^3)$ elementary bit operations and
+$O(n^2)$ storage using ordinary dense elimination. In Gray order one
+basis vector is added per step, costing $O(n)$ bit operations;
+the integer neighbor check costs $O_D(n)$ operations on bounded
+integers. An $r_2$-bit counter also costs at most $O(n)$ per step.
+Thus elimination and enumeration together cost
+\begin{equation}\label{eq:binary-cost}
+ O_D(n^3+n2^{r_2}),
+\end{equation}
+and the cutoff gives $O_{a,b}(n^3+n^{\nu+2})$ elementary work on every input.
+This is a polynomial bit bound. In a sequential storage model the
+addressing overhead is at most an additional polynomial factor; in
+the usual bit-operation or word-RAM models the displayed bound, up
+to logarithmic address costs, is immediate. There are no large
+uncontrolled rational numbers in this algorithm.
+
+Without the cutoff, the same procedure lists every passing assignment.
+Suppress one representative of each global-sign pair, for example by
+requiring its first sign to be positive. Equation~\eqref{eq:binary-moment}
+and \eqref{eq:binary-cost} give expected work
+$O_{a,b}(n^3)$, including output checks and a streamed output
+list. The runtime can be exponential on rare inputs; the cutoff
+version supplies the worst-case polynomial bound in the theorem.
+
+
+A smaller universal cap $n^3$ gives bounded $O_D(n^4)$ elementary
+work and failure $O(N^{-\nu})+O(N^{-3})$. In particular it gives
+$O(N^{-2})$ recovery failure throughout the assortative range.

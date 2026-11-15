@@ -1,0 +1,674 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+\usepackage{amsmath,amssymb,graphicx}
+\usetheme{default}
+\usefonttheme{serif}
+\setbeamertemplate{navigation symbols}{}
+\setbeamercolor{normal text}{fg=black,bg=white}
+\setbeamercolor{structure}{fg=black}
+\setbeamercolor{frametitle}{fg=black,bg=white}
+\setbeamercolor{title}{fg=black}
+\setbeamerfont{frametitle}{size=\Large,series=\bfseries}
+\setbeamerfont{title}{size=\LARGE,series=\bfseries}
+\setbeamertemplate{itemize item}{\small$\bullet$}
+\setbeamertemplate{itemize subitem}{\small$\circ$}
+\setbeamertemplate{footline}{\hspace{6mm}\scriptsize Spectral graph theory\hfill\insertframenumber\hspace{6mm}\vspace{3mm}}
+\setlength{\parskip}{.45em}
+\newcommand{\one}{\mathbf 1}
+\newcommand{\E}{\mathbb E}
+\newcommand{\F}{\mathbb F}
+\newcommand{\Prob}{\mathbb P}
+\newcommand{\R}{\mathbb R}
+\newcommand{\Afig}[2][]{\includegraphics[#1]{present/slides/assets/#2.pdf}}
+\newcommand{\source}[1]{\par\vfill{\scriptsize\color{black!65}#1}}
+\title{Spectral graph theory and exact hidden-group recovery}
+\subtitle{Examples, a matching-product estimate, and a recovery theorem}
+\author{Angelo Farfan \and Carlos Shum \and Ananth Venkatesh}
+\institute{Monadic Burrito}
+\date{November 15, 2026}
+\hypersetup{pdftitle={Spectral graph theory and exact hidden-group recovery},pdfauthor={Angelo Farfan, Carlos Shum, Ananth Venkatesh}}
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}{The route from a graph to a theorem}
+\begin{enumerate}
+\item Describe a graph by a matrix.
+\item Read structure from its eigenvectors and eigenvalues.
+\item Understand why random matching entries cancel after centering.
+\item Recover exact hidden groups from their neighbor-count equations.
+\end{enumerate}
+The background assumes only basic algebra. Each matrix operation will be
+illustrated on a small graph.
+\source{Background reading: Pan, Nie and Wang, \href{https://math.mit.edu/research/highschool/primes/circle/documents/2025/Brian-Nathan-Daniel-Final.pdf}{\emph{An Introduction to Spectral Graph Theory}} (2025). Figures and worked examples here are newly drawn.}
+\end{frame}
+
+\section{Graphs and matrices}
+\begin{frame}{Vertices, edges, and degree}
+A \emph{simple undirected graph} $G=(V,E)$ consists of vertices and
+unordered pairs of distinct vertices called edges.
+
+The \emph{degree} $d(v)$ is the number of neighbors of $v$.
+\begin{center}\Afig[width=.48\textwidth]{path-three}\end{center}
+In this path, the degrees are $1,2,1$.
+\[
+ \sum_{v\in V}d(v)=2|E|=4.
+\]
+Each edge contributes once at each endpoint. This proves the
+\emph{handshaking identity} for every finite graph.
+\end{frame}
+
+\begin{frame}{Four graph families to recognize}
+\begin{center}\Afig[width=\textwidth]{graph-families}\end{center}
+\begin{itemize}
+\item $P_5$: two endpoints of degree one; three vertices of degree two.
+\item $C_5$: every vertex has degree two.
+\item $K_4$: every vertex has degree three.
+\item $K_{1,4}$: one vertex has degree four; four have degree one.
+\end{itemize}
+A graph is \emph{$d$-regular} if every vertex has degree $d$.
+\end{frame}
+
+\begin{frame}{Walks, paths, and connected components}
+A \emph{walk} is a sequence of vertices joined by edges.
+Its length is the number of edges traversed.
+\begin{center}\Afig[width=.47\textwidth]{path-three}\end{center}
+\begin{itemize}
+\item $1,2,3$ is a path of length two: no vertex repeats.
+\item $1,2,1$ is a walk of length two, but not a path.
+\item A graph is \emph{connected} if every pair can be joined by a walk.
+\end{itemize}
+A \emph{connected component} is a maximal connected part of the graph.
+Matrices can count walks and even count components.
+\end{frame}
+
+\begin{frame}{The adjacency matrix}
+Number the vertices $1,\ldots,n$. Define
+\[
+ A_{ij}=\begin{cases}1,&\{i,j\}\in E,\\0,&\text{otherwise}.\end{cases}
+\]
+\begin{columns}[c]
+\column{.45\textwidth}\Afig[width=\linewidth]{path-three}
+\column{.50\textwidth}
+\[
+ A(P_3)=\begin{pmatrix}0&1&0\\1&0&1\\0&1&0\end{pmatrix}.
+\]
+\end{columns}
+The matrix is symmetric. Its diagonal is zero.
+The sum of row $i$ is the degree of vertex $i$.
+\end{frame}
+
+\begin{frame}{Matrix multiplication adds the neighbors' values}
+Put a number $x_i$ at each vertex. Then
+\[
+ (Ax)_i=\sum_{j:\{i,j\}\in E}x_j.
+\]
+For the path on three vertices,
+\[
+ \begin{pmatrix}0&1&0\\1&0&1\\0&1&0\end{pmatrix}
+ \begin{pmatrix}2\\5\\7\end{pmatrix}
+ =\begin{pmatrix}5\\9\\5\end{pmatrix}.
+\]
+The middle vertex adds $2+7=9$.
+The endpoints each see only the middle value, $5$.
+
+This local addition rule is the starting point for both spectral methods
+and the exact recovery algorithm later in the talk.
+\end{frame}
+
+\begin{frame}{Powers of the adjacency matrix count walks}
+The entry $(A^2)_{ij}$ counts walks of length two from $i$ to $j$:
+\[
+ (A^2)_{ij}=\sum_k A_{ik}A_{kj}.
+\]
+For $P_3$,
+\[
+ A^2=\begin{pmatrix}1&0&1\\0&2&0\\1&0&1\end{pmatrix}.
+\]
+There are two length-two returns from vertex $2$:
+$2,1,2$ and $2,3,2$.
+
+More generally, $(A^\ell)_{ij}$ counts length-$\ell$ walks. Induction
+works because the last step chooses the final neighbor.
+\end{frame}
+
+\begin{frame}{An eigenvector reproduces itself under neighbor addition}
+A nonzero vector $x$ is an \emph{eigenvector} with \emph{eigenvalue}
+$\lambda$ if $Ax=\lambda x$.
+\[
+ A(P_3)\begin{pmatrix}1\\\sqrt2\\1\end{pmatrix}
+ =\begin{pmatrix}\sqrt2\\2\\\sqrt2\end{pmatrix}
+ =\sqrt2\begin{pmatrix}1\\\sqrt2\\1\end{pmatrix}.
+\]
+The three eigenvalues of $A(P_3)$ are $\sqrt2,0,-\sqrt2$.
+For example, $(1,0,-1)^{\mathsf T}$ has eigenvalue zero:
+the two contributions at the middle vertex cancel.
+
+For a real symmetric matrix, all eigenvalues are real and an orthonormal
+eigenbasis exists: the spectral theorem.
+\end{frame}
+
+\begin{frame}{Three visible modes on a cycle}
+\begin{center}\Afig[width=.96\textwidth]{cycle-modes}\end{center}
+The displayed numbers are vector coordinates, not vertex names.
+At every vertex, add the two neighboring numbers.
+
+For $C_4$, the full adjacency spectrum is $2,0,0,-2$.
+The second zero mode is $(0,1,0,-1)^{\mathsf T}$.
+\end{frame}
+
+\begin{frame}{Regularity produces an exact eigenvector}
+If $G$ is $d$-regular, then
+\[
+ A\one=d\one.
+\]
+Every row adds exactly $d$ ones.
+
+If $G$ is also bipartite, give one side value $+1$ and the other $-1$.
+Every neighbor lies on the opposite side, so
+\[
+ Ax=-dx.
+\]
+For example, $C_4$ is $2$-regular and bipartite, explaining its eigenvalues
+$2$ and $-2$ without a determinant calculation.
+
+Other eigenvalues describe variations away from these simple modes.
+\end{frame}
+
+\section{The Laplacian and partitioning}
+\begin{frame}{The graph Laplacian measures local disagreement}
+Let $D=\operatorname{diag}(d(1),\ldots,d(n))$. The Laplacian is
+\[
+ L=D-A,\qquad (Lx)_i=\sum_{j\sim i}(x_i-x_j).
+\]
+For $P_3$,
+\[
+ L=\begin{pmatrix}1&-1&0\\-1&2&-1\\0&-1&1\end{pmatrix},\quad
+ L\begin{pmatrix}1\\0\\-1\end{pmatrix}
+ =\begin{pmatrix}1\\0\\-1\end{pmatrix}.
+\]
+The constant vector has eigenvalue zero. The full Laplacian spectrum is
+$0,1,3$.
+\end{frame}
+
+\begin{frame}{The basic energy identity}
+For every real vector $x$,
+\[
+ x^{\mathsf T}Lx=\sum_{\{i,j\}\in E}(x_i-x_j)^2\ge0.
+\]
+\textbf{Proof.} Each edge contributes $x_i^2+x_j^2$ to
+$x^{\mathsf T}Dx$ and $2x_ix_j$ to $x^{\mathsf T}Ax$.
+Subtract and sum.
+
+For $P_3$ and $x=(1,0,-1)^{\mathsf T}$,
+\[
+ x^{\mathsf T}Lx=(1-0)^2+(0-(-1))^2=2.
+\]
+A small energy means that neighboring vertices usually receive similar
+values.
+\end{frame}
+
+\begin{frame}{Zero eigenvalues count connected components}
+By the energy identity,
+\[
+ Lx=0\quad\Longleftrightarrow\quad
+ x\text{ is constant on every connected component}.
+\]
+One direction follows because every squared difference must vanish.
+The other follows directly from $(Lx)_i=\sum_{j\sim i}(x_i-x_j)$.
+
+Thus
+\[
+ \dim\ker L=\text{number of connected components}.
+\]
+For a connected graph, zero is a simple Laplacian eigenvalue.
+This is an exact algebraic statement about connectivity.
+\end{frame}
+
+\begin{frame}{The second eigenvector is the smoothest nonconstant signal}
+For a connected graph, write $0=\lambda_1<\lambda_2\le\cdots\le\lambda_n$.
+The spectral theorem gives
+\[
+ \lambda_2=\min_{x\ne0,\;x\perp\one}
+ \frac{\sum_{\{i,j\}\in E}(x_i-x_j)^2}{\sum_i x_i^2}.
+\]
+A minimizing vector is a \emph{Fiedler vector}.
+The orthogonality condition excludes constant signals.
+
+Spectral partitioning orders vertices by this vector, then tests threshold
+cuts. A slowly varying signal can expose a weak connection between groups.
+The best cut and a balanced cut are not automatically the same thing.
+\end{frame}
+
+\begin{frame}{Example: two complete graphs joined by one edge}
+\begin{center}\Afig[width=.91\textwidth]{spectral-cut}\end{center}
+Here the Fiedler vector has one sign on each $K_4$.
+Thresholding at zero finds the single bridge.
+
+For this example, $\lambda_2=3-\sqrt7\approx0.354$.
+This illustrates the method; it is not a recovery guarantee for every graph.
+\end{frame}
+
+\begin{frame}{A cut gives an upper bound on the second eigenvalue}
+In the preceding eight-vertex graph, put $x_i=+1$ on the left $K_4$
+and $x_i=-1$ on the right. Then $x\perp\one$.
+
+Only the bridge contributes to the energy:
+\[
+ x^{\mathsf T}Lx=4,\qquad x^{\mathsf T}x=8,
+ \qquad\lambda_2\le\frac48=\frac12.
+\]
+The actual minimizing vector gives the sharper value $3-\sqrt7$.
+
+This calculation explains why a sparse connection can produce a small
+Laplacian eigenvalue.
+\end{frame}
+
+\begin{frame}{Keep adjacency and Laplacian eigenvalues distinct}
+For a $d$-regular graph, $L=dI-A$. Thus
+\[
+ Ax=\theta x\quad\Longrightarrow\quad Lx=(d-\theta)x.
+\]
+For irregular graphs, $D$ is not a scalar matrix, so this conversion
+is unavailable.
+
+A \emph{spectral gap} means a specified separation between eigenvalues;
+one must say which matrix and which eigenvalues.
+
+The recovery theorem at the end does not require a planted adjacency
+eigenvalue to be isolated from the other adjacency eigenvalues.
+\end{frame}
+
+\section{Random lifts and centered matching products}
+\begin{frame}{A random lift replaces each vertex by a fiber}
+Replace each vertex of a fixed base graph by $N$ copies.
+Replace each base edge by an independent uniform perfect matching
+between its two fibers.
+\begin{center}\Afig[width=.69\textwidth]{lift-example}\end{center}
+A lift of a $d$-regular base remains $d$-regular.
+The picture is one example, not an asymptotic experiment.
+\end{frame}
+
+\begin{frame}{Old modes and new modes}
+A vector constant on each fiber can be lifted from the base graph.
+Neighbor addition on such vectors is exactly the base adjacency action.
+
+Therefore every base eigenvalue is inherited by every lift.
+These are the \emph{old} eigenvalues; the orthogonal complement carries
+the \emph{new} spectrum.
+
+Bounding the new spectrum requires control of long random walks.
+Their products involve entries of the same random matchings, so the
+entries cannot be treated as independent.
+\source{Bordenave (2020), random-lift spectral theorem and Proposition 28.}
+\end{frame}
+
+\begin{frame}{A perfect matching is a permutation matrix}
+A uniform permutation $\sigma$ of $\{1,\ldots,N\}$ defines
+\[
+ M_{ij}=\mathbf 1_{\{\sigma(i)=j\}},\qquad \E M_{ij}=N^{-1}.
+\]
+Every row and every column has exactly one entry equal to one.
+
+For $r$ prescribed matches in distinct rows and columns,
+\[
+ \Prob(\text{all occur})=\frac{(N-r)!}{N!}=\frac1{(N)_r},
+ \quad (N)_r=N(N-1)\cdots(N-r+1).
+\]
+Two prescribed matches in the same row cannot both occur.
+\end{frame}
+
+\begin{frame}{Centering: a two-cell calculation}
+\begin{center}\Afig[width=.65\textwidth]{requested-cells}\end{center}
+\[
+ \E[(M_{11}-N^{-1})(M_{22}-N^{-1})]
+ =\frac1{N(N-1)}-\frac1{N^2}=\frac1{N^2(N-1)}.
+\]
+In the same row, the expectation is instead $-N^{-2}$.
+The pattern of requested cells determines how much cancellation occurs.
+\end{frame}
+
+\begin{frame}{Compatible conditioning leaves a smaller uniform matrix}
+After fixing $r$ compatible matches, delete their rows and columns.
+The remaining matrix $U$ is a uniform permutation matrix of size $N-r$.
+\begin{center}\Afig[width=.50\textwidth]{depleted-matrix}\end{center}
+Keep the original centering: $Z_{ij}=NU_{ij}-1$.
+Then each remaining row satisfies
+\[
+ \sum_v Z_{iv}=N-(N-r)=r.
+\]
+\end{frame}
+
+\begin{frame}{A row sum gives a positive recurrence}
+Let $\mu_j=\E\prod_{i=1}^j Z_{ii}$, with $\mu_0=1$ and $r+j\le N$.
+Multiplying a row sum by $\prod_{i<j}Z_{ii}$ gives
+\[
+ (N-r-j+1)\mu_j
+ =(r+2j-2)\mu_{j-1}+(j-1)\mu_{j-2}.
+\]
+Omit the final term when $j=1$.
+
+The identity for a used column is
+$Z_{ii}Z_{ji}=-Z_{ii}-Z_{ji}-1$.
+All recurrence coefficients on the right are nonnegative.
+This retains cancellation before any absolute-value estimate.
+\source{The report proves the depleted recurrence. At $r=0$, the corresponding recurrence is prior work of Collins--Nagatsu.}
+\end{frame}
+
+\begin{frame}{A numerical check of the recurrence}
+Take $N=6$ and condition on $r=2$ compatible matches.
+The remaining matrix has size four.
+\[
+ \mu_1=\frac{2}{4}=\frac12,\qquad
+ 3\mu_2=4\mu_1+\mu_0=3,\qquad \mu_2=1.
+\]
+Directly,
+\[
+ \E[(6U_{11}-1)(6U_{22}-1)]
+ =\frac{36}{4\cdot3}-\frac{12}{4}+1=1.
+\]
+The recurrence is positive even though individual centered entries can
+have either sign.
+\end{frame}
+
+\begin{frame}{The matching-product estimate: what the gain means}
+Consider $a$ distinct requested cells, with arbitrary centered and raw
+powers and independent permutation colors.
+Let $h$ be the centered singletons whose row and column contain no other
+requested cell of that color; let $b$ count the other centered singletons.
+
+For $2\le a\le\sqrt N$, the report proves
+\[
+ |\E P|\le\sqrt e\,2^bN^{-a}
+ \left(\frac{\sqrt{a-1}}{\sqrt N-\sqrt{a-1}}\right)^h.
+\]
+Each isolated singleton contributes an extra small factor of order
+$\sqrt{a/N}$. Repeated powers introduce no extra factor of two.
+\source{The report's scalar mixed bound implies Bordenave's Proposition 28 form. Exact attained envelopes are also proved there.}
+\end{frame}
+
+\begin{frame}{The biregular model uses half-edge matchings}
+\begin{center}\Afig[width=.68\textwidth]{biregular-matching}\end{center}
+For $n_L$ left vertices of degree $d_L$ and $n_R$ right vertices of
+degree $d_R$, both half-edge sets have size
+$H=n_Ld_L=n_Rd_R$.
+
+The random cross block is a uniform permutation matrix on these $H$
+half-edges. Apply the product estimate with $N=H$ and centering $1/H$.
+\source{Brito--Dumitriu--Harris (2022): published Lemma 5.6, preprint Lemma 7.}
+\end{frame}
+
+\begin{frame}{How the estimate enters the spectral argument}
+A \emph{non-backtracking walk} never immediately reverses its previous
+edge. Its expansion leads to products of matching entries.
+\begin{enumerate}
+\item Expand a high matrix norm moment into walk patterns.
+\item Bound the expectation of each matching product.
+\item Count patterns and control tangles.
+\item Relate non-backtracking roots to adjacency eigenvalues.
+\end{enumerate}
+For any matrix $C$, including a nonnormal one,
+\[
+ \|C\|^{2s}\le\operatorname{tr}((CC^*)^s).
+\]
+\source{The report proves the product input. The graph path enumeration and tangle bounds remain cited inputs; it does not infer a new graph spectral theorem from the product bound alone.}
+\end{frame}
+
+\section{Exact hidden-group recovery}
+\begin{frame}{A new question: can exact groups be recovered?}
+Suppose each vertex has exactly two neighbors in its own group and
+one in the other group. The labels of the groups have been erased.
+\begin{center}\Afig[height=2.9cm,width=.64\textwidth,keepaspectratio]{two-groups}\end{center}
+This is an exact neighbor-count rule, not an average preference.
+Can the graph alone reveal the hidden grouping?
+\end{frame}
+
+\begin{frame}{An equitable partition satisfies an exact matrix equation}
+A partition is \emph{equitable} if all vertices of group $i$ have the
+same number $Q_{ij}$ of neighbors in group $j$.
+
+Let $J_{vi}=1$ when vertex $v$ belongs to group $i$, and zero otherwise.
+Then
+\[
+ AJ=JQ.
+\]
+For two groups with internal degree $a$ and cross degree $b$,
+\[
+ Q=\begin{pmatrix}a&b\\b&a\end{pmatrix},\qquad
+ A\tau=(a-b)\tau,
+\]
+where $\tau$ is $+1$ on one group and $-1$ on the other.
+The hidden groups create an exact algebraic signal.
+\end{frame}
+
+\begin{frame}{The random model and its sufficient condition}
+Fix upper bounds $K$ on the number of groups and $D$ on vertex degree.
+The true count table $Q=(d_{ij})$ is fixed, has connected type support,
+and has fixed positive size proportions obeying
+$N_i d_{ij}=N_j d_{ji}$: cross-edge counts agree from both ends.
+
+Each internal regular graph and each cross biregular graph is sampled
+independently and uniformly among simple graphs with those counts.
+
+The theorem requires weights satisfying
+\[
+ q_{ij}=q_{ji},\qquad 0\le q_{ij}<\tfrac12,\qquad
+ \sum_jd_{ij}q_{ij}=1.
+\]
+The weights certify applicability; the algorithm is not given them.
+If all degrees equal $d\ge3$, use $q_{ij}=1/d$.
+\end{frame}
+
+\begin{frame}{The main recovery theorem, in words}
+Under the preceding model and weight condition, as the graph grows:
+\begin{itemize}
+\item With probability tending to one, every equitable partition into at
+most $K$ nonempty groups only merges whole planted groups.
+\item The planted partition is the unique finest such partition.
+\item From the graph and $K,D$, the algorithm lists every valid partition;
+selecting the one with most groups recovers the plant.
+\end{itemize}
+Neither the true table, the number of groups, nor their sizes is supplied.
+Class names are arbitrary, so recovery is up to renaming.
+\source{The report's recovery extension states the precise theorem and supplies the proof. This is a fixed-parameter, noiseless random-model guarantee.}
+\end{frame}
+
+\begin{frame}{A concrete consequence: every fixed regular base}
+Take any fixed connected simple $d$-regular base graph, $d\ge3$.
+An independent random $N$-lift satisfies the weight condition.
+\begin{center}\Afig[width=.63\textwidth]{lift-example}\end{center}
+With probability tending to one, the finest partition with at most $K$
+groups reveals the fibers, provided $K$ is at least the base order.
+The algorithm need not be told which base generated the graph.
+\end{frame}
+
+\begin{frame}{Why the bound on the number of groups is essential}
+If every vertex forms its own group, the partition is always equitable:
+each neighbor count is simply an adjacency entry.
+
+So ``find the finest equitable partition'' would be trivial if the
+number of groups were unrestricted.
+
+The theorem asks for the finest partition with at most a supplied
+\emph{fixed} number $K$ of nonempty groups.
+
+On the structural event, every other admissible answer is obtained by
+merging whole planted groups, so the largest class count identifies the
+plant unambiguously.
+\end{frame}
+
+\begin{frame}{The algorithm first tries finitely many count tables}
+With $K,D$ fixed, there are only finitely many nonnegative integer tables
+of order at most $K$ and row sums at most $D$.
+\begin{enumerate}
+\item Try each candidate table $R$.
+\item Solve a modular version of $AY=YR$.
+\item Enumerate the solutions represented by a complete kernel basis.
+\item Keep only one-hot, nonempty partitions passing the integer equation.
+\end{enumerate}
+Finally, retain a verified partition with the largest number of groups.
+
+The number of tables may be large. It is part of the fixed-parameter
+constant, not a claim that the method is immediately practical.
+\end{frame}
+
+\begin{frame}{Finite-field arithmetic organizes the search}
+Arithmetic modulo three works on the clock $0,1,2$:
+\[
+ 2+1=0,\qquad 2\cdot2=1\quad\text{in }\F_3.
+\]
+For each proposed $R$, solve the linear system
+\[
+ AY-YR=0\quad\text{over a fixed finite field}.
+\]
+Every genuine partition survives reduction modulo that prime.
+Some modular solutions are false candidates.
+
+Therefore every output is checked again using the original \emph{integer}
+neighbor counts. Modular coincidence is never sufficient for acceptance.
+\end{frame}
+
+\begin{frame}{A complete kernel basis is a certificate of coverage}
+If a finite-field solution space has dimension $h$, a basis describes
+all its $p^h$ elements using $h$ coefficients in $\F_p$.
+
+The algorithm certifies the \emph{complete} right kernel, even when the
+matrix is nonsymmetric. It then enumerates its candidates and verifies
+their integer neighbor counts.
+
+Finding one attractive solution would not prove that all valid partitions
+had been considered. Completeness is what justifies selecting a finest one.
+
+The randomized computation is always correct; randomness affects its
+running time. Such an algorithm is called \emph{Las Vegas}.
+\end{frame}
+
+\begin{frame}{Why the expected search cost is nearly quadratic}
+The key probabilistic estimate is a \emph{raw moment} bound:
+\[
+ \sup_n\E\big[p^{h_R(A)}\big]<\infty
+\]
+for every fixed candidate matrix $R$ and field, where
+$h_R(A)=\dim\{Y:AY=YR\}$ over that field.
+
+It counts the average number of modular candidates, including rare
+inputs with very large solution spaces.
+
+Combined with the certified sparse computation, it gives expected
+$\widetilde O(n^2)$ bit work and expected $\widetilde O(n)$ working bits.
+The tilde hides logarithmic factors; fixed-parameter constants may be large.
+\end{frame}
+
+\begin{frame}{The proof has three logically separate parts}
+\begin{enumerate}
+\item \textbf{Identifiability.} Entropy controls large alternative
+partitions; a sparse-support count excludes small alternatives.
+\item \textbf{Search size.} Finite-field channel moments bound the actual
+expected number of modular candidates, including exceptional inputs.
+\item \textbf{Certified computation.} A complete-kernel algorithm and
+integer checks find exactly the valid partitions at the stated cost.
+\end{enumerate}
+Correct listing holds on every input. Identifying the particular hidden
+plant is a separate event whose probability tends to one in the model.
+\end{frame}
+
+\begin{frame}{What ``without a spectral gap'' means here}
+For the two-group example, $A\tau=(a-b)\tau$ holds exactly.
+The algorithm uses the neighbor-count equations themselves.
+
+It does not require the eigenvalue $a-b$ to be separated numerically
+from the remaining eigenvalues, nor a one-dimensional real eigenspace.
+
+This does not establish noise tolerance. Changing edges can destroy the
+exact equations.
+
+Likewise expected nearly quadratic work is not a quadratic worst-case
+bound. Some inputs can have many valid answers and a long search.
+\end{frame}
+
+\begin{frame}{A sharp ambiguity example from the full research manuscript}
+For equal groups of size $N$, internal degree $2$ and cross degree $1$,
+choose the hidden balanced grouping uniformly.
+\begin{center}\Afig[width=.59\textwidth]{ambiguity-rates}\end{center}
+The ambiguity probability is $\sim4/N^2$; the optimal average error is
+$\sim2/N^2$. These are asymptotic formulas, not finite-size error bars.
+\source{Proved in the full 60-page research manuscript, two-class ambiguity section. This additional result is distinct from the report's condensed core recovery proof.}
+\end{frame}
+
+\begin{frame}{Boundary cases show why the assumptions matter}
+\textbf{Degree two.} An unconditioned lift of a known cycle is a collection
+of cycles. Components admit different shifts and orientations of their
+hidden labels. Optimal hidden-fiber success tends to zero.
+
+\textbf{Unequal degrees.} A $K_{3,12}$ lift has exponentially many compatible
+fiber partitions, even after the three left fibers are revealed.
+Under a uniform remaining hidden prior, optimal success is exponentially small.
+
+Thus minimum degree three by itself does not suffice for arbitrary
+nonregular templates. The positive theorem uses the full weight condition.
+\source{These separate information bounds are proved in the full research manuscript. Connected conditioning changes the cycle experiment.}
+\end{frame}
+
+\begin{frame}{The contribution and its predecessors}
+The proposed advance is a proved recovery and expected-cost guarantee
+across the specified fixed-parameter class, with unknown tables and sizes.
+
+The algebraic recovery idea has direct predecessors:
+\begin{itemize}
+\item Fellows--Koblitz (1993): hidden fibers in $K_4$ covers, Kid Krypto.
+\item Bernstein--Cottaar--Lange (2023): Gaussian elimination and grouping
+equal affine expressions to recover those fibers.
+\end{itemize}
+The manuscript credits these algorithms and classical counting, entropy,
+finite-field moments, and certified linear algebra.
+Historical firstness is not certified.
+\end{frame}
+
+\begin{frame}{What the theorem does and does not promise}
+\begin{itemize}
+\item \textbf{Exact random model:} fixed group and degree bounds;
+independent uniform simple factors; exact neighbor counts.
+\item \textbf{Statistical recovery:} succeeds with probability tending to
+one as the model grows; correct listing is unconditional.
+\item \textbf{Work bound:} expected nearly quadratic bit work;
+no benchmark-speed or small-constant guarantee.
+\item \textbf{Limits:} no noise theorem, no growing-parameter uniformity,
+no general clustering guarantee for arbitrary networks.
+\end{itemize}
+The work has internal mathematical reviews and finite checks.
+These do not constitute formal verification or external peer review.
+\end{frame}
+
+\begin{frame}{References: background and the matching estimate}
+\small
+\begin{itemize}
+\item B.~Pan, N.~Nie, D.~Wang.
+\emph{An Introduction to Spectral Graph Theory}. MIT PRIMES Circle, 2025.
+\item C.~Bordenave. \emph{A new proof of Friedman's second eigenvalue theorem
+and its extension to random lifts}. Ann. Sci. ENS 53 (2020), 1393--1439.
+\item G.~Brito, I.~Dumitriu, K.~D.~Harris.
+\emph{Spectral gap in random bipartite biregular graphs and applications}.
+CPC 31 (2022), 229--267.
+\item B.~Collins, M.~Nagatsu. \emph{Weingarten calculus for centered random
+permutation matrices}. Algebraic Combinatorics 9 (2026), 465--479.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{References and proof locations: recovery}
+\small
+\begin{itemize}
+\item M.~Fellows, N.~Koblitz. \emph{Kid Krypto}. CRYPTO '92 proceedings,
+published 1993.
+\item D.~J.~Bernstein, J.~Cottaar, T.~Lange. IPCC evaluation, Chapter 3
+of \emph{Report on evaluation of KpqC candidates}, 2023, Section 3.1.
+\item \emph{Spectral-gap report}: original matching-product proofs followed
+by the condensed recovery extension and its technical proofs.
+\item \emph{Unknown-frame recovery in sparse block-regular graphs},
+November 15, 2026: complete source paper, additional ambiguity,
+old/new-spectrum, and information-obstruction results.
+\end{itemize}
+The full source paper and this talk distinguish proved statements,
+cited inputs, internal checks, and historical-priority limits.
+\end{frame}
+\end{document}

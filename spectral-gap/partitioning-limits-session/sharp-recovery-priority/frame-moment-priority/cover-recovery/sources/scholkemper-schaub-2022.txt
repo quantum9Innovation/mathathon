@@ -1,0 +1,584 @@
+                                                       BLIND EXTRACTION OF EQUITABLE PARTITIONS FROM GRAPH SIGNALS
+
+                                                                                             Michael Scholkemper, Michael T. Schaub
+
+                                                                     Department of Computer Science, RWTH Aachen University, Germany
+
+
+                                                                           ABSTRACT                                           roles based on exact node equivalences, such as regular equivalence
+
+
+
+
+arXiv:2203.05407v1 [math.OC] 10 Mar 2022
+                                                Finding equitable partitions is closely related to the extraction of          or automorphic equivalence [5]. A specific form of such a partition
+                                           graph symmetries and of interest in a variety of applications context              into exact node equivalence classes is an equitable partition (EP),
+                                           such as node role detection, cluster synchronization, consensus dy-                which may be intuitively defined recursively as sets of nodes that
+                                           namics, and network control problems. In this work we study a blind                are connected to the same number of equivalent nodes. These EPs
+                                           identification problem in which we aim to recover an equitable parti-              generalize orbit partitions related to automorphic equivalence and
+                                           tion of a network without the knowledge of the network’s edges but                 are thus closely related to graph symmetries. Knowledge of EPs
+                                           based solely on the observations of the outputs of an unknown graph                can thus, e.g., facilitate the computation of network statistics such
+                                           filter. Specifically, we consider two settings. First, we consider a               as centrality measures [6]. As they are associated to certain spec-
+                                           scenario in which we can control the input to the graph filter and                 tral signatures, EPs are also relevant for the study of dynamical pro-
+                                           present a method to extract the partition inspired by the well known               cesses on networks such as cluster synchronization [7, 8], consensus
+                                           Weisfeiler-Lehman (color refinement) algorithm. Second, we gener-                  dynamics [9], and network control problems [10].
+                                           alize this idea to a setting where only observe the outputs to random,                  Motivated by this interplay between network dynamics and EPs,
+                                           low-rank excitations of the graph filter, and present a simple spec-               in this work we ask the question: Can we detect the presence of an
+                                           tral algorithm to extract the relevant equitable partitions. Finally, we           EP in a network solely based on a small number of nodal observa-
+                                           establish theoretical bounds on the error that this spectral detection             tions of a dynamical process acting on the network? For this, we
+                                           scheme incurs and perform numerical experiments that illustrate our                adopt a graph signal processing perspective [11], in which we model
+                                           theoretical results and compare both algorithms.                                   the dynamics as a graph signal filtered by an unknown filter repre-
+                                                                                                                              senting the dynamics. Our task is then to recover the EP solely based
+                                               Index Terms— Equitable partitions, Weisfeiler Lehman algo-                     on a small number of outputs of this filter.
+                                           rithm, spectral analysis, topology inference, graph symmetry                       Related work. Network topology inference has been studied exten-
+                                                                                                                              sively in the literature [12, 13]. Inferring the complete topology of
+                                                                     1. INTRODUCTION                                          a network can however require a large number of samples and may
+                                                                                                                              thus be infeasible in practice. A relatively recent development is
+                                           Networks have become a powerful abstraction for complex sys-                       the idea to bypass this inference of the exact network topology and
+                                           tems [1, 2]. To comprehend such networks, we often seek patterns                   directly estimate network characteristics in the form of community
+                                           in their connections, which would allow us to comprehend the sys-                  structure [14, 15, 16] or centrality measures [17, 18, 19] from graph
+                                           tem in simpler terms. A common theme is to divide the nodes—and                    signals. Learning graph characteristics directly in this way benefits
+                                           by extension the units of the underlying system—into groups of                     from a better sample complexity, since only a low-dimensional set
+                                           similar nodes. For instance, in the context of community detection,                of spectral features must be inferred rather than the whole graph.
+                                           we consider nodes as similar if they are tightly-knit together, or                 This manuscript falls squarely within this line of work, but focuses
+                                           share similar neighborhoods [3]. This notion of node similarity is                 on EPs as a different network feature, which results in some distinct
+                                           thus bound to the specific position of the nodes in the graph, i.e.,               challenges. Specifically, we cannot rely on the estimation of a dom-
+                                           the identity of their neighboring nodes. In contrast, we may want to               inant invariant subspace, but must estimate and select a subset of
+                                           split nodes into groups according to whether they play a similar role              relevant eigenvectors from the whole spectrum of the graph.
+                                           in the graph [4], irrespective of their exact position. As an example,             Contributions and outline. We present two algorithms to tackle the
+                                           consider a division into hubs and peripheral nodes according to                    problem of extracting the coarsest EP from the observation of graph
+                                           their degree, a split for which the exact identity of the neighboring              signals under two different scenarios. First, we consider a scenario
+                                           nodes is not essential. While in this specific example defining a                  where we can control the input to the (unknown) graph filter, while
+                                           degree-similarity measure between nodes is simple, how to define a                 having no access to the graph. We present an algorithm that exactly
+                                           similarity measure between nodes in a position independent manner                  recovers the coarsest EP in this setting. Second, we consider a fully
+                                           is a non-trivial question in general.                                              “blind” estimation problem, where we only have access to noisy,
+                                                Rather than trying to identify similar nodes, many traditional ap-            random, low-rank excitations of the graph filter. For this we derive
+                                           proaches in social network analysis consider the definition of nodes               a simple spectral algorithm and derive theoretical error bounds for
+                                                                                                                              its performance under certain assumptions. Finally, we illustrate our
+                                                We acknowledge partial funding from the Ministry of Culture and Sci-
+                                           ence of North Rhine-Westphalia (NRW Rückkehrprogramm) and the Excel-              results and compare the two algorithms.
+                                           lence Strategy of the Federal Government and the Länder. Copyright 2022
+                                           IEEE. Personal use of this material is permitted. Permission from IEEE
+                                           must be obtained for all other uses, in any current or future media, including                               2. NOTATION
+                                           reprinting/republishing this material for advertising or promotional purposes,
+                                           creating new collective works, for resale or redistribution to servers or lists,   Graphs. A simple graph G = (V, E) consists of a set of nodes
+                                           or reuse of any copyrighted component of this work in other works.                 V and a set of edges E = {uv | u, v ∈ V }. The neighborhood
+                2                                                         where Aπ is the adjacency matrix of the so-called quotient graph as-
+            6         2                             1
+       4                  4                                               sociated to the EP. Note that Aπ is not necessarily simple nor undi-
+                                                                          rected. The converse of eq. (2) also holds. If there exists an indicator
+      5     3             3                   2           3
+                                                                          matrix H ∈ {0, 1}n×k as defined above and AH = HAπ , then the
+       2    1         4   4                         4                     graph has an EP with k classes as indicated by H.
+      3                                                   2
+                                                                          Spectral signatures of EPs The algebraic characterization of EPs in
+            4         4                             2                     terms of Equation (2) has some noteworthy consequences. First, the
+                                                                          eigenvalues of Aπ are a subset of the eigenvalues of A. Second, the
+                (a)                                 (b)                   eigenvectors of Aπ can be scaled up by H to become eigenvectors of
+                                                                          A. Both of these statements are implied by the following argument:
+Fig. 1: Examples of graphs where the structural eigenvectors of the       Let Aπ v = λv define an eigenpair of Aπ , then AHv = HAπ v =
+cEP behave irregularly. The depicted graphs are loopy to make the         λHv is an eigenpair of A.
+examples small. However, we can think of this as the condensed                 Thus, A has k (unnormalized) eigenvectors of the form z = Hv
+graphs Aπ of some larger simple graph. (a) [1, 1, 1, 1, 2, 2] is the      that are by construction block constant on the classes of the EP. We
+perron vector of the graph. However, the cEP has 6 classes. (b) This      call these eigenvectors of A associated with the cEP structural eigen-
+graph also only has one EP, but the adjacency matrix is singular.         vectors. As A is symmetric, these eigenvectors form an orthogonal
+Therefore, an eigenvector with eigenvalue 0 is part of the cEP.           basis of a closed subspace. Moreover, as the structural eigenvectors
+                                                                          are block-wise constant, the same subspace is also spanned by the
+                                                                          indicator vectors of the classes, i.e., the columns of H.
+N (v) = {x | vx ∈ E} of a node v is the set of all nodes connected             This motivates the following intuitive idea to find the cEP spec-
+to v. A graph is undirected if uv ∈ E ⇐⇒ vu ∈ E. We may                   trally by analyzing the eigenvectors of the adjacency matrix A: Find
+consider more general (non-simple) graphs that allow for directed         the smallest number k of eigenvectors that are block constant on the
+edges, self loops vv ∈ E, or assign positive weights w : E → R+           same k blocks. The vectors indicating the blocks of these eigenvec-
+to the edges of the graph, rendering it a weighted graph.                 tors will then correspond to the columns of the indicator matrix H
+Matrices. For a matrix M , Mi,j is the component in the i-th row          for the cEP of the graph.
+and j-th column. We use Mi, to denote the i-th row vector of                   Since any structural eigenvector is of the form z = Hv, we
+M and M ,j to denote the j-th column vector. The span of a ma-            may even hope to find the cEP by simply computing a single struc-
+trix M ∈ Rn×m is defined as the set span(M ) = {x ∈ Rn |                  tural eigenvector, provided that the entries of the eigenvector v of
+x = M v for some v ∈ Rm }. For a matrix X, we denote by X ∈               the quotient graph are all distinct. Given such an eigenvector z, we
+span(M ) if X ,j ∈ span(M ) for all j. In is the identity matrix          could then simply read off the node-equivalences classes by check-
+and 1n the all-ones vector of size n respectively. Given a graph          ing whether or not two nodes are assigned the same value in the vec-
+G = (V, E), we identify the set of nodes with {1, . . . , n}. An ad-      tor z. In fact, we can always identify at least one structural eigenvec-
+jacency matrix of a given graph is a matrix A with entries Au,v = 0       tor of the cEP easily using the following proposition, which follows
+if uv ∈/ E and Au,v = w(uv) otherwise, where we set w(uv) = 1             from the non-negativity of the adjacency and the algebraic charac-
+for unweighted graphs for all uv ∈ E.                                     terization of the cEP given above.
+Equitable partitions. A partition C = {C1 , ..., Ck } of a graph into
+                     S into disjoint sets Ci such that Ci ∩ Cj = ∅
+k classes splits the nodes                                                Proposition 1. If the Perron vector (dominant eigenvector) of a
+for i 6= j and V = i Ci . An equitable partition (EP) is a partition      graph is unique, then it is a structural eigenvector.
+such that within each class Ci the neighborhood of each node is
+partitioned into parts of the same size for all classes Cj . Formally,          However, there are several obstacles to implement the above al-
+in an EP it holds for all nodes v, u ∈ Ci in the same class that:         gorithmic idea. First, even if we are given a structural eigenvector of
+                                                                          the cEP, simply grouping the nodes according to their entries in the
+    |{N (v) ∩ Cj }| = |{N (u) ∩ Cj }| for all j ∈ {1, ..., k}.     (1)    eigenvector may not reveal the cEP. For instance, focussing only on
+                                                                          the Perron vector may not yield the correct cEP, as nodes in different
+A standard algorithm to detect EPs is the Weisfeiler-Lehman algo-
+                                                                          classes may still be assigned the same value. Second, the eigenvec-
+rithm [20], a combinatorial algorithm which iteratively refines a col-
+                                                                          tors associated to the cEP may be associated to any eigenvalue of A,
+oring of the nodes until a stable coloring is reached. It finds the
+                                                                          i.e., they are not necessarily the dominant eigenvectors of A.
+coarsest EP (cEP), meaning that with the fewest classes. Note that
+it is typically this cEP one aims to find, as it provides the largest           Both of these problematic cases are shown in Figure 1. Fig-
+reduction in complexity for describing the structure of the graph.        ure Figure 1a provides an example where the dominant eigenvector
+Furthermore, any graph will have a trivial finest EP with |V | classes.   (Perron vector) has fewer than k distinct entries. Figure Figure 1b
+                                                                          shows an eigenvector of the cEP with small eigenvalues (in this case
+                                                                          zero). While there area thus always exactly k structural eigenvectors
+   3. EQUITABLE PARTITIONS AND EIGENVECTORS                               of the cEP, we must first determine which eigenvectors are indeed
+                                                                          structural eigenvectors of the cEP and which are not.
+In this section we recap how the presence of an equitable partition
+manifests itself in the spectral properties of the adjacency matrix. We
+will subsequently use these spectral properties to detect the presence             4. SCENARIO I: BLIND BUT IN CONTROL
+of a cEP from the output of a graph filter.
+     Throughout the paper, we consider an undirected graph G with         In the following, we consider a setup in which we cannot see the
+a cEP that has k classes encoded by the indicator matrix H with           graph directly, but can sample the input/output behavior      of a graph
+                                                                                                                                P        k
+entries Hij = 1 if i ∈ Cj and Hij = 0 otherwise. It now holds that        filter in form of a matrix polynomial f (A) =            k hk A , where
+                                                                          hk ∈ R are filter coefficients. To illustrate our main ideas, we will
+                AH = H(H > H)−1 H > AH =: HAπ                      (2)    restrict ourselves for this section to the simplest case, where f (A) =
+  Algorithm 1: BlindWL                                                          In fact, Algorithm 1 induces the same partitions as the WL al-
+                                                                           gorithm in each iteration of the while loop: we start with the same
+  1 O ← oracle returning Ax;
+                                                                           color for all nodes, as encoded in the all ones vector. If the number of
+  2 B ← 1|V | ; / start with global partition indicator matrix;
+                                                                           neighbors of a certain color c is different for two nodes u, v the WL
+  3 while O(B) ∈  / span(B) do
+                                                                           algorithm will put them in two different classes. The corresponding
+  4     for i, j ∈ V (
+                     do
+                                                                           components (AB)u,c 6= (AB)v,c will also be distinct. Hence, in the
+                       1 if O(B)i, = O(B)j, ∧ Bi, = Bj,                    next iteration, Bu,v = 0 meaning u and v are also put into distinct
+  5          Bi,j ←
+                       0 else                                              classes by the blind WL algorithm.
+  6     end                                                                     A benefit of the blindWL algorithm is that the intermediate row
+  7     remove redundant columns from B                                    representations (AB)i, of a node i yield an embedding each itera-
+  8 end                                                                    tion rather than colors that, if distinct, provide no method of com-
+  9 return B               / return coarsest equitable partition           parison. For example one can cluster these embeddings to obtain an
+                                                                           even coarser partition into nodes that are similar. This circumvents
+                                                                           the sensitivity of the WL algorithm to minor perturbations in the
+                                                                           graph: indeed, adding a single edge can disrupt an exact symmetry
+A and we can control the input to the filter. In Section 5 we will then    and yields a much finer cEP. While crucial to the original application
+concern ourselves with a fully “blind” cEP inference problem, where        of the WL (graph isomorphism checking), a more robust approach
+we have no control over the inputs.                                        to assigning the classes is useful for node role extraction and the
+     For now let us assume we observe the outputs y = Ax ∈ Rn to           completely blind problem setting (section 6).
+a set of inputs x we can choose. Clearly, we could reconstruct the              While the proposed algorithm is not as efficient as the actual WL
+whole graph using sufficiently many inputs localized at single nodes,      algorithm (which has been thoroughly optimized), it does offer a per-
+since Y = AIn . However, if we simply aim to identify a cEP with a         spective that can help with detecting other EPs, rather than simply
+relatively small number of classes, considerably fewer inputs suffice.     the coarsest EP. Suppose a graph has multiple distinct EPs, and the
+     Our idea here is to use input/output behavior as an oracle to sim-    cEP is found by the WL algorithm, and the blindWL algorithm start-
+ulate the well-known Weisfeiler Lehman algorithm (WL) [20], also           ing from the all-ones-vector. Note that the blindWL algorithm finds
+known as color refinement. Starting from an initial coloring c(0) at       the smallest subspace spanned both by a basis consisting of eigen-
+time t = 0 (usually the same color for all nodes), the WL algorithm        vectors and a basis consisting of block-standard vectors. We know
+updates the color of each node v iteratively as follows:                   that the all-ones vector must always be part of this subspace, since
+                                                                         H 1k = 1n . When trying to find a finer EP, we need to choose a
+       c(t+1) (v) = hash c(t) (v), {{c(t) (x) | x ∈ N (v)}}                different set of starting vectors. Reasonable candidates can be found
+                                                                           by taking an eigenvector that is not a structural eigenvector of the
+where the doubled brackets denote a “multi-set”, i.e. a set in which       cEP, but that is nonetheless block constant on some nodes, and using
+an element can appear more than once. Here the hash function is            the indicator vectors of its blocks.
+an injective function and ensures that nodes that have (i) the same             Assuming that this candidate vector x is in the finer EP, the
+color in previous iteration t and (ii) the same set of colors in their     blindWL algorithm will find the whole EP.
+neighborhood, are assigned the same color in the next iteration t + 1.
+Evidently, every step of the algorithm refines the coloring until at
+some point the partition of the graph induced by the colors stays the        5. SCENARIO II: TRULY BLIND IDENTIFICATION OF
+same. At this point, all nodes within the same class have the same                      EQUITABLE PARTITIONS
+number of neighbors to each class, i.e., the algorithm found an EP —
+the cEP to be precise [21]. Using the oracle for y = Ax, we present
+                                                                           We now consider a scenario in which we aim to infer the cEP, but
+a “blind” version of the WL algorithm in Algorithm 1. A similar
+                                                                           merely observe the outputs of a graph filter excited by a noisy, ran-
+algorithm was proposed by [22] for the computation of fractional
+                                                                           dom low-rank excitation over which we have no control.
+isomorphisms based on conditional gradients.
+     Note that, since we are only interested in nodes with exactly the
+same colors in their neighborhood, we need only remember if the                                y = αf (A)H̃x + (1 − α)z.                       (3)
+multi-set is exactly the same or not. A common approach in practice
+is thus to create an implicit hash function via a dictionary that is       Here x ∼ N (0, Ik ) and z ∼ N (0, In ) are jointly Gaussian inde-
+indexed by the (sorted) multi-sets. Computing the hash of a multi-         pendent random vectors that are each sampled i.i.d from a normal
+set then consists of checking whether it is already in the dictionary.     distribution, α ∈ [0, 1] is a parameter that regulates how p    strongly
+If so, one returns the color value stored in the dictionary. If not, the   the structural eigenvectors are excited, and H̃ = H diag(1/ |Ci |).
+number of entries of the dictionary is stored indexed by the multi-set     For simplicity, we assume that f (A) and f (A)2 have the same cEP
+and returned. This way, distinct multi-sets receive distinct values,       indicated by H as A. Though this seems restrictive, for generic
+but the same multi-set will continue receiving the same value.             graphs most filters will fulfill this requirement. Indeed, the cEP of A
+Properties of the blindWL algorithm. It is relatively easy to see          is always an EP of Ak as well, though it may not be the coarsest.
+that Algorithm 1 indeed finds the coarsest equitable partition. After           Now observe that the covariance matrix of the above process has
+termination, AB ∈ span(B), meaning that there exists some matrix           the following form:
+Aπ with AB = BAπ . Furthermore, consider the cEP represented
+by H ∗ . Throughout the execution, if B = H ∗ B π ∈ span(H ∗ ),
+then AB = AH ∗ B π = H ∗ Aπ B π ∈ span(H ∗ ). Since 1|V | =                 Σ = E[yy T ] = P ΓP T = α2 f (A)H̃ H̃ T f (A)T + (1 − α)2 In
+H ∗ 1|H ∗ | , B stays in span(H ∗ ) and B eventually represents the
+same EP as H ∗ .                                                           Because f (A) has an cEP as indicated by H, for any eigenvector
+f (Aπ )v = λv, associated to a structural eigenvector we have:                the error of the partition found by the simple spectral clustering algo-
+                                                                              rithm. The consistency statement that in the limit s → ∞ the error
+         ΣHv = α2 f (A)H̃ H̃ T f (A)Hv + (1 − α)2 In Hv                       vanishes and the extraction of the cEP is exact immediately follows.
+                                                                                   A similar statement can be made about an adjusted variant of the
+                 = α2 f (A)H̃ H̃ T Hf (A)π v + (1 − α)2 Hv
+                                                                              blindWL algorithm applied to the estimated covariance matrix Σ̂.
+                 = α2 f (A)Hf (A)π v + (1 − α)2 Hv                            We can simply replace the exact equality conditions in the compu-
+                 = α2 H(f (A)π )2 v + (1 − α)2 Hv                             tation of the intermediate matrix B in Algorithm 1 with a clustering
+                                                                              algorithm that allows for some variance. In the limit s → ∞, the
+                 = (α2 λ2 + (1 − α)2 )Hv,
+                                                                              error of the approximate oracle Σ̂x goes toward 0: Σ̂x − Σx =
+where we have used that H̃ H̃ T H = H. Hence, the structural eigen-           k∆xk → 0. Therefore, the adjusted blindWL algorithm also ex-
+vectors of Σ are the same as the structural eigenvectors of f (A),            actly recovers the cEP with infinitely many samples. In the next sec-
+which are scaled-up, block constant eigenvectors of f (Aπ ). Now, let         tion we explore numerically how the two algorithms compare with
+f (A) = V ΛV T denote the spectral decomposition of the (symmet-              finitely many samples.
+ric) matrix f (A), and denote by VEP the subset of structural eigen-
+vectors.                                                                                               6. EXPERIMENTS
+     If we consider the cEP C ∗ = {C1∗ , ..., Ck∗ } associated to f (A)
+and define the k-means cost function:                                         In this section we perform some experiments that support the theo-
+                                                            2                 retical findings of this paper. Toward this end, we use the setup as
+                           XX                  1 X                            described in section 5, eq. (3). While the proposed spectral algorithm
+             F (C, V ) =              Vi, −           Vj,              (4)
+                                              |C| j∈C                         of section 5 is fit for the task, the blindWL algorithm (1) must be al-
+                           C∈C i∈C                          2                 tered slightly as indicated above. In particular, we no longer have
+it is easy to see that F (C ∗ , VEP ) = 0, as the eigenvectors of f (A) are   control over the inputs, thus the oracle O for y = Ax is replaced
+block-wise constant on the classes of the cEP.                                with an approximate oracle ŷ = Σ̂x.
+      Hence, if we had access to (a good estimate of) the covariance               Accordingly, we use a (robust) version of the algorithm, in
+matrix Σ, we could simply use k-means to find candidates for the              which we replace the exact equality check in line 5 in algorithm 1
+cEP, provided we can supply the correct eigenvectors V to the al-             and instead fit a gaussian mixture on the rows of O(B). The adjusted
+gorithm. As the above calculations show, the parameter α regulates            algorithm then uses the indicator vectors of the found clusters as the
+the scale of the eigenvalues associated to the structural eigenvectors.       new intermediate B. We note that in the scenario of section 4, both
+For sufficiently large values of α most structural eigenvectors will,         variants of the algorithm yield the same result (under the assumption
+in fact, be the dominant eigenvectors. Assuming that we know the              that the clustering algorithm fits the data optimally).
+number of classes k of the cEP to be found, we may thus simply                     The graphs used in our synthetic test are sampled from a locally
+pick the top k eigenvectors of Σ and optimize the k-means objec-              colored configuration model [24]. As opposed to the original config-
+tive to obtain the blocks of the EP — a procedure akin to spectral            uration model, in the locally colored configuration model, the edge
+clustering. Here we estimate the covariance matrix by the sample              stubs also specify what color the incident nodes should have. Specif-
+covariance based on sampled outputs yi for i ∈ 1, . . . , s:                  ically, each node in the model has two main sets of parameters: an
+                                                                              assignment to a (color) class and a number of colored stubs with
+                             1X
+                                s                                             which the node is required to link to other classes (which amounts to
+                      Σ̂ =         yi yiT = P̂ Γ̂P̂ T                         specifying a partition indicator matrix H and a quotient graph Aπ ).
+                             s i=1
+                                                                              Given that the desired constraints can be met, we obtain a simple
+                                                                              graph without self-loops or multi-edges. Stated differently, using
+For this setup we can show the following result.
+                                                                              the locally colored configuration model, we can fix the number of
+                                                                              colored neighbors for each node and thus guarantee that the sampled
+Theorem 1. Let Σ̂−Σ = ∆ and let y 1 , ..., y s ∈ Rn be independent
+                                                                              graph has an EP AH = HAπ . For more details we refer the reader
+samples from the graph filter as in eq. (3) and let r = Tr(Σ)/ kΣk2 .
+                                                                              to the code available here.
+Let the following conditions hold:
+                                                                                   In the experiments, graphs with 300 nodes and an EP with
+    1. KMeans finds a partition Cˆ = {Ĉ1 , ..., Ĉk } that minimizes         6 same sized classes were used. In each experiment, we ran-
+       F(ˆ C, P̂EP ).                                                         domly sampled a symmetric matrix Aπ uniformly from the integers
+             2                                                                {0, ..., 4}6×6 . Subsequently, we sampled the matrix A, generated s
+    2.   y i 2 ≤ KE[kyk22 ] is bounded almost surely.                         outputs y i (for i ∈ 1, . . . , s) and evaluated the algorithms.
+    3. There exists δ > 0 s.t. k∆k + δ ≤ γk − γ̂k+1 .                              We measure the performance of both algorithms using graph-
+                                                                              level accuracy, that is, an output partition receives a score of 1 if it is
+Then, for c > 0 and with probability at least 1 − c:
+                                                                              exactly equivalent to the planted partition; else the score is 0. Note
+                 √
+                              q                                             that this is a quite strict measure, as a correct class assignment for all
+                                    K 2 r log(n/c)   K 2 r log(n/c)
+ q                 8k kΣk2 Θ                s
+                                                   +         s                but one node is still counted as a complete failure to recover the EP.
+       ˆ VEP ) ≤
+   F (C,                                                                      As a second, node-level measure, we use the cost function F ( ˆ  C, VEP )
+                                           δ                                  as defined in eq. (4), which can give insight into the quality of wrong
+for some constant Θ.                                                          partitions. Both measures are reported as the mean score over 1000
+                                                                              repeated experiments for each of the parameter configurations shown
+     The proof of the theorem can be found in the full version avail-         in Figure 2.
+able here. It is inspired by [14, 23] and uses a concentration inequal-            In the right plot of Figure 2, a rapid decrease in the cost func-
+ity and the Davis Kahan sin(θ) theorem. The theorem itself bounds             tion and a slightly less steep increase in the accuracy can be seen
+Fig. 2: Graph-level and node-level performance of the algo-
+rithms. The figure shows the graph-level accuracy on the right axis
+                                                       ˆ VEP ) on the
+(continuous line) and the node-level cost function F (C,
+left axis (dashed line) of each graph. It also shows the progression
+of these metrics with fixed sample size s = 300 and varying noise
+parameter α (left), and with fixed α = 0.7 and varying s (right).
+
+
+for increasing sample size, which underlines our theoretical findings
+in Theorem 1. Though quite close in the node-level measure, the
+blindWL algorithm already has considerably higher accuracy using
+only few samples.
+     In the left plot of Figure 2 and with no noise at all, both algo-
+rithms find the correct partitions. However, the blindWL algorithm
+is again more robust when increasing the noise. The fact that the
+algorithms do not converge to the same score at α = 0 can be ex-
+plained by the distinct clustering methods. While KMeans always
+finds 6 clusters the gaussian mixture used in the blindWL can use
+less than 6 components in the mixture. This should also be kept in
+mind when comparing the two algorithms, as KMeans requires the
+number of classes as input, whereas the blindWL algorithm can infer
+the number of classes from the data.
+
+                        7. CONCLUSION
+
+We presented approaches to blindly extracting structural information
+in the form of an equitable partition of an unobserved graph from
+only such graph signals. In theorem 1, we established a theoretical
+bound on the error of such an inferred partition and went on to com-
+pare the spectral clustering and blindWL approaches experimentally.
+An interesting direction for future research may be to exploit this no-
+tion of node roles, e.g., the quotient structure may be employed for
+faster computations of certain graph filters.
+                        8. REFERENCES                                    [16] Michael T Schaub, Santiago Segarra, and John N Tsitsiklis,
+                                                                              “Blind identification of stochastic block models from dynami-
+ [1] Steven H Strogatz, “Exploring complex networks,” Nature,                 cal observations,” SIAM Journal on Mathematics of Data Sci-
+     vol. 410, no. 6825, pp. 268–276, 2001.                                   ence, vol. 2, no. 2, pp. 335–367, 2020.
+ [2] Mark Newman, Networks, Oxford University Press, 2018.               [17] T Mitchell Roddenberry and Santiago Segarra, “Blind in-
+                                                                              ference of centrality rankings from graph signals,”       in
+ [3] Santo Fortunato, “Community detection in graphs,” Physics                ICASSP 2020-2020 IEEE International Conference on Acous-
+     reports, vol. 486, no. 3-5, pp. 75–174, 2010.                            tics, Speech and Signal Processing (ICASSP). IEEE, 2020, pp.
+ [4] Ryan A Rossi, Di Jin, Sungchul Kim, Nesreen K Ahmed,                     5335–5339.
+     Danai Koutra, and John Boaz Lee, “On proximity and struc-           [18] Yiran He and Hoi-To Wai, “Estimating centrality blindly from
+     tural role-based embeddings in networks: Misconceptions,                 low-pass filtered graph signals,” in ICASSP 2020-2020 IEEE
+     techniques, and applications,” ACM Transactions on Knowl-                International Conference on Acoustics, Speech and Signal Pro-
+     edge Discovery from Data (TKDD), vol. 14, no. 5, pp. 1–37,               cessing (ICASSP). IEEE, 2020, pp. 5330–5334.
+     2020.
+                                                                         [19] Yiran He and Hoi-To Wai, “Detecting central nodes from low-
+ [5] Ulrik Brandes, Network analysis: methodological foundations,             rank excited graph signals via structured factor analysis,” arXiv
+     vol. 3418, Springer Science & Business Media, 2005.                      preprint arXiv:2109.13573, 2021.
+ [6] Rubén J Sánchez-Garcı́a, “Exploiting symmetry in network          [20] Boris Weisfeiler and Andrei Leman, “The reduction of a graph
+     analysis,” Communications Physics, vol. 3, no. 1, pp. 1–15,              to canonical form and the algebra which appears therein,” NTI,
+     2020.                                                                    Series, vol. 2, no. 9, pp. 12–16, 1968.
+ [7] Louis M Pecora, Francesco Sorrentino, Aaron M Hagerstrom,           [21] Robert Paige and Robert E Tarjan, “Three partition refinement
+     Thomas E Murphy, and Rajarshi Roy, “Cluster synchroniza-                 algorithms,” SIAM Journal on Computing, vol. 16, no. 6, pp.
+     tion and isolated desynchronization in complex networks with             973–989, 1987.
+     symmetries,” Nature communications, vol. 5, no. 1, pp. 1–8,         [22] Kristian Kersting, Martin Mladenov, Roman Garnett, and Mar-
+     2014.                                                                    tin Grohe, “Power iterated color refinement,” in Twenty-Eighth
+ [8] Michael T Schaub, Neave O’Clery, Yazan N Billeh, Jean-                   AAAI Conference on Artificial Intelligence, 2014.
+     Charles Delvenne, Renaud Lambiotte, and Mauricio Barahona,          [23] Hoi-To Wai, Santiago Segarra, Asuman E Ozdaglar, Anna
+     “Graph partitions and cluster synchronization in networks of             Scaglione, and Ali Jadbabaie, “Blind community detection
+     oscillators,” Chaos: An Interdisciplinary Journal of Nonlinear           from low-rank excitations of a graph filter,” IEEE Transactions
+     Science, vol. 26, no. 9, pp. 094821, 2016.                               on signal processing, vol. 68, pp. 436–451, 2019.
+ [9] Ye Yuan, G-B Stan, Ling Shi, Mauricio Barahona, and Jorge           [24] Bo Söderberg, “Random graphs with hidden color,” Physical
+     Goncalves, “Decentralised minimum-time consensus,” Auto-                 Review E, vol. 68, no. 1, pp. 015102, 2003.
+     matica, vol. 49, no. 5, pp. 1227–1235, 2013.                        [25] Christos Boutsidis, Prabhanjan Kambadur, and Alex Gittens,
+[10] Simone Martini, Magnus Egerstedt, and Antonio Bicchi,                    “Spectral clustering via the power method-provably,” in In-
+     “Controllability analysis of multi-agent systems using relaxed           ternational conference on machine learning. PMLR, 2015, pp.
+     equitable partitions,” International Journal of Systems, Control         40–48.
+     and Communications, vol. 2, no. 1-3, pp. 100–121, 2010.             [26] Charles F Van Loan and G Golub, “Matrix computations (johns
+                                                                              hopkins studies in mathematical sciences),” 1996.
+[11] Antonio Ortega, Pascal Frossard, Jelena Kovačević, José MF
+     Moura, and Pierre Vandergheynst, “Graph signal processing:          [27] Roman Vershynin, High-dimensional probability: An intro-
+     Overview, challenges, and applications,” Proceedings of the              duction with applications in data science, vol. 47, Cambridge
+     IEEE, vol. 106, no. 5, pp. 808–828, 2018.                                university press, 2018.
+[12] Xiaowen Dong, Dorina Thanou, Pascal Frossard, and Pierre
+     Vandergheynst, “Learning laplacian matrix in smooth graph
+     signal representations,” IEEE Transactions on Signal Process-
+     ing, vol. 64, no. 23, pp. 6160–6173, 2016.
+[13] Vassilis Kalofolias, “How to learn a graph from smooth sig-
+     nals,” in Artificial Intelligence and Statistics. PMLR, 2016, pp.
+     920–929.
+[14] Hoi-To Wai, Santiago Segarra, Asuman E Ozdaglar, Anna
+     Scaglione, and Ali Jadbabaie, “Community detection from
+     low-rank excitations of a graph filter,” in 2018 IEEE Interna-
+     tional Conference on Acoustics, Speech and Signal Processing
+     (ICASSP). IEEE, 2018, pp. 4044–4048.
+[15] T Mitchell Roddenberry, Michael T Schaub, Hoi-To Wai, and
+     Santiago Segarra, “Exact blind community detection from sig-
+     nals on multiple graphs,” IEEE Transactions on Signal Pro-
+     cessing, vol. 68, pp. 5016–5030, 2020.
+                                                                                                                           T          T
+                            9. APPENDIX                                  As a shorthand, define the error matrix E = VEP VEP − P̂EP P̂EP . The
+                                                                         following inequalities hold:
+9.1. Proof of Proposition 1
+Proposition 1: If the Perron vector (dominant eigenvector) of a                   VEP − Ĥ Ĥ > VEP
+graph is unique, then it is a structural eigenvector.                                             F
+                                                                                                >
+                                                                                 = I − Ĥ Ĥ        VEP
+                                                                                                           F
+Proof. Let G be a graph with adjacency matrix A and its cEP indi-                    
+                                                                                                >
+                                                                                                  
+                                                                                                           >
+cated by H, that is, AH = HAπ . Consider the dominant eigenpair                  = I − Ĥ Ĥ        VEP VEP
+                                                                                                               F
+(λ1 , v1 ) of A. It holds, that:                                                     
+                                                                                                >
+                                                                                                  
+                                                                                                             >
+                                                                                                                    
+                                                                                 = I − Ĥ Ĥ          P̂EP P̂EP + E
+                                     At x                                                                         F     
+                                                                                                >
+                         v1 = lim
+                                t→∞ kAt xk
+                                                                                 ≤ I − Ĥ Ĥ        P̂EP P̂EP + I − Ĥ Ĥ > E
+                                                                                                            >
+                                                                                                               F              F
+                                                                                                 
+for some x, that is not perpendicular to v1 . Take x = 1n = H 1k .               ≤ I − Ĥ Ĥ > P̂EP P̂EP    >
+                                                                                                                 + kEkF
+                                                                                                                     F
+The all-ones vector 1n is not perpendicular to v1 , since the dominant
+eigenvector of a non-negative matrix is non-negative and positive in     where the second equality stems from the fact that V is unitary and
+at least one component. Therefore:                                       the frobenius norm is invariant under unitary operations. In the same
+                                                                         vein, the last equality is a consequence of (I − Ĥ Ĥ T ) being a pro-
+               At 1n        At H 1k       H(Aπ )t 1k                     jection matrix and therefore also having no influence on the norm.
+    v1 = lim          = lim         = lim
+          t→∞ kA 1n k
+                t       t→∞ kA 1n k
+                               t      t→∞ kAt 1n k                       Now, since Cˆ minimizes F (C, P̂EP ) going to the ground-truth parti-
+                                                                         tion will actually increase the cost:
+Then v1 = Hv1π and is thus a structural eigenvector.
+                                                                                                
+                                                                                      I − Ĥ Ĥ > P̂EP P̂EP
+                                                                                                         >
+                                                                                                               + kEkF
+                                                                                                          F
+                                                                                                        >
+9.2. Proof of Theorem 1                                                            ≤ I − H ∗ (H ∗ ) P̂EP P̂EP    >
+                                                                                                                       + kEkF
+                                                                                                                     F
+ Theorem 1. Let Σ̂ − Σ = ∆ and let y 1 , ..., y s ∈ Rn be independent
+                                                                                                                       
+                                                                                                        >
+                                                                                   = I − H ∗ (H ∗ )                >
+                                                                                                             VEP VEP  −E      + kEkF
+samples from the graph filter as in eq. (3) and let r = Tr(Σ)/ kΣk2 .                                                       F
+Let the following conditions hold:
+                                                                                                         
+                                                                                                        >
+                                                                                   ≤ I − H ∗ (H ∗ ) VEP VEP      >
+                                                                                                                       + 2kEkF
+                                                                                                                     F
+    1. KMeans finds a partition Cˆ = {Ĉ1 , ..., Ĉk } that minimizes                 p
+           ˆ P̂EP ).
+       F (C,                                                                       = F (C ∗ , VEP ) + 2kEkF
+            2                                                                      = 2kEkF
+   2.   y i 2 ≤ KE[kyk22 ] is bounded almost surely.
+   3. There exists δ > 0 s.t. k∆k + δ ≤ γk − γ̂k+1 .                     To now bound the error kEkF we change the norms by the following
+                                                                         lemma:
+Then, for c > 0 and with probability at least 1 − c:
+                 √
+                              q
+                                                      2
+                                                                        Lemma 1 ([25], Lemma 7). For any A, B ∈ Rm×n with m ≥ n
+                                    K 2 r log(n/c)
+ q                 8k kΣk2 Θ                s
+                                                   + K r log(n/c)
+                                                           s
+                                                                         and AT A = B T B = In , it holds that:
+       ˆ VEP ) ≤
+   F (C,
+                                           δ                                                                 2                                  2
+                                                                                       AAT − BB T                ≤ 2n AAT − BB T
+                                                                                                             F                                  2
+for some constant Θ.
+                                                                         It directly follows that:
+Proof. Define the indicator matrices
+                                                                                                         √
+                                                                                              r     
+                             np               o                                                 ˆ V ≤ 2 2k kEk
+                                                                                               F C,
+                Ĥ = H diag        |C| | C ∈ Cˆ                                                                                          2
+
+
+                                                                                                                             T          T
+                                np            o
+                H ∗ = H diag       |C| | C ∈ C                           We now need to bound the error term E = VEP VEP       − P̂EP P̂EP . Since
+                                                                         the first term consists of the eigenvectors of the cEP of A, which
+It becomes apparent that:                                                are by assumption the same as the eigenvectors of the cEP of A2 ,
+                                                                         which are, in turn, the same as the eigenvectors of Σ, we have E =
+                                        2                                       T           T
+                  P̂EP − Ĥ Ĥ T P̂EP       = F(ˆ
+                                                C, P̂EP )                PEP PEP   − P̂EP P̂EP . As a direct consequence of [26, Theorem 2.6.1]
+                                        F                                this, in turn, can be rewritten as:
+and by condition 1, Ĥ minimizes the expression. Similarly,                                     T           T                        T
+                                                                                    kEk2 = PEP PEP − P̂EP P̂EP                   = P̂EP PEP
+                                                                                                                             2                      2
+                                        2
+             VEP − H ∗ (H ∗ )T VEP          = F (C ∗ , VEP ) = 0
+                                        F                                We continue the proof by applying a variant of the Davis Kahan sin
+                                                                         θ theorem to show that:
+In the following the aim will be to bound
+                                                                                                                   T
+               q                                                                                                 P̂EP ∆PEP               k∆k2
+                  F(ˆC, VEP ) = VEP − Ĥ Ĥ T VEP                                           T
+                                                                                          P̂EP PEP       ≤                       2
+                                                                                                                                     ≤
+                                                          F                                          2               δ                    δ
+The second inequality is obvious as the matrices except ∆ are or-         Theorem 2 ([27] Theorem 5.6.1, 5.6.4). Let y 1 , ..., y s be indepen-
+thogonal and therefore do not increase the largest eigenvalue. For the    dent samples of the graph filter as in eq. (3), let y l 2 ≤ KE[kyk22 ]
+first inequality, consider the decomposition of the covariance matrix:    and let the effective rank of the covariance be r = Tr(Σ)/ kΣk2 ,
+                                                                          then for every c > 0 it holds, that:
+               Σ = P ΓP T = PEP ΓEP PEP
+                                     T             T
+                                        + PEP ΓEP PEP                                               r                                      !
+                                                                                                      K 2 r log(n/c)        K 2 r log(n/c)
+The estimated covariance matrix is also decomposed in the same                 k∆k2 ≤ kΣk2 C                            +
+                                                                                                               s                    s
+way. Now, it holds that:
+                                                                          with probability at least 1 − c.
+        ∆PEP = (Σ + ∆) PEP − ΣPEP
+                                                
+                                T             T
+             = Σ̂PEP − PEP ΓEP PEP + PEP ΓEP PEP   PEP
+
+                = Σ̂PEP − PEP ΓEP
+
+Furthermore:
+                  T           T            T
+                P̂EP ∆PEP = P̂EP Σ̂PEP − P̂EP PEP ΓEP
+                                      T          T
+                             = Γ̂EP P̂EP PEP − P̂EP PEP ΓEP
+
+We will now use a trick to center the eigenvalues of Γ around 0: Let
+c = (γ1 + γk )/2 and d = (γ1 − γk )/2. By the triangle inequality:
+
+        T                        T         T
+       PEP ∆PEP        = Γ̂EP P̂EP PEP − P̂EP PEP ΓEP
+                   2                                    2
+                                       
+                                           T              T
+                       =    Γ̂EP − cIn P̂EP PEP + cIP̂EP    PEP
+                                              
+                             T                          T
+                         − P̂EP PEP ΓEP − cIn − P̂EP      PEP cIn
+                                                                  2
+                                       
+                                           T
+                       =    Γ̂EP − cIn P̂EP   PEP
+                                                  
+                                T
+                           − P̂EP  PEP ΓEP − cIn
+                                                      2
+                                      
+                                           T
+                       ≥ Γ̂EP − cIn P̂EP     PEP
+                                                   2
+                                                    
+                                  T
+                           − P̂EP PEP ΓEP − cIn
+                                                         2
+
+As Γ is a diagonal matrix and γi − c ∈ [−d, d] for i ∈ {1, ..., k}, it
+holds that kΓEP − cIn k2 ≤ d. Applying this yields:
+                                
+                T                             T
+              P̂EP PEP ΓEP − cIn      ≤ d P̂EP  PEP
+                                           2                  2
+
+Using the same logic, and by condition 3, γ̂i − c ∈ [−∞, −(d + δ)]
+for i ∈ {k + 1, ..., n}. Thus, Γ̂EP − cIn ≥ (d + δ). Applying
+                                          2
+this to the norms, it holds that:
+                        
+                             T                 T
+              Γ̂EP − cIn P̂EP  PEP ≥ (d + δ) P̂EP PEP
+                                      2                           2
+
+Subtracting the right-hand side of the equations from one another,
+we end up with the inequality:
+
+          T                            T                  T
+         PEP ∆PEP          ≥ (d + δ) P̂EP PEP       − d P̂EP PEP
+                       2                        2                     2
+                                  T
+                           ≥δ   P̂EP PEP
+                                           2
+
+It has now been proven, that
+                                   √
+                          ˆ V ) ≤ 2 2k k∆k2
+                    q
+                      F (C,
+                                        δ
+Applying the following theorem then directly yields the theorem
+stated above.
+

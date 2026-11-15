@@ -1,0 +1,198 @@
+Alternate equitable bisections and compact eigenvectors for RSBM(2,1)
+Prepared 2026-11-15. Independent derivation; no novelty claim.
+
+MODEL AND SCOPE
+There are N vertices in each planted block V+ and V-. Independently choose
+a uniform simple 2-regular graph in each block and a uniform perfect matching
+between the blocks. Let sigma be +1 on V+ and -1 on V-. The adjacency matrix
+A obeys A sigma = sigma. An alternate equitable bisection means a vector
+tau in {+1,-1}^{2N}, sum tau=0, A tau=tau, tau != +/- sigma.
+
+RESULT
+The expected number of alternate equitable bisections is O(N^{-2}). Hence
+the planted bisection is the unique equitable (2,1) bisection, up to global
+sign, with probability 1-O(N^{-2}). This is an identifiability statement.
+It does NOT establish dim ker(A-I)=1, and does not yield an efficient
+recovery algorithm by itself. A real eigenspace may have dimension >1
+without containing another balanced sign vector.
+
+DETERMINISTIC FLIP CONDITION
+Write tau_v=sigma_v t_v with t_v in {+1,-1}, and let S={v:t_v=-1}.
+Subtracting A sigma=sigma from A tau=tau after multiplying coordinates
+by sigma gives the following exact condition at every vertex:
+
+  number of original internal edges crossing (S,S^c)
+    = number of original matching edges crossing (S,S^c).
+
+Thus the first count is either zero or one. In particular, every vertex
+of S has at least one original internal neighbor in S. Balance of tau
+requires |S intersect V+|=|S intersect V-|=:k. Replacing tau by -tau
+replaces k by N-k, so it suffices to treat 1<=k<=N/2. For simple internal
+graphs k=1 is impossible, since its lone flipped vertex in each block
+would have no internal neighbor in S.
+
+EXACT CONFIGURATION MODEL FIRST MOMENT
+First allow independent degree-2 configuration multigraphs inside blocks,
+with two distinguishable stubs at every vertex. The matching is simple.
+Fix S+ subset V+ and S- subset V-, each of size k. Let r be the number
+of matching edges from S+ to V-\S-. Since both sides have k flipped
+vertices, exactly r matching edges also go from V+\S+ to S-.
+
+The probability of this matching intersection is
+
+  P_r = binom(k,r) binom(N-k,r) / binom(N,k).
+
+Within each planted block exactly r vertices of S and r vertices outside
+S are active (their cross partner is on the other side of S). Each needs
+exactly one internal edge across S. All other vertices need zero.
+For any fixed such active sets, the exact probability in one internal
+configuration model is
+
+  q(k,r) = 2^(2r) r! (2k-r-1)!! (2(N-k)-r-1)!! / (2N-1)!!,
+
+if r is even; it is zero otherwise. Convention: (-1)!!=1. Indeed choose
+one of two stubs at each active vertex, match the r selected S stubs to
+the r selected outside stubs (r! choices), and pair all remaining stubs
+within their own side. Parity forces r even.
+
+Consequently the exact expected number of valid flip sets with size k
+and intersection parameter r is
+
+  T_N(k,r) = binom(N,k) binom(k,r) binom(N-k,r) q(k,r)^2.
+
+This counts oriented sign vectors. Summing only k<=N/2 covers every
+unordered alternate bisection at least once; overcounting is harmless.
+
+SMALL k: A UNIFORM BOUND
+Fix epsilon=1/1024. Put c=1-3 epsilon/2 and C=8 e^2/c^3. For k<=epsilon N
+and 0<=r<=k, r even, the ratio of the second double factorial in q to its
+denominator is a product of k+r/2 reciprocals, every denominator at least
+2N-2k-r+1 >= 2cN. Therefore
+
+  q(k,r) <= 4^r r! (2k)^(k-r/2) / (2cN)^(k+r/2).
+
+Using binom(N,k)<=(eN/k)^k, binom(k,r)<=2^k,
+binom(N-k,r)<=(eN/r)^r, and r!<=r^r gives
+
+  T_N(k,r) <= (C k/N)^k.
+
+The r=0 case uses the standard 0^0=1 convention and the same inequality.
+There are at most k+1 possible r values. For
+f_k=(k+1)(Ck/N)^k, k>=2,
+
+  f_(k+1)/f_k
+     <= (4/3) e C (k+1)/N
+     <= (4/3) e C (epsilon+1/N) < 1/2
+
+for all sufficiently large N. Thus
+
+  sum_(2<=k<=epsilon N) sum_r T_N(k,r)
+     <= 2 f_2 = 24 C^2/N^2.
+
+Although the unrestricted configuration model also has k=1 candidates,
+all of those use internal loops and disappear on conditioning simplicity.
+We bound only k>=2 before the conditioning step.
+
+MACROSCOPIC k: STRICT ENTROPY NEGATIVITY
+Set a=k/N and b=r/N, where 0<a<=1/2 and 0<=b<=a. With H(x)=-x log x
+-(1-x)log(1-x), and 0 log0=0, define
+
+ Q(a,b)=2b log2+b log b
+       +(2a-b)log(2a-b)/2
+       +(2-2a-b)log(2-2a-b)/2-log2;
+
+ F(a,b)=H(a)+a H(b/a)+(1-a)H(b/(1-a))+2Q(a,b).
+
+Uniform Stirling bounds (including zero factorial arguments) imply
+
+  log T_N(k,r) = N F(a,b)+O(log N)
+
+with an absolute uniform O(log N) on this compact domain.
+In the interior,
+
+ F_b = log[16(a-b)(1-a-b)/((2a-b)(2-2a-b))].
+
+F_bb<0, because
+
+ F_bb=-1/(a-b)-1/(1-a-b)+1/(2a-b)+1/(2-2a-b)<0.
+
+At b=0, F_b=log4>0. At b=a it tends to -infinity (including a=1/2).
+Thus there is a unique maximizer
+
+  b_*(a) = (7-sqrt(49-180a(1-a)))/15,
+
+which lies in (0,a), and b_*(a)<1/3 for a<1/2, with b_*(1/2)=1/3.
+
+Let M(a)=F(a,b_*(a)). Its derivative is F_a at the optimum:
+
+ F_a=log[(1-a-b)(2a-b)^2/((a-b)(2-2a-b)^2)].
+
+To verify its sign, put x=a-b and y=1-a-b, so 0<x<y for a<1/2.
+Then F_a<0 is equivalent to
+
+  (2x+b)/sqrt(x) < (2y+b)/sqrt(y),
+
+which is equivalent to b<2sqrt(xy). The optimum condition is
+16xy=(2x+b)(2y+b), equivalently 12xy=2b-3b^2.
+Hence b<2sqrt(xy) is equivalent to b<1/3. This holds strictly for a<1/2.
+Therefore M is strictly decreasing on (0,1/2). Direct substitution gives
+
+  lim_(a->0) M(a)=0,  M(1/2)=log(2/3)<0.
+
+It follows that F(a,b)<=M(epsilon)<0 whenever epsilon<=a<=1/2.
+The macroscopic contribution, having at most N^2 summands and a polynomial
+Stirling prefactor, is exponentially small.
+
+TRANSFER TO THE SIMPLE MODEL
+For each internal degree-2 configuration model the probability of being
+simple tends to exp(-3/4)>0. A self-contained enumeration: the exponential
+generating function of simple labeled 2-regular graphs is
+
+  exp(sum_(j>=3) z^j/(2j))
+     =(1-z)^(-1/2) exp(-z/2-z^2/4).
+
+The number of configurations per simple graph is 2^N. Divide their count
+by (2N-1)!!; the resulting simplicity probability is
+
+  [z^N] ((1-z)^(-1/2) exp(-z/2-z^2/4))
+       / [z^N] (1-z)^(-1/2),
+
+which tends to exp(-3/4), by the usual coefficient asymptotics for an
+analytic factor times (1-z)^(-1/2). The two internal graphs are independent,
+so joint simplicity has limiting probability exp(-3/2)>0. Conditional on
+simplicity they are exactly the desired independent uniform simple graphs.
+Since every simple-model alternate has k>=2, its expectation is at most
+the configuration expectation for k>=2 divided by joint simplicity.
+The preceding bounds prove O(N^{-2}).
+
+EXACT REAL EIGENSPACE REDUCTION
+Relabel V- by the perfect matching. If C,D are the two internal adjacency
+matrices, A=[[C,I],[I,D]]. The equation (A-I)(x,y)=0 is equivalent to
+
+  y=(I-C)x,    (C+D-DC)x=0.
+
+Thus dim ker(A-I)=dim ker(C+D-DC), with planted x=1. The uniqueness
+theorem above excludes additional balanced sign vectors, not additional
+general real vectors in this kernel. It must not be cited as shifted
+nonsingularity on 1^perp.
+
+WHY BOUNDED CYCLE/TWIN MOTIFS DO NOT GIVE AN OBSTRUCTION
+For any cubic graph and a real eigenvector f with eigenvalue lambda!=0,
+let S be its exact nonzero support, |S|=k, and let H include all edges
+incident to S and all their endpoints. Every v in S has an S-neighbor
+(otherwise lambda f_v=0). Every outside neighbor of S has at least two
+neighbors in S (otherwise its eigenvector equation cannot cancel).
+If e edges lie inside S and ell vertices outside S touch S, then
+
+  boundary edges=3k-2e,  ell<=(3k-2e)/2,
+  |E(H)|=3k-e,  |V(H)|=k+ell,
+  |E(H)|-|V(H)| >= k/2.
+
+For fixed k there are finitely many possible bounded H, and a fixed
+colored H has expected O(N^{|V(H)|-|E(H)|}) embeddings in this planted
+fixed-degree model (or probability zero). Hence the probability of a
+nonzero eigenvalue eigenvector supported on at most K vertices is
+O_K(N^{-1}) for every fixed K; for lambda=1 the minimum support is at
+least two and the direct excess bound is O_K(N^{-1}). This excludes
+bounded compact-support motifs as a nonvanishing-probability explanation
+of excess multiplicity. It says nothing about supports growing with N.

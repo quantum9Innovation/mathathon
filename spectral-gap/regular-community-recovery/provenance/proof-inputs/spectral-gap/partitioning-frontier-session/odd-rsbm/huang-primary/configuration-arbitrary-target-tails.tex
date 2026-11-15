@@ -1,0 +1,323 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newcommand{\Fp}{\mathbb F_p}
+\newcommand{\Prob}{\mathbb P}
+\newcommand{\Ent}{\mathsf H}
+\newcommand{\KL}{\mathsf D}
+\title{Arbitrary-target configuration counts and quantitative entropy tails}
+\author{Research working note: direct adaptation, historical priority unverified}
+\date{November 15, 2026}
+\begin{document}
+\maketitle
+
+Fix integers $d\ge3$ and an odd prime $p$. The results below are uniform in
+every target vector but keep $d,p$ fixed. Let $C$ be the adjacency matrix
+of the uniform pairing model on $N$ vertices with $d$ labelled stubs per
+vertex; assume only $dN$ even. Loops contribute two to the diagonal.
+In particular, odd $N$ is allowed when $d$ is even.
+
+Huang's published-topic preprint \cite{huang}, Theorem 1.1(1.2), concerns
+the zero-target kernel moment, not the all-target mixing statement needed
+for the odd-block RSBM extension. This note proves the arbitrary-target
+enumeration and entropy-tail parts directly. The remaining central local
+limit theorem is not asserted here. The combinatorial enumeration follows
+the mechanism of Huang's Proposition 2.2, with different row targets;
+the maximization over targets and the resulting rate function are proved
+below rather than imported as a theorem from that source.
+
+\section{Exact prescribed-output enumeration}
+For $q\in\Fp^N$, let
+\[
+ N_a=|\{v:q_v=a\}|,\qquad \nu_a=N_a/N \quad(a\in\Fp).
+\]
+If a pairing has adjacency matrix $C$, its directed color-count matrix is
+\[
+ M_{ab}=\sum_{v:q_v=a}\sum_{w:q_w=b} C_{vw}.
+\]
+Thus $M$ is symmetric, every $M_{aa}$ is even, and
+$\sum_b M_{ab}=dN_a$. Put $m=M/(dN)$, so $m$ is a symmetric probability
+matrix with both marginals $\nu$. Define
+\[
+ P_t(z)=\sum_{\substack{a_1,\ldots,a_d\in\Fp\\a_1+\cdots+a_d=t}}
+                \prod_{j=1}^d z_{a_j},
+\qquad T_{dN}=(dN-1)!!.
+\]
+The coefficient notation $[z^{M_a}]$ uses $p$ variables and the row
+$M_a=(M_{ab})_b$.
+
+\begin{proposition}[Exact arbitrary-output formula]\label{prop:exact}
+For every fixed $q,r\in\Fp^N$ and admissible matrix $M$,
+\begin{align}
+ &\Prob(Cq=r,\ M(q,C)=M)\\
+ &\quad=\frac{K(M)}{T_{dN}}
+       \prod_{a\in\Fp}[z^{M_a}]
+              \prod_{v:q_v=a}P_{r_v}(z),\label{eq:count}\\
+ &K(M)=\prod_{a<b} M_{ab}!\,
+         \prod_a\frac{M_{aa}!}{2^{M_{aa}/2}(M_{aa}/2)!}.
+ \nonumber
+\end{align}
+\end{proposition}
+\begin{proof}
+For each stub at vertex $v$, record the color of its partner's vertex.
+At $v$, the ordered $d$ partner colors have sum $r_v$ if and only if
+$(Cq)_v=r_v$. The coefficient in \eqref{eq:count} counts assignments of
+these colors to the labelled stubs with specified total row counts.
+For a fixed assignment with symmetric counts $M$, the stubs from color
+$a$ requesting color $b$ can be paired bijectively with those from $b$
+requesting $a$ in $M_{ab}!$ ways. The $M_{aa}$ stubs requesting their own
+color have $(M_{aa}-1)!!$ pairings. Multiplication gives $K(M)$.
+Every pairing has exactly one such assignment, and the total number of
+pairings is $T_{dN}$. This proves the formula, including loops and
+parallel edges.
+\end{proof}
+
+\section{Uniform row inequality and equality cases}
+Set $\alpha=(d-1)/d$. For a probability vector $\pi$ on $\Fp$, define
+\[
+ F_t(\pi)=\sum_{a_1+\cdots+a_d=t}\prod_{j=1}^d\pi(a_j)^\alpha,
+ \qquad F_*(\pi)=\max_{t\in\Fp}F_t(\pi).
+\]
+Let $u=(1/p,\ldots,1/p)$.
+
+\begin{lemma}\label{lem:row}
+For every probability vector $\pi$,
+\[
+ p^{-(d-1)}\le F_*(\pi)\le1.
+\]
+Moreover $F_t(\pi)=1$ if and only if either $\pi=u$, or $\pi$ is
+a point mass at $a$ and $t=da$ in $\Fp$. No assumption $p\nmid d$
+is needed for this lemma.
+\end{lemma}
+\begin{proof}
+For every tuple, the arithmetic--geometric mean inequality gives
+\[
+ \prod_{j=1}^d\pi(a_j)^{(d-1)/d}
+ \le\frac1d\sum_{j=1}^d\prod_{\ell\ne j}\pi(a_\ell).
+\]
+After summing over tuples with prescribed sum $t$, each term obtained
+by omitting one coordinate sums to one. Thus $F_t\le1$.
+The tuple with every entry equal to a largest atom $a$ gives
+$F_{da}(\pi)\ge\pi(a)^{d-1}\ge p^{-(d-1)}$.
+
+For equality, let $S=\operatorname{supp}\pi$. If $d-1$ entries lie in
+$S$ and the completing entry lies outside $S$, the corresponding AM--GM
+inequality is strict. Hence equality requires
+\[
+ t-(d-1)S\subseteq S.
+\]
+Fixing $d-2$ entries in $S$ gives a reflection preserving $S$.
+Changing one of these fixed entries from $a$ to $b$ and composing the
+two reflections gives invariance of $S$ under translation by $a-b$.
+If $|S|\ge2$, a nonzero such translation generates the additive group
+of $\Fp$, so $S=\Fp$. Since $d\ge3$, any two values can appear together
+in a tuple of prescribed sum. AM--GM equality for that tuple forces
+their probabilities to agree. Thus $\pi=u$. For $|S|=1$, direct
+substitution gives the stated point-mass case. The two asserted cases
+also plainly give equality.
+\end{proof}
+
+\begin{lemma}[Uniform Taylor expansion]\label{lem:taylor}
+On the hyperplane $\sum_a z_a=0$, as $z\to0$,
+\[
+ \log F_t(u+z)
+ =-\frac{(d-1)p}{2d}\|z\|_2^2+O_{d,p}(\|z\|_2^3),\label{eq:taylor}
+\]
+uniformly over $t\in\Fp$. Consequently, on a sufficiently small fixed
+neighborhood of $u$,
+\[
+ \log F_*(\pi)\le-\frac{(d-1)p}{4d}\|\pi-u\|_2^2.
+\]
+\end{lemma}
+\begin{proof}
+Let $(A_1,\ldots,A_d)$ be uniform on tuples of sum $t$. Since $d\ge3$,
+each coordinate is uniform on $\Fp$ and every pair is independent,
+for every $t$. Then
+\[
+ F_t(u+z)=\mathbb E\prod_{j=1}^d(1+pz_{A_j})^\alpha.
+\]
+The linear term vanishes. Pairwise independence makes every quadratic
+cross term vanish. The remaining quadratic coefficient is
+\[
+ \frac{\alpha(\alpha-1)}2p^2d\,
+       \mathbb E z_{A_1}^2
+ =-\frac{(d-1)p}{2d}\sum_a z_a^2.
+\]
+On $\max_a|z_a|\le1/(2p)$ all these functions have bounded third
+derivatives. There are only $p$ targets, so the remainder is uniform.
+The logarithm has the same quadratic term. Shrinking the neighborhood
+absorbs the cubic remainder into half the negative quadratic term.
+\end{proof}
+
+\section{Rate bound, with every polynomial factor charged}
+For a symmetric probability matrix $m$ with row marginal $\nu$, define
+$\pi_a=m_a/\nu_a$ when $\nu_a>0$. Define
+\[
+ \Psi(m)=-\frac{d-2}{2}\KL(m\|\nu\otimes\nu)
+            +\sum_{a:\nu_a>0}\nu_a\log F_*(\pi_a).
+ \tag{3}\label{eq:rate}
+\]
+Rows of zero mass contribute zero. The relative entropy is finite:
+if $m_{ab}>0$, then $\nu_a\nu_b>0$. As usual $0\log0=0$.
+
+\begin{proposition}\label{prop:typebound}
+There are constants $C=C(d,p)$ and an integer
+$K_0=4p^2+20p+20$ (a deliberately loose choice) such that, for every
+admissible type $M$, every input $q$ of profile $\nu$, and every target $r$,
+\begin{align}
+ \Prob(Cq=r,M(q,C)=M)
+ &\le C(N+1)^{K_0}
+          \exp\{N[-\Ent(\nu)+\Psi(m)]\},\label{eq:fixedq}\\
+ \sum_{q:\operatorname{type}(q)=\nu}
+       \sup_r\Prob(Cq=r,M(q,C)=M)
+ &\le C(N+1)^{K_0}\exp\{N\Psi(m)\}.
+ \label{eq:summedq}
+\end{align}
+The prefactors are uniform over the targets; no enumeration of target
+types is performed.
+\end{proposition}
+\begin{proof}
+Evaluate each coefficient in \eqref{eq:count} at
+$z_b=\pi_a(b)^\alpha$ to obtain
+\[
+ [z^{M_a}]\prod_{v:q_v=a}P_{r_v}(z)
+ \le F_*(\pi_a)^{N_a}\prod_b\pi_a(b)^{-\alpha M_{ab}}.
+ \tag{4}\label{eq:coeff}
+\]
+If a coordinate of $\pi_a$ is zero, its $M_{ab}$ is also zero;
+the bound follows by taking positive-coordinate limits. Empty rows
+give coefficient one.
+
+Uniform factorial bounds give
+\[
+ \log\frac{K(M)}{T_{dN}}
+   =\frac{dN}{2}\sum_{a,b}m_{ab}\log m_{ab}
+           +O_{d,p}(\log(N+1)).
+\]
+Indeed apply $\log j!=j\log j-j+O(\log(dN+1))$ to each factorial,
+including $j=0$. There are only $O(p^2)$ factorials. Adding the
+logarithm of \eqref{eq:coeff} gives the exponent
+\[
+ \frac d2\sum m_{ab}\log m_{ab}
+  -(d-1)\sum m_{ab}\log\frac{m_{ab}}{\nu_a}
+  +\sum_a\nu_a\log F_*(\pi_a)
+  =-\Ent(\nu)+\Psi(m).
+\]
+This proves \eqref{eq:fixedq}. There are
+$N!/\prod_aN_a!=\exp\{N\Ent(\nu)+O_p(\log(N+1))\}$ inputs of
+that profile. Multiplying proves \eqref{eq:summedq}.
+The displayed loose exponent $K_0$ dominates these factorial errors;
+all $d$-dependent constant factors are absorbed into $C(d,p)$.
+\end{proof}
+
+\begin{lemma}[Zeros and quantitative uniformity]\label{lem:rate}
+The function $\Psi$ is continuous and nonpositive on the compact set
+of symmetric probability matrices. Its zeros are exactly
+\[
+ m=u\otimes u\quad\hbox{and}\quad m=e_a\otimes e_a\quad(a\in\Fp).
+\]
+For each fixed $\eta>0$ there exists $c=c(d,p,\eta)>0$ such that
+\[
+ \max_a\nu_a\le1-\eta
+ \quad\Longrightarrow\quad
+ \Psi(m)\le-c\bigl(\|m-u\otimes u\|_2^2+\|\nu-u\|_2^2\bigr).
+ \tag{5}\label{eq:quadratic}
+\]
+If the domain is empty, the assertion is vacuous.
+\end{lemma}
+\begin{proof}
+The bound $p^{-(d-1)}\le F_*\le1$ shows that each zero-row weighted
+term in \eqref{eq:rate} tends to zero continuously. Also
+\[
+ \KL(m\|\nu\otimes\nu)=\sum m_{ab}\log m_{ab}-2\sum\nu_a\log\nu_a
+\]
+is continuous. Nonpositivity follows from Lemma~\ref{lem:row}.
+If $\Psi=0$, positivity of $d-2$ forces $m=\nu\otimes\nu$.
+Every nonempty conditional row then equals $\nu$, and
+Lemma~\ref{lem:row} forces $\nu=u$ or a point mass. The converse
+is immediate.
+
+In a sufficiently small neighborhood of $u\otimes u$, all marginals
+are bounded below, and all conditional rows lie in the neighborhood
+from Lemma~\ref{lem:taylor}. Put
+\[
+ Q=\sum_a\nu_a\|\pi_a-u\|_2^2.
+\]
+Symmetry implies $\sum_a\nu_a\pi_a=\nu$, so Jensen gives
+$Q\ge\|\nu-u\|_2^2$. Moreover,
+\[
+ \|m-\nu\otimes u\|_2^2
+   =\sum_a\nu_a^2\|\pi_a-u\|_2^2\le Q.
+\]
+The rows of $m-\nu\otimes u$ sum to zero, so they are orthogonal
+to the corresponding constant rows of $(\nu-u)\otimes u$. Thus
+\[
+ \|m-u\otimes u\|_2^2
+ =\|m-\nu\otimes u\|_2^2+p^{-1}\|\nu-u\|_2^2
+ \le(1+p^{-1})Q.
+\]
+Consequently the sum of the two squared distances in
+\eqref{eq:quadratic} is at most $3Q$, while
+\[
+ \Psi(m)\le-\frac{(d-1)p}{4d}Q.
+\]
+This proves a uniform local quadratic bound. On the remaining
+compact portion with $\max\nu_a\le1-\eta$, none of the zeros of
+$\Psi$ remains. The negative maximum there, divided by an upper
+bound on the squared distances, extends the inequality to the
+whole required domain.
+\end{proof}
+
+\begin{theorem}[All-target noncentral tails]\label{thm:tails}
+Fix $\eta>0$ and $A>0$. There exists a finite constant
+$B=B(d,p,\eta,A)$ such that
+\begin{multline}
+ \sum_{\substack{q\in\Fp^N\\\max_a\nu_a(q)\le1-\eta}}
+ \sup_{r\in\Fp^N}\Prob\biggl(Cq=r,\\
+ \|m(q,C)-u\otimes u\|_2^2+\|\nu(q)-u\|_2^2
+       >B\frac{\log(N+1)}N\biggr)
+ =O_{d,p,\eta,A}(N^{-A}).\label{eq:tailtheorem}
+\end{multline}
+In particular this gives an arbitrary-target summed maximum-atom
+bound outside the shrinking balanced-input window, once
+nearconstant inputs are excluded.
+\end{theorem}
+\begin{proof}
+For each $q$, move the target supremum inside the sum over types,
+which only enlarges the expression. Apply
+\eqref{eq:summedq} and \eqref{eq:quadratic}. There are at most
+$(N+1)^p$ input profiles and $(dN+1)^{p(p+1)/2}$ symmetric count
+matrices before imposing any row or parity restrictions. Hence the
+left side is bounded by
+\[
+ C_{d,p}(N+1)^{K_1-cB},\qquad
+ K_1=K_0+p+p(p+1)/2.
+\]
+Choose $B>(K_1+A+1)/c$. The argument used only the condition
+$dN$ even, and all constants are independent of target vectors.
+\end{proof}
+
+\paragraph{What is left.}
+The nearconstant contribution has a separate direct stub-exposure
+proof in the sibling research note
+\texttt{parity-reduction/nearconstant-configuration-atoms.tex}.
+Combining that result with Theorem~\ref{thm:tails} leaves only the
+central arbitrary-output local limit theorem, including its lattice
+index, feasibility condition, leading constant and uniform error.
+Neither the zero-target theorem of Huang nor the present entropy
+bounds alone supplies that final step. No odd-block RSBM simplicity
+theorem is claimed in this note.
+
+\begin{thebibliography}{9}
+\bibitem{huang} J. Huang,
+\emph{Invertibility of adjacency matrices for random $d$-regular graphs},
+arXiv:1807.06465v2, December 30, 2018.
+\url{https://arxiv.org/pdf/1807.06465v2}.
+The paper appeared in Duke Mathematical Journal 170(18), 3977--4032
+(2021); the precise version inspected here is the cited preprint.
+\end{thebibliography}
+\end{document}

@@ -1,0 +1,2548 @@
+                                         Near-Linear Time Approximations for Cut Problems via Fair Cuts
+                                         Jason Li∗        Danupon Nanongkai†             Debmalya Panigrahi‡            Thatchaphol Saranurak§
+
+
+
+                                                                                          Abstract
+
+
+
+
+arXiv:2203.00751v2 [cs.DS] 12 Jan 2023
+                                                  We introduce the notion of fair cuts as an approach to leverage approximate (s, t)-mincut
+                                              (equivalently (s, t)-maxflow) algorithms in undirected graphs to obtain near-linear time approx-
+                                              imation algorithms for several cut problems. Informally, for any α ≥ 1, an α-fair (s, t)-cut is
+                                              an (s, t)-cut such that there exists an (s, t)-flow that uses 1/α fraction of the capacity of every
+                                              edge in the cut. (So, any α-fair cut is also an α-approximate mincut, but not vice-versa.) We
+                                              give an algorithm for (1 + )-fair (s, t)-cut in Õ(m)-time, thereby matching the best runtime for
+                                              (1 + )-approximate (s, t)-mincut [Peng, SODA ’16]. We then demonstrate the power of this
+                                              approach by showing that this result almost immediately leads to several applications:
+                                                 • the first nearly-linear time (1+)-approximation algorithm that computes all-pairs maxflow
+                                                   values (by constructing an approximate Gomory-Hu tree). Prior to our work, such a result
+                                                   was not known even for the special case of Steiner mincut [Dinitz and Vainstein, STOC
+                                                   ’94; Cole and Hariharan, STOC ’03];
+                                                 • the first almost-linear-work subpolynomial-depth parallel algorithms for computing (1+)-
+                                                   approximations for all-pairs maxflow values (again via an approximate Gomory-Hu tree)
+                                                   in unweighted graphs;
+                                                 • the first near-linear time expander decomposition algorithm that works even when the ex-
+                                                   pansion parameter is polynomially small; this subsumes previous incomparable algorithms
+                                                   [Nanongkai and Saranurak, FOCS ’17; Wulff-Nilsen, FOCS ’17; Saranurak and Wang,
+                                                   SODA ’19].
+
+
+
+
+                                          ∗
+                                            Simons Institute for Theory of Computing, UC Berkeley. Email: jmli@alumni.cmu.edu
+                                          †
+                                            Max Planck Institute for Informatics & University of Copenhagen & KTH. Email: danupon@gmail.com
+                                          ‡
+                                            Department of Computer Science, Duke University. Email: debmalya@cs.duke.edu
+                                          §
+                                            University of Michigan, Ann Arbor. Email: thsa@umich.edu
+Contents
+1 Introduction                                                                                          1
+  1.1 Our contributions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .     2
+  1.2 Applications . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    3
+
+2 Overview of Techniques                                                                                5
+  2.1 Computing Fair Cuts (Proof Idea of Theorem 1.3) . . . . . . . . . . . . . . . . . . .             5
+  2.2 From Fair Cuts to Approximate Isolating Cuts . . . . . . . . . . . . . . . . . . . . .            6
+  2.3 From Approximate Isolating Cuts to Approximate GH-trees . . . . . . . . . . . . . .               6
+  2.4 From Fair Cuts to Near-linear time Expander Decomposition . . . . . . . . . . . . .               7
+
+3 Preliminaries                                                                                         7
+
+4 Almost Fair Cuts via Multiplicative Weight Updates                                                    9
+  4.1 Algorithm . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    10
+  4.2 Correctness . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    11
+  4.3 Running Time . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .       14
+  4.4 Proof of Lemma 4.9 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .       14
+
+5 From Almost Fair Cuts to Fair Cuts                                                                 16
+  5.1 Algorithm . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16
+  5.2 Analysis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
+
+6 Approximate Isolating Cuts and Steiner Cut                                                  21
+  6.1 Approximate Minimum Isolating Cuts . . . . . . . . . . . . . . . . . . . . . . . . . . 21
+  6.2 (1 + )-approximate Minimum Steiner Cut . . . . . . . . . . . . . . . . . . . . . . . . 23
+
+7 Approximate Gomory-Hu Tree Algorithm                                                                 24
+  7.1 Cut Threshold Step Algorithm . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .         25
+  7.2 The Algorithm for Approximating Gomory-Hu Steiner Tree . . . . . . . . . . . . . .               27
+  7.3 Running Time Bound . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .         27
+  7.4 Approximation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .      32
+
+8 Expander Decomposition                                                                               34
+  8.1 Algorithm overview . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .     35
+  8.2 Trimming step . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .      35
+  8.3 Cut-matching step . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .      37
+
+A Parallel Algorithms                                                                                  44
+  A.1 Congestion Approximators . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .       44
+  A.2 Fair Cuts . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    45
+  A.3 Isolating Cuts and Gomory-Hu Tree . . . . . . . . . . . . . . . . . . . . . . . . . . .          46
+
+B Proof of Uncrossing Property                                                                         46
+1       Introduction
+In the (s, t)-mincut problem, we are given an n-vertex m-edge graph G = (V, E) with integer edge
+weights w : E → Z+ bounded by U . The goal is to minimize the sum of the weight of edges whose
+removal make s unable to reach t. Unless stated otherwise, the input graphs are assumed to be
+undirected throughout the paper.
+    The (s, t)-mincut problem and its dual—(s, t)-maxflow—are among the most fundamental tools
+in graph algorithms and optimization. In particular, many reductions have been recently devel-
+oped to show that if (s, t)-mincut (equivalently, (s, t)-maxflow) can be solved in almost or nearly
+linear time, then so are a number of fundamental graph problems. These problems include vertex
+connectivity [LNP+ 21] and Gomory-Hu tree [AKL+ 21] in unweighted graphs, deterministic global
+mincut and Steiner mincut [LP20], edge connectivity augmentation and edge splitting-off [CLP22],
+and hypergraph global mincut [CQ21a, MN21].
+    All these results require exact (s, t)-mincut algorithms. In other words, these reductions can-
+not exploit approximate (s, t)-mincut algorithms which can offer many advantages. For example,
+while the best randomized (1 + )-approximate (s, t)-mincut algorithm takes nearly-linear1 time on
+weighted graphs [Pen16] (and almost-linear    2 time for deterministic algorithms [She13, KLOS14]),
+                                                         3   1
+                                                                                    
+the fastest exact algorithms require Õ min(m + n3/2 , m 2 − 328 , m4/3+o(1) U 1/3 ) time [GLP21, LS20,
+vdBLL+ 21, vdBLN+ 20]3 and are all inherently randomized.4
+     Moreover, in many popular models of computation such as parallel computing, distributed
+computing, etc., computing exact (s, t)-mincut is still far from efficient, and using approximation
+algorithms might be the only alternative. For example, it is known that the (1 + )-approximation
+algorithm (implied by [CS19, She13]) on undirected unweighted graphs requires almost-linear work
+and sub-polynomial depth in PRAM. In contrast, we are far from emulating this result for exact
+algorithms. In fact, the first small step toward solving exact (s, t)-mincut with almost-linear work
+and sub-polynomial depth would be doing so for the much simpler problem of (s, t)-reachability.
+                                                       √
+And, the latter would involve breaking a major Ω( n) depth barrier.5 Another example is in
+the distributed setting (the CONGEST model), where a nearly optimal algorithm for computing
+(1 + )-approximate (s, t)-mincut exists [GKK+ 15] while no nontrival algorithm is known for the
+exact version. These advantages of approximate (s, t)-mincuts motivate a natural question: Can
+the existing reductions work with approximate (s, t)-mincut algorithms instead of the exact ones?
+     To answer the above question, let us discuss first why many reductions work only with exact
+(s, t)-mincut. A crucial property of exact (s, t)-mincuts in undirected graphs that is used by these
+reductions (e.g., for Gomory-Hu tree, deterministic global mincut, Steiner cut, edge connectivity
+augmentation, and edge splitting-off) is the following uncrossing property:
+
+        (Uncrossing Property) For any vertices s and t, let X ⊂ V be an (s, t)-mincut. Then,
+    1
+     By nearly-linear time, we mean a running time of Õ(m).
+    2
+     By almost-linear time, we mean a running time of m1+o(1) .
+   3
+     Throughout, we use Õ to hide poly log(n).
+   4
+     In an independent result [CKL+ 22], an almost-linear time randomized algorithm has been shown for the (s, t)-
+mincut problem. Even when this independent result is taken into account, the best (1 + )-approximation algorithms
+are still superior to the best exact algorithm with respect to time complexities and randomness requirements.
+   5
+     This is due to the reduction from directed maxflow to undirected maxflow (see e.g. [Mad11]) which works in the
+parallel setting. The reduction implies that if we can solve (s, t)-mincut exactly on undirected unweighted graphs in
+O(W ) work and O(D) depth, then we can solve (s, t)-mincut exactly on directed unweighted graphs with Õ(W ) work
+and Õ(D) depth. The latter captures the st-reachability problem as a special case.
+
+
+                                                         1
+       for any u, v ∈ X, there exists Y ⊂ X that is a (u, v)-mincut.
+
+The uncrossing property is very useful from an algorithmic perspective since it gives a natural
+recursive tool – after finding an (s, t)-mincut, we can recurse on each side of the cut to find a
+(u, v)-mincut for every pair of vertices (u, v) on the same side of the cut. Indeed, the uncrossing
+property is more generally true for symmetric, submodular minimization problems and is at the
+heart of most of the beautiful structure displayed by undirected graph cuts and other symmetric,
+submodular functions. The uncrossing property, however, does not hold for (1 + )-approximate
+mincuts in general. This is the main bottleneck that prevents these reductions from being robust to
+approximation. As a result, for these problems, we fail to exploit the benefits of (1+)-approximate
+(s, t)-mincut algorithms.
+
+1.1    Our contributions
+We subvert the above bottleneck by introducing a more robust notion of approximate mincuts
+called fair cuts. Informally, an α-fair (s, t)-cut is an (s, t)-cut such that there exists an (s, t)-flow
+f that uses 1/α fraction of the capacity of every edge in the cut. (The reader should think of α as
+being close to 1.) Formally:
+
+Definition 1.1 (Fair Cut). Let G = (V, E) be an undirected graph with edge capacities c ∈ RE             >0 .
+Let s, t be two vertices in V . For any parameter α ≥ 1, we say that a cut (S, T ) is a α-fair (s, t)-cut
+if there exists a feasible (s, t)-flow f such that f (u, v) ≥ α1 · c(u, v) for every (u, v) ∈ E(S, T ) where
+u ∈ S and v ∈ T .
+
+     Observe that a 1-fair (s, t)-cut is an exact (s, t)-mincut. Moreover, an α-fair (s, t)-cut is also an
+α-approximate (s, t)-mincut. However, not all α-approximate (s, t)-mincuts are α-fair (s, t)-cuts.6
+In other words, a set of α-fair cuts is a proper subset of α-approximate cuts and a superset of exact
+(s, t)-mincuts.
+     We show that the notion of fair cuts allow us to combine the key features of both approximate
+cuts and exact cuts. First, fair cuts admit a property for approximate cuts that is analogous to
+uncrossing for exact mincuts, which we prove in Appendix B for completeness.
+
+Lemma 1.2 (Approximate Uncrossing Property). For any vertices s and t, let (S, T ) be an α-fair
+(s, t)-mincut. Then, for any u, v ∈ S, there exists R ⊂ S such that (R, V \ R) is an α-approximate
+(u, v)-mincut.
+
+    Second, while computing a fair cut can be harder than an approximate mincut (since any fair cut
+is an approximate mincut but not vice-versa), we give a nearly-linear time algorithm for computing
+a (1 + )-fair (s, t)-mincut.
+
+Theorem 1.3 (Fair Cut). Given a graph G = (V, E), two vertices s, t ∈ V , and  ∈ (0, 1], we can
+compute with high probability a (1 + )-fair (s, t)-cut in Õ(m/3 ) time.
+    6
+      As a simple example, consider a path v − s − t on three vertices. Clearly, the cut {s} contains both edges and
+is therefore a 2-approximate (s, t)-mincut. However, there is no (s, t)-flow that can saturate both edges to fraction
+1
+2
+  . To motivate our choice of terminology (fair cuts), note that if an (s, t)-cut is a α-approximate (s, t)-mincut, it
+                                                                                                                     1
+follows by flow-cut duality that any (s, t)-maxflow will cumulatively saturate the edges of the cut to a fraction ≥ 1+α .
+But, as we saw in the previous example, this saturation need not be fair in the sense that some edges might not
+be saturated at all. In this context, a α-fair cut demands the additional property that each edge be saturated to a
+fraction ≥ α1 (in the sense of “max-min” fairness).
+
+
+                                                           2
+   We note that the only reason why our algorithm is randomized is because we use the congestion
+approximator by [RST14, Pen16]. This can be made deterministic based on an algorithm by
+[CGL+ 20], but the running time would be m1+o(1) /3 instead. Moreover, we remark that although
+we will focus on (1 + )-fair (s, t)-cuts, the corresponding (s, t)-flow can be obtained from a fair
+cut in Õ(m/) time using a standard application of a (1 + )-approximate max-flow algorithm of
+Sherman [She17].
+
+1.2   Applications
+We demonstrate the power of fair cuts by using it to improve the time complexity of several
+problems.
+
+Gomory-Hu Tree. The Gomory-Hu (GH) tree is a compact representation of a (u, v)-mincut
+(and therefore, (u, v)-maxflow values) between every pair of vertices (u, v) of a graph, and has a
+large number of applications. It captures fundamental questions such as global, (s, t)−, and Steiner
+mincuts as special cases. There has been much progress on exact and approximation algorithms
+for this problem recently (e.g., [LP21, AKT20a, AKT20b, AKT21c, AKL+ 21, AKT21a, AKT21b,
+LPS21, Zha21a, Zha21b]). The fastest among these is the (1+)-approximation algorithm by Li and
+Panigrahi [LP21] whose time complexity is equal to poly-logarthmic
+                                                                   calls to any exact (s, t)-mincut
+                                    3   1
+                              3/2     −      4/3+o(1)  1/3
+algorithm, i.e. Õ min(m + n , m 2 328 , m            U ) .
+    By replacing the exact max-flow calls by our (1 + )-fair cut algorithm in [LP21], we get a
+nearly-linear time algorithm for approximating the Gomory-Hu tree (which is equivalent to finding
+all-pairs maxflow values by known reductions, e.g., [AKT20a]):
+Theorem 1.4 (Nearly-linear time Gomory-Hu tree). For any  > 0, there is a Õ(m · poly(1/))-
+time randomized algorithm that constructs, with high probability, a (1 + )-approximate Gomory-Hu
+tree in weighted undirected graphs.
+    Prior to our work, a nearly-linear time (approximation) algorithm was not known even for the
+special case of the Steiner mincut problem. In this problem [DV94, CH03, HKP07, BHKP07, LP20],
+we are interested in finding a cut of minimum value that disconnects a given set of terminal vertices.
+For this problem, Li and Panigrahi [LP20] gave an exact algorithm using poly-logarithmic exact
+max-flow calls. Before our work, no improvement in the running time was known if we allow
+(1 + )-approximation instead of the exact Steiner mincut. Since the Steiner mincut problem is a
+minimal generalization of global and (s, t)-mincuts, our paper is the first to obtain nearly-linear
+time (approximation) algorithms for cut problems that go beyond these two problems.
+Parallelization. Since the use of exact max-flow is the only bottlenect to parallelize the approximate
+GH tree algorithm of [LP21], the following parallel algorithm also follows.
+Theorem 1.5 (Parallel GH-tree). For any  > 0, there is a Õ(m1+o(1) /poly())-work (mo(1) /poly())-
+depth randomized algorithm that constructs, with high probability, a (1+)-approximate Gomory-Hu
+tree in unweighted undirected graphs.
+   We are not aware of prior work on parallel GH algorithms (except some experiments, e.g.
+[MCJ20, CRJ17]). This is likely because previous GH trees algorithms, even the approximate ones
+[LP21], inherently require solving max-flow exactly, which is well beyond current techniques in the
+parallel setting.
+
+                                                  3
+Expander Decomposition. In the last decade, numerous fast graph algorithms are based on
+fast algorithms for computing an expander decomposition. For some examples of such applications,
+see e.g. [ST04, KLOS14, She13, NSW17, CS19, BBG+ 20].
+    We say that a (weighted) graph G = (V, E) is a φ-expander if for every cut (S, V \PS), we have
+that the cut size δ(S) ≥ min{vol(S), vol(V \ S)} where the volume of S is vol(S) = v∈S deg(v).
+A (, φ)-expander decomposition
+                    P             of G is a partition {V1 , . . . , Vk } of vertices such that each G[Vi ] is
+a φ-expander and i δ(Vi ) ≤  · vol(V ), i.e., the total weight of edges crossing the partition is at
+most -fraction.
+    There are two incomparable fastest algorithms for computing expander decompositions. First,
+[NS17, Wul17] gave m1+o(1) -time algorithms that computes a (φno(1) , φ)-expander decomposition
+for any φ > 0. These subpolynomial factors are sometimes undesirable. Second, [SW19] gave a
+Õ(m/φ)-time algorithm that computes a (Õ(φ), φ)-expander decomposition for any φ > 0. This
+algorithm is slower than the first one when φ < 1/n0.1 . Using fair cuts, we obtain an algorithm
+that subsumes both these sets of results and is optimal up to poly-logarithmic factors.
+
+Theorem 1.6 (Near-linear expander decomposition). For any φ > 0, there is a randomized Õ(m)-
+time algorithm that with high probability computes a (Õ(φ), φ)-expander in weighted undirected
+graphs.
+
+Open problems. We believe that our notion of fair cuts opens up many interesting directions
+for future research. We mention some examples. (i) A natural goal is to extend our efficient
+(1 + )-fair (s, t)-cut to other computational models, such as the distributed (CONGEST) setting,
+where exact (s, t)-mincut algorithms are much slower/inefficient compared to approximate (s, t)-
+mincut algorithms. This will lead to efficient algorithms for approximating, e.g., Gomory-Hu tree
+and Steiner mincut in these models as well. (ii) The notion of fair vertex cuts can be defined in
+a similar fashion to fair (edge) cuts defined in this paper. It would be interesting to design an
+efficient algorithm for finding a fair vertex cut and use it to obtain nearly-linear time algorithms
+for approximating the vertex connectivity and hypergraph global mincut. These results can also
+be extended to other computational models. (iii) We also hope that the notion of fair cuts can be
+extended to more general contexts such as the minimization of symmetric, submodular functions.
+In turn, this will significantly improve our understanding of the approximation-efficiency tradeoff
+in minimization problems defined for these function classes.
+
+Independent result. Our result is obtained independently from the recently announced almost-
+linear time bound for min-cost flow by Chen, Kyng, Liu, Peng, Gutenberg, and Sachdeva [CKL+ 22].
+Plugging this result into existing reductions in [AKL+ 21, LNP+ 21, CQ21b, MN20] help solve prob-
+lems such as GH tree and vertex connectivity in unweighted graphs, approximate GH tree in
+weighted graphs, and hypergraph global mincut in m1+o(1) time. Even assuming this result, our
+algorithms are faster in both randomized and deterministic settings; for the latter, our running time
+                                                                           √
+is m1+o(1) whereas the best exact (s, t)-mincut algorithm takes Õ(m min( m, n2/3 )) time [GR98].
+Finally, our algorithms can be adapted to other models such as parallel computation whereas this
+is well beyond existing techniques for exact (s, t)-mincut.
+
+
+
+
+                                                     4
+2       Overview of Techniques
+2.1     Computing Fair Cuts (Proof Idea of Theorem 1.3)
+Our key subroutine for computing fair cuts is called AlmostFair. Here, we describe at a high-level
+what the AlmostFair subroutine does, how to use it for computing fair cuts, and finally how to
+obtain the AlmostFair subroutine itself.
+     Say we are given an (s, t)-cut (S, T ) which may be far from being fair. The AlmostFair
+subroutine works on one side of the (s, t)-cut, say T , and returns a partition (Pt , T 0 ) of T such
+that t ∈ T 0 . We think of Pt as the part that we “prune” out of T . Our first guarantee is that
+the remaining part T 0 is “almost fair” in the following sense: each boundary edge in E(S, T 0 )
+(i.e., those edges that are not in E(Pt , T 0 )) can simultaneously send flow of value at least (1 − β)-
+fraction of its capacity to t, for a small parameter β that we can choose. This guarantee alone
+would have been weak if the pruned set Pt is so big that there are few edges left in E(S, T 0 ).
+However, the second guarantee of AlmostFair says that, if Pt is big, then (V \ T 0 , T 0 ) is actually
+a much smaller (s, t)-cut than the original cut (S, T ) in terms of cut value. More formally, we have
+δG (T 0 ) ≤ δG (T ) − β · δG (S, Pt ) meaning that the decrease in the cut size is at least β times the total
+capacity of E(S, Pt ).
+     With these two guarantees of AlmostFair, given any (s, t)-cut (S, T ), we can iteratively im-
+prove this cut to make it fair as follows. We call AlmostFair on both S and T and obtain (Ps , S 0 )
+and (Pt , T 0 ). Let’s consider two extremes. If both pruned sets Ps and Pt are tiny, then there is an
+(s, t)-flow that almost fully saturates every edge in E(S 0 , T 0 ). This certifies (S, T ) is very close to
+being fair as Ps and Pt are tiny. However, if either Ps or Pt is very big, say Pt , then (S ∪ Pt , T 0 ) is
+an (s, t)-cut of much smaller value than the original cut (S, T ). Therefore, this is progress too and
+we can recursively work on this new cut (S ∪ Pt , T 0 ). To make the intuition on these two extremes
+work, we iteratively call AlmostFair using a parameter β that increases slightly in every round.
+The full algorithm is presented in Section 5.
+     Now, let us sketch the AlmostFair subroutine itself. This subroutine is based on Sherman’s
+algorithm for computing a (1 + )-approximate max-flow [She13] (for any  > 0), which in turn
+uses the multiplicative weight update (MWU) framework.7 Given the t-side T of an (s, t)-cut, if
+we call Sherman’s algorithm where the demand is specified so that each boundary edge should
+send flow at its full capacity to sink t, then the algorithm would either return a flow satisfying
+this demand with congestion (1 + ) or return a “violating” cut certifying that the demand is not
+feasible. In the former case, this would satisfy the guarantee of AlmostFair where Pt = ∅ after
+scaling down the flow by a (1 + ) factor. Unfortunately, in the latter case, the algorithm does not
+guarantee the existence of the flow that we want. The reason behind this problem is that whenever
+the algorithm detects a violating cut, the algorithm is just terminated. In a more general context,
+this holds for most (if not all) MWU-based algorithms for solving linear programs; in each round
+of the MWU algorithm, whenever “the oracle” certifies that the linear program is infeasible, then
+we just terminate the whole algorithm.
+     Interestingly, we fix this issue by “insisting on continuing” the MWU algorithm. Once we detect
+a violating cut, we include it into the pruned set, cancel the demand inside this pruned set, and
+continue updating weights in the MWU algorithm. After the last round, the flow constructed
+    7
+    Sherman’s original presentation in [She13] does not explicitly use the MWU framework. Although this alternative
+interpretation was already known to experts, our MWU-based presentation of his algorithm is arguably simpler and
+more intuitive.
+
+
+                                                        5
+via MWU indeed sends flow from each remaining boundary edge that is not pruned out, which is
+exactly our goal. The detailed algorithm is presented in Section 4.
+
+2.2    From Fair Cuts to Approximate Isolating Cuts
+We believe that the notion of fair cuts can be useful in many contexts since it offers a more robust
+alternative to approximate mincuts. In this paper, we first use it to obtain an approximate isolating
+cuts algorithm. We define the isolating cuts problem first.
+
+Definition 2.1. Given a weighted, undirected graph G = (V, E) and a subset of terminals S =
+{s1 , s2 , . . . , sk }, the goal of the isolating cuts problem is to find a set of disjoint sets S1 , S2 , . . . , Sk
+such that for each i, the cut (Si , V \ Si ) is a mincut that separates si ∈ Si from the remaining
+terminals S \ {si } ⊆ V \ Si . If Si is a (1 + )-approximate mincut separating si from the remaining
+terminals, then the corresponding problem is called the (1 + )-approximate isolating cuts problem.
+
+    Using fair cuts, we obtain a near-linear time algorithm for approximate isolating cuts.
+
+Theorem 2.2. There is an algorithm for finding (1 + )-approximate isolating cuts that takes
+Õ(m · poly(1/)) time.
+
+    Li and Panigrahi [LP20] gave an algorithm for finding exact isolating cuts using O(log n) (s, t)-
+max-flow/mincut computations that crucially relies on the uncrossing property of (s, t)-mincuts.
+This property ensures that if we take a minimum isolating cut X containing a terminal vertex s
+and a crossing mincut Y , then their intersection X ∩ Y or difference X \ Y (depending on which
+set the terminal vertex s is in) is also a minimum isolating cut. This allows partitioning of the
+graph by removing edges corresponding to a set of mincuts, such that each terminal is in one of
+the components of this partition. For each terminal, the corresponding minimum isolating cut is
+now obtained by simply contracting the rest of the components and running a max-flow algorithm
+on this contracted graph. The advantage of this contraction is that the total size of all the graphs
+on which we are running max-flows is only a constant times the size of the overall graph.
+    Unfortunately, approximate mincuts don’t satisfy this uncrossing property, which renders this
+method unusable if we replace exact mincut subroutines with faster (1 + )-approximate mincuts.
+But, if we instead used fair cuts, then we can show the following: if X is a (1 + )-approximate
+minimum isolating cut containing terminal s and Y is a (1 + α)-fair cut, then either X ∩ Y or X \ Y
+(whichever set contains s) is a (1 + )(1 + α)-approximate minimum isolating cut. This allows us to
+use the framework in [LP20]. Since the number of fair cuts we remove in forming the components
+is only O(log n), the multiplicative growth in the approximation factor can be offset by scaling the
+parameter in fair cuts by the same logarithmic factor. The advantage in using fair cuts over exact
+mincuts is that the running time of the former is near-linear by Theorem 1.3, which helps establish
+Theorem 2.2. The details of this algorithm are presented in Section 6.
+
+2.3    From Approximate Isolating Cuts to Approximate GH-trees
+Finally, we use approximate isolating cuts to obtain an approximate GH tree algorithm. [LP21]
+gives a recursive algorithm for computing an approximate GH tree but using exact isolating cuts.
+We observe that the latter can be replaced by approximate isolating cuts provided the approxima-
+tion is one-sided in the following sense: the “large” recursive subproblem needs to preserve mincut
+values exactly. But, in general, if we use the approximate isolating cuts subroutine as a black box,
+
+                                                          6
+this would not be the case. To alleviate this concern, we augment the approximate isolating cuts
+procedure using an additional fairness condition for the isolating cuts returned by the algorithm.
+This fairness condition ensures that although we do not have one-sided approximation, the approx-
+imation factor in the “large” subproblem can be controlled using a much finer parameter than the
+overall approximation factor of the algorithm, which then allows us to run the recursion correctly.
+The details of the GH tree algorithm establishing Theorem 1.4 are presented in Section 7.
+
+2.4    From Fair Cuts to Near-linear time Expander Decomposition
+Via fair cuts, we will speed up the algorithm by [SW19] for computing a (Õ(φ), φ)-expander de-
+composition in time Õ(m/φ) to Õ(m). There are two main steps in the algorithm by [SW19]:
+the cut-matching step and the trimming step. The cut-matching step can be solved in Õ(m) time
+simply by applying the near-linear-time approximate maxflow algorithm by [Pen16].8 The harder
+step to speed up is the trimming step. However, we observe that the cut problem needed to be
+solved in this step is actually a one-sided version of the fair cut problem, which is an easier problem.
+By calling our fair cut algorithm, we immediately obtain a Õ(m)-time algorithm for the trimming
+step. See details in Section 8.
+
+
+3     Preliminaries
+Given a undirected capacitated/weighted graph
+                                            P G = (V, E) with edge capacities/weights     is c ∈ RE
+                                                                                                  ≥0
+                      0                0                                          0
+and an edge set E ⊆ E, we let c(E ) = e∈E 0 c(e) be the total capacity of E . For simplicity,
+we assume that the ratio between the largest and lowest edge capacities or weights are poly(n).
+For any disjoint sets S, T ⊆ V , we let δG (S) = c(E(S, V \ S)) denote the cut size of S and
+δG (S, T ) = c(E(S, T )) denote the total capacity of edges from S to T . For any distinct vertices s
+and t, let λG (s, t) be the minimum-weight s-t cut. We sometimes omit G when it is clear from the
+context.
+
+Flow. A flow f : V × V → R satisfies f (u, v) = −f (v, u) and f (u, v) = 0 for {u, v} ∈          / E.
+The notation f (u, v) > 0 means that mass is routed in the direction from u to v, and vice versa.
+The congestion of f is max{u,v}∈E |f c(e)
+                                      (u,v)|
+                                             . If the congestion is at most 1, we say that f respects
+the capacity
+         P    or f is feasible. For each  vertex   u ∈ V , the net flow out of vertex u, denoted by
+f (u) = v∈V f (u, v), is the total mass going out of u minus the total mass coming P     into u. More
+generally,
+P          for any vertex set S ⊆ V , we can define the net flow out of SPas f (S) = u∈S f (u) =
+   u∈S,v∈V (u, v). The net flow out from S to T is denoted by f (S, T ) =
+           f                                                                 u∈S,v∈T f (u, v). Observe
+that we always have f (V ) = 0.                          P
+    A demand function ∆ : V → R is a function where v∈V ∆(v) =P0. We say that flow f satisfies
+demand ∆ if f (v) = ∆(v) for all v ∈ V . For any S ⊆ V , let ∆(S) = v∈S ∆(v) be the total demand
+on S. Observe ∆(V ) = f (V ) = 0. By the max-flow min-cut theorem, we have the following:
+
+Fact 3.1. For any  ≥ 0, |∆(S)| ≤  · δ(S) for all S ⊆ V iff there is a flow with congestion  that
+satisfies ∆.
+   8
+     For reader who are familiar with [SW19], their algorithm applies the push-relabel flow algorithm that takes
+Õ(m/φ) time, instead of using an Õ(m)-time approximate max flow algorithm, because the push-relabel algorithm
+has fewer log factors in the running time.
+
+
+
+                                                       7
+     For a flow f and a demand function ∆, define the excess ∆f as ∆f (v) = ∆(v) − f (v) for
+every v ∈ V . We think of excess as a remaining demand function. We say that f -satisfies ∆ if
+|∆f (S)| ≤  · δ(S) for all S ⊆ V . That is, by Fact 3.1, there exists a flow faug with congestion 
+where f + faug satisfies ∆. Note that f 0-satisfies ∆ iff f satisfies ∆.
+     For any two vertices s, t ∈ V , an (s, t)-cut (S, T ) is a cut such that s ∈ S and t ∈ T . An
+(s, t)-flow f obeys f (v) = 0 for all v 6= s, t. Similarly, an (s, t)-demand function ∆ obeys ∆(v) = 0
+for all v 6= s, t. That is, an (s, t)-demand function is satisfied only by an (s, t)-flow.
+
+Congestion Approximators. When we want to argue that flow f -satisfies a demand function
+∆, it can be inconvenient to ensure that |∆f (S)| ≤  · δ(S) for all S ⊆ V because there are
+exponentially many sets. Surprisingly, there is a collection S of linearly many sets of vertices,
+where if |∆(S)| ≤  · δ(S) for each S ∈ S, then this is also true for all S ⊆ V with some polylog(n)
+blow-up factor. Moreover, S can be computed in near-linear time.
+
+Theorem 3.2 (Congestion approximator [RST14, Pen16]). There is a randomized algorithm that,
+given a graph G = (V, E) with n vertices and m edges, constructs in Õ(m) time with high probability
+a laminar family S of subsets of V such that
+
+  1. S contains at most 2n sets,
+
+  2. each vertex appears in O(log n) sets of S, and
+
+  3. for any demand function ∆ on V , if |∆(S)| ≤ δ(S) for all S ∈ S, then |∆(R)| ≤ γS δ(R) for
+     all R ⊆ V for a quality factor γS = O(log4 n).
+
+Graphs with Boundary Vertices. Given a set U ⊆ V , let G{U } denote the following “induced
+subgraph with boundary vertices”: start with induced subgraph G[U ], and for each edge e = (u, v) ∈
+E(U, V \ U ) with endpoint u in U , create a new vertex xe and add the edge (xe , u) to G{U } of the
+same capacity as e. Let NG {U } be the vertex set of G{U } and define NG hU i = NG {U } \ U . We
+call vertices in NG hU i boundary vertices. We simply write N {U } and N hU i instead of NG {U } and
+NG hU i when the context is clear. Observe that the degree degG{U } (xe ) of each boundary vertex
+xe ∈ N hU i in G{U } is simply the capacity c(e) of edge e. We will use this notation very often in
+the paper.
+
+Boundary Demand Functions. In our context, the sink node t ∈ U is usually given. The full
+U -boundary demand function ∆U : V (G{U }) → R is defined such that
+                                     
+                                     degG{U } (v) if v ∈ N hU i
+                                     
+                            ∆U (v) = 0              if v ∈ U \ t
+                                     
+                                       −∆(N hU i) if v = t.
+                                     
+
+That is, any flow satisfying ∆U sends flow from each boundary vertex of G{U } at full capacity to
+t. We also write ∆U,t when it is not clear from the context what t is. More generally, given any
+demand function ∆0 : V (G{U }) → R, we say that ∆0 is a U -boundary demand function if ∆0 (v) = 0
+for all v ∈ U \ t, ∆0 (t) = −∆(N hU i). That is, ∆0 is completely determined once we specify the
+demand values on boundary vertices N hU i.
+
+
+                                                  8
+One-Sided Fair Cut.            Finally, the following “one-sided” version of a fair cut (Definition 1.1) will
+be useful.
+Definition 3.3 (One-sided Fair Cut). Let G = (V, E) be an undirected graph with edge capacities
+c ∈ RE>0 . Let s be a vertex in V . For any parameter α ≥ 1, we say that a cut (S, T ) is an s-sided
+α-fair cut if there exists a feasible flow f such that
+    1. f (v) = 0 for all v ∈ S \ {s}
+    2. f (u, v) ≥ α1 · c(u, v) for every (u, v) ∈ E(S, T ) where u ∈ S and v ∈ T .
+In other words, the flow f sends flow from s to the boundary E(S, T ) in a way that almost saturates
+every edge in E(S, T ), but we do not care about the behavior of f beyond E(S, T ).
+   Clearly, an α-fair (s, t)-cut is an s-sided α-fair cut since we can take the same flow f that
+witnesses the α-fair (s, t)-cut. However, we will only require the one-sided version in our isolating
+cuts application in Section 6.
+
+
+4       Almost Fair Cuts via Multiplicative Weight Updates
+The key subroutine used for proving Theorem 1.3 is the algorithm below.
+Theorem 4.1 (Almost Fair Cuts). There is an algorithm AlmostFair(G, U, t, , β) that, given a
+graph G = (V, E) with a sink node t ∈ V , a set U ⊆ V where t ∈ U , and parameters β ≥ 0 and
+ > 0, returns a partition (P, U 0 ) of U where t ∈ U 0 with the following properties:
+    1. δG (U 0 ) ≤ δG (U ) − βδG (P, V \ U ) (equivalently, δG (P, U 0 ) ≤ (1 − β)δG (P, V \ U )), and
+                            0
+    2. There exists a flow fsat in G{U 0 } with congestion (1 + ) satisfying a U 0 -boundary demand
+                  0
+       function ∆ such that
+
+               ∆0 (v) = (1 − β) degG{U 0 } (v)          for all old boundary vertices v ∈ N hU 0 i ∩ N hU i
+             |∆0 (v)| ≤ (1 + ) degG{U 0 } (v)          for all new boundary vertices v ∈ N hU 0 i \ N hU i
+
+The algorithm takes Õ(|E(G{U })|/2 ) time and is correct with high probability.9
+    The rest of this section is for proving Theorem 4.1. For convenience, we write H = G{U } and
+let n and m denote the number of vertices and edges in H throughout this section. Let B be the
+incidence matrix of H. Observe that, for any flow f on H, we have (Bf )v = f (v) is the net flow
+out of v. We can view Bf as a vector in RV (H) . Define
+
+                                                   ∆ = (1 − β)∆U
+
+as the full U -boundary demand function on G{U } after scaled down by (1 − β) factor. For any
+U 0 ⊆ U , the restriction ∆|U 0 of ∆ is a U -boundary demand function obtained from ∆ by zeroing
+out the entries on N hU i \ N hU 0 i, i.e., the                                                    0
+                                             P boundary vertices of U which are not boundaries of U ,
+and then setting the entry on t so that v∈V (H) ∆|U 0 (v) = 0. Similarly, we view ∆ and also ∆|U 0
+as vectors in RV (H) .
+    9
+     Note that the guarantee that |∆0 (v)| ≤ (1 + ) degG{U 0 } (v) for all new boundary vertices v ∈ N hU 0 i \ N hU i in
+                                      0
+fact follows from the guarantee that fsat has congestion (1 + ). We state both guarantees explicitly for convenience.
+
+
+                                                            9
+4.1   Algorithm
+Initialization. We start by computing a congestion approximator S of H with quality γS =
+O(log4 n) using Theorem 3.2. For a technical reason, it is more convenient if no set in S contains
+sink t. From now, we will assume this, which is justified by the following observation:
+Proposition 4.2. Given the family S from Theorem 3.2 and a vertex t, there is a linear time
+algorithm that returns another family S 0 with the same guarantee as in Theorem 3.2 but with
+additional guarantee that each set S ∈ S 0 does not contains t.
+Proof. Replace each set S ∈ S where t ∈ S with its complement V (H) \ S. Observe that S is now
+a larminar family on V (H) \ t where |S| does not change, and the number of sets containing each
+vertex may increase only by O(log n). Hence, the first and second properties of Theorem 3.2 still
+hold. The third property still holds as well because |∆(S)| = |∆(V (H) \ S)| for all S.
+   Our algorithm is based on the Multiplicative Weight Update framework and so it works in
+                                           i
+rounds. For round i, we maintain weights wS,◦ ≥ 0 for each S ∈ S and ◦ ∈ {+, −} and define the
+           i
+potential φ ∈ R V (H) where
+                                       X 1
+                                 φiv =          (wi − wS,−i
+                                                             )
+                                          δH (S) S,+
+                                           S3v
+
+for each vertex v. As no set S ∈ S contains t, we will always have φit = 0 for all i. Initially, we set
+  1 = 1 for all S ∈ S, ◦ ∈ {+, −}.
+wS,◦
+    The algorithm also maintains a decremental subset V i where t ∈ V i ⊆ V i−1 for all i. We
+initialize V 0 as follows. First, set V 0 = V (H). While there exists S ∈ S where ∆|V 0 (S) > δH (S),
+which certifies that there is no feasible flow on H satisfying ∆|V 0 by Fact 3.1, we update V 0 ← V 0 \S
+(in particular, the function ∆|V 0 changes). Let D0 contain all the vertices we removed from V 0 .
+Now, we are ready to state the main algorithm.
+
+Main Algorithm. For round i = 1, 2, . . . , T where T = Θ(log(n)/α2 ) and α = /γS , we do the
+following:
+  1. Define f i on H such that for each edge (u, v), f i (u, v) flows from high potential to low
+     potential at maximum capacity. That is, for every edge (u, v) in H,
+                                           
+                                           c(u, v)
+                                                       if φiu > φiv
+                                  i
+                                f (u, v) = 0            if φiu = φiv
+                                           
+                                             −c(u, v) if φiu < φiv .
+                                           
+
+  2. Using Lemma 4.9, compute a deletion set Di ⊆ V (H) \ t and set V i ← V i−1 \ Di , where Di
+     satisfies the following:
+                                if Di 6= ∅, then ∆|V i−1 (Di ) > δH (Di ), and
+                                hφi , ∆|V i i = hφi , ∆|V i−1 \Di i ≤ hφi , Bf i i.
+
+  3. For each S ∈ S, let
+                                                    i
+                                         (∆|V i )f (S)  ∆| i (S) − f i (S)
+                                   rSi =               = V
+                                           δH (S)            δH (S)
+      be the relative total excess at S compared to the cut size in round i.
+
+                                                        10
+     4. Update the weights
+                                                      i                                i
+                                     i+1
+                                    wS,+    i
+                                         = wS,+ · eαrS          i+1
+                                                           and wS,−    i
+                                                                    = wS,− · e−αrS .
+
+After T rounds, we compute the pruned set P = ∪Ti=0 Di and let U 0 = U \ P . Finally, we return
+the partition (P, U 0 ).
+
+4.2      Correctness
+We prove that the partition (P, U 0 ) outputted by our algorithm satisfies the requirement in Theo-
+rem 4.1. The first important thing to understand our algorithm is to formally see how it is captured
+by the Multiplicative Weight Update (MWU) algorithm, which we recall below:
+
+Theorem 4.3 (Multiplicative Weights Update [AHK12]). Let J be a set of indices, and let α ≤ 1
+and ω > 0 be parameters. Consider the following algorithm:
+              (1)
+     1. Set wj      ← 1 for all j ∈ J
+
+     2. For i = 1, 2, . . . , T where T = O(ω 2 log(|J|)/α2 ):
+
+         (a) The algorithm is given a “gain” vector g i ∈ RJ satisfying kg i k∞ ≤ ω and hg i , wi i ≤ 0
+                                                                           0
+         (b) For each j ∈ J, set wji ← wji−1 exp(αgji ) = exp(α i0 ∈[i] gji )
+                                                               P
+
+
+At the end of the algorithm, we have T1                   i                   10
+                                               P
+                                                  i∈[T ] gj ≤ α for all j ∈ J.
+
+    To apply Theorem 4.3 into our setting, we define J = S × {+, −}. That is, we work with indices
+(S, +) and (S, −) for S ∈ S. We use the same weights wi and error parameter α as the algorithm,
+and we set ω = 2. For each iteration i and S ∈ S, we define
+
+                                         i                ∆|V i (S) − f i (S)
+                                        gS,± = ±rSi = ±                       .
+                                                                δH (S)
+                           i                                       i        i−1       i ). With this
+Observe that the weights wS,± are updated in Step 4 exactly as wS,±    ← wS,±   exp(αgS,±
+setting, we show that our gain vector g i indeed satisfies the condition in Step 2a of Theorem 4.3.
+
+Lemma 4.4. For each i, we have kg i k∞ ≤ 2 and hg i , wi i ≤ 0.
+
+Proof. To show kg i k∞ ≤ 2, we have
+
+                           i        ∆|V i (S) − f i (S)   ∆|V i (S)   f i (S)
+                         |gS,± |=                       ≤           +         ≤ 1 + 1,
+                                          δH (S)           δH (S)     δH (S)
+
+To see why the last inequality holds, we have (1) ∆|V 0 (S) ≤ δH (S) for all S ∈ S by the initialization
+of V 0 , (2) ∆|V i (S) ≥ 0 for all i because t ∈
+                                               / S, and (3) ∆|V i (S) may only decrease as V i is a
+decremental set. Also, we have |f (S)| ≤δH (S) because each f i respects the capacity.
+                                    i
+
+    10
+    PMore generally,    for any value val, if we have hg i , wi i ≤ val for all i, the MWU algorithm guarantees that
+1            i
+T    i∈[T ] gj ≤ val + α, for all j. Here, we use a special case when val = 0.
+
+
+
+
+                                                          11
+   To show hg i , wi i ≤ 0, first observe that hg i , wi i = hφi , ∆|V i i − hφi , Bf i i exactly.
+                                       X
+                         hg i , wi i =     i
+                                         (gS,+  i
+                                               wS,+       i
+                                                     + gS,−   i
+                                                            wS,−   )
+                                        S∈S
+                                        X
+                                                i      i
+                                    =         (wS,+ − wS,− )rSi
+                                        S∈S
+                                           i
+                                        X wS,+    i
+                                               − wS,−
+                                                                ∆|V i (S) − f i (S)
+                                                                                   
+                                    =
+                                                  δH (S)
+                                        S∈S
+                                           i
+                                        X wS,+    i
+                                               − wS,− X
+                                                                    ∆|V i (v) − (Bf i )v
+                                                                                           
+                                    =
+                                                  δH (S)
+                                        S∈S                 v∈S
+                                                                        i        i
+                                                                            − wS,−
+                                         X                         X wS,+
+                                    =             ∆|V i (v) − (Bf i )v
+                                                                          δH (S)
+                                      v∈V (H)                       S3v
+                                        X
+                                              ∆|V i (v) − (Bf i )v φiv
+                                                                  
+                                    =
+                                        v∈V (H)
+
+                                    = hφi , ∆|V i i − hφi , Bf i i.
+Since the deletion set Di from Step 2 is designed to guarantee that hφi , ∆|V i i ≤ hφi , Bf i i, we have
+that hg i , wi i ≤ 0.
+
+   From the above, we have verified that our algorithm is indeed captured by the MWU algorithm.
+Now,  we derive the implication of this fact. Only for analysis, we define thePaverage flow f¯ =
+1 PT     i    E(H) on H and the average U -boundary demand function ∆ = 1        T             V (H)
+T   i=1 f ∈ R                                                               T    i=1 ∆|V i ∈ R
+on H.
+Lemma 4.5. We have f¯ -satisfies ∆ in H.
+Proof. Define r̄ = T1 Ti=1 ri ∈ RS . First, we prove that |r̄S | ≤ α for all S ∈ S. This is because
+                     P
+
+                                        1 X           1 X i
+                                ±r̄S =        ±rSi =          gS,± ≤ α
+                                       T              T
+                                                  i∈[T ]            i∈[T ]
+
+where the last inequality is precisely the guarantee of the MWU algorithm from Theorem 4.3. Next
+observe that the excess is
+                                    f¯
+                                  ∆ (S) = ∆(S) − f¯(S) = r̄S δH (S).
+                               f¯
+Therefore, we have that |∆ (S)| ≤ αδH (S) for all S ∈ S. Since S is a congestion approximator, it
+follows by Theorem 3.2 that
+                                    f¯
+                                  |∆ (S)| ≤ γS αδH (S) = δH (S)
+for all S ⊆ V (H). This precisely means that f¯ -satisfies ∆.
+
+    Now, we are ready to prove Item 2 of Theorem 4.1. By Lemma 4.5, there exists a flow f¯aug
+in H with congestion  such that f¯sat := f¯ + f¯aug satisfies ∆. We define fsat
+                                                                             0   as the restriction of
+ ¯            0                                                     0
+fsat into G{U }. That is, for each new boundary vertex xe ∈ N hU i \ N hU i where u is its unique
+                   0 (x , u) = f¯ (e). For every other edge e ∈ E(G{U 0 }), we set f 0 (e) = f¯ (e).
+neighbor, we set fsat  e         sat                                                 sat        sat
+Let ∆0 be a U 0 -boundary demand function where, for each U 0 -boundary vertex v ∈ N hU 0 i, we set
+∆0 (v) = fsat
+          0 (v) as the net flow out of v via f 0 .
+                                              sat
+
+
+                                                           12
+Lemma 4.6. We have
+       0
+   1. fsat is a flow in G{U 0 } with congestion at most (1 + ) that satisfies ∆0 .
+
+   2. ∆0 is a U 0 -boundary demand function where
+
+             ∆0 (v) = (1 − β) degG{U 0 } (v)       for all old boundary vertices v ∈ N hU 0 i ∩ N hU i
+            |∆0 (v)| ≤ (1 + ) degG{U 0 } (v)     for all new boundary vertices v ∈ N hU 0 i \ N hU i
+
+                 0 is a restriction of f¯               0                          0                      ¯
+Proof. (1) As fsat                       sat into G{U }, then the congestion of fsat is at most that of fsat
+                                0               0               0         0               0
+which is (1+). To see why fsat satisfies ∆ , we have that ∆ (v) = fsat (v) for all U -boundary vertex
+v ∈ N hU 0 i by construction. For non-boundary vertex v ∈ U 0 \t, we have fsat   0 (v) = f¯(v) = 0 = ∆0 (v).
+     0 (v) = ∆0 (v) for all v 6= t. This implies that f 0 (t) = ∆0 (t) too and so f 0
+So fsat                                                                                               0
+                                                           sat                         sat satisfies ∆ .
+    (2) For each new boundary vertex v ∈ N hU i \ N hU i, we have ∆ (v) = fsat (v) and so |∆0 (v)| ≤
+                                                     0                      0        0
+                                  0
+(1 + ) degG{U 0 } (v) because fsat   has congestion (1 + ) in G{U 0 }. For each old boundary vertex
+         0                          0
+v ∈ N hU i ∩ N hU i, we have ∆ (v) = fsat   0 (v) = f¯ (v). As f¯
+                                                       sat
+                                                                                             ¯
+                                                                  sat satisfies ∆, we have fsat (v) = ∆(v).
+But ∆(v) = (1 − β) degG{U } (v) as, for every i, ∆|V i (v) = (1 − β) degG{U } (v) for every v ∈          / P.
+Therefore, ∆0 (v) = (1 − β) degG{U 0 } (v).
+
+   This proves Item 2 of Theorem 4.1. It remains to prove Item 1 of Theorem 4.1.
+
+Lemma 4.7. δG{U } (P ) ≤ ∆(P ).
+
+Proof. First observe that δH (D0 ) ≤ ∆(D0 ) because every time we remove a set S from V 0 , we have
+δH (S) < ∆|V 0 (S) and we can charge δH (S) to the decrease of ∆|V 0 (S). Next, the sets Di for i ≥ 1
+satisfy δH (Di ) ≤ ∆|V i−1 (Di ), so
+                                        X                     X
+                δG{U } (P ) = δH (P ) ≤   δH (Di ) ≤ ∆(D0 ) +   ∆|V i−1 (Di ) = ∆(P ).
+                                         i≥0                       i≥1
+
+
+
+
+Corollary 4.8. δG (U 0 ) ≤ δG (U ) − β · δG (P, V \ U ).
+
+Proof. We have δG{U } (P ) = δG (P, U 0 ) and ∆(P ) = (1 − β)δG (V \ U, P ). By adding δG (V \ U, U 0 )
+into both sides of the inequality of Lemma 4.7, we have
+
+             δG (V \ U, U 0 ) + δG (P, U 0 ) ≤ δG (V \ U, U 0 ) + δG (V \ U, P ) − βδG (V \ U, P )
+
+which concludes the proof because δG (U 0 ) = δG (V \ U, U 0 ) + δG (P, U 0 ) and δG (V \ U, U 0 ) + δG (V \
+U, P ) = δG (V \ U ) = δG (U ).
+
+   This proves the correctness of Theorem 4.1.
+
+
+
+
+                                                      13
+4.3    Running Time
+Here, we explain some implementation details and analyze the total running time. Computing the
+congestion approximator S takes Õ(m) by Theorem 3.2. The step which ensures that no set in S
+contains t is at most O(n log n) time because t was contained in at most O(log n) sets S and the
+complement of S has size at most n.
+    Next, we explain how to implement the initialization of V 0 efficiently. Observe that, for any
+S ∈ S, if ∆|V 0 (S) > δH (S), then we set V 0 ← V 0 \ S and then we have ∆|V 0 (S) = 0. Otherwise,
+if ∆|V 0 (S) ≤ δH (S), then it remains so forever because ∆|V 0 (S) is monotonically decreasing when
+V 0 is a decremental set. In any case, for each S ∈ S, we only need to compare ∆|V 0 (S) with δH (S)
+once, which takes time at most O(|S| + |EH (S, V (H))|). So the total time is O(m log n) because S
+can be partitioned into O(log n) layers of disjoint subsets by the second property of Theorem 3.2.
+    In round i of the main algorithm, computing f i takes O(m) time. Using the fact that S is a
+laminar family and S contains O(n) sets, we can compute rSi for all S ∈ S in O(n) time, and so we
+                              i+1
+can compute the weights wS,◦      for all S ∈ S, ◦ ∈ {+, −} in O(n). The most technical step is Step
+2 whose implementation details is shown at the end of the section.
+Lemma 4.9. The “deletion set” Di ⊆ V (H) \ t from Step 2 can be computed in O(m + n log n)
+time.
+   In total, the running time is Õ(m) + T · O(m + n log n) time. Recall that m = |E(H)| =
+O(|E(G{U })|) where T is the number of rounds. So we conclude the running time analysis:
+Lemma 4.10. The total running time of the algorithm for Theorem 4.1 is at most Õ(|E(G{U })|/2 ).
+
+4.4    Proof of Lemma 4.9
+In this section, we show how to construction Di ⊆ V (H) \ t where
+                                if Di 6= ∅, then ∆|V i−1 (Di ) > δH (Di )                                         (1)
+                                  i              i                         i    i
+                               hφ , ∆|V i i = hφ , ∆|V i−1 \Di i ≤ hφ , Bf i.                                     (2)
+If hφi , ∆|V i−1 i ≤ hφi , Bf i i, then we simply set Di = ∅, which trivially fulfills both conditions. For
+the remainder of the proof, we assume that hφi , ∆|V i−1 i > hφi , Bf i i.
+    For real number x, define V>x = {v ∈ V (H) : φiv > x}. Fix some large number M > max |φiv |.
+                                                                                                       v∈N {U }
+We first prove the chain of relations
+              Z M                                                    Z M
+                                          i                i    i
+                     ∆|V i−1 (V>x )dx = hφ , ∆|V i−1 i > hφ , Bf i =                    δH (V>x )dx.              (3)
+                x=−M                                                             x=−M
+
+We start with
+                                                                                             
+                Z M                          Z M            X
+                        ∆|V i−1 (V>x )dx =                        ∆|V i−1 (v) · 1{φiv > x} dx
+                 x=−M                         x=−M       v∈V (H)
+                                              X                      Z M
+                                         =             ∆|V i−1 (v)             1{φiv > x}dx
+                                             v∈V (H)                 x=−M
+                                              X
+                                         =             ∆|V i−1 (v)(φiv − (−M )).
+                                             v∈V (H)
+
+
+
+                                                       14
+        P
+Since    v∈V (H) ∆|V i−1 (v) = 0 by construction, this is equal to
+                                        X
+                                                ∆|V i−1 (v) φiv = hφi , ∆|V i−1 i.
+                                      v∈V (H)
+
+By definition of the flow f i ,
+                                         X
+                     hφi , Bf i i =                cH (u, v)|φiu − φiv |
+                                      (u,v)∈E(H)
+                                         X                     Z M
+                                  =                cH (u, v)             1{(u, v) ∈ ∂H (V>x )}dx
+                                      (u,v)∈E(H)                 x=−M
+                                      Z M          X
+                                  =                         cH (u, v)1{(u, v) ∈ ∂H (V>x )}dx
+                                       x=−M (u,v)∈E(H)
+                                      Z M
+                                  =             δH (V>x )dx.
+                                       x=−M
+
+Together with the assumption hφi , ∆|V i−1 i > hφi , Bf i i, we obtain (3).
+   Let x∗ be the largest value such that
+                           Z x∗                        Z x∗
+                                  ∆|V i−1 (V>x )dx =             δH (V>x )dx,
+                                  x=−M                               x=−M
+
+which must exist since x∗ = −M works. Next, we claim that we must have
+                                       ∆|V i−1 (V>x∗ ) > δH (V>x∗ ).                                  (4)
+                                                       R x∗ +                   R x∗ +
+Otherwise, for small enough  > 0 we would have x=−M ∆|V i−1 (V>x )dx ≤ x=−M δH (V>x )dx, and
+      RM                         RM
+since x=−M ∆|V i−1 (V>x )dx > x=−M δH (V>x )dx, there is another choice of x∗ between x∗ +  and
+M that achieves equality, a contradiction.
+    We now claim that t ∈    / V>x∗ . Otherwise, since ∆|V i−1 (V (H)) = 0 and ∆|V i−1 (t) is the only
+negative entry, we would have ∆|V i−1 (V>x∗ ) ≤ 0 which would violate (4). Since t ∈          / V>x∗ and
+φit = 0, we conclude that x∗ ≥ 0.
+          i
+    Let φ = min{φi , x∗ } as φi truncated to a maximum of x∗ . Then, similar to (3), we obtain
+                               Z x∗                         Z x∗
+                 i                                                                  i
+              hφ , ∆|V i−1 i =        ∆|V i−1 (V>x )dx =           δH (V>x )dx = hφ , Bf i i.         (5)
+                                   x=−M                                x=−M
+
+Define our deletion set as Di , V                  / Di and Equation (1) follows from (4). We now prove
+                                        >x∗ , so t ∈
+the chain of relations
+                                        i                        i                    i
+              hφi , ∆|V i−1 \Di i = hφ , ∆|V i−1 \Di i ≤ hφ , ∆|V i−1 i = hφ , Bf i i ≤ hφi , Bf i i,
+                                                                                  i
+which would fulfill Equation (2). For the first relation, if φiv 6= φv then v ∈ Di , which means that
+                                                        i
+∆|V i−1 \Di (v) = 0. For the second relation, we use φt = φit = 0 to obtain
+          i                 X      i                      X        i
+      hφ , ∆|V i−1 \Di i =        φ (v)∆|V i−1 \Di (v) =          φ (v)∆|V i−1 (v) − x∗ ∆|V i−1 (Di )
+                          v∈V (H)\t                                  v∈V (H)\t
+                                                                           i
+                                                                     = hφ , ∆|V i−1 i − x∗ ∆|V i−1 (Di )
+
+
+                                                            15
+                           i
+which is at most hφ , ∆|V i−1 i since x∗ ≥ 0. The third relation follows from (5). For the last relation,
+we have
+            i           X                    i    i      X
+         hφ , Bf i i =            cH (u, v)|φu − φv | ≤         cH (u, v)|φiu − φiv | = hφi , Bf i i.
+                               (u,v)∈E(H)                               (u,v)∈E(H)
+
+This concludes Equation (2).
+    Finally, we claim the running time O(m + n log n). The only nontrivial step in the algorithm
+is computing x∗ . We first sort the values φiv in O(n log n) time. Then, by sweeping through the
+sorted list, we can compute ∆|V i−1 (V>x ) − δH (V>x ) for all x ∈ {φiv : v ∈ V (H)} in O(m) time. The
+function ∆|V i−1 (V>x ) − δH (V>x ) is linear between consecutive values of φiv , so we can locate the
+largest value x∗ for which the function is 0.
+
+
+5         From Almost Fair Cuts to Fair Cuts
+In this section, we prove Theorem 1.3 using the AlmostFair subroutine.
+
+5.1         Algorithm
+Let (G, s, t, α) be the input and we want to compute a (1 + α)-fair (s, t)-cut in G. Let cmin =
+mine c(e) and let C = c(E)/cmin be the ratio between total capacity and the minimum capacity.
+                                                                           1
+Recall that we assume C = poly(n). We also assume α ≥ poly(n)                , otherwise we could solve the
+problem using exact max flow algorithms.
+                                                                                            j
+     Our algorithm runs in iterations where in iteration j we compute (S j , T j , k j , def ) where (S j , T j )
+                                                                       j
+is an (s, t)-cut where s ∈ S j and t ∈ T j , k j ∈ Z≥0 , and def ∈ R≥0 represents an upper bound of
+the deficit which will be explained in the analysis. Define β = Θ(α/ log n) and  = β/16. Initially,
+                                            0
+(S 0 , T 0 ) is an arbitrary (s, t)-cut, def = δG (S 0 , T 0 ), and k 0 = 0.
+                  j
+     While def > βcmin , do the following starting from j = 0, 1, 2, . . .
+
+     1. Compute
+
+                                  (Psj , S j \ Psj ) = AlmostFair(G, S j , s, , (k j + 1)β), and
+                                  (Ptj , S j \ Ptj ) = AlmostFair(G, T j , t, , (k j + 1)β)
+
+           by calling Theorem 4.1.
+                                                         j
+     2. If max{δG (Psj , T j ), δG (Ptj , S j )} ≤ def /40, then we update
+
+                                                         k j+1 = k j + 1, and
+                                                             j+1           j
+                                                       def         = def /2.
+
+           Then, we set T j+1 = T j \ Ptj and S j+1 = V \ T j+1 .11
+    11
+         We could also symmetrically set S j+1 = S j \ Psj and T j+1 = V \ S j+1 . This choice is arbitrary.
+
+
+
+
+                                                                   16
+                                                           j
+   3. Else, if max{δG (Psj , T j ), δG (Ptj , S j )} > def /40, then we update
+
+                                                k j+1 = k j , and
+                                                    j+1                     j
+                                              def         = (1 − β/80)def
+                            j
+      If δG (Psj , T j ) > def /40, then, we set S j+1 = S j \ Psj (and T j+1 = V \ S j+1 ). Otherwise, we
+      set T j+1 = T j \ Ptj (and S j+1 = V \ T j+1 ).
+                                                                                         0
+After the while loop, we return (S j , T j ) as a (1 + α)-fair (s, t)-cut. As def ≤ c(E) we have that
+    j                                                                                      j
+def ≤ (1−β/80)j c(E) for all j. So there are at most O(log(C/β)/β) iterations before def < β·cmin .
+Therefore, the algorithm takes O(log(C/β)/β) × Õ(m/2 ) = Õ(m/α3 ) total time by Theorem 4.1.
+It remains to show the correctness of the algorithm.
+
+5.2    Analysis
+For convenience, whenever we refer to an edge (a, b) ∈ E(A, B), we mean a ∈ A and b ∈ B. Only
+for the analysis, we construct a feasible flow f j in G on each iteration j, and ensure that f j satisfies
+the following two properties:
+
+   1. Define the deficit of flow f j as def j (f j ) = (u,v)∈E(S j ,T j ) max{0, (1 − k j β)c(u, v) − f j (u, v)}.
+                                                      P
+                                                               j
+      We maintain an invariant that def j (f j ) ≤ def .
+
+   2. For all R ⊆ V \ {s, t}, we require that |f j (R)| ≤ δG (R). Equivalently, f j -satisfies an
+      (s, t)-demand function in G.
+
+In words, each cut edge (u, v) ∈ E(S j , T j ) contributes to the deficit of flow f j when the flow in f j
+from u to v is less than (1 − k j β)-fraction of its capacity. With our definition of deficit in Property
+1, we have that the cut is fair whenever the deficit is very small:
+                            j
+Proposition 5.1. If def < βcmin , then (S j , T j ) is a (1 + α)-fair (s, t)-cut.
+
+Proof. First we claim that k j = O(log n). This is because everytime k j increments, def is halved.
+                                                    j         j
+So at the end of the algorithm, we have βc2min < def < c(E)/2k , which implies k j = O(log(C/β)) =
+O(log n). Now, by the assumption and Property 1, for all (u, v) ∈ E(S j , T j ), we have (1 −
+k j β)c(u, v) − f j (u, v) < β · cmin and so
+                                                                         1
+                           f j (u, v) > (1 − (k j + 1)β)c(u, v) ≥              c(u, v)
+                                                                     (1 + α/2)
+
+where the last inequality is because k j = O(log n) and we can set the constant in β = Θ(α/ log n) to
+be small enough. Since f j -satisfies an (s, t)-demand function, by the observation below Fact 3.1,
+there exists faug with congestion  such that f ∗ = f j + faug is an (s, t)-flow. Now, we have that for
+all (u, v) ∈ E(S j , T j ),
+                                                                    1
+                            f ∗ (u, v) ≥ f j (u, v) − c(u, v) ≥         c(u, v)
+                                                                 (1 + α)
+because  = β/16 = Θ(α/ log n) and the constant in it is small enough. Therefore, f ∗ certifies that
+(S j , T j ) is a (1 + α)-fair (s, t)-cut.
+
+                                                          17
+                                                                                           0
+   Initially, we set f 0 as the zero flow, which satisfies both properties since def = δG (S 0 , T 0 ).
+Property 2 will help us show the following inductive step, which would conclude the correctness of
+Theorem 1.3.
+
+Lemma 5.2. Suppose there exists a feasible flow f j satisfying Properties 1 and 2 for j. Then, we
+can construct a feasible flow f j+1 satisfying Properties 1 and 2 for j + 1.
+
+    We analyze the two cases based on max{δG (Psj , T j ), δG (Ptj , S j )} in the subsections below.
+
+                                                  j
+Case 1: max{δG (Psj , T j ), δG (Ptj , S j )} ≤ def /40
+Let S 0j = S j \ Psj . By the guarantees of AlmostFair(G, S j , s, , (k j + 1)β), let ∆s be the S 0j -
+boundary demand function satisfied by a flow fs in G{S 0j } with congestion (1+). As k j+1 = k j +1
+in this case, by Theorem 4.1, we have fs (v) = ∆s (v) = (1 − k j+1 β) degG{S j } (v) for all old boundary
+vertices v ∈ N hS j i ∩ N hS 0j i. Let T 0j , ∆t , ft be defined symmetrically. From fs and ft , we will
+construct a new flow f j+1 in three steps.
+
+Step 1: Concatenate. Get fˆ. Consider the “concatenation” of fs and ft , denoted by fst , where
+we reverse the direction of fs so that the flow is sent out of s. The concatenated flow fst is on the
+graph G{S 0j } ∪ G{T 0j } where the two graphs share N hS 0j i ∩ N hT 0j i as common boundary vertices.
+Now, we want to define a flow fˆ on G that corresponds to fst in a natural way. See Figure 1.
+
+   1. For each edge e ∈ E(G[S 0j ]) ∪ E(G[T 0j ]) in the “interior” of S 0j or T 0j , we set fˆ(e) = fst (e).
+
+   2. For each common boundary vertex xe ∈ N hS 0j i ∩ N hT 0j i where e = (u, v) ∈ E(S 0j , T 0j ), we
+      have fst (u, xe ) = fst (xe , v) = (1 − k j+1 β)c(e) and so we set fˆ(e) = (1 − k j+1 β)c(e).
+
+   3. For each new boundary vertex xe ∈ (N hS 0j i \ N hS j i) ∪ (N hT 0j i \ N hT j i) where e = (u, v) ∈
+      E(S 0j , Psj ) ∪ E(T 0j , Ptj ), we set fˆ(e) = fst (u, xe ).
+
+   4. For each old boundary vertex xe ∈ N hS j i ∩ N hT j i incident to the pruned set Psj or Ptj on
+      one side, i.e., e = (u, v) ∈ E(S 0j , Ptj ) ∪ E(T 0j , Psj ), we set fˆ(e) = fst (u, xe ).
+
+   5. For each old boundary vertex xe ∈ N hS j i ∩ N hT j i incident to the pruned set Psj or Ptj on
+      both sides, i.e., e = (u, v) ∈ E(Psj , Ptj ), we set fˆ(e) = 0.
+
+   6. For each edge in the “interior” of Psj or Ptj , we set fˆ(e) = 0.
+
+By construction, fˆ satisfies some demand function ∆
+                                                   ˆ where ∆(v)
+                                                           ˆ              / {s, t}∪V (Psj )∪V (Ptj ).
+                                                                = 0 for v ∈
+
+Step 2: Remove Flow Paths Through New Boundaries. Get fˆ0 . Take a path decomposi-
+tion of fˆ in G, and then remove all paths starting or ending at vertices in V (Psj ) ∪ V (Ptj ); let the
+resulting flow be fˆ0 , which satisfies some demand function that is only nonzero at s, t. That is, fˆ0
+is an (s, t)-flow. Note that fˆ0 still has congestion at most (1 + ).
+
+Step 3: Truncate to a Feasible Flow. Get f j+1 . Finally, for any edges congested by more
+than 1 in fˆ0 , lower the flow along that edge to congestion exactly 1. We define f j+1 as the resulting
+flow.
+
+
+                                                      18
+                      Figure 1: A diagram indicating the cases for defining fˆ from fst .
+
+Proving Properties of f j+1 . Since f j+1 is obtained from the (s, t)-flow fˆ0 by removing a flow
+of congestion at most , Property 2 is satisfied. Now, we prove Property 1. We write the deficit of
+f j+1 as follows
+       def j+1 (f j+1 )
+                 X
+        =                        max{0, (1 − k j+1 β)c(e) − f j+1 (e)}
+            e∈E(S j+1 ,T j+1 )
+                   X                                                                                             
+        ≤                            max{0, (1 − k j+1 β)c(e) − fˆ(e)} + |fˆ(e) − fˆ0 (e)| + |fˆ0 (e) − f j+1 (e)|
+            e∈E(S j+1 ,T j+1 )
+                   X
+        =                        max{0, (1 − k j+1 β)c(e) − fˆ(e)}+
+            e∈E(S j+1 ,T j+1 )
+               X                                             X
+                            |fˆ(e) − fˆ0 (e)| +                             |fˆ0 (e) − f j+1 (e)|
+       e∈E(S j+1 ,T j+1 )                              e∈E(S j+1 ,T j+1 )
+
+Now, we bound each of the three terms above. We use the fact T j+1 = T 0j and S j+1 = S 0j ∪Psj ∪Ptj .
+   For the first term, we consider the concatenated flow fˆ. We have fˆ(e) = (1 − k j+1 β)c(e) for
+each old boundary edge e ∈ E(S 0j , T 0j ). So, the first term is bounded by
+          X                                                      X
+                     max{0, (1 − k j+1 β)c(e) − fˆ(e)} ≤                (1 − k j+1 β)c(e) − fˆ(e)
+   e∈E(S 0j ∪Psj ∪Ptj ,T 0j )                                                      e∈E(Psj ∪Ptj ,T 0j )
+
+                                                                               ≤ ((1 − k j+1 β) + (1 + )) · δ(Psj ∪ Ptj , T 0j )
+                                                                               ≤ (2 + ) · δ(Psj ∪ Ptj , T 0j )
+
+where the second inequality is because fˆ has (1 + ) congestion.
+    For the second term, consider the flow fˆ0 obtained by the flow-path removal. We rewrite the
+second term as            X                             X
+                                   |fˆ(e) − fˆ0 (e)| +         |fˆ(e) − fˆ0 (e)|.
+                                e∈E(Psj ∪Ptj ,T 0j )                          e∈E(S 0j ,T 0j )
+
+Trivially, we have
+                                                        |fˆ(e) − fˆ0 (e)| ≤ (1 + )δ(Psj ∪ Ptj , T 0j )
+                                         X
+
+                                 e∈E(Psj ∪Ptj ,T 0j )
+
+
+                                                                      19
+because the flow has congestion (1 + ). Now, we claim that
+
+                                                |fˆ(e) − fˆ0 (e)| ≤ (1 + )δ(Psj ∪ Ptj , S 0j ∪ T 0j ).
+        X                              X
+                |fˆ(e) − fˆ0 (e)| ≤
+      e∈E(S 0j ,T 0j )                               e∈E(Psj ∪Ptj ,S 0j ∪T 0j )
+
+
+To see this, consider each flow-path P removed from fˆ to obtain fˆ0 . Observe that P cannot cross
+directly from T 0j to S 0j because, for every edge e ∈ E(S 0j , T 0j ), the flow is directed from S 0j to
+T 0j as fˆ(e) = (1 − k j+1 β)c(e). Thus, between any two consecutive times that P crosses from
+S 0j to T 0j , P must have crossed from T 0j to Psj ∪ Ptj . Also, note that the first edge of P is from
+E(Psj ∪Ptj , S 0j ∪T 0j ). Therefore, we can    charge the flow changes in edges    of E(S 0j , T 0j ) to the changes
+                   j       j
+in edges of E(Ps ∪ Pt , S 0j ∪ T 0j ). So e∈E(S 0j ,T 0j ) |fˆ(e) − fˆ0 (e)| ≤ e∈E(Psj ∪P j ,S 0j ∪T 0j ) |fˆ(e) − fˆ0 (e)|
+                                             P                                 P
+                                                                                          t
+as claimed.
+     Finally, for the third term, we consider the truncated flow f j+1 with congestion at most 1 on all
+edges. Again, we have fˆ0 (e)−f j+1 (e) = 0 for all e ∈ E(S 0j , T 0j ) because 0 ≤ fˆ0 (e) ≤ (1−k j+1 β)c(e).
+In particular, the congestion on e was already less than 1. Also, we have |fˆ0 (e) − f j+1 (e)| ≤ c(e)
+for any edges e as fˆ0 has congestion 1 + . Hence, we have
+
+                                                                         c(e) = δ(Psj ∪ Ptj , T 0j ).
+                        X                                     X
+                                 |fˆ0 (e) − f j+1 (e)| ≤
+                   e∈E(S j+1 ,T j+1 )                                      e∈E(Psj ∪Ptj ,T 0j )
+
+    From the above bounds, we obtain
+
+                     def j+1 (f j+1 ) ≤ ((2 + ) + (1 + ) + (1 + ) + )δ(Psj ∪ Ptj , S 0j ∪ T 0j ).
+
+Now, write δ(Psj ∪ Ptj , S 0j ∪ T 0j ) = δ(Psj , S 0j ) + δ(Ptj , S 0j ) + δ(Psj , T 0j ) + δ(Ptj , T 0j ). Note that
+δ(Ptj , T 0j ) ≤ δ(Ptj , S j ) and δ(Psj , S 0j ) ≤ δ(Psj , T j ) by the guarantee of AlmostFair. Trivially, we
+also have δ(Ptj , S 0j ) ≤ δ(Ptj , S j ) and δ(Psj , T 0j ) ≤ δ(Psj , T j ). But we have δ(Ptj , S j ), δ(Psj , T j ) ≤
+   j
+def /40 by the assumption of this case. So we have, as  ≤ 1/4,
+                                                                                       j
+                                          j+1        j+1                      def      j         j+1
+                                    def         (f         ) ≤ (4 + 4) · 4 ·     ≤ def /2 = def
+                                                                               40
+fulfilling Property 1.
+
+                                                                       j
+Case 2: max{δG (Psj , T j ), δG (Ptj , S j )} > def /40
+In this case, we set f j+1 as the same old flow f j . So Property 2 of f j+1 trivially continues to hold.
+For Property 1, assume without loss of generality the case δG (Ptj , S j ) > def j /40, so T j+1 = T j \ Ptj .
+(The case δG (Psj , T j ) > def j /40 is symmetric, so we omit it.) As f j+1 = f j and k j+1 = k j , we have
+
+def j+1 (f j+1 )
+          X
+ =                       max{0, (1 − k j β)c(e) − f j (e)}
+   e∈E(S j+1 ,T j+1 )
+                         X                                                                        X
+= def j (f j ) −                    max{0, (1 − k j β)c(e) − f j (e)} +                                       max{0, (1 − k j β)c(e) − f j (e)}.
+                   e∈E(S j ,Ptj )                                                          e∈E(Ptj ,T j+1 )
+
+For the second term (without the minus sign), we can lower bound it as
+
+                                                                             20
+                                   (1 − k j β)c(e) − f j (e) = (1 − k j β)δ(S j , Ptj ) − f j (S j , Ptj ).
+                          X
+                  ≥
+                      e∈E(S j ,Ptj )
+
+For the third term, we can upper bound it as
+
+                                  c(e) − f j (e) = δ(Ptj , T j+1 ) − f j (Ptj , T j+1 ).
+                           X
+                     ≤
+                              e∈E(Ptj ,T j+1 )
+
+
+where the first inequality is because 0 ≤ c(e) − f j (e) as f j is feasible. Putting these together, we
+have
+                                                                                                                   
+  def j+1 (f j+1 ) ≤ def j (f j ) − (1 − k j β)δ(S j , Ptj ) − δ(Ptj , T j+1 ) + f j (S j , Ptj ) − f j (Ptj , T j+1 ) .
+
+That is, the increase in deficit can be upper bounded as follows. It will decrease proportional
+to (1 − k j β)δ(S j , Ptj ) − δ(Ptj , T j+1 ) which is related cut size. It may increase proportional to
+f (S j , Ptj ) − f (Ptj , T j+1 ) which is related to flow.
+                                                                                                                j     j+1
+     For the decrease caused by cut size, AlmostFair(G, T j , t, , (k j +1)β) guarantees that δ(P            t , Tj j) ≤
+         j             j     j                                                      j              j
+(1−(k +1)β)δ(S , Pt ). So the deficit must decrease by at least (1 − k β) − (1 − (k + 1)β) δ(S , Pt ) ≥
+βδ(S j , Ptj ). For the increase caused by flow, we have that f j (S j , Ptj ) − f j (Ptj , T j+1 ) = f j (S j , Ptj ) +
+f j (T j+1 , Ptj ) = −f j (Ptj ) is exactly the net flow of f j into Ptj . As |f j (Ptj )| ≤ δG (Ptj ) by Property 2
+on Ptj , we now have
+
+                                 def j+1 (f j+1 ) ≤ def j (f j ) − βδ(S j , Ptj ) + δG (Ptj ).
+
+Observe that δG (Ptj ) = δG (S j , Ptj ) + δG (Ptj , T j+1 ) but δ(Ptj , T j+1 ) ≤ δ(S j , Ptj ) by AlmostFair
+again. So δG (Ptj ) ≤ 2δG (S j , Ptj ) ≤ β2 δG (S j , Ptj ) because  ≤ β/4. Therefore,
+
+                                                       β                     β                    j+1
+                   def j+1 (f j+1 ) ≤ def j (f j ) −     δ(S j , Ptj ) ≤ (1 − )def j (f j ) = def
+                                                       2                     80
+
+because δG (S j , Ptj ) > def j /40 by our initial assumption.
+
+
+6     Approximate Isolating Cuts and Steiner Cut
+The focus of this section is to compute approximate isolating cuts and show its application in the
+Steiner mincut problem.
+
+6.1    Approximate Minimum Isolating Cuts
+The approximate minimum isolating cuts problem is defined below.
+
+Definition 6.1. Given an undirected graph G = (V, E) with non-negative edge weights and a set of
+terminals T ⊆ V , a cut ∅ ⊂ S ⊂ V is said to be an isolating cut for a terminal t ∈ T if T ∩ S = {t}.
+A minimum isolating cut for t is a minimum value cut among all the isolating cuts for t. Similarly,
+a (1 + )-approximate minimum isolating cut for t is an isolating cut for t whose value is at most
+(1 + ) times that of a minimum isolating cut for t.
+
+
+                                                              21
+   Below is our main theorem. We state our result in general before plugging in the current best
+runtime from Theorem 1.3.
+Theorem 6.2. We can compute (1 + ) approximate minimum isolating cuts in Õ(m) time.
+    More precisely, fix any  < 1. Given an undirected graph G = (V, E) on m edges and n vertices
+with non-negative edge weights and a set of terminals T ⊆ V , there is an algorithm that outputs
+a (1 + )-approximate minimum isolating cut St for every terminal t ∈ T in O(m) time plus a set
+of (1 + γ)-fair (s, t)-cut calls on undirected graphs that collectively contain O(m log |T |) edges and
+O(n log |T |) vertices, where γ = 4dlg|T |e . Moreover, the sets St are disjoint, and for each t ∈ T , the
+cut (St , V \ St ) is a t-sided (1 + γ)-fair cut. Using Theorem 1.3 to compute (1 + γ)-fair (s, t)-cuts,
+our algorithm for (1 + )-approximate minimum isolating cuts runs in Õ(m/3 ) time.
+
+Algorithm 1 (1 + )-approximate Minimum Isolating Cuts Algorithm on terminal set T
+ 1: Arbitrarily order the terminals in T = {t1 , t2 , . . . , t|T | }
+ 2: Phase 1:
+ 3: for i = 1 to dlg |T |e do
+ 4:   Xi ← {vj ∈ T : ith bit in j is 1}
+ 5:   Yi ← {vj ∈ T : ith bit in j is 0}
+ 6:   Use Theorem 1.3 to find a (1 + γ)-fair (Xi , Yi )-cut Si
+ 7: end for
+ 8: Phase 2:
+ 9: for every terminal t ∈ T do
+10:   Let St be the connected component containing t in G \ ∪i δSi , i.e., the graph where we delete
+      all the edges in cuts δSi for all i.
+11:   Gt is obtained from G by contracting all vertices in V \ St into a single vertex s̄t . {To
+      implement this step efficiently, we construct a new graph that is identical to Gt instead of
+      contracting G.}
+12:   Find a (1 + β)-approximate minimum (t, s̄t )-cut in graph Gt ; call this cut Ct
+13: end for
+14: Return the cuts {Ct : t ∈ T }
+
+
+    To establish Theorem 6.2, we describe Algorithm 1 for finding (1+)-approximate isolating cuts.
+First, we establish correctness of the algorithm by showing that the cut Ct returned by Algorithm 1
+for a terminal t ∈ T is indeed a (1 + )-approximate minimum isolating cut for T . The following
+claim establishes an approximate version of the standard uncrossing property of minimum cuts,
+and is crucial for the correctness of our algorithm.
+Lemma 6.3. Let A be a (1 + α)-approximate minimum isolating cut for some terminal t and
+let B be a (1 + γ)-fair (X, Y )-cut where X ∪ Y = T , t ∈ X, and X ⊆ B. Then, A ∩ B is a
+(1 + α)(1 + γ)-approximate minimum isolating cut for t.
+Proof. First, note that since A is an isolating cut for t and t ∈ X, X ⊆ B, it follows that A \ B
+does not contain any terminal and A ∩ B contains a single terminal t. Now, consider the two cuts
+A and A ∩ B. Using the notation ] for disjoint union, we can write
+                 E(A, V \ A) = E(A ∩ B, V \ (A ∪ B)) ] E(A ∩ B, B \ A) ] E(A \ B, V \ A)
+      E(A ∩ B, V \ (A ∩ B)) = E(A ∩ B, V \ (A ∪ B)) ] E(A ∩ B, B \ A) ] E(A ∩ B, A \ B).
+
+
+                                                    22
+Since the first two sets are identical, we only need to compare the third sets E(A \ B, V \ A) and
+E(A ∩ B, A \ B). Since B is a (1 + γ)-fair (X, Y )-cut, there is a feasible flow from X to Y that,
+                                                1
+for each edge in E(B, V \ B), sends at least 1+γ   times capacity in the direction from B to V \ B.
+Now, consider the flow on the subset of edges E(A ∩ B, A \ B) ⊆ E(B, V \ B). Since the flow must
+end at Y and since Y ∩ (A \ B) = ∅, it follows that this flow must exit the set A \ B on the edges
+in E(A \ B, V \ (A ∪ B)). Thus,
+
+           δ(A ∩ B, A \ B) ≤ (1 + γ) · δ(A \ B, V \ (A ∪ B)) ≤ (1 + γ) · δ(A \ B, V \ A).
+
+It follows that δ(A ∩ B) ≤ (1 + γ) · δ(A), which proves the lemma.
+
+Lemma 6.4. For γ = 4dlg|T |e and β = 4 , the cut Ct returned by Algorithm 1 is a (1+)-approximate
+minimum isolating cut for every t ∈ T .
+Proof. Lemma 6.3 implies that in Algorithm 1, the minimum isolating cut of t in graph Gt , i.e., the
+minimum t − s̄t cut, is a (1 + γ)dlg |T |e -approximate minimum isolating cut of t in the input graph G.
+Since Ct is a (1 + β)-approximate minimum t − s̄t cut, it follows that Ct is a (1 + γ)dlg |T |e · (1 + β)-
+approximate minimum isolating cut of t in the input graph G. Using the values of γ and β, we
+have                           dlg |T |e 
+                                                
+                 1+                       · 1+      ≤ e/4 · e/4 = e/2 ≤ 1 +  since  < 1.
+                     4dlg |T |e                  4
+
+
+    For the (1+β)-approximate mincut in Step 12, we can use Theorem 1.3 to compute a (1+γ)-fair
+cut, which is also a (1 + β)-approximate mincut since γ ≤ β. This also guarantees that the cut Ct
+is a t-sided (1 + γ)-fair cut. Finally, it is clear from the algorithm that all cuts Ct are disjoint.
+    The runtime analysis is identical to that in [LP20], so we omit it for brevity.
+
+6.2   (1 + )-approximate Minimum Steiner Cut
+As an immediate application of our isolating cut result, we can solve the Steiner cut problem below
+efficiently.
+Definition 6.5. Given an undirected graph G = (V, E) with non-negative edge weights and a set
+of terminals T ⊆ V , a minimum Steiner cut is a cut of minimum value among all cuts ∅ ⊂ S ⊂ V
+that satisfy ∅ ⊂ S ∩ T ⊂ T .
+    Using Theorem 6.2, we give the following algorithm for finding a (1 + )-approximate minimum
+Steiner cut.
+Theorem 6.6. Given an undirected graph G = (V, E) on m edges and n vertices and with non-
+negative edge weights and a set of terminals T ⊆ V , Algorithm 2 computes a (1 + )-minimum
+Steiner cut for T wuth probability at least 1 − 1/n in Õ(m) time.
+Proof. Fix a minimum Steiner cut for the terminal set T and let S denote the side of this cut such
+that |T ∩ S| ≤ |T \ S|. Let i ∈ [dlg |T |e] such that 2i−1 ≤ |S ∩ T | < 2i . Then, Tij contains exactly
+one vertex in T ∩ S with probability
+                                                                      i
+                                    1 |T ∩S|−1                     1 2
+                                                           
+                          1                         i−1 1                    1 1     1
+                |T ∩ S| · i · 1 − i              ≥2     · i · 1− i        ≥ · = .
+                         2          2                    2         2         2 4     8
+
+                                                   23
+Algorithm 2 (1 + )-approximate minimum Steiner cut Algorithm on terminal set T
+ for i = 1 to dlg |T |e do
+   for j = 1 to dlog8/7 ne do
+      Tij is drawn i.i.d. from T where every vertex t ∈ T appears in Tij with probability 1/2i
+      Use Theorem 6.2 to find isolating cuts Sij = {St : t ∈ Tij } for the terminal set Tij
+   end for
+ end for
+ Return arg min{δ(S) : S ∈ Sij , i ∈ [dlg |T |e], j ∈ [dlog8/7 ne]}
+
+
+This implies that the probability that there is no index j ∈ [dlog8/7 ne] such that Tij contains
+exactly one terminal in T ∩ S is at most 1/n, thereby establishing the correctness of the algorithm.
+   The running time bound follows from Theorem 6.2.
+
+
+7    Approximate Gomory-Hu Tree Algorithm
+The main result in this section is the near-linear time algorithm for computing an approximate
+Gomory-Hu tree. In fact, our algorithm can solve a more general problem called approximate
+Gomory-Hu Steiner tree defined below. (The definition is copied verbatim from [LP21].)
+
+Definition 7.1 (Approximate Gomory-Hu Steiner tree). Given a graph G = (V, E) and a set of
+terminals U ⊆ V , the (1 + )-approximate Gomory-Hu Steiner tree is a weighted tree T on the
+vertices U , together with a function f : V → U , such that
+
+    • For all s, t ∈ U , consider the minimum-weight edge (u, v) on the unique s − t path in T .
+      Let U 0 be the vertices of the connected component of T − (u, v) containing s. Then, the set
+      f −1 (U 0 ) ⊆ V is a (1 + )-approximate (s, t)-mincut, and its value is wT (u, v).
+
+   Our main result is stated below. Recall that we assume that the ratio between the largest and
+lowest edge weights are poly(n).
+
+Theorem 7.2. Let G be a weighted, undirected graph, and let U be a subset of vertices. There
+is a randomized algorithm that w.h.p., outputs a (1 + )-approximate Gomory-Hu Steiner tree in
+Õ(m · poly(1/)) time.
+
+    The algorithm and analysis are similar to those in [LP21], except we replace (exact) minimum
+isolating cuts with an approximate version, which requires overcoming a few more technical issues.
+For completeness, we redo all the proofs. We also restate Theorem 6.2 below in the form we
+precisely need.
+
+Theorem 7.3. Fix any  < 1. Given an undirected graph G = (V, E) on m edges and n vertices
+with non-negative edge weights and a set of terminals T ⊆ V , there is an algorithm that outputs
+a (1 + )-approximate minimum isolating cut St ⊆ V for every terminal t ∈ T in Õ(m/O(1) )
+time. Moreover, the sets St are disjoint, and for each t ∈ T , the set St is a t-sided (1 + γ)-fair
+({t}, T \ {t})-cut.
+
+
+
+
+                                                24
+7.1      Cut Threshold Step Algorithm
+We begin with the following “Cut Threshold Step” subroutine from [LP21], described in Algorithm 3
+below. Loosely speaking, the algorithm inputs a source vertex s and a threshold W , and aims to
+find a large fraction of vertices whose mincut from s is approximately at most W .
+
+Algorithm 3 (1 + γ)-approximate “Cut Threshold Step” on inputs (G, U, W, s)
+ 1: Initialize D ← ∅
+ 2: for independent iteration i ∈ {0, 1, 2, . . . , blg |U |c} do
+ 3:   Ri ← sample of U where each vertex in U \ {s} is sampled independently with probability
+      1/2i , and s is sampled with probability 1
+ 4:   Compute (1 + 2dlgγ|U |e )-approximate minimum isolating cuts {Svi : v ∈ Ri } on inputs G and
+      Ri with the additional guarantees of Theorem 7.3 (for large enough constantS c > 0)
+ 5:   Let F i be the family of sets Svi satisfying δSvi ≤ (1 + γ)W , and let Di ← Svi ∈F i Svi ∩ U
+ 6:   Let R ei ⊆ Ri be the set of all v ∈ Ri satisfying δSvi ≤ (1 + γ)W
+ 7: end for
+ 8: Let imax be the index i maximizing |D i |
+ 9: Return D ← D imax , R ← R   eimax , and F ← F imax
+
+
+Lemma 7.4. For any i, each set Svi added to Di satisfies λ(s, v) ≤ (1 + γ)W .
+
+Proof. For each v ∈ Di , the corresponding set Svi on line 5 contains v and not s, so λ(s, v) ≤ δSvi ≤
+(1 + γ)W .
+
+Lemma 7.5. Let D∗ be all vertices v ∈ U \ s for which there exists an (s, v)-cut in G of weight at
+most W whose side containing v has at most |U |/2 vertices in U . Then, E[|D|] = Ω(|D∗ |/ log |U |).
+
+Proof. We will show that
+                                                                
+                                                 blg |U |c
+                                                    X
+                                           E                |Di | ≥ Ω(|D∗ |),                                          (6)
+                                                    i=0
+
+
+which is sufficient, since the largest Di will have at least 1/(blg |U |c + 1) fraction of the total size.
+Fix a vertex v ∈ D∗ . For each 0 ≤ j ≤ dlg |U |e, define Cvj ⊆ V as the (s, v)-cut of weight at most
+(1 + 2dlgγ|U |e )j W that minimizes |Cvj ∩ U |, which must exist since v ∈ D∗ . By construction, |Cvj ∩ U |
+is decreasing in j.                                                   ∗               ∗
+    We focus on a value j ∗ (0 ≤ j ∗ < dlg |U |e) satisfying |Cvj +1 ∩ U | ≥ |Cvj ∩ U |/2, which is
+                                                                  ∗
+guaranteed to exist. Consider sampling iteration i = blg |Cvj ∩ U |c, where each vertex in U \ {s} is
+                                                               ∗                    ∗
+sampled with probability 1/2i . With probability Ω(1/|Cvj ∩ U |), we have Cvj ∩ Ri = {v}, i.e., we
+                                      ∗                              ∗
+sampled v and nothing else in Cvj ∩ U . If this occurs, then Cvj is a valid isolating cut separating
+v from Ri \ {v}. Since Svi is a (1 + 2dlgγ|U |e )-approximate minimum isolating cut, we have
+                                                          j ∗ +1                          dlg |U |e
+                   γ                ∗              γ                                  γ
+δSvi ≤    1+                    δCvj ≤    1+                           W ≤ 1+                               W ≤ eγ/2 W ≤ (1+γ)W,
+               2dlg |U |e                      2dlg |U |e                         2dlg |U |e
+
+
+
+                                                               25
+                                                                    ∗                                  ∗
+so Svi ∩ U is added to Di on line 5. By definition of Cvj +1 , we have |Svi ∩ U | ≥ |Cvj +1 ∩ U |, which
+                ∗                                                        ∗
+is at least |Cvj ∩ U |/2 by our choice of j ∗ . In other words, if Cvj ∩ Ri = {v}, which occurs with
+                          ∗                                                      ∗
+probability Ω(1/|Cvj ∩ U |), then v is “responsible” for adding at least |Cvj ∩ U |/2 vertices to Di .
+                                  ∗                                                               i
+             hPvertex v ∈ iD is responsible for adding Ω(1) vertices in expectation to some D , which
+    Thus, each
+                  blg |U |c
+increases E       i=0       |Di | by Ω(1) in expectation. Finally, (6) follows by linearity of expectation
+over all v ∈ D∗ .
+
+    For our approximate Gomory-Hu tree algorithm, we actually need a bound on E[|D ∩ D∗ |],
+not E[|D|], since we want to remove D from U and claim that the size of the new D∗ drops by a
+large enough factor. Unfortunately, it is possible that D is largely disjoint from D∗ , so a bound
+on E[|D|] does not directly translate to a bound on E[|D ∩ D∗ |]. Therefore, we wrap Algorithm 3
+into another routine that achieves a good bound on E[|D ∩ D∗ |]. We actually prove the stronger
+guarantee that D∗ can be any subset of all vertices v ∈ U \ s for which λ(s, v) ≤ W , which is needed
+in our Gomory-Hu tree algorithm.
+
+Algorithm 4 (1 + γ)-approximate Gomory-Hu Steiner tree “step” on inputs (G, U0 , W0 , s)
+ Initialize U ← U0
+ for O(log3 n) sequential iterations do
+   for independent iteration j ∈ {0, 1, 2, . . . , dlg |U |e − 1} do
+      Call Algorithm 3 on parameter 2dlgγ|U |e and inputs (G, U, (1 + 2dlgγ|U |e )j W0 , s) and let
+      (Dj , Rj , Fj ) be the output
+   end for              S
+   Update U ← U \ j Dj for the values Dj computed on this sequential iteration
+ end for
+ Return an output (D, R, F) selected uniformly at random out of the O(log3 n log |U |) calls to
+ Algorithm 3.
+
+
+Lemma 7.6. Each set S ∈ F in the output (D, R, F) of Algorithm 4 satisfies δS ≤ (1 + γ)W0 .
+
+Proof. By Lemma 7.4 applied to any j ∈ {0, 1, 2, . . . , dlg |U |e − 1}, each set S ∈ Fj satisfies
+                                            j                             dlg |U |e
+                 γ                    γ                               γ
+δS ≤ 1 +                   · 1+                     W0 ≤       1+                           W0 ≤ eγ/2 W0 ≤ (1 + γ)W0 .
+             2dlg |U |e           2dlg |U |e                      2dlg |U |e
+
+So the same holds for the randomly chosen output (D, R, F).
+
+Lemma 7.7. Let D∗ be an arbitrary set of vertices v ∈ U \ s satisfying λ(s, v) ≤ W0 . The output
+(D, R, F) satisfies E[D ∩ D∗ ] ≥ Ω(|D∗ |/ log4 n).
+
+Proof. We claim that after O(log3 n) iterations of the main for loop, the set D∗ ∩ U becomes
+empty. This would mean that D∗ is contained in the union of all O(log4 n) sets Dj computed over
+all iterations, so a random set Dj must contain a Ω(1/ log4 n) fraction of D∗ in expectation. For
+the rest of the proof, we prove this claim.
+    For each 0 ≤ j ≤ dlg |U |e, let Dj∗ be all vertices v ∈ U \ s for which λ(s, v) ≤ (1 + 2dlgγ|U |e )j W0 .
+By construction, D∗ ⊆ D0∗ ⊆ D1∗ ⊆ · · · ⊆ Ddlg        ∗                              ∗
+                                                        |U |e . We track the sets Dj ∩ U throughout
+
+
+
+                                                           26
+the algorithm. Consider the set U at the beginning of one of the O(log3 |U |) sequential iter-
+ations. We focus on a value j ∗ (0 ≤ j ∗ < dlg |U |e) satisfying |Dj∗∗ ∩ U | ≥ |Dj∗∗ +1 |/2. Con-
+sider iteration j ∗ of the inner for loop. By Lemma 7.4, we have λ(s, v) ≤ (1 + 2dlgγ|U |e ) · (1 +
+    γ       j∗                   ∗
+                = (1 + 2dlgγ|U |e )j +1 W0 , so in particular, Dj ∗ ⊆ Dj∗∗ +1 . By Lemma 7.5, we have
+2dlg |U |e ) W0
+E[|Dj ∗ |] ≥ Ω(|Dj∗∗ |/ log |U |) ≥ Ω(|Dj∗∗ +1 |/ log |U |). Therefore, once we delete j Dj at the end of
+                                                                                      S
+this sequential iteration, the size of Dj∗∗ +1 drops by factor (1 − Ω(1/ log |U |)) in expectation.
+    In other words, on each sequential iteration, there exists j ∗ (1 ≤ j ∗ ≤ dlg |U |e) for which the size
+of Dj∗ ∩ U drops by factor (1 − Ω(1/ log |U |)) in expectation. Since the other sets Dj∗0 ∩ U can never
+                                  Qdlg |U |e
+increase in size, the product j=1 |Dj∗ ∩ U | decreases by factor (1 − Ω(1/ log |U |)) in expectation.
+                                                  2
+Since the product is at most |U |dlg |U |e ≤ 2O(log n) initially, it follows that after O(log3 n) sequential
+iterations, the product becomes zero w.h.p. Therefore, at the end of the algorithm, there exists j
+(1 ≤ j ∗ ≤ dlg |U |e) with Dj∗ ∩ U = ∅. Since D∗ ⊆ Dj∗ , we also get D∗ ∩ U = ∅, which proves the
+claim.
+
+7.2    The Algorithm for Approximating Gomory-Hu Steiner Tree
+We present our approximate Gomory-Hu tree algorithm in Algorithm 5. It uses Algorithm 4 as
+a subroutine. See Figure 7.2 for a visual guide to the algorithm. Once again, the algorithm and
+analysis closely follow those in [LP21].
+   We require the lemma below for both running time and approximation guarantee analysis.
+Lemma 7.8. Each set S ∈ F satisfies δG S ≤ (1 + γ)(1 + 10)λ and |S ∩ U | ≤ 2|U |/3.
+Proof. By Lemma 7.6 on the call to Algorithm 4 (line 6), each set S ∈ F satisfies δG0 S ≤ (1 +
+γ) · (1 + 10)λ, so δG S ≤ δG0 S ≤ (1 + γ)(1 + 10)λ. We now prove the second statement. By
+construction, the cut ∂G0 S has |S ∩ U | edges of weight 18λ/|U | that were added to G0 . Since ∂G S
+is a valid Steiner cut in G and the Steiner mincut is at least (1 − )λ, the cut ∂G0 S has at least
+(1 − )λ weight of edges from G. So δG0 S ≥ (1 − )λ + |S ∩ U | · 18λ/|U |. Suppose for contradiction
+that |S ∩ U | > 2|U |/3; then, this becomes δG0 S > (1 − )λ + 12λ = (1 + 11)λ, which contradicts
+the earlier statement δG0 S ≤ (1 + γ)(1 + 10)λ.
+
+
+7.3    Running Time Bound
+Let P (G, U, W ) be the set of unordered pairs of distinct vertices whose mincut is at most W :
+                                                                      
+                                                     U
+                          P (G, U, W ) = {u, v} ∈         : λG (u, v) ≤ W .
+                                                      2
+
+In particular, we will consider its size |P (G, U, W )|, and show the following expected reduction:
+Lemma 7.9. For any W that is at most (1 + ) times the Steiner mincut of G, we have
+                                                             
+                                                          1
+                E[|P (Glarge , Ularge , W )|] ≤ 1 − Ω             |P (G, U, W )|,
+                                                        log4 n
+where the expectation is taken over the random selection of s and the randomness in Algorithm 4.
+   Before we prove Lemma 7.9, we show how it implies progress on the recursive call for Glarge .
+
+                                                      27
+Algorithm 5 (1 + )-approximate Gomory-Hu Steiner tree on inputs (G0 , U ). Assume  < 1/100.
+ 1: If |U | = 1, then return the trivial Gomory-Hu Steiner tree (T, f ) where T is the empty tree on
+    the single vertex u ∈ U , and f (v) = u for all vertices v. Otherwise, if |U | > 1, then do the
+    steps below.
+ 2: γ ← 2 / log6 n
+ 3: λ ← (1 + )-approximate global Steiner mincut of G with terminals U , so that the Steiner
+    mincut is in the range [(1 − )λ, λ]
+ 4: s ← uniformly random vertex in U
+ 5: Construct graph G0 by starting with G and adding an edge (s, u) of weight 18λ/|U | for each
+    u∈U
+ 6: Call Algorithm 4 on parameter γ and inputs (G0 , U, (1 + 10)λ, s), and let (D, R, F) be the
+    output. Write F = {Sv : v ∈ R} where v ∈ Sv for all v ∈ R.
+ 7: Phase 1: Construct recursive graphs and apply recursion
+ 8: for each v ∈ R do
+ 9:    Let Gv be the graph G with vertices V \ Sv contracted to a single vertex xv
+10:    Let Uv ← Sv ∩ U
+11:    Recursively call (Gv , Uv ) to obtain output (Tv , fv )
+12: end for
+13: Let Glarge be the graph G with (disjoint) vertex sets Sv contracted to single vertices yv for all
+    v∈R                S
+14: Let Ularge ← U \ v∈R (Sv ∩ U )
+15: Recursively call (Glarge , Ularge ) to obtain (Tlarge , flarge )
+16: Phase 2: Merge the recursive Gomory-Hu Steiner trees
+                                                                     S
+17: Construct T by starting with the disjoint union Tlarge ∪ v∈R Tv and, for each v ∈ R, adding
+    an edge between fv (xv ) ∈ Uv and flarge (yv ) ∈ Ularge of weight w(∂G Sv )
+18: Construct f : V → U by f (v 0 ) = flarge (v 0 ) if v 0 ∈ Ularge and f (v 0 ) = fv (v 0 ) if v 0 ∈ Uv for some
+    v∈R
+19: Return (T, f )
+
+
+
+
+                                                       28
+                                                                                      Tv2
+                                                                                                  f v2
+                                   G
+                                                                          Gv2
+                          v2     Svi 2
+                                                                                                                  Gv3
+                                                      recursive graphs                          xv2
+                                                 i
+                                             v3 Sv3                                       xv1
+                                                                                                                        f v3
+                         Svi 1                                                                        xv3
+                                                                Gv1
+                          v1                                                                                                   Tv3
+                                                                   f v1
+
+
+                                                                  Tv1
+
+
+                                                                                                yv2      Glarge
+
+
+                                         T              Combine
+                                                                          flarge
+                                                                                                                  yv3
+
+                                                                           Tlarge
+                                                                                    yv1
+
+
+
+
+Figure 2: Recursive construction of Glarge and Gv for v ∈ R. Here, R = {v1 , v2 , v3 }, denoted by
+red vertices on the top left. The dotted blue curves on the right mark the boundaries of the regions
+fv−1
+  i
+     (u) : u ∈ Uvi and fv−1   large
+                                    (u) : u ∈ Ularge . The light green edges on the bottom left are the edges
+(fvi (xvi ), flarge (yvi )) added on line 17.
+
+
+
+
+                                                                  29
+Corollary 7.10. Let λ0 be the global Steiner mincut of G. W.h.p., after Ω(log5 n) recursive calls
+along Glarge (replacing G ← Glarge each time), the global Steiner mincut of G is at least (1 + )λ0
+(where λ0 is still the global Steiner mincut of the initial graph).
+
+Proof. Let W = (1 + )λ0 . Initially, we trivially have |P (G, U, W )| ≤ |U2 | . The global Steiner
+                                                                                  
+
+mincut can only increase in the recursive calls, since Glarge is always a contraction of G, so W is
+always at most (1+) times the current Steiner mincut of G. By Lemma 7.9, the value |P (G, U, W )|
+drops by factor 1 − Ω( log14 n ) in expectation on each recursive call, so after Ω(log5 n) calls, we have
+
+                                                     Ω(log5 n)
+                                      |U |           1                    1
+                 E[|P (G, U, W )|] ≤       · 1−Ω      4              ≤         .
+                                       2           log n               poly(n)
+
+In other words, w.h.p., we have |P (G, U, W )| = 0 at the end, or equivalently, the Steiner mincut of
+G is at least (1 + )λ0 .
+
+   Combining both recursive measures of progress together, we obtain the following bound on the
+recursion depth:
+
+Lemma 7.11. W.h.p., each path down the recursion tree of Algorithm 5 has O(log n) calls on a
+graph Gv , and between two consecutive such calls, there are O(−1 log6 n) calls on the graph Glarge .
+
+Proof. For any Θ(log5 n) successive recursive calls down the recursion tree, either one call was on
+a graph Gv , or all Θ(log5 n) of them were on the graph Glarge . In the former case, |U | drops by a
+constant factor by Lemma 7.8, so it can happen O(log n) times total. In the latter case, by Corol-
+lary 7.10, the global Steiner mincut increases by factor (1 + ). Let wmin and wmax be the minimum
+and maximum weights in G, so that ∆ = wmax /wmin , which we assume to be poly(n). Note that for
+any recursive instance (G0 , U 0 ) and any s, t ∈ U 0 , we have wmin ≤ λG0 (s, t) ≤ w(∂({s})) ≤ nwmax ,
+so the global Steiner mincut of (G0 , U 0 ) is always in the range [wmin , nwmax ]. It follows that the
+global Steiner mincut can increase by factor (1 + ) at most O(−1 log(nwmax /wmin )) = O(−1 log n)
+times. Therefore, there are at most O(−1 log6 n) consecutive calls on Glarge before a call on some
+Gv must occur.
+
+Lemma 7.12. For an unweighted/weighted graph G = (V, E), and terminals U ⊆ V , Algorithm 5
+takes time Õ(m−1 ) plus calls to Theorem 7.3 with parameter γ = 2 / log6 n on unweighted/weighted
+instances with a total of Õ(n−1 ) vertices and Õ(m−1 ) edges.
+
+Proof. For a given recursion level, consider the instances {(Gi , Ui , Wi )} across that level. By con-
+struction, the terminals Ui partition U . Moreover, the total number of vertices over all Gi is at
+most n + 2(|U | − 1) = O(n) since each branch creates 2 new vertices and there are at most |U | − 1
+branches.
+    To bound the total number of edges, we consider the unweighted and weighted cases separately,
+starting with the unweighted case. The total number of new edges created is at most the sum of
+weights of the edges in the final (1 + )-approximate Gomory-Hu Steiner tree. For an unweighted
+graph, this is O(m) by the following well-known argument. Root the Gomory-Hu Steiner tree T at
+any vertex r ∈ U ; for any v ∈ U \ r with parent u, the cut ∂{v} in G is a (u, v)-cut of value deg(v),
+       Pv) ≤ (1 + )λG (u, v) ≤ (1 + ) deg(v). Overall, the sum of the edge weights in T is at most
+so wT (u,
+(1 + ) v∈U deg(v) ≤ (1 + ) · 2m.
+
+
+                                                   30
+    For the weighted case, define a parent vertex in an instance as a vertex resulting from either
+(1) contracting V \Sv in some previous recursive Gv call, or (2) contracting a component containing
+a parent vertex in some previous recursive call. There are at most O(log n) parent vertices: at most
+O(log n) can be created by (1) since each Gv call decreases |U | by a constant factor (Lemma 7.8),
+and (2) cannot increase the number of parent vertices. Therefore, the total number of edges adjacent
+to parent vertices is at most O(log n) times the number of vertices. Since there are O(n) vertices
+in a given recursion level, the total number of edges adjacent to parent vertices is O(n log n) in this
+level. Next, we bound the number of edges not adjacent to a parent vertex by m. To do so, we first
+show that on each instance, the total number of these edges over all recursive calls produced by
+this instance is at most the total number of such edges in this instance. Let P ⊆ V be the parent
+vertices; then, each Gv call has exactly |E(G[Sv \ P ])| edges not adjacent
+                                                                         S     to parent vertices (in the
+recursive instance), and the Glarge call has at most |E(G[V \ P ]) \ v∈R E(G[Sv \ P ])|, and these
+sum to |E(G[V \ P ])|, as promised. This implies that the total number of edges not adjacent to a
+parent vertex at the next level is at most the total number at the previous level. Since the total
+number at the first level is m, the bound follows.
+    Therefore, there are O(n) vertices and Õ(m) edges in each recursion level. By Lemma 7.11,
+there are O(−1 log6 n) levels, for a total of Õ(n−1 ) vertices and Õ(m−1 ) edges. In particular, the
+instances to the max-flow calls have Õ(n−1 ) vertices and Õ(m−1 ) edges in total.
+
+   Finally, we prove Lemma 7.9, restated below.
+
+Lemma 7.9. For any W that is at most (1 + ) times the Steiner mincut of G, we have
+                                                             
+                                                          1
+                E[|P (Glarge , Ularge , W )|] ≤ 1 − Ω             |P (G, U, W )|,
+                                                        log4 n
+where the expectation is taken over the random selection of s and the randomness in Algorithm 4.
+
+Proof. Define D∗ as the set of vertices v ∈ U \ s for which there exists an (s, v)-cut in G of weight
+at most W whose side containing v has at most |U |/2 vertices in U . Let Pordered (G, U, W ) be the
+set of ordered pairs (u, v) : u, v ∈ V for which there exists a (u, v)-mincut of weight at most W
+with at most |U |/2 vertices in U on the side S(u, v) ⊆ V containing u. We now state and prove
+the following four properties:
+
+ (a) For all u, v ∈ U , {u, v} ∈ P (G, U, W ) if and only if either (u, v) ∈ Pordered (G, U, W ) or
+     (v, u) ∈ Pordered (G, U, W ) (or both).
+
+ (b) For each pair (u, v) ∈ Pordered (G, U, W ), we have u ∈ D∗ with probability at least 1/2,
+
+ (c) For each u ∈ D∗ , there are at least |U |/2 vertices v ∈ U for which (u, v) ∈ Pordered (G, U, W ).
+
+ (d) Over the randomness in Algorithm 3 on (G, U, (1 + )λ), E[|D ∩ D∗ |] ≥ Ω(|D∗ |/ log4 |U |).
+
+   Property (a) follows by definition. Property (b) follows from the fact that u ∈ D∗ whenever
+s∈/ S(u, v), which happens with probability at least 1/2. Property (c) follows because any vertex
+v ∈ U \S(u, v) satisfies (u, v) ∈ Pordered (G, U, W ), of which there are at least |U |/2. For property (d),
+observe by construction of G0 that for each vertex v ∈ D∗ , the (s, v)-mincut has weight at most
+W + |U |/2 · 18λ/|U |. This is at most (1 + )λ + 9λ = (1 + 10)λ since W is at most (1 + ) times the
+
+
+                                                    31
+Steiner mincut of G (which is at most λ). It follows that each v ∈ D∗ satisfies λG0 (s, v) ≤ (1+10)λ.
+Property (d) follows from Lemma 7.7 applied to input (G, U, (1 + 10)λ, s) and set D∗ .
+    With properties (a) to (d) in hand, we now finish the proof of Lemma 7.9. For any vertex
+u ∈ D, all pairs (u, v) ∈ Pordered (G, U, W ) (over all v ∈ U ) disappear from Pordered (G, U, W ), which
+is at least |U |/2 many by (c). In other words,
+
+                                                                                   |U | · |D|
+                       |Pordered (G, U, W ) \ Pordered (Glarge , Ularge , W )| ≥              .
+                                                                                        2
+Taking expectations and applying (d),
+
+                                                                                                  |U | · |D∗ |
+                                                                                                                
+                                                                      |U | · E[|D|]
+         E[|Pordered (G, U, W ) \ Pordered (Glarge , Ularge , W )|] ≥               ≥Ω                               .
+                                                                             2                     log4 |U |
+Moreover,
+                                                             1
+                    |U | · |D∗ | ≥ E {(u, v) : u ∈ D∗ } ≥ |Pordered (G, U, W )|,
+                                    
+                                                                  2
+where the second inequality follows by (b). Putting everything together, we obtain
+                                                                                                
+                                                                           |Pordered (G, U, W )|
+          E[|Pordered (G, U, W ) \ Pordered (Glarge , Ularge , W )|] ≥ Ω                           .
+                                                                                 log4 |U |
+
+Finally, applying (a) gives
+                                                                                             
+                                                                             |P (G, U, W )|
+                      E[|P (G, U, W ) \ P (Glarge , Ularge , W )|] ≥ Ω                            .
+                                                                                log4 |U |
+
+Finally, we have P (Glarge , Ularge , W ) ⊆ P (G, U, W ) since the (u, v)-mincut for u, v ∈ Ularge can only
+increase in Glarge due to Glarge being a contraction of G. Therefore,
+
+              |P (G, U, W )| − |P (Glarge , Ularge , W )| = |P (G, U, W ) \ P (Glarge , Ularge , W )|,
+
+and combining with the bound on E[|P (G, U, W ) \ P (Glarge , Ularge , W )|] concludes the proof.
+
+7.4    Approximation
+We first prove the two lemmas below before concluding the approximation guarantee.
+
+Lemma 7.13. For any distinct vertices p, q ∈ Ularge , we have λG (p, q) ≤ λGlarge (p, q) ≤ (1 +
+γ)λG (p, q).
+
+Proof. Since Glarge is a contraction of G, we have λG (p, q) ≤ λGlarge (p, q). To show the other
+inequality, fix any (p, q)-mincut (A, B) in G. We iteratively “uncross” the cut (A, B) with each set
+Sv ∈ F (v ∈ R) as follows: if v ∈ A, then replace (A, B) with (A ∪ Sv , B \ Sv ), and if v ∈ B, then
+replace (A, B) with (A \ Sv , B ∪ Sv ). By construction, the final cut is a (p, q)-cut that contains
+each Sv on one side of the cut, so it survives upon contraction into Glarge and is a valid (p, q)-
+cut in Glarge . We claim that the final cut has weight at most (1 + γ)λG (p, q), which would prove
+λGlarge (p, q) ≤ (1 + γ)λG (p, q).
+    Let (A, B) be the current cut in the iterative process, and let Sv be the next cut we wish to
+uncross. Since Sv is a v-sided (1 + γ)-fair cut on G0 , there is a feasible flow with no source/sink
+
+                                                        32
+                                                          1
+in Sv \ {v} and which saturates ∂G0 Sv up to factor 1+γ        (in the direction from Sv to V \ Sv ). By
+                                0
+ignoring the flow outside G [Sv ] ∪ ∂G0 Sv , we can view it as a flow from v to the boundary ∂G0 Sv
+                                        1
+that saturates the boundary up to 1+γ      factor. Decompose the flow into paths and ignore the paths
+                        0
+ending at edges in G − G (which are all in ∂G0 Sv ), obtaining a feasible flow from v to δG Sv that
+                              1
+saturates ∂G Sv to factor 1+γ     .
+    Suppose first that v ∈ B. Further restrict the flow paths to only those ending at the edges in
+the subset EG (A \ Sv , A ∩ Sv ) of ∂G Sv . Each of these paths must cross EG (A ∩ Sv , B ∩ Sv ). There
+             1
+is at least 1+γ w(EG (A \ Sv , A ∩ Sv )) flow along these paths, and they must cross a total capacity
+                                                                              1
+of w(EG (A ∩ Sv , B ∩ Sv )). Since the flow is feasible, we conclude that 1+γ   w(EG (A \ Sv , A ∩ Sv )) ≤
+w(EG (A ∩ Sv , B ∩ Sv ). In the operation that uncrosses Sv , the newly cut edges are precisely
+EG (A \ Sv , A ∩ Sv ), and all edges in EG (A ∩ Sv , B ∩ Sv ) disappear. We charge the newly cut edges
+EG (A \ Sv , A ∩ Sv ) to the deleted edges EG (A ∩ Sv , B ∩ Sv ) at a 1 + γ to 1 ratio. Finally, if v ∈ A,
+then the argument is symmetric by replacing A and B, and the charging is identical.
+    Since the sets Sv : v ∈ R are disjoint, each edge is either charged to or charged from, but not
+both. If the total weight of charged-to edges is W , then the total weight of newly cut edges is at
+most (1 + γ)W , so the final cut has weight at most λG (p, q) − W + (1 + γ)W ≤ (1 + γ)λG (p, q), as
+promised.
+
+Lemma 7.14. For any v ∈ R and any distinct vertices p, q ∈ Uv , we have λG (p, q) ≤ λGv (p, q) ≤
+(1 + 13)λG (p, q).
+
+Proof. The lower bound λG (p, q) ≤ λGv (p, q) holds because Gv is a contraction of G, so we focus on
+the upper bound. Fix any (p, q)-mincut in G, and let S be the side of the mincut not containing s
+(recall that s ∈ U and s ∈
+                         / Sv ). Since Sv ∪ S is a (p, s)-cut (and also a (q, s)-cut), it is in particular
+a Steiner cut for terminals U , so δG (Sv ∪ S) ≥ (1 − )λ. Also, δG Sv ≤ (1 + γ)(1 + 10)λ ≤ (1 + 11)λ
+by Lemma 7.8. Together with the submodularity of cuts, we obtain
+
+       (1 + 11)λ + δG S ≥ δG Sv + δG S ≥ δG (Sv ∪ S) + δG (Sv ∩ S) ≥ (1 − )λ + δG (Sv ∩ S),
+
+The set Sv ∩ S stays intact under the contraction from G to Gv , so δGv (Sv ∩ S) = δG (Sv ∩ S).
+Therefore,
+
+              λGv (p, q) ≤ δGv (Sv ∩ S) = δG (Sv ∩ S) ≤ δG S + 12λ = λG (p, q) + 12λ.
+
+Finally, λG (p, q) is at least the Steiner mincut of G, which is at least (1 − )λ, so the above is at
+most λG (p, q) + 12 · λG (p, q)/(1 − ) ≤ (1 + 13)λG (p, q), as promised.
+
+    Combining the lemmas above, we can conclude the following.
+                                                        −1   6   log1.5 |U |
+Lemma 7.15. Algorithm 5 outputs a (1 + 13)(1 + γ)O( log n)                  -approximate Gomory-Hu
+                        2     6                                       O(log    |U |) .
+Steiner tree. With γ =  / log n, the approximation factor is (1 + )
+
+Proof. To avoid clutter, define α = C−1 log6 n for large enough constant C > 0. Consider the path
+down the recursion tree leading up to the current recursive instance, and let k be the number of
+consecutive recursive calls of type Glarge directly preceding the current instance. We apply induction
+on |U | and k to prove an ((1 + 13)(1 + γ)α )log1.5 |U | (1 + γ)−k -approximation factor. By Lemma 7.8,
+we have |Uv | ≤ 2|U |/3 for all v ∈ R, so by induction, the recursive outputs (Tv , fv ) are Gomory-Hu
+Steiner trees with approximation ((1 + 13)(1 + γ)α )log1.5 |Uv | ≤ ((1 + 13)(1 + γ)α )log1.5 |U |−1 . By
+
+                                                   33
+definition, this means that for all s, t ∈ Uv and the minimum-weight edge (u, u0 ) on the s–t path
+in Tv , letting Uv0 ⊆ Uv be the vertices of the connected component of Tv − (u, u0 ) containing s,
+we have that fv−1 (Uv0 ) is a ((1 + 13)(1 + γ)α )log1.5 |U |−1 -approximate (s, t)-mincut in Gv with value
+wT (u, u0 ). Define U 0 ⊆ U as the vertices of the connected component of T − (u, u0 ) containing s.
+By construction of (T, f ) (lines 17 and 18), the set f −1 (U 0 ) is simply fv−1 (Uv0 ) with the vertex xv
+replaced by V \ Sv in the case that xv ∈ f −1 (U 0 ). Since Gv is simply G with all vertices V \ Sv
+contracted to xv , we conclude that δGv (fv−1 (Uv0 )) = δG (f −1 (U 0 )). By Lemma 7.14, the values
+λG (s, t) and λGv (s, t) are within factor (1 + 13) of each other, so δG (f −1 (U 0 )) approximates the
+(s, t)-mincut in G to a factor (1 + 13) · ((1 + 13)(1 + γ)α )log1.5 |U |−1 , which we want to show is at
+most ((1 + 13)(1 + γ)α )log1.5 |U | (1 + γ)−k . This follows by Lemma 7.11 since w.h.p., we always have
+k ≤ C−1 log6 n = α for large enough constant C > 0. Thus, the Gomory-Hu Steiner tree condition
+for (T, f ) is satisfied for all s, t ∈ Uv for some v ∈ R.
+     We now focus on the case s, t ∈ Ularge . By induction, the recursive output (Tlarge , flarge ) is a
+Gomory-Hu Steiner tree with approximation ((1+13)(1+γ)α )log1.5 |U | (1+γ)−(k+1) . Again, consider
+s, t ∈ Ularge and the minimum-weight edge (u, u0 ) on the s–t path in Tlarge , and let Ularge     0   ⊆ Ularge
+                                                                       0
+be the vertices of the connected component of Tlarge − (u, u ) containing s. Define U ⊆ U as the 0
+
+vertices of the connected component of T − (u, u0 ) containing s. By a similar argument, we have
+           −1
+δGlarge (flarge    0
+                (Ularge )) = δG (f −1 (U 0 )). By Lemma 7.13, we also have λGlarge (s, t) = (1 + γ)λG (s, t),
+so δG (f −1 (U 0 )) is a ((1 + 13)(1 + γ)α )log1.5 |U | (1 + γ)−(k+1) · (1 + γ) -approximate (s, t)-mincut in
+                                                                                
+
+G, fulfilling the Gomory-Hu Steiner tree condition for (T, f ) in the case s, t ∈ Ularge .
+     There are two remaining cases: s ∈ Uv and t ∈ Uv0 for distinct v, v 0 ∈ R, and s ∈ Uv and
+t ∈ Ularge ; we treat both cases simultaneously. Since G has Steiner mincut at least λ, each of
+the contracted graphs Glarge and Gv also has Steiner mincut at least λ. Since all edges on the
+approximate Gomory-Hu Steiner tree correspond to actual cuts in the graph, every edge in Tv and
+Tlarge has weight at least λ. By construction, the s–t path in T has at least one edge of the form
+(fv (xv ), flarge (yv )), added on line 17; this edge has weight δG Sv ≤ (1 + )(1 + γ)λ by Lemma 7.8.
+Therefore, the minimum-weight edge on the s–t path in T has weight at least λ and at most
+(1 + )(1 + γ)λ; in particular, it is a (1 + )(1 + γ)-approximation of λG (s, t), which fits the bound
+since |U | ≥ 2. If the edge is of the form (fv (xv ), flarge (yv )), then by construction, the relevant set
+f −1 (U 0 ) is exactly Sv , which is a (1 + )-approximate (s, t)-mincut in G. If the edge is in Tlarge or
+Tv or Tv0 , then we can apply the same arguments used previously.
+
+   Finally, we can reset  ← Θ(/ log n) so that the (1 + )O(log |U |) -approximation becomes (1 + ).
+This concludes Theorem 7.2.
+
+
+8    Expander Decomposition
+In this section, we show how the fair cut algorithm implies a near-optimal expander decomposition
+algorithm, following the framework of Saranurak and Wang [SW19]. We first begin         P with some
+notation exclusive to this section. Define the volume of a set of vertices S as vol(S) = v∈S deg(v),
+and let G{S} denote the subgraph G[S] with (weighted) self-loops added to vertices so that all
+vertex degrees are preserved, i.e., degG (v) = degG{S} (v) for all v ∈ S. For a graph G, define its
+conductance as
+                                                  c(E(S, V \ S))
+                                ΦG = min                                .
+                                      ∅(S(V min{vol(S), vol(V \ S)}
+
+
+
+
+                                                     34
+We call G a φ-expander if ΦG ≥ φ.
+Theorem 8.1 (Near-linear expander decomposition). Given a graph G = (V, E) and a parameter
+φ, there is a randomized Õ(m)-time algorithm that withPhigh probability finds a partitioning of V
+into V1 , . . . , Vk such that ΦG{Vi } ≥ φ for all i ∈ [k] and i δ(Vi ) = Õ(φm).
+    Note that if G{Vi } is a φ-expander, then so is the induced subgraph G[Vi ] (which is sometimes
+more directly applicable). We also remark that [SW19] prove almost the exact same theorem,
+except their running time is Õ(m/φ), and is therefore slower for small values of φ.
+    At a high level, we use the same high-level recursive approach, except we replace the flow
+subroutines in their trimming and cut-matching steps of [SW19] with a fair cut computation.
+We note that there are known black-box reductions from expander decomposition to computing
+(approximately) most-balanced sparse cuts. But these reductions have some drawbacks and do not
+lead to near-optimal algorithms as in Theorem 8.1. The first reduction is implicit by Spielman and
+Teng [ST04]. However, they can only obtain a weak expander decomposition from most-balanced
+sparse cut algorithms. It is weak in the sense that each part is only guaranteed to be contained
+in some expanders, but may not induce an expander itself. Another reduction by Nanongkai and
+Saranurak [NS17] suffers from an inherent no(1) factor loss in both quality and running time. By
+refining the non-blackbox approach of [SW19] via fair cuts, we successfully obtain the first expander
+decomposition algorithm that are optimal up to polylogarithmic factors.
+
+8.1   Algorithm overview
+We begin by describing the recursive algorithm of [SW19] at a high level. There are two main
+subroutines, cut-matching and trimming, to be described later. On input graph G = (V, E) and
+parameter φ, the algorithm Decomp(G, φ) outputs a partition of V as follows.
+  1. Call Cut-Matching(G, φ), which either certifies that ΦG ≥ φ or finds a cut (A, R)
+  2. If we certify ΦG ≥ φ, then return {V } (the trivial partition)
+  3. Else if we find a relatively balanced cut (A, R), where vol(A) and vol(R) are both Ω(vol(V )/ log2 m):
+      (a) Return Decomp(G{A}, φ) ∪ Decomp(G{R}, φ)
+  4. Else, suppose that vol(R) ≤ O(vol(V )/ log2 m):
+      (a) A0 = Trimming(G, A, φ)
+      (b) Return {A0 } ∪ Decomp(G{A0 }, φ)
+If Cut-Matching and Trimming run in T time, then the entire recursive algorithm takes Õ(T )
+time. In [SW19], the two subroutines are solved in Õ(m/φ) time. In this section, we improve both
+running times to Õ(m) by substituting their flow subroutines with fair cuts/flows.
+
+8.2   Trimming step
+To describe the trimming step formally, we need the concept of a nearly expander.
+Definition 8.2 (nearly φ-expander). Given G = (V, E) and a set of vertices A ⊆ V , we say
+that A is a nearly φ-expander in G if for all subsets S ⊆ A with vol(S) ≤ vol(A)/2, we have
+c(E(S, V \ S)) ≥ φvol(S).
+
+                                                 35
+    In the trimming step, we are given a set A ⊆ V such that A is a nearly φ-expander in G, and the
+goal is to “trim” A to a subset A0 ⊆ A such that G{A0 } is a φ/6-expander. The formal subroutine
+is described in the theorem below, copied almost identically to Theorem 2.1 of [SW19] except for
+the improved Õ(m) running time.
+
+Theorem 8.3 (Trimming, Theorem 2.1 of [SW19]). Given graph G = (V, E) and A ⊆ V such that
+
+  1. A is a nearly φ-expander in G, and
+
+  2. c(E(A, A)) ≤ φvol(A)/10,
+
+the trimming step finds A0 ⊆ A in time Õ(m) such that ΦG{A0 } ≥ φ/6. Moreover, vol(A0 ) ≥
+vol(A) − 4c(E(A, A))/φ and c(E(A0 , A0 )) ≤ 2c(E(A, A)).
+
+Proof. Consider the following (s, t)-flow problem on a new graph H = (VH , EH ). Start from G{A},
+and contract V \ A into a single vertex and label it the source s. Next, multiply the capacity of
+each edge by 3/φ. Finally, add a new sink vertex t and connect it to each vertex v ∈ A with an
+edge of capacity degG{A} (v). Let α = 0.1, and compute a (1 + α)-fair cut (S, T ). Let A0 = T \ {t},
+which we now show satisfies the properties of the lemma.
+    First, suppose for contradiction that G{A0 } is not a φ/6-expander. Then, there is a violating
+set U ⊆ A0 satisfying
+                                                       φ
+                                     c(E(U, A0 \ U )) ≤ vol(U ).
+                                                       6
+Since A is a nearly φ-expander,
+
+                                     c(E(U, V \ U )) ≥ φvol(U ).
+
+Taking the difference of the two inequalities above,
+                                                                           5φ
+                 c(E(U, V \ A0 )) = c(E(U, V \ U )) − c(E(U, A0 \ U )) ≥      vol(U ).
+                                                                            6
+Since (S, T ) is a (1 + α)-fair cut, there is a feasible flow f that saturates each edge of EH (S, T )
+to factor 1+α1
+                . Each edge (u, v) in E(U, V \ A0 ) corresponds to an edge in EH (S, T ) of capacity
+3                                                    1     3             2
+φ cG{A} (u, v), and the flow f must send at least 1+α · φ cG{A} (u, v) ≥ φ cG{A} (u, v) flow along that
+edge (in the direction from S to T ). In total, the amount of flow entering U in H is at least
+
+                         2                        2 5φ          5
+                           cG{A} (E(U, V \ A0 )) ≥ ·   vol(U ) = vol(U ).
+                         φ                        φ 6           3
+
+On the other hand, at most vol(U ) flow can leave U along the edges incident to t, and at most
+
+                          3                        3 φ         1
+                            cG{A} (E(U, A0 \ U )) ≤ · vol(U ) = vol(U )
+                          φ                        φ 6         2
+
+flow can cross from U to A0 \ U . This totals at most 23 vol(U ) flow that can exit U , which is strictly
+less than the ≥ 53 vol(U ) flow that enters U , a contradiction. Thus, G{A0 } is a φ/6-expander.
+     Finally, we show the properties vol(A0 ) ≥ vol(A)−4c(E(A, A))/φ and c(E(A0 , A0 )) ≤ 2c(E(A, A))
+promised by the lemma. Since (S, T ) is a (1 + α)-fair cut, it is in particular a (1 + α)-approximate
+(s, t)-mincut. Since ({s}, VH \ {s}) is an (s, t)-cut of capacity φ3 c(E(A, A)), it follows that the cut
+
+                                                  36
+(S, T ) has capacity at most (1 + α) · φ3 c(E(A, A)). To prove the first property above, note that each
+vertex v ∈ A \ A0 is on the S-side of the cut (S, T ), and therefore contributes degG{A} (v) to the cut
+(S, T ) from the edge (v, t). Summing over all v ∈ A \ A0 , we obtain
+                                                           3             4
+                vol(A \ A0 ) ≤ cH (E(S, T )) ≤ (1 + α) ·     c(E(A, A)) ≤ c(E(A, A)),
+                                                           φ             φ
+
+which proves the first property. For the second property above, note that each edge (u, v) in
+E(A0 , A0 ) corresponds to an edge in E(S, T ) with 3/φ times the capacity, so summing over all such
+edges,
+                        3                                           3
+                          c(E(A0 , A0 )) ≤ cH (E(S, T )) ≤ (1 + α) · c(E(A, A)),
+                        φ                                           φ
+which proves the second property.
+
+8.3   Cut-matching step
+In the cut-matching step, the goal is to either certify that the input graph is an expander, or find
+a low-conductance cut with a special property: either it is balanced, or if not, we guarantee that
+the larger side is a nearly expander. The name “cut-matching” comes from the cut-matching game
+framework [KRV09] that this step uses, though its description is not required in this section.
+    The formal subroutine is described in the theorem below, copied almost identically to Theo-
+rem 2.2 of [SW19] except for the improved Õ(m) running time.
+
+Theorem 8.4 (Cut-Matching, Theorem 2.2 of [SW19]). Given a graph G = (V, E) and a parameter
+φ, the cut-matching step takes Õ(m) time and must end with one of the three cases:
+
+  1. We certify G has conductance ΦG ≥ φ.
+
+  2. We find a cut (A, A) in G of conductance ΦG (A) = O(φ2 m), and vol(A), vol(A) are both
+     Ω(m/ log2 m), i.e., we find a relatively balanced low conductance cut.
+
+  3. We find a cut (A, A) with ΦG (A) ≤ c0 φ log2 m for some constant c0 , and vol(A) ≤ m/(10c0 log2 m),
+     and A is a nearly φ-expander.
+
+    We will not present the entire proof of this theorem, since most of the steps remain unchanged
+from [SW19]. The only step that takes Õ(m/φ) time in [SW19] is their subroutine Lemma B.6, so
+it suffices to describe it and improve its running time to Õ(m).
+    First, we introduce some notation from [SW19]. Given a graph G = (V, E) and a subset
+of vertices A ⊆ V , denote by G{S} the induced subgraph G[S] but with self-loops added to
+vertices so that any vertex in S has the same degree as its degree in G. Given a multi-graph
+G = (V, E), its subdivision graph GE = (V 0 , E 0 ) is the graph where we put a split node xe on
+each edge e ∈ E (including the self-loops). Formally, V 0 = V ∪ XE where XE = {xe | e ∈ E},
+and E 0 = {(u, xe ), (v, xe ) | e = (u, v) ∈ E}. While [SW19] only defines the subdivision graph
+for unweighted graphs, we can extend the definition to weighted graphs by assigning the edges
+(u, xe ), (v, xe ) ro have capacity c(e) for each edge e = (u, v) ∈ E. For a split node x(u,v) , we abuse
+notation and define its capacity c(x(u,v) ) to be the capacity c(u, v) of the edge (u, v) in G. For a
+set of split nodes S, its total capacity c(S) is the sum of the capacities of the split nodes in S.
+    The input to the subroutine of Lemma B.6 is
+
+
+                                                   37
+  1. A set of vertices A ⊆ V 0 ,
+
+  2. A set of source split nodes Al ⊆ A ∩ XE of total capacity at most cG{A} (A ∩ XE )/8, and
+
+  3. A set of target split nodes Ar ⊆ A ∩ XE of total capacity at least cG{A} (A ∩ XE )/2.
+
+For any graph H and positive number U , let H U be the graph where each edge has its capacity
+multiplied by U . Let U = 1/(φ log2 m), and consider a flow problem on (GE {A})U where each split
+node x(u,v) ∈ Al is a source of c(u, v) units of mass (where c(u, v) is the original capacity in GE ,
+not multiplied by U ) and each split node x(u,v) ∈ Ar is a sink with capacity c(u, v). The task is to
+either find
+
+  1. A feasible flow f for the above problem, or
+
+  2. A cut S where ΦG{A} (S) = O(φ log2 m) and a feasible flow for the above flow problem when
+     only split nodes x(u,v) in Al \ S are sources of c(u, v) units.
+
+Lemma B.6 of [SW19] uses a push-relabel or blocking-flow algorithm that runs in O(m/(φ log m))
+time. Using fair cuts, we improve the running time to Õ(m), independent of φ, in the lemma below.
+
+Lemma 8.5. We can solve the task above in Õ(m) time.
+
+Proof. Let α = 0.1, and consider the flow problem on the graph H = (GE {A})U/(1+α) instead.
+First, convert it to an (s, t)-flow problem by adding a source vertex s, connected to each x(u,v) ∈
+Al with capacity cG{A} (u, v), and a sink vertex t, connected to each x(u,v) ∈ Ar with capacity
+cG{A} (u, v)/(1 + α). Next, we compute a (1 + α)-fair cut (S, T ) and corresponding feasible flow f 0
+in Õ(m) time. There are two cases below:
+
+  1. S = {s}. In this case, by definition of fair cuts, the flow f 0 sends at least cG{A} (u, v)/(1 + α)
+     flow out of each edge from s. By computing a path decomposition and removing paths
+     accordingly, we can modify f 0 to a new feasible flow f 00 that sends exactly cG{A} (u, v)/(1 +
+     α) flow along each edge out of s, and at most cG{A} (u, v)/(1 + α) flow along each edge
+     into t. Finally, we let flow f be f 00 multiplied by (1 + α), and then restricted to graph
+     (GE {A})U . Since f 00 is feasible on the edges in (GE {A})U/(1+α) , we conclude that f is
+     feasible on (GE {A})U .
+
+  2. S 6= {s}. In this case, let Es ⊆ EH (S, T ) be the edges of the cut incident to s, let Et ⊆
+     EH (S, T ) be those incident to t, and let Em = EH (S, T ) \ (Es ∪ Et ) be the remaining cut
+     edges. Recall that edges in Es and Et retain their original capacity from GE {A}, while edges
+     in Em have their capacity scaled by U/(1 + α). Also, note that Em is, up to this scaling
+     factor, exactly the cut E(S \ {s}, T \ {t}) in the original graph G{A}.12 In other words,
+                                                                      1+α
+                                   cG{A} (E(S \ {s}, T \ {t})) =          · cH (Em ).                 (7)
+                                                                       U
+
+        Let E s be the edges incident to s that are not in Es . Since (S, T ) is a (1 + α)-fair cut, there
+                                                                                                   1
+        is a flow f from s to t that saturates each edge in EH (S, T ) to fraction at least 1+α       . In
+        particular, this means that the sub-flow from s starting from edges E s must saturate edges in
+ 12
+      We show later that the degenerate case T = {t} cannot happen.
+
+
+                                                        38
+                                           1
+     EH (S, T ) \ Es to fraction at least 1+α . This implies that cH (EH (S, T ) \ Es ) ≤ (1 + α)cH (E s ).
+     Moreover, for each edge (s, xe ) ∈ E s , the split node xe is on the S \ {s} side of the cut
+     E(S \ {s}, T \ {t}) in G{A}, so
+                              X                                          2                           2
+     volG{A} (S \ {s}) ≥                 degG{A} (xe ) = 2cH (E s ) ≥       cH (EH (S, T ) \ Es ) ≥     cH (Em ).
+                                                                        1+α                         1+α
+                           (s,xe )∈E s
+                                                                                                          (8)
+
+     Putting (7) and (8) together, we obtain
+
+                                                       2U
+                         volG{A} (S \ {s}) ≥                c     (E(S \ {s}, T \ {t})),                  (9)
+                                                    (1 + α)2 G{A}
+
+     so we would be done as long as we show that volG{A} (S \ {s}) ≤ O(volG{A} (T \ {t})).
+     Consider now the edges Et . Their capacities are scaled down by 1/(1 + α), so their total
+     original capacity is at most (1 + α)2 cG{A} (Al ), which is at most (1 + α)2 cG{A} (A ∩ XE )/8 by
+     property (2). On the other hand, the total capacity of edges incident to t is cG{A} (Ar )/(1+α),
+     which is at least cG{A} (A ∩ XE )/(2(1 + α)) by property (3). It follows that at least
+
+              cG{A} (A ∩ XE )/(2(1 + α)) − (1 + α)2 cG{A} (A ∩ XE )/8 ≥ Ω(cG{A} (A ∩ XE ))
+
+     total capacity of edges incident to t are not in Et . In other words, their corresponding split
+     nodes are on the T \{t} side of the cut E(S \{s}, T \{t}), which means that volG{A} (T \{t}) ≥
+     Ω(cG{A} (A∩XE )). Now observe that cG{A} (A∩XE ) is a constant fraction of the total volume
+     of the graph G{A}, so volG{A} (T \ {t}) ≥ Ω(volG{A} (A)). Together with (9), we obtain the
+     desired
+                                      cG{A} (S \ {s}, T \ {t})
+          ΦG{A} (S \ {s}) =                                             ≤ O(1/U ) = O(φ log2 m).
+                              min{volG{A} (S \ {s}), volG{A} (T \ {t})}
+
+
+
+
+Acknowledgements
+This project has received funding from the European Research Council (ERC) under the Euro-
+pean Union’s Horizon 2020 research and innovation programme under grant agreement No 715672.
+Danupon Nanongkai was also supported by the Swedish Research Council (Reg. No. 2019-05622).
+Debmalya Panigrahi was supported in part by NSF grants CCF-1750140 (CAREER Award) and
+CCF-1955703.
+
+
+References
+[AHK12]       Sanjeev Arora, Elad Hazan, and Satyen Kale. The multiplicative weights update
+              method: a meta-algorithm and applications. Theory of Computing, 8(1):121–164,
+              2012. 11
+
+
+                                                        39
+[AKL+ 21]   Amir Abboud, Robert Krauthgamer, Jason Li, Debmalya Panigrahi, Thatchaphol
+            Saranurak, and Ohad Trabelsi.  Gomory-hu tree in subcubic time.     CoRR,
+            abs/2111.04958, 2021. 1, 3, 4
+
+[AKT20a]    Amir Abboud, Robert Krauthgamer, and Ohad Trabelsi. Cut-equivalent trees are
+            optimal for min-cut queries. In 61st IEEE Annual Symposium on Foundations of
+            Computer Science, FOCS 2020, Durham, NC, USA, November 16-19, 2020, pages
+            105–118. IEEE, 2020. 3
+
+[AKT20b]    Amir Abboud, Robert Krauthgamer, and Ohad Trabelsi. New algorithms and lower
+            bounds for all-pairs max-flow in undirected graphs. In Shuchi Chawla, editor, Pro-
+            ceedings of the 2020 ACM-SIAM Symposium on Discrete Algorithms, SODA 2020,
+            Salt Lake City, UT, USA, January 5-8, 2020, pages 48–61. SIAM, 2020. 3
+
+[AKT21a]    Amir Abboud, Robert Krauthgamer, and Ohad Trabelsi. APMF < apsp? gomory-hu
+            tree for unweighted graphs in almost-quadratic time. In 62nd IEEE Annual Sympo-
+            sium on Foundations of Computer Science, FOCS 2021, Denver, CO, USA, February
+            7-10, 2022, pages 1135–1146. IEEE, 2021. 3
+
+[AKT21b]    Amir Abboud, Robert Krauthgamer, and Ohad Trabelsi. Friendly cut sparsifiers and
+            faster gomory-hu trees. CoRR, abs/2110.15891, 2021. 3
+
+[AKT21c]    Amir Abboud, Robert Krauthgamer, and Ohad Trabelsi. Subcubic algorithms for
+            gomory-hu tree in unweighted graphs. In Samir Khuller and Virginia Vassilevska
+            Williams, editors, STOC ’21: 53rd Annual ACM SIGACT Symposium on Theory of
+            Computing, Virtual Event, Italy, June 21-25, 2021, pages 1725–1737. ACM, 2021. 3
+
+[BBG+ 20]   Aaron Bernstein, Jan van den Brand, Maximilian Probst Gutenberg, Danupon
+            Nanongkai, Thatchaphol Saranurak, Aaron Sidford, and He Sun. Fully-dynamic graph
+            sparsifiers against an adaptive adversary. arXiv preprint arXiv:2004.08432, 2020. 4
+
+[BHKP07]    Anand Bhalgat, Ramesh Hariharan, Telikepalli Kavitha, and Debmalya Panigrahi.
+            An Õ(mn) Gomory-Hu tree construction algorithm for unweighted graphs. In 39th
+            Annual ACM Symposium on Theory of Computing, STOC’07, pages 605–614, 2007.
+            3
+
+[CGL+ 20]   Julia Chuzhoy, Yu Gao, Jason Li, Danupon Nanongkai, Richard Peng, and
+            Thatchaphol Saranurak. A deterministic algorithm for balanced cut with applications
+            to dynamic connectivity, flows, and beyond. In 2020 IEEE 61st Annual Symposium
+            on Foundations of Computer Science (FOCS), pages 1158–1167. IEEE, 2020. 3
+
+[CH03]      Richard Cole and Ramesh Hariharan. A fast algorithm for computing steiner edge
+            connectivity. In Lawrence L. Larmore and Michel X. Goemans, editors, Proceedings
+            of the 35th Annual ACM Symposium on Theory of Computing, June 9-11, 2003, San
+            Diego, CA, USA, pages 167–176. ACM, 2003. 3
+
+[CKL+ 22]   Li Chen, Rasmus Kyng, Yang P Liu, Richard Peng, Maximilian Probst Gutenberg,
+            and Sushant Sachdeva. Maximum flow and minimum-cost flow in almost-linear time.
+            March 2022. 1, 4
+
+                                             40
+[CLP22]     Ruoxu Cen, Jason Li, and Debmalya Panigrahi. Augmenting edge connectivity via
+            isolating cuts. In Proceedings of the 2022 ACM-SIAM Symposium on Discrete Algo-
+            rithms (SODA), 2022. 1
+
+[CQ21a]     Chandra Chekuri and Kent Quanrud. Isolating cuts, (bi-)submodularity, and faster
+            algorithms for connectivity. In Nikhil Bansal, Emanuela Merelli, and James Worrell,
+            editors, 48th International Colloquium on Automata, Languages, and Programming,
+            ICALP 2021, July 12-16, 2021, Glasgow, Scotland (Virtual Conference), volume 198
+            of LIPIcs, pages 50:1–50:20. Schloss Dagstuhl - Leibniz-Zentrum für Informatik, 2021.
+            1
+
+[CQ21b]     Chandra Chekuri and Kent Quanrud. Isolating cuts, (bi-)submodularity, and faster al-
+            gorithms for connectivity. In ICALP, volume 198 of LIPIcs, pages 50:1–50:20. Schloss
+            Dagstuhl - Leibniz-Zentrum für Informatik, 2021. 4
+
+[CRJ17]     Jaime Cohen, Luiz A. Rodrigues, and Elias P. Duarte Jr. Parallel cut tree algorithms.
+            J. Parallel Distributed Comput., 109:1–14, 2017. 3
+
+[CS19]      Yi-Jun Chang and Thatchaphol Saranurak. Improved distributed expander decom-
+            position and nearly optimal triangle enumeration. In Proceedings of the 2019 ACM
+            Symposium on Principles of Distributed Computing, pages 66–73, 2019. 1, 4, 44
+
+[DV94]      Yefim Dinitz and Alek Vainshtein. The connectivity carcass of a vertex subset in a
+            graph and its incremental maintenance. In Frank Thomson Leighton and Michael T.
+            Goodrich, editors, Proceedings of the Twenty-Sixth Annual ACM Symposium on The-
+            ory of Computing, 23-25 May 1994, Montréal, Québec, Canada, pages 716–725. ACM,
+            1994. 3
+
+[GG18]      Barbara Geissmann and Lukas Gianinazzi. Parallel minimum cuts in near-linear work
+            and low depth. In Proceedings of the 30th on Symposium on Parallelism in Algorithms
+            and Architectures, pages 1–11, 2018. 45
+
+[GKK+ 15]   Mohsen Ghaffari, Andreas Karrenbauer, Fabian Kuhn, Christoph Lenzen, and Boaz
+            Patt-Shamir. Near-optimal distributed maximum flow. In Proceedings of the 2015
+            ACM Symposium on Principles of Distributed Computing, pages 81–90, 2015. 1
+
+[GLP21]     Yu Gao, Yang P. Liu, and Richard Peng. Fully dynamic electrical flows: Sparse
+            maxflow faster than goldberg-rao. FOCS, 2021. 1
+
+[GR98]      Andrew V. Goldberg and Satish Rao. Beyond the flow decomposition barrier. J.
+            ACM, 45(5):783–797, 1998. 4
+
+[GRST21]    Gramoz Goranci, Harald Räcke, Thatchaphol Saranurak, and Zihan Tan. The ex-
+            pander hierarchy and its applications to dynamic graph algorithms. In Proceedings of
+            the 2021 ACM-SIAM Symposium on Discrete Algorithms (SODA), pages 2212–2228.
+            SIAM, 2021. 44
+
+[HKP07]     Ramesh Hariharan, Telikepalli Kavitha, and Debmalya Panigrahi. Efficient algorithms
+            for computing all low s-t edge connectivities and related problems. In Proceedings of
+
+
+                                               41
+            the Eighteenth Annual ACM-SIAM Symposium on Discrete Algorithms, SODA 2007,
+            New Orleans, Louisiana, USA, January 7-9, 2007, pages 127–136, 2007. 3
+
+[Kar00]     David R Karger. Minimum cuts in near-linear time. Journal of the ACM (JACM),
+            47(1):46–76, 2000. 45
+
+[KLOS14]    Jonathan A Kelner, Yin Tat Lee, Lorenzo Orecchia, and Aaron Sidford. An almost-
+            linear-time algorithm for approximate max flow in undirected graphs, and its mul-
+            ticommodity generalizations. In Proceedings of the twenty-fifth annual ACM-SIAM
+            symposium on Discrete algorithms, pages 217–226. SIAM, 2014. 1, 4
+
+[KRV09]     Rohit Khandekar, Satish Rao, and Umesh Vazirani. Graph partitioning using single
+            commodity flows. Journal of the ACM (JACM), 56(4):1–15, 2009. 37
+
+[LF80]      Richard E Ladner and Michael J Fischer. Parallel prefix computation. Journal of the
+            ACM (JACM), 27(4):831–838, 1980. 45
+
+[LNP+ 21]   Jason Li, Danupon Nanongkai, Debmalya Panigrahi, Thatchaphol Saranurak, and
+            Sorrachai Yingchareonthawornchai. Vertex connectivity in poly-logarithmic max-
+            flows. In STOC, pages 317–329. ACM, 2021. 1, 4
+
+[LP20]      Jason Li and Debmalya Panigrahi. Deterministic min-cut in poly-logarithmic max-
+            flows. In 61st IEEE Annual Symposium on Foundations of Computer Science, FOCS
+            2020. IEEE Computer Society, 2020. 1, 3, 6, 23
+
+[LP21]      Jason Li and Debmalya Panigrahi. Approximate Gomory-Hu tree is faster than n − 1
+            max-flows. In Proceedings of the 53rd Annual ACM Symposium on Theory of Com-
+            puting, 2021. 3, 6, 24, 25, 27
+
+[LPS21]     Jason Li, Debmalya Panigrahi, and Thatchaphol Saranurak. A nearly optimal all-
+            pairs min-cuts algorithm in simple graphs. In 62nd IEEE Annual Symposium on
+            Foundations of Computer Science, FOCS 2021, Denver, CO, USA, February 7-10,
+            2022, pages 1124–1134. IEEE, 2021. 3
+
+[LS20]      Yang P. Liu and Aaron Sidford. Faster energy maximization for faster maximum
+            flow. In Konstantin Makarychev, Yury Makarychev, Madhur Tulsiani, Gautam Ka-
+            math, and Julia Chuzhoy, editors, Proccedings of the 52nd Annual ACM SIGACT
+            Symposium on Theory of Computing, STOC 2020, Chicago, IL, USA, June 22-26,
+            2020, pages 803–814. ACM, 2020. 1
+
+[Mad11]     Aleksander Madry. From graphs to matrices, and back: new techniques for graph
+            algorithms. PhD thesis, Massachusetts Institute of Technology, 2011. 1
+
+[MCJ20]     Charles Maske, Jaime Cohen, and Elias P. Duarte Jr. Speeding up the gomory-hu
+            parallel cut tree algorithm with efficient graph contractions. Algorithmica, 82(6):1601–
+            1615, 2020. 3
+
+[MN20]      Sagnik Mukhopadhyay and Danupon Nanongkai. Weighted min-cut: sequential, cut-
+            query, and streaming algorithms. In STOC, pages 496–509. ACM, 2020. 4
+
+
+                                               42
+[MN21]      Sagnik Mukhopadhyay and Danupon Nanongkai. A note on isolating cut lemma for
+            submodular function minimization. CoRR, abs/2103.15724, 2021. 1
+
+[NS17]      Danupon Nanongkai and Thatchaphol Saranurak. Dynamic spanning forest with
+            worst-case update time: adaptive, las vegas, and o(n1/2 -  )-time. In STOC, pages
+            1122–1129. ACM, 2017. 4, 35
+
+[NSW17]     Danupon Nanongkai, Thatchaphol Saranurak, and Christian Wulff-Nilsen. Dynamic
+            minimum spanning forest with subpolynomial worst-case update time. In FOCS,
+            pages 950–961. IEEE Computer Society, 2017. 4
+
+[Pen16]     Richard Peng. Approximate undirected maximum flows in o (m polylog (n)) time.
+            In Proceedings of the twenty-seventh annual ACM-SIAM symposium on Discrete al-
+            gorithms, pages 1862–1867. SIAM, 2016. 1, 3, 7, 8
+
+[RST14]     Harald Räcke, Chintan Shah, and Hanjo Täubig. Computing cut-based hierarchical
+            decompositions in almost linear time. In Proceedings of the twenty-fifth annual ACM-
+            SIAM symposium on Discrete algorithms, pages 227–238. SIAM, 2014. 3, 8
+
+[She13]     Jonah Sherman. Nearly maximum flows in nearly linear time. In 2013 IEEE 54th
+            Annual Symposium on Foundations of Computer Science, pages 263–269. IEEE, 2013.
+            1, 4, 5
+
+[She17]     Jonah Sherman. Area-convexity, l∞ regularization, and undirected multicommodity
+            flow. In Proceedings of the 49th Annual ACM SIGACT Symposium on Theory of
+            Computing, pages 452–460, 2017. 3
+
+[ST04]      Daniel A. Spielman and Shang-Hua Teng. Nearly-linear time algorithms for graph
+            partitioning, graph sparsification, and solving linear systems. In Proceedings of the
+            36th Annual ACM Symposium on Theory of Computing, Chicago, IL, USA, June
+            13-16, 2004, pages 81–90, 2004. 4, 35
+
+[SW19]      Thatchaphol Saranurak and Di Wang. Expander decomposition and pruning: Faster,
+            stronger, and simpler. 2019. To appear in SODA’19. 4, 7, 34, 35, 36, 37, 38
+
+[vdBLL+ 21] Jan van den Brand, Yin Tat Lee, Yang P. Liu, Thatchaphol Saranurak, Aaron Sidford,
+            Zhao Song, and Di Wang. Minimum cost flows, mdps, and `1 -regression in nearly
+            linear time for dense instances. 2021. arXiv:2101.05719. 1
+
+[vdBLN+ 20] Jan van den Brand, Yin Tat Lee, Danupon Nanongkai, Richard Peng, Thatchaphol
+            Saranurak, Aaron Sidford, Zhao Song, and Di Wang. Bipartite matching in nearly-
+            linear time on moderately dense graphs. In FOCS, pages 919–930. IEEE, 2020. 1
+
+[Wul17]     Christian Wulff-Nilsen. Fully-dynamic minimum spanning forest with improved worst-
+            case update time. In STOC, pages 1130–1143. ACM, 2017. 4
+
+[Zha21a]    Tianyi Zhang. Faster cut-equivalent trees in simple graphs. CoRR, abs/2106.03305,
+            2021. 3
+
+[Zha21b]    Tianyi Zhang. Gomory-hu trees in quadratic time. CoRR, abs/2112.01042, 2021. 3
+
+                                              43
+A     Parallel Algorithms
+The goal of this section to prove Theorem 1.5. Along the way, we will show that all algorithmic
+components we use and develop can be parallelized.
+
+A.1    Congestion Approximators
+The first thing we need is a parallel construction of congestion approximators (see Theorem 3.2).
+
+Theorem A.1 (Parallel Congestion approximator). There is a randomized algorithm that, given
+an unweighted graph G = (V, E) with n vertices and m edges, constructs in m1+o(1) work and mo(1)
+depth with high probability same laminar as in Theorem 3.2 except that γS = no(1) .
+
+   We only state the result for unweighted graphs as it follows quite easily from [CS19, GRST21].
+We believe that known techniques also imply the same for weighted graphs. Below, we sketch the
+proof of Theorem A.1.
+   First, we need a definition of boundary-linked expander decomposition introduced in [GRST21].
+For any graph G = (V, E) and any set S ⊂ V , let G[S] denote the subgraph of G induced by S.
+For any w ≥ 0, let G[S]w be obtained from G[S] by adding w self-loops to each vertex v ∈ S for
+every boundary edge (v, x), x ∈/ S.
+
+Definition A.2. For any graph G = (V, E) with m edges, a (, φ, α)-boundary-linked
+                                                                           P                     expander
+decomposition is partition U = (U1 , . . . , Uk ) of vertex set V such that i |E(Ui , V \ Ui )| ≤ m and
+G[Ui ]α/φ is a φ-expander for all i.
+
+    Note that (, φ, 0)-boundary-linked expander decomposition is the standard (, φ)-expander de-
+composition. A parallel algorithm for computing an expander decomposition of an unweighted
+graph was explicitly shown in [CS19]. In fact, the algorithm works even in the distributed model
+called CONGEST.
+                                                                                         O(k)
+Theorem A.3 ([CS19]). For any positive integer k,  ∈ (0, 1), and φ ≥ (/ log n)2             , there is an
+algorithm for computing an (, φ)-expander decomposition of an unweighted graph in CONGEST in
+O(n2/k poly(1/φ, log n)) rounds w.h.p. In fact, this algorithm has n1/O(log log log n) -depth and m1+o(1)
+work.
+
+    We will choose k = log log log n from now on. This algorithm can be easily extended to compute
+a (, φ, )-boundary-linked expander decomposition. The idea is as follows: whenever we find a φ-
+sparse cut, for each cut edge (u, v), we add (α/φ) self-loops on both u and v before recursing
+on both sides. The largest boundary-linked parameter α we can get can be derived by setting
+                                                                                             2
+ = 1/O(log n) and see the largest value of φ we can get. In this case, it is 1/2Θ(log log n) ) when
+ = 1/O(log n) and k = log log log n. From this, it implies the following:
+                                     √                       O(log log log)
+                                                                                 √
+Theorem A.4. When  = 1/2Θ( log n) , φ ≥ (/ log n)2                   ≥ 1/2Θ( log n·log log n) , and α ≥
+    Θ(log log n)2)
+1/2                , there is an algorithm that w.h.p. computes a (, φ, α)-boundary-linked expander
+decomposition in n1/O(log log log n) -depth and m1+o(1) work. (In fact, the algorithm is implementable
+in CONGEST in n1/O(log log log n) rounds.)
+
+   In [GRST21], it is shown that constructing congestion approximators can be reduced to com-
+puting boundary-linked expander decomposition a few times, which is summarized as follows:
+
+                                                    44
+Lemma A.5. By calling an algorithm for computing a (, φ, α)-boundary-linked expander de-
+composition for O(log(1/) m) times, one can construct a congestion approximator S with quality
+γS = O((1/φ) · (1/α)log(1/) m ).
+
+   Plugging Theorem A.4 into the above lemma, this implies an algorithm for Theorem A.1 where
+n1/O(log log
+          √
+             log n) depth and m1+o(1) work that computes a congestion approximator S with quality
+
+γS = 2 Θ(    log n·(log log n)2 ) = no(1) .
+
+
+
+A.2    Fair Cuts
+Given the above parallel construction for congestion approximator, we can obtain the following
+parallel fair cut algorithm:
+
+Theorem A.6 (Parallel Fair Cut). Given an unweighted graph G = (V, E), two vertices s, t ∈ V ,
+and  ∈ (0, 1], we can compute with high probability a (1 + )-fair (s, t)-cut in no(1) /poly() depth
+and m1+o(1) /poly() work.
+
+   Before proving the above theorem, we first argue how to obtain a parallel version of the
+AlmostFair algorithm.
+   See the running time analysis of AlmostFair in Section 4.3. We can parallelize it as follows.
+We initialize by computing a congestion approximator S with quality γS = no(1) via Theorem A.1.
+The other initialization steps consist of elementary operations which can be parallelized in Õ(1)
+depth and Õ(m) work.
+   For each round of the multiplicative weight update algorithm, the only non-trivial step is to a
+compute the “deletion set” Di via a sweep cut (Lemma 4.9).
+   We will prove the below claim at the end.
+
+Claim A.7. Lemma 4.9 admits a parallel implementation with Õ(1) depth and Õ(m) work.
+
+    Since our multiplicative weight update algorithm consists of T = O(log(n)/α2 ) = mo(1) /poly()
+rounds (recall that α = /γS ), we can implement the AlmostFair algorithm from Theorem 4.1 in
+mo(1) /poly() depth and m1+o(1) /poly() work.
+    Given the parallel implementation of the AlmostFair algorithm, we are almost done. The
+algorithm for computing fair cuts in Section 5.1 simply calls the AlmostFair subroutine for
+O(log(C/β)/β) times where we set β = Θ(α/ log n). Therefore, the algorithm require mo(1) /poly()
+depth and m1+o(1) /poly() work. This concludes Theorem A.6.
+
+Proof of Claim A.7. Recall that the problem is to compute x∗ which is the largest x such that
+∆|V i−1 (V>x ) − δH (V>x ) > 0 where V>x = {v ∈ V (H) : φiv > x}.
+      We start by parallel sorting vertices v according to their potential φiv in decreasing order. Let
+v1 , . . . , vn be the vertices after sorting. Let Sk = {v1 , . . . , vk }. We can compute the list of values
+of ∆|V i−1 (Sk ) for all k ∈ [n] in O(log n) depth and O(n) work using a classic parallel prefix sum
+algorithm [LF80].
+      Observe that our goal is equivalent to finding the largest k where δH (Sk ) − ∆|V i−1 (Sk ) < 0. By
+binary search, we can reduce the problem to checking if there is k where δH (Sk ) − ∆|V i−1 (Sk ) < 0.
+      Now, this problem can be solved using a parallel 1-respecting mincut algorithm by Karger
+[Kar00] (see also Lemma 11 of [GG18]) with O(log n) depth and O(m) work. The reduction is as
+follows. Let H 0 be the graph obtained from H by inserting the tree P = (v1 , . . . , vn ), which is a
+
+                                                     45
+path. Let M be a big number such that M − ∆|V i−1 (Sk ) > 0. Each tree edge (vk , vk+1 ) ∈ P , we
+set its weight to be M − ∆|V i−1 (Sk ). By computing a mincut in H 0 that 1-respect the tree P , we
+will obtain k such that δH 0 (Sk ) is minimized. Since δH 0 (Sk ) = δH (Sk ) + M − ∆|V i−1 (Sk ), we can
+just check if δH 0 (Sk ) − M < 0.
+
+A.3    Isolating Cuts and Gomory-Hu Tree
+Here, we finally prove Theorem 1.5. We first briefly explain how the approximate isolating cuts
+algorithm (Algorithm 1) and Gomory-Hu tree algorithm (Algorithm 5) can be parallelized to run
+in Õ(m) work and polylog(n) parallel time.
+    For approximate isolating cuts, Phase 1 of Algorithm 1 requires O(log n) many calls to (1 + γ)-
+fair cut, which has a parallel algorithm by Theorem A.6. For Phase 2, the sets St and graphs Gt can
+be constructed independently for different t in parallel, and for the (1 + β)-approximate minimum
+cut computation, we can use the parallel (1 + β)-fair cut algorithm of Theorem A.6, which is also
+a (1 + β)-approximate minimum cut.
+    For Gomory-Hu tree, there are a few additional algorithms that need to be investigated. For
+the “Cut Threshold Step” algorithm (Algorithm 3), the O(log n) independent iterations can be
+executed in parallel, so the entire algorithm can as well. The (1 + γ)-approximate Gomory-Hu
+Steiner tree “step” (Algorithm 4) makes O(log3 n) (sequential) calls to Algorithm 3, so it can also
+be parallelized. The Gomory-Hu tree algorithm itself (Algorithm 5) makes one call to Algorithm 4
+and, aside from the recursive call on line 11, consists of elementary operations that can directly be
+parallelized. For the recursive calls, we use Lemma 7.11 to argue that the recursion tree has depth
+polylog(n) w.h.p., so the recursive calls can be parallelized as well. (We stop the recursion after a
+large enough polylog(n) many recursive calls, which is all we need w.h.p.)
+
+
+B     Proof of Uncrossing Property
+Here, we prove the uncrossing property (Lemma 1.2), restated below. We remark that the proof
+follows the same outline as the proof of Lemma 6.3 for approximate isolating cuts.
+
+Lemma 1.2 (Approximate Uncrossing Property). For any vertices s and t, let (S, T ) be an α-fair
+(s, t)-mincut. Then, for any u, v ∈ S, there exists R ⊂ S such that (R, V \ R) is an α-approximate
+(u, v)-mincut.
+
+Proof. Let (U, V \U ) be a (u, v)-mincut. Without loss of generality, assume that t ∈
+                                                                                    / U . (Otherwise,
+we can swap u and v and use V \U in place of U .) Our goal is to show that U ∩S is an α-approximate
+(u, v)-mincut contained in S, so that setting R = U ∩ S proves the lemma. Equivalently, we want
+to show that δ(U ∩ S) ≤ α · δ(U ).
+    Using the notation ] for disjoint union, we can write
+
+                  E(U, V \ U ) = E(U ∩ S, V \ (U ∪ S)) ] E(U ∩ S, S \ U ) ] E(U \ S, V \ U )
+       E(U ∩ S, V \ (U ∩ S)) = E(U ∩ S, V \ (U ∪ S)) ] E(U ∩ S, S \ U ) ] E(U ∩ S, U \ S).
+
+Since the first two sets are identical, we only need to compare the third sets E(U \ S, V \ U ) and
+E(U ∩ S, U \ S). Since (S, T ) is an α-fair (s, t)-cut, there is a feasible flow from s to t that, for each
+edge in E(S, T ), sends at least 1/α times capacity in the direction from S to T . Now, consider the
+
+
+                                                    46
+flow on the subset of edges E(U ∩ S, U \ S) ⊆ E(S, T ). This flow must reach t eventually, and it
+must exit U \ S along the edges in E(U \ S, V \ (U ∪ S)). Thus,
+
+                 δ(U ∩ S, U \ S) ≤ α · δ(U \ S, V \ (U ∪ S)) ≤ α · δ(U \ S, V \ U ).
+
+It follows that δ(U ∩ S) ≤ α · δ(U ), which proves the lemma.
+
+
+
+
+                                                 47
+

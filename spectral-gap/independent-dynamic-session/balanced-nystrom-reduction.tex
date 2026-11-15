@@ -1,0 +1,181 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\R}{\mathbb R}
+\title{A charged generalized Nystr\"om reduction for relative fractional updates}
+\author{Independent dynamic-session subtask}
+\date{November 15, 2026}
+\begin{document}
+\maketitle
+
+\paragraph{Status.}
+This note proves an oracle reduction, with an explicit raw output factor.
+It does not prove that the required oracles can be implemented by a
+gap-independent, nearly-linear number of shifted graph solves.  Its
+purpose is to isolate that access problem without losing the
+log-determinant rank budget or charging fractional powers as free.
+
+Let $A\succ0$, $B=A+uu^T$, $0<\alpha<1$, and
+\[
+ \Delta=B^\alpha-A^\alpha,\qquad
+ C=A^{-\alpha/2}\Delta A^{-\alpha/2},\qquad
+ b=\alpha\log(1+u^TA^{-1}u).
+\]
+Thus $C\succeq0$ and $\log\det(I+C)=b$.  The argument applies to
+any positive semidefinite correction with this log-determinant budget,
+including a common-kernel graph problem restricted to its support.
+
+\begin{lemma}[Log-determinant controls ridge dimension]
+For $0<\mu\le1$,
+\[
+ d_{\rm eff}(C;\mu):=\tr C(C+\mu I)^{-1}\le b/\mu.
+\]
+\end{lemma}
+\begin{proof}
+For every $x\ge0$,
+\[
+ \frac{\mu x}{x+\mu}\le\frac{x}{1+x}\le\log(1+x).
+\]
+The first inequality uses $\mu\le1$, and the second follows by
+integrating $(1+t)^{-1}$ on $[0,x]$.  Sum over the eigenvalues of $C$.
+\end{proof}
+
+\paragraph{Exact access model.}
+Charge $S$ for all setup.  After setup suppose that two operations are
+available: one independent sample $\omega\sim N(0,A^{-\alpha})$ costs
+$T_{\rm cov}$, and one action $z\mapsto\Delta z$ costs $T_\Delta$.
+These assumptions concern exact arithmetic.  In particular,
+$T_{\rm cov}$ includes applying $A^{-\alpha/2}$ to a Gaussian vector,
+or the full cost of any equivalent covariance sampler; $T_\Delta$
+includes the full cost of both fractional matrix-function actions.
+They are not assumed to be ordinary shifted SDD solves.
+
+\begin{theorem}[Raw-factor conditional construction]
+For $0<\varepsilon,\delta<1/2$, the exact access model above admits
+a randomized construction of an explicit $X\in\R^{n\times r}$ such
+that, with probability at least $1-\delta$,
+\[
+ 0\preceq\Delta-XX^T\preceq\varepsilon A^\alpha.
+\]
+One may take
+\[
+ r=O\bigl((1+b/\varepsilon)\log(1/\delta)\bigr)
+\]
+or $r=n$, whichever is preferable.  Its complete charged cost is
+\[
+ S+r(T_{\rm cov}+T_\Delta)+O(nr^2+r^3),
+\]
+with $O(nr+r^2)$ storage.  No graph spectral gap or condition number
+appears in the reduction itself.  Every such dependence in either
+oracle remains charged through $T_{\rm cov}$ and $T_\Delta$.
+\end{theorem}
+
+\begin{proof}
+Set $\mu=\varepsilon/40$, and let
+\[
+ p=\max\{3,\lceil2b/\mu\rceil+1\},\qquad \ell=2p-1.
+\]
+First suppose $\ell<n$.  Independently draw $t=\lceil\log_2(1/\delta)\rceil$
+blocks $\Omega_j$ with $\ell$ columns from the stated covariance,
+concatenate them to $\Omega$, and form
+\[
+ Y=\Delta\Omega,\qquad M=\Omega^TY,\qquad
+ X=Y(M^\dagger)^{1/2}.
+\]
+Zero eigenvalues of the small Gram matrix can be dropped.
+This explicitly constructs the raw factors without applying
+$A^{\alpha/2}$ to a whitened output factor.
+
+In distribution, $\Omega=A^{-\alpha/2}G$, where $G$ is standard
+Gaussian.  Consequently
+\[
+ A^{-\alpha/2}Y=CG,\qquad M=G^TCG,
+\]
+and hence
+\[
+ A^{-\alpha/2}XX^TA^{-\alpha/2}
+       =CG(G^TCG)^\dagger G^TC=:\widehat C.
+\]
+For every $G$, including singular cases, the last matrix is
+$C^{1/2}P C^{1/2}$, where $P$ projects orthogonally onto
+$\operatorname{range}(C^{1/2}G)$.  Therefore
+$0\preceq\widehat C\preceq C$ exactly.  Enlarging $G$ by more columns
+can only increase this orthogonal projector and decrease the residual
+in Loewner order.
+
+Write the eigenvalues of $C$ as $c_1\ge\cdots\ge c_n$.  The
+Gaussian Nystr\"om estimate of Frangella, Tropp, and Udell
+\cite[Corollary 2.3]{FTU} gives for one block
+\[
+ \mathbb E\|C-\widehat C_j\|
+ \le 3c_p+\frac{4e^2}{p}\sum_{i\ge p}c_i.
+\]
+Here $p\ge2d_{\rm eff}(C;\mu)+1$.  The definition of effective
+dimension implies $c_p\le\mu$: otherwise each of the first $p$
+eigenvalues contributes more than $1/2$.  Moreover,
+\[
+ \sum_{i\ge p}c_i\le\mu d_{\rm eff}.
+\]
+To see this, put $d=d_{\rm eff}$ and $s=\sum_{i\ge p}c_i$.
+If $c_p=x$, then
+\[
+ d\ge \frac{(p-1)x}{x+\mu}
+             +\frac{s}{x+\mu},
+\]
+because the first $p-1$ eigenvalues are at least $x$ and the remaining
+ones are at most $x$.  Thus
+$s\le\mu d-x(p-1-d)\le\mu d$.
+This gives
+\[
+ \mathbb E\|C-\widehat C_j\|
+ \le(3+2e^2)\mu<\varepsilon/2.
+\]
+Markov's inequality bounds the probability of a block residual above
+$\varepsilon$ by $1/2$.  With independent blocks, all block residuals
+exceed $\varepsilon$ with probability at most $2^{-t}\le\delta$.
+The concatenated residual is no larger than each individual residual,
+so this proves the assertion.  This amplification requires no
+unavailable residual-norm test or selection of a successful block.
+
+There are $r=\ell t$ samples and actions.  Forming $M$, computing
+its pseudoinverse square root, and multiplying $Y$ by that root cost
+$O(nr^2+r^3)$, including the explicit factor construction.  If the
+prescribed block width reaches $n$, take $n$ Gaussian columns once;
+their range is the full support almost surely, giving $XX^T=\Delta$
+exactly in the same cost model.
+\end{proof}
+
+\paragraph{What this does and does not resolve.}
+The structural rank can therefore be converted into an explicit
+one-sided factor without a further exponential dependence on
+$b=\alpha\log(1+\tau)$.  A trace-only argument would instead give
+$\tr C\le e^b-1$, which loses this feature for large leverage.
+The matrix arithmetic is linear in $n$ when the target rank is fixed,
+but quadratic in the target rank; it is not an $O(nr)$ factor algorithm.
+
+The missing graph primitive is substantial.  A shifted SDD solver
+supplies $(L+tI)^{-1}z$ to relative shifted-energy error.  It does not
+by itself supply the fractional Gaussian sample or a product by
+$L'^\alpha-L^\alpha$ in the norm used above.  Replacing the second
+oracle by the existing absolute quadrature theorem requires absolute
+accuracy at most $\varepsilon\lambda_{\min}^+(L)^\alpha$ in a
+worst-case norm conversion, reintroducing the forbidden scale.
+Likewise, an inexact $\Delta$ action generally destroys the exact
+Nystr\"om Loewner inequality unless an additional certified argument
+is supplied.  Thus this is a reduction with fully charged oracle
+costs, not a proof of the requested nearly-linear graph construction
+and not an impossibility theorem for explicit graphs.
+
+\begin{thebibliography}{9}
+\bibitem{FTU} Z. Frangella, J. A. Tropp, M. Udell,
+\emph{Randomized Nystr\"om Preconditioning},
+SIAM J. Matrix Anal. Appl. 44 (2023), 718--752.
+\url{https://arxiv.org/abs/2110.02820}.
+Author-hosted published paper, consulted November 15, 2026:
+\url{https://tropp.caltech.edu/papers/FTU23-Randomized-Nystrom-SIMAX.pdf}.
+\end{thebibliography}
+\end{document}

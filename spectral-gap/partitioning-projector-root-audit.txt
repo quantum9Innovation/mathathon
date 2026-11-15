@@ -1,0 +1,185 @@
+Independent actual-source audit: sharp-projector graph obstruction
+=================================================================
+Reviewer: spectral_audit worker. Date: November 15, 2026.
+Decision: PASS for the quantitative small-budget theorem and the later
+exact-fixed-leverage extension in the reviewed source.
+No proof/session file was edited. This audit does not certify novelty.
+
+Actual source read in full initially, then its added theorem and revised
+introduction were freshly read:
+ spectral-gap/partitioning-dynamic-session/projector-no-go.tex
+ Final reviewed SHA256:
+ 29a996dafd1e1ed7e0209703f5f74ff3564702d0f44e3c8c1011dbed0f57b2c0
+Earlier small-gamma copy:
+ b93c6582ce7bc622466265a388daa1e4e63a62f0b7cc4cff81179ddd29aa3966
+The separate projector-independent-audit.md was read only AFTER the
+small-budget proof and all its constants were independently reconstructed.
+Its later fixed-tau discussion led me to inspect the actual added theorem;
+the checks below are my own reconstruction, not reliance on that verdict.
+
+1. This is an ordinary unit-mass weighted graph, without hidden signs
+---------------------------------------------------------------------
+Fix b=e_p-e_q. An isometry U:R^r->1-perp satisfying
+U^T b=sqrt(2/r)*1 exists by an orthogonal basis change, since both
+specified vectors have squared norm two. Thus H=U diag(j/r)U^T is PSD,
+annihilates constants, and has norm one. For i!=j, |H_ij|<=1, so
+L_ij=-1/n+delta H_ij<=-1/(2n)<0 at delta=1/(2n).
+Zero row sums make its diagonal exactly the sum of the positive incident
+conductances. Hence L is precisely a positively weighted complete-graph
+combinatorial Laplacian, with ordinary Euclidean unit vertex masses.
+There is no signed-graph or generalized-mass substitution in this step.
+
+Its positive eigenvalues are lambda_j=1+delta*j/r. The positive edit
+is an increase of the one existing edge pq by d=gamma*delta/2.
+Its support-basis matrix is exactly
+ I+(delta/r)(diag(j)+gamma*11^T).
+The leverage is gamma*delta times the mean of lambda_j^-1, proving both
+stated bounds. In particular tau~gamma/(2n)->0 for fixed gamma.
+Reference positive eigenvalues lie near one, not near a vanishing gap at
+zero. The common kernel is exactly constants before and after the edit.
+
+2. Bulk secular roots and normalization constants
+---------------------------------------------------
+Positive rank-one strict interlacing is valid because all coordinates
+of the update vector in the simple old eigenbasis are nonzero. For j<r,
+there is exactly one root nu_j=j+theta_j with 0<theta_j<1. The secular
+sign is correct: 1+gamma sum_i(i-nu)^-1=0, and the secular function is
+strictly increasing between its poles.
+
+For r/4<=j<=3r/4 and theta<=1/4, paired +/-h terms sum to
+2theta/(h^2-theta^2). Their infinite sum is <1: use
+2theta/(1-theta^2) times sum h^-2, maximized at theta=1/4.
+The unpaired harmonic tail is uniformly bounded on this bulk; the claimed
+log4+1 bound is conservative for r>=64. In particular |S_j|<=8 is valid.
+At theta=gamma/2 the secular value is <=-1+8gamma<0; at theta=2gamma
+it is >=1/2-8gamma>0 for 0<gamma<=1/32. Thus the displayed bracket holds.
+
+Since theta<=1/16, the off-pole squared sum is <=
+2(16/15)^2*zeta(2)<4, hence certainly <=8. Also theta^-2>=256.
+Writing N_j=theta/sqrt(1+theta^2 S_2) shows
+ N_j>=theta/sqrt(2)>=gamma/sqrt(8), N_j<=theta<=2gamma.
+For i<j, |i-j-theta|=j-i+theta<=j-i+1, giving exactly
+ |V_ij|^2>=gamma^2/[8(j-i+1)^2].
+No perturbation expansion in gamma*r or an unproved uniform asymptotic
+is used; gamma*r may grow arbitrarily.
+
+3. Equal-rank cutoff windows and Hilbert--Schmidt lower bound
+--------------------------------------------------------------
+For every stated central k, nu_k<=k+2gamma while nu_(k+1)>k+1.
+The displayed open interval for t is therefore above both kth eigenvalues
+and below both (k+1)st eigenvalues. Both projectors have exactly rank k;
+the common zero mode is excluded from both by the (0,t) convention.
+All columns j=k+1,...,k+q, q=floor(r/16), remain in the bulk, and rows
+k-a for 0<=a<q exist. The overlap identity is
+ Tr(P(I-Q))=sum_(i<=k,j>k)|V_ij|^2.
+
+In the retained q-by-q rectangle, for every 1<=h<=q there are exactly
+h pairs a+b=h. Since h/(h+1)^2>=1/(4h), the leakage is at least
+ gamma^2/32 sum_(h=1)^q 1/h >=gamma^2/32 log(q+1).
+Equal ranks give ||P-Q||_F^2=2Tr(P(I-Q)), proving the claimed
+coefficient gamma^2/16. The central index and rounding assumptions cover
+all retained rows/columns, including the smallest permitted r.
+
+4. Many fixed-size singular values: compression reconstructed explicitly
+-------------------------------------------------------------------------
+The geometric blocks have R_l=Q^l, Q=2^16, and 2R_l<=r/16.
+They are disjoint and remain safely in the stated bulk at every central
+cutoff. After one harmless global sign, their overlap entries are
+N_(k+b)/(a+b+theta_(k+b)).
+
+The column unit vector on block h is proportional to 1/N_(k+b).
+If A_h=sum_(b in block h) N_(k+b)^-2, its normalization produces
+ c_h=sqrt(R_h)/sqrt(A_h).
+This lies between the minimum and maximum N_j on that block, exactly
+as asserted. Thus the compressed matrix really is K diag(c_h), with
+the displayed K, rather than a missing extra factor of R_h.
+
+K need not be symmetric, but the proof does not use symmetry. Each
+diagonal is >=1/5 (even 1/4 is available). Each off-diagonal entry is
+<=sqrt(min(R_l,R_h)/max(R_l,R_h)), so both maximum row and column sums
+of the off-diagonal part are <=2/(sqrt(Q)-1)=2/255<1/30.
+Its operator norm has the same bound by Schur's inequality. Hence
+ sigma_min(K)>1/5-1/30=1/6,
+ sigma_min(K diag(c))>gamma/(6sqrt(8))>gamma/20.
+
+Orthogonal row and column compression cannot increase the relevant
+singular values, so the full cross-overlap has at least s such values.
+For equal-rank orthogonal projections these are principal-angle sines,
+each appearing twice among nonzero singular values of P-Q. Thus at least
+2s singular values meet the claimed threshold. Since
+s=1+floor(log_Q(r/32)) for sufficiently large r, this is Omega(log n).
+The conclusion is uniform over all the stated cutoff intervals.
+
+5. The integral includes a genuine logarithmic measure factor
+--------------------------------------------------------------
+The central k range gives at least r/4 disjoint intervals. Each has
+length (1-2gamma)*delta/r, and all lie below 1+delta. Consequently their
+total dt/t measure is at least
+ delta(1-2gamma)/[4(1+delta)] >=delta/8,
+using gamma<=1/32<1/8 and delta<=1/2. Multiplying by the HS lower bound
+proves the stated delta*gamma^2*log(q+1)/128. A sharper unused coefficient
+is 5/512, confirming the conservative 1/128 allocation.
+
+Since log(1+tau)<=tau<=gamma*delta, the ratio to log(1+tau) is at least
+gamma log(q+1)/128 and diverges for fixed gamma. The integral itself may
+tend to zero; the theorem correctly asserts divergence of its RATIO.
+Outside the displayed windows its integrand is nonnegative. At very low
+and sufficiently high t both projectors agree, so no integrability issue
+at t=0 or infinity is being used implicitly.
+
+6. Added theorem at EXACTLY prescribed leverage
+------------------------------------------------
+For any fixed tau_*>0 the source now sets
+ a_r=mean_j (1+delta*j/r)^-1, d=tau_*/(2a_r),
+ gamma=2d/delta=tau_*/(delta*a_r).
+This preserves the same ordinary graph and gives leverage exactly tau_*.
+For sufficiently large r, gamma>=1/32, without an upper restriction.
+The earlier small-gamma normalization estimates are not reused incorrectly.
+
+Let c=1/64 and g_j(theta)=sum_i(i-j-theta)^-1. Independently substituting
+i->r+1-i verifies the reflection identity
+ g_j(1-c)=-g_(r-j)(c).
+The mirror index is r-j and is still in the bulk. Since g_j(c)<=-56,
+the secular function is negative at c for gamma>=1/32 and positive at
+1-c. Thus c<=theta_j<=1-c uniformly for every such gamma.
+The two nearest inverse-square denominators contribute at most 8192,
+and all remaining terms total <4, so N_j>1/sqrt(8196)>1/100.
+Also N_j<=1 is safe. The same compression has sigma_min(K)>1/6,
+now c_h>=1/100, so it has s singular values >1/600. Equal-rank projector
+difference therefore has at least 2s of them.
+
+At k=r/2, the new open cutoff interval is genuinely above the kth old
+and new eigenvalues and below both next ones. Choosing finite r sufficiently
+large makes 2s exceed any prescribed integer h. Thus at every fixed positive
+leverage and every tolerance below 1/600 there is NO finite dimension-
+independent projector singular-count bound, even over these weighted graphs.
+This strengthened quantifier resolves the limitation of the original
+varying-tau family. It does not claim a divergent integrated ratio at fixed
+tau; the original small-gamma family supplies the integral obstruction.
+
+7. Scope and interpretation
+-----------------------------
+The first edit has size d=gamma/(4n), whereas every reference edge weight
+lies between 1/(2n) and 3/(2n). It is a small positive increase of one
+existing edge, not necessarily doubling and not an unweighted insertion.
+In the fixed-tau extension d approaches tau_*/2 while original edge
+weights remain of order 1/n; arbitrary positive edit size is explicitly
+allowed. Both constructions have unit vertex masses and growing complete-
+graph degree. Neither establishes a sparse or bounded-degree obstruction.
+
+The common cutoff gap shrinks like delta/r=Theta(n^-2). Thus the examples
+avoid a small baseline lambda_2 but do not contradict gap-dependent
+projector perturbation bounds. The fractional relative response tends to
+zero only for the original small-gamma, tau->0 family; at fixed tau_* its
+stated general norm bound is a fixed constant. The paragraph saying
+'for the constructed sequence' should be understood as the original
+family, rather than the fixed-tau extension. Specifying that family by
+theorem number would improve wording but is not a mathematical defect.
+
+These results refute the specified projector-budget/count targets. They
+are not an algorithm for balanced partitioning, a cut-recourse lower bound,
+a finite-precision theorem, or a novelty certificate for the classical
+orthogonality-catastrophe mechanism. The proof uses explicit finite matrices
+and no unverified infinite-volume or scattering transfer.
+
+No unresolved mathematical defect was found in the reviewed source.

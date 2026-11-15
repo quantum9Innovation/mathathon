@@ -1,0 +1,230 @@
+Independent actual-source audit: charged relative fractional graph update
+========================================================================
+Reviewer: spectral_audit worker. Date: November 15, 2026.
+Decision: PASS for the precise exact-real arithmetic theorem after the
+unconditional-runtime guards and certified resistance estimate were added.
+This is informal mathematical reconstruction, not formal verification,
+external refereeing, historical-priority certification or a bit-stability claim.
+
+Complete manuscript read and reconstructed:
+ spectral-gap/independent-dynamic-session/charged-relative-graph-update.tex
+ SHA256 1ab819c7ba8a94a44c8de256d8abdd06d598ed6ce1b363fcabf5651b5632dc48
+This source includes the max-pivot Jacobi implementation, moment/work caps,
+and certified Las Vegas primal-dual resistance estimation. Earlier copies
+without these additions are not covered by this final decision.
+No session files were modified by this reviewer.
+
+Primary solver source freshly checked:
+ Kelner--Orecchia--Sidford--Allen Zhu, arXiv:1301.6628,
+ https://math.mit.edu/~kelner/publications/ASimpleCombinatorialAlgorithmforSolvingSDDSystemsinNearly-LinearTime.pdf
+Definition 2.4 requires exact demand feasibility and relative primal energy.
+Theorem 3.2 supplies the expected energy/potential guarantees; Theorem 4.1
+preserves feasibility during cycle updates; Theorem 2.11 supplies a weighted
+low-stretch tree bound without a conductance-ratio parameter. These contracts
+are appropriate for the augmented graph and general zero-sum demands.
+The source's numerical-stability claims are not imported into this manuscript.
+
+1. Normalization and the graph-specific scale bounds
+-----------------------------------------------------
+Common scaling by 1/d reduces the update to uu^T with u=e_p-e_q,
+||u||^2=2 and leverage tau. Multiplying the returned factor by d^(alpha/2)
+restores the physical matrix and the same relative Loewner bounds.
+For the mean-zero dipole potential v=A^dagger u, the maximum principle
+bounds its coordinate range by v_p-v_q=tau. Hence ||v||^2<=n tau^2.
+Spectral Holder interpolation gives u^T A^-alpha u<=tau^alpha 2^(1-alpha).
+Neither inequality contains a spectral endpoint or conductance ratio.
+
+2. Relative tails and positive logarithmic quadrature
+------------------------------------------------------
+The low-tail trace is bounded by writing u=Av and taking
+sup_lambda lambda^(2-alpha)/(lambda+t)^2=K_alpha t^-alpha.
+The transformed positive integrand before dt is therefore bounded uniformly
+by K_alpha||v||^2, yielding the stated O(T||v||^2) low tail. The high tail
+uses R_t^2<=t^-2 I, yielding O(T^(alpha-1)u^T A^-alpha u).
+The chosen cutoffs control both tails by their allocated constants, using
+only n,1+tau,epsilon. Their logarithms are O_alpha(L).
+
+For complex t=e^(y+i theta), |theta|<=a<pi/2, Re s(t)>=0, so the
+rank-one denominator has modulus >=1. The complex resolvents are bounded
+by real positive resolvents using |lambda+t e^(i theta)|>=
+cos(theta/2)(lambda+t). Their rank-one matrix norms are dimension-free.
+The strip boundary integral is bounded by a constant times
+ c_alpha integral_0^infty t^alpha u^T R_t A^-alpha R_t u dt=alpha*tau.
+The equality follows from the scalar beta integral at each positive lambda.
+Operator-valued contour shifting and the triangle inequality then give the
+stated exponentially small infinite-trapezoid error. The same low/high
+positive envelopes bound discarded grid sums geometrically. Thus q=O(L^2),
+qh=O(L), and all positive node weights are justified without a matrix norm
+factor depending on n. The Frobenius bound follows from
+ t^(alpha+1)lambda^(1-alpha)/(lambda+t)^2<=K_alpha,
+summed against the spectral weights defining tau.
+
+3. Clipping and exact feasible-flow column accuracy
+-----------------------------------------------------
+An energy-accurate initial potential has terminal error <=eta*tau, so
+its endpoint order is correct on the success event. Common coordinate
+clipping fixes those terminal values, decreases every edge energy, and
+preserves u^T x. The identity ||x-v||_A^2=x^T A x-2u^T x+tau proves
+that clipping cannot increase the energy error. Subtracting its mean
+preserves these quantities and gives the stated Euclidean range bound.
+
+On the augmented graph, exact feasibility implies
+ D^T f+g=vhat and the error divergence e=D^T(f-f*)=-(g-g*).
+Electrical optimality makes total excess energy exactly the squared
+flow-distance energy. Thomson gives ||e||_(A^dagger)^2<=E, while the
+ground part gives ||e||^2<=tE. Spectral Holder then yields
+ ||A^-alpha/2 e||^2<=t^(1-alpha)E
+                    <=zeta^2 t^-alpha ||vhat||^2.
+The bias from vhat-v has the separate bound obtained from
+sup_lambda lambda^(1-alpha)/(lambda+t)^2=O(t^(-1-alpha)).
+These are exactly the two terms in the flow-error lemma. No generic
+shifted-potential error is being silently treated as a relative vector error.
+
+The flow moments follow from total energy <=2||vhat||^2/t and
+||g||^2<=2||vhat||^2; ||vhat-g||^2<=6||vhat||^2. Outputting original-edge
+divergence makes every column mean zero exactly. Tree flows can be recovered
+by subtree sums after non-tree flows are stored; this costs O(m+n) per flow.
+
+4. Raw factor errors and moment certificates
+----------------------------------------------
+A scalar shifted energy solve gives |u^T xhat-s(t)|<=kappa*s(t).
+Clipping its scalar value at zero preserves this error bound; denominators
+stay >=1 and their square-root weights change by relative O(kappa).
+After weighting columns, the initial-voltage error has Frobenius norm
+O(eta sqrt(tau J)), weight error has norm O(kappa sqrt(tau J)), and
+feasible-flow error has norm at most
+O(zeta sqrt(n tau^2 J t_plus)). These match the displayed sufficient budget.
+Combining with ||SS^T-TT^T||<=(2||S||+||T-S||)||T-S|| gives the claimed
+raw relative matrix error after the quadrature allocation. All tolerances
+can be capped at a fixed constant; their inverse logarithms are O_alpha(L)
+even when tau is arbitrarily small. No log(1/tau) term is forced.
+
+For each column, its retained original-edge flow is feasible for that
+column's divergence. Thomson therefore certifies its A^dagger energy by
+its computed flow energy. Summing weighted energies gives a genuine
+computable H0 bound for tr Z^T A^dagger Z. N0=||Z||_F^2 is explicit.
+Geometric node sums h sum t_j^a<=K_a t_plus^a give the two polynomial
+raw-moment bounds. The mean-zero property is essential and is satisfied.
+
+5. Small Gram construction without fractional vector actions
+--------------------------------------------------------------
+For mean-zero Z the fractional inverse identity gives exactly
+ H=Z^T A^-alpha Z=c_alpha integral s^-alpha Z^T(A+sI)^-1 Z ds.
+The low/high trace tails are O(H0 S_minus^(1-alpha)) and
+O(N0 S_plus^-alpha). The logarithmic envelope
+min(H0 s^(1-alpha),N0 s^-alpha) has integrated mass
+O(H0^alpha N0^(1-alpha)). Both endpoint logarithms and its accuracy
+logarithm are O_alpha(L) after the raw-moment bounds. A fixed-strip contour
+argument therefore yields N=O_alpha(L^2) Gram nodes without a spectral gap.
+
+A relative-energy error theta in column j gives bilinear error
+<=theta sqrt(Z_i^T R_s Z_i) sqrt(Z_j^T R_s Z_j). Its Frobenius norm is
+at most theta tr Z^T R_s Z. Symmetrization does not increase the norm bound.
+The integrated/grid envelope controls all solve errors using only O(L)
+accuracy logarithms. Forming a node Gram costs O(nq^2) and q shifted solves.
+There is no hidden application of A^-alpha or a dense whitening matrix.
+
+6. Jacobi arithmetic, truncation, and exact error/rank constants
+----------------------------------------------------------------
+The max off-diagonal pivot has square at least the off-diagonal Frobenius
+square divided by q(q-1). A Jacobi rotation removes twice this square,
+so the contraction fraction 2/[q(q-1)] is correct. Scanning all entries
+costs O(q^2) per rotation, and O(q^2 log(2+||H||_F/epsilon)) rotations
+suffice. Updating the matrix and accumulated orthogonal factor fits in
+that cost. Rotations use arithmetic, comparisons and positive square roots;
+no eigenvalue-separation assumption or exact general eigensolver is needed.
+The required stopping target is the off-diagonal Frobenius NORM <=epsilon/16,
+consistent with the preceding explicit residual requirement in the source.
+The source's phrase 'that norm' after mentioning its square should be read
+this way; spelling out 'Frobenius norm' would remove a minor ambiguity.
+
+Total approximate Gram error <=epsilon/8 implies retained diagonalized
+Gram eigenvalues >epsilon/2 correspond to H eigenvalues >3epsilon/8.
+Raw error epsilon/8 then forces that many C eigenvalues >epsilon/4.
+The determinant budget gives the stated strict rank bound, including
+integer thresholds and r=0. On the discarded subspace,
+||(I-UU^T)H(I-UU^T)||<=5epsilon/8. Combining its PSD residual with the
+raw +/-epsilon/8 error yields exactly
+ -epsilon/8 A^alpha <=Delta-XX^T<=3epsilon/4 A^alpha.
+The near-sharp variant similarly has total error
+rho*epsilon/4 + [(1-rho/2)epsilon+rho*epsilon/4]=epsilon,
+and retained true eigenvalue threshold (1-rho)epsilon. Its added accuracy
+cost is logarithmic in 1/rho, as claimed.
+
+7. Unconditional work, primal-dual certification, and confidence
+------------------------------------------------------------------
+The first reviewed copy had only success-event polynomial moment bounds;
+that alone would not bound runtime on arbitrarily bad primitive outputs.
+The added guards and preliminary procedure repair this issue.
+
+For every potential w, the dual value D0=2u^T w-w^T A w is <=tau;
+for every feasible original-graph flow f, E0=f^T W^-1 f is >=tau.
+Thus every accepted interval 0<D0 and E0<=2D0 certifies
+ tau<=E0<=2tau, independently of primitive success. Constant-accuracy
+potential and feasible-flow calls have a positive joint probability of
+acceptance. For instance their energy errors imply D0=tau-||w-v||_A^2,
+while a constant relative flow guarantee gives E0 close enough to tau.
+Independent repetition has constant expected trials and nearly-linear
+expected preliminary work. The accepted upper bound can schedule every
+subsequent cutoff, tolerance and a priori polynomial moment cap.
+
+Raw moment certificates are checked before using them to create Gram
+cutoffs or tighter accuracy requests; oversized certificates terminate in
+failure. Jacobi has an a priori iteration cap and likewise terminates in
+failure if needed. Those guards never fire on the simultaneous successful
+solve event. They prevent rare outputs from introducing hidden conductance
+or condition-number dependence into expected postprocessing work. Raw
+primitive runtimes depend on size and prescribed relative tolerance, not
+on the magnitude of their arbitrary real demands.
+
+Feasible-flow success is amplified by least computed primal energy, because
+all candidates have the same demand/optimum and every candidate is feasible.
+Ordinary potential solves can use pairwise energy-distance median selection;
+its extra pairwise energy evaluations cost only logarithmic overhead times
+sparse arithmetic. Union bounding the O(qN+q+1) prescribed events gives
+failure probability <=delta. Scalar and algebraic work, including raw flow
+extraction, Gram formation, Jacobi scans, and final ZU multiplication, is
+charged. The primitive counts are therefore consistent with expected
+nearly-linear work up to the stated logarithmic factors, on all outcomes.
+
+8. Scalar model, preconditioning, and precise limits
+-----------------------------------------------------
+The general fixed-alpha claim explicitly charges scalar real powers. For
+alpha=1/2, dyadic-root nodes 2^(j/H), H a power of two of order L, can
+be constructed using repeated positive square roots and arithmetic;
+log(2), pi and fixed scalar constants can be approximated by convergent
+series at the allocated budgets. Relative weight/node errors can be
+included in the same raw/Gram scalar error allocations. At this fixed
+alpha no general spectral-function or decomposition oracle is hidden.
+
+The Loewner relative bound implies the stated quality of
+M=L^alpha+XX^T, since M>=L^alpha. Its inverse is not free: the explicitly
+charged conditional Woodbury costs retain a base fractional inverse action.
+The theorem asserts a PSD factor with two-sided relative error; it does not
+assert XX^T<=Delta, a sublinear dynamic update, a finite-word theorem,
+or an arbitrary-SPD construction. The maximum principle and exact feasible
+flows are material graph-specific inputs. Historical priority is open.
+
+No unresolved mathematical defect was found in the guarded reviewed source.
+
+Final actual-source delta review
+--------------------------------
+Read the final Jacobi stopping paragraph in the actual source at
+SHA256 cda4e346b59d56cd9c6e2d3b6c4f803d26b73ddc1653c8e60ab5b5a16ea847f9.
+It now explicitly stops at off-diagonal Frobenius norm <=epsilon/16,
+equivalently squared norm <=epsilon^2/256. This removes the minor wording
+ambiguity identified above and preserves every residual/error/count bound.
+PASS applies to this final frozen source. No other mathematical change
+was reported or observed in the affected actual-source passage.
+
+Final statement/count bookkeeping delta
+----------------------------------------
+Read the actual theorem statement at final source
+SHA256 8a5b7a49ed43ea40db031fe4212e576d7cec45a1fc47bef2a811bb99ffc59b78.
+It now explicitly places rank and error guarantees on the same success
+event, and counts expected O(q+1) feasible-flow and O(qN+q+1) potential
+calls including the certified Las Vegas preliminary estimation, before
+confidence amplification. These are accurate clarifications of the
+already audited algorithm; no mathematical change is required.
+Final PASS applies to this source. This reviewer will not edit this
+audit further absent a substantive subsequent correction.

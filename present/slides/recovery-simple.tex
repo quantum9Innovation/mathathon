@@ -1,0 +1,230 @@
+% Elementary recovery sequence. The more general theorem and proof details
+% belong in the backup slides, rather than this first explanation.
+\section{Finding hidden groups}
+
+\begin{frame}{A graph is visible; its group labels are missing}
+\begin{center}
+\Afig[height=3.9cm]{recovery-uncolored}
+\end{center}
+The six numbers name the vertices. We see every edge, but no group colors.
+\begin{block}{The question}
+Can the connections tell us which vertices belong together?
+\end{block}
+\end{frame}
+
+\begin{frame}{Start with one very concrete neighbor rule}
+\begin{columns}[c]
+\column{.53\textwidth}
+\Afig[height=3.3cm,width=\linewidth,keepaspectratio]{recovery-colored}
+\column{.44\textwidth}
+Every vertex has:
+\begin{itemize}
+\item \textbf{two} neighbors in its own group;
+\item \textbf{one} neighbor in the other group.
+\end{itemize}
+These are exact counts, not averages.
+\end{columns}
+\source{This six-vertex graph illustrates the rule. The theorem later concerns growing random graphs.}
+\end{frame}
+
+\begin{frame}{Check the rule at a single vertex}
+\begin{columns}[c]
+\column{.56\textwidth}
+\Afig[height=3.3cm,width=\linewidth,keepaspectratio]{recovery-local-count}
+\column{.41\textwidth}
+Look at blue vertex \textbf{2}.
+\begin{itemize}
+\item Vertices 1 and 3 are blue.
+\item Vertex 5 is orange.
+\end{itemize}
+So its counts are
+\[
+       (\text{same},\text{across})=(2,1).
+\]
+\end{columns}
+A proposed grouping is valid only if \emph{every} vertex passes its rule.
+\end{frame}
+
+\begin{frame}{A plausible coloring can fail the rule}
+\begin{columns}[c]
+\column{.56\textwidth}
+\Afig[height=3.3cm,width=\linewidth,keepaspectratio]{recovery-wrong}
+\column{.41\textwidth}
+In this trial coloring, vertex \textbf{2} has:
+\begin{itemize}
+\item one neighbor of its own color;
+\item two neighbors of the other color.
+\end{itemize}
+\begin{alertblock}{Reject this trial}
+The required counts were $(2,1)$, not $(1,2)$.
+\end{alertblock}
+\end{columns}
+Checking the ordinary neighbor counts gives a definite answer.
+\end{frame}
+
+\begin{frame}{The algorithm also tries different count rules}
+For a degree-three graph, try tables such as these.
+Rows name your group; columns name a neighbor's group.
+\begin{columns}[t]
+\column{.30\textwidth}
+\begin{block}{One group}
+\[
+\begin{pmatrix}3\end{pmatrix}
+\]
+Three neighbors inside.
+\end{block}
+\column{.32\textwidth}
+\begin{block}{Two groups}
+\[
+\begin{pmatrix}2&1\\1&2\end{pmatrix}
+\]
+Two inside; one across.
+\end{block}
+\column{.32\textwidth}
+\begin{block}{Another rule}
+\[
+\begin{pmatrix}1&2\\2&1\end{pmatrix}
+\]
+One inside; two across.
+\end{block}
+\end{columns}
+A fixed upper bound on groups and neighbors leaves only finitely many tables.
+The true table is \emph{not} supplied to the algorithm.
+\end{frame}
+
+\begin{frame}{The recovery algorithm: five steps}
+\begin{center}
+\Afig[width=\textwidth]{recovery-workflow}
+\end{center}
+The hard part is organizing all possible assignments of vertices to groups.
+
+The next slides show how the middle steps work for the specific
+\textbf{two-inside, one-across} rule on our six-vertex graph.
+\end{frame}
+
+\begin{frame}{Turn a grouping into simple equations}
+\begin{columns}[c]
+\column{.52\textwidth}
+\Afig[height=3.3cm,width=\linewidth,keepaspectratio]{recovery-marks}
+\column{.45\textwidth}
+Mark group A by $1$ and group B by $0$.
+Call the mark at vertex $i$ \,$x_i$.
+
+Adding the neighbors' marks counts neighbors in group A.
+
+At vertex 2 this gives
+\[
+       x_1+x_3+x_5=1+x_2.
+\]
+\end{columns}
+If $x_2=1$, the count must be 2. If $x_2=0$, it must be 1.
+Write one such equation for each vertex and solve them together.
+\end{frame}
+
+\begin{frame}{First solve an easier arithmetic version}
+\begin{columns}[c]
+\column{.53\textwidth}
+\Afig[width=\linewidth]{recovery-clock}
+\column{.44\textwidth}
+Use a three-position clock: after 2 comes 0.
+
+Solve the equations with this arithmetic.
+Linear algebra gives a compact description of \emph{all} their solutions.
+\end{columns}
+Every genuine $0/1$ grouping survives this step, but extra answers can appear.
+For example, 1 and 7 look the same on this clock, though they are different integers.
+\end{frame}
+
+\begin{frame}{For this graph and this rule: nine clock solutions}
+\begin{center}
+\Afig[height=3.2cm,width=.96\textwidth,keepaspectratio]{recovery-nine-candidates}
+\end{center}
+Each boxed string gives the six proposed marks $x_1,\ldots,x_6$.
+
+Seven answers contain a 2, so they are not $0/1$ groupings.
+The two remaining answers must still pass the ordinary neighbor-count check.
+\source{An exact enumeration of all $3^6$ markings verifies this finite example. It is not the asymptotic theorem.}
+\end{frame}
+
+\begin{frame}{Nine candidates become one grouping}
+\begin{center}
+\Afig[height=3.1cm,width=.92\textwidth,keepaspectratio]{recovery-same-partition}
+\end{center}
+Both $111000$ and $000111$ pass every ordinary neighbor-count check.
+They differ only by exchanging the two group names.
+\[
+ \boxed{9\text{ clock answers}}\ \longrightarrow\
+ \boxed{2\text{ valid colorings}}\ \longrightarrow\
+ \boxed{1\text{ division into groups}}.
+\]
+\source{This count is for the specified $(2,1)$ rule on this particular graph. Other count rules are a separate search.}
+\end{frame}
+
+\begin{frame}{Which valid answer should be kept?}
+\begin{center}
+\Afig[height=3.3cm,width=.96\textwidth,keepaspectratio]{recovery-coarse-fine}
+\end{center}
+Both pictured answers have a consistent neighbor-count table.
+The two-group answer keeps more information than the one-group answer.
+
+The algorithm keeps a valid answer with the most groups, subject to the fixed bound $K$.
+\source{These are two illustrative answers; this tiny graph can have other valid groupings. The theorem controls all alternatives in the growing random model.}
+\end{frame}
+
+\begin{frame}{Which random graphs does the main case cover?}
+\begin{block}{A precise setting, in words}
+Every vertex has the same fixed total degree $d\ge3$ and follows a hidden
+neighbor-count table with at most $K$ groups.
+\end{block}
+\begin{itemize}
+\item The table connects the groups; their positive size ratios stay fixed.
+\item For each group or pair of groups, choose the links uniformly from
+all simple graphs with the required counts.
+\item These choices are independent.
+\end{itemize}
+Our example uses random degree-two links inside each group and a random
+perfect matching across. Random lifts of fixed regular bases are also covered.
+\end{frame}
+
+\begin{frame}{The theorem makes the final choice reliable}
+\begin{theorem}[Recovery, stated informally]
+In the preceding random model, as the graph grows, with probability tending
+to one every valid grouping into at most $K$ groups only merges whole true groups.
+\end{theorem}
+Therefore the most detailed valid grouping is the hidden one.
+
+The algorithm is given the graph and fixed bounds on groups and degree.
+It is \emph{not} given the actual group count, sizes, or neighbor-count table.
+\begin{block}{Two separate guarantees}
+Every answer on the list passes its exact rules.
+Identifying which answer was originally hidden is the high-probability theorem.
+\end{block}
+\source{The precise statement and complete proofs are in the report's main recovery theorem and proof sections.}
+\end{frame}
+
+\begin{frame}{Why is the method computationally useful?}
+The proof controls the \emph{average} number of intermediate candidates,
+including rare graphs with many of them.
+
+It bounds the expected total work by nearly $n^2$, where $n$ is the number of vertices.
+\begin{center}
+\Afig[height=2.5cm,width=.75\textwidth,keepaspectratio]{recovery-work-bound}
+\end{center}
+Doubling $n$ roughly multiplies the bound by four, apart from logarithmic factors.
+This is an expected bound, not a speed benchmark or a bound for every input.
+\end{frame}
+
+\begin{frame}{What is the new idea, and where does it stop?}
+\begin{block}{The useful combination}
+Exact neighbor counts give equations. A complete search organized by those
+equations can recover unknown groups without needing an isolated signal eigenvalue.
+\end{block}
+The result covers a broad family of sparse random graphs with fixed parameters,
+including every fixed connected simple regular base of degree at least three.
+\begin{itemize}
+\item The algorithm also learns the count table and group sizes.
+\item Exact verification rules out false accepted groupings.
+\item Missing or added edges can break the equations: there is no noise theorem here.
+\end{itemize}
+The formal report proves the model-specific guarantee and explains its predecessors.
+\end{frame}

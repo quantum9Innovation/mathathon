@@ -1,0 +1,212 @@
+Audit of the feasible-flow repair proposed by the main agent
+Independent dynamic session, 2026-11-15
+
+The following repairs the generic energy-solve issue in Section 3 of
+barriers-positive-shift-oracle.txt. It uses more structure than the
+restricted oracle lower-bound model and therefore does not conflict
+with that theorem.
+
+All statements concern exact-real arithmetic. Let L=B^T W B be a
+connected weighted graph Laplacian, d>0, u=sqrt(d)(e_p-e_q),
+tau=u^T L^dagger u, and alpha in (0,1). Work on 1-perp.
+
+1. Bounded approximate unshifted voltage
+--------------------------------------
+Let v=L^dagger u and let q satisfy ||q-v||_L<=eta_0 sqrt(tau), where
+eta_0<1. Then
+
+  |u^T(q-v)| <= sqrt(tau)||q-v||_L <= eta_0 tau,
+
+so q_p>q_q and their difference is at most
+(1+eta_0)tau/sqrt(d). Clip every coordinate of q to [q_q,q_p], and
+subtract its mean to obtain vhat. Clipping fixes both terminal values,
+so preserves u^Tq. It is 1-Lipschitz, so decreases q^T L q. The
+identity
+
+  ||q-v||_L^2=q^T L q-2u^T q+tau
+
+shows that clipping and centering cannot increase the L-energy error.
+Furthermore
+
+  ||vhat||^2 <= n(1+eta_0)^2 tau^2/d.
+
+Thus a standard graph solve plus O(n) clipping/centering yields both
+energy accuracy and a gap-independent Euclidean bound.
+
+2. Filtered demand and feasible flows
+------------------------------------
+For t>0, let y=(L+tI)^{-1}vhat and x=L y=P_t vhat, where
+P_t=L(L+tI)^{-1}. Add a ground vertex joined to each original vertex
+by conductance t. Solve the electrical-flow problem with demand vhat
+on the original vertices and demand 0 at ground (vhat has mean zero).
+Write a feasible flow as (f,g), with original-edge flows f and flows
+g from original vertices to ground. Feasibility is exactly
+
+  B^T f+g=vhat.
+
+The electrical optimum is (f_*,g_*)=(W B y,t y). Define
+
+  xhat=B^T f=vhat-g,
+  E=||f-f_*||_{W^{-1}}^2+||g-g_*||^2/t.
+
+The two expressions for xhat give
+
+  e=xhat-x=B^T(f-f_*)=-(g-g_*).
+
+Thomson's principle on the ORIGINAL graph and the ground contribution
+therefore imply, simultaneously,
+
+  ||e||_{L^dagger}^2 <= E,       ||e||^2 <= t E.
+
+Since e has mean zero, spectral Holder interpolation yields
+
+  ||L^{-alpha/2}e||^2
+      <= (||e||_{L^dagger}^2)^alpha (||e||^2)^{1-alpha}
+      <= t^{1-alpha} E.
+
+This is exactly the error structure absent from a generic energy-accurate
+potential solver. It uses exact feasibility; a solver returning only
+approximate demands would need an additional repair proof.
+
+3. Relative flow-energy accuracy and initial voltage error
+---------------------------------------------------------
+Every feasible error flow is a circulation on the augmented graph,
+and is energy-orthogonal to the optimum. Thus excess primal energy is
+exactly E. If the feasible solver returns energy at most (1+xi)OPT,
+
+  E <= xi OPT <= xi ||vhat||^2/t,
+
+where the last inequality is (L+tI)^{-1}<=I/t. Consequently
+
+  ||L^{-alpha/2}(xhat-P_t vhat)||^2
+       <= xi t^{-alpha} ||vhat||^2.
+
+For the initial error z=vhat-v,
+
+  ||L^{-alpha/2}P_t z||^2
+     = sum_i lambda_i^{2-alpha}/(lambda_i+t)^2 z_i^2
+     <= K_alpha t^{-1-alpha} ||z||_L^2,
+
+  K_alpha=max_{r>0} r^{1-alpha}/(1+r)^2
+    =(1-alpha)^{1-alpha}(1+alpha)^{1+alpha}/4 <= 1.
+
+Because P_t v=(L+tI)^{-1}u, triangle inequality gives the usable
+raw-factor error bound
+
+  ||L^{-alpha/2}[xhat-(L+tI)^{-1}u]||
+   <= sqrt(K_alpha tau) eta_0 t^{-(1+alpha)/2}
+        +sqrt(xi) ||vhat|| t^{-alpha/2}.
+
+Choosing tolerances polynomial in the gap-free node scales from
+barriers-voltage-tail-observation.txt gives only logarithms in n,tau,
+1/eps in the electrical-solver cost, with no graph spectral ratio.
+The main construction still has to allocate weighted factor errors and
+scalar denominator errors and charge any final rank compression.
+
+4. Precisely verified primary-source solver contract
+----------------------------------------------------
+Kelner, Orecchia, Sidford, Allen Zhu, A Simple, Combinatorial Algorithm
+for Solving SDD Systems in Nearly-Linear Time, STOC 2013:
+
+  https://arxiv.org/abs/1301.6628
+  https://math.mit.edu/~kelner/publications/ASimpleCombinatorialAlgorithmforSolvingSDDSystemsinNearly-LinearTime.pdf
+
+Definition 2.4 requires exact demand feasibility and relative primal
+energy. Theorem 3.2 proves the needed excess-energy bound in expectation.
+Theorem 4.1 preserves feasibility at each iteration and geometrically
+decreases expected excess. Theorem 2.11 supplies a weighted low-stretch
+tree with total stretch O(m log n loglog n), without a conductance-ratio
+parameter.
+
+To amplify success, run independent copies with expected excess at
+most xi OPT/4. Markov gives at least 3/4 probability of excess at most
+xi OPT. Choose the copy of lowest computed primal energy; all copies
+have exactly the same demand, so lowest primal energy also has lowest
+unknown excess. O(log(1/delta)) copies give failure at most delta while
+preserving feasibility. No oracle for OPT is needed for this selection.
+
+For the augmented graph there are n+1 vertices and m+n edges. Extraction
+of the final xhat through vhat-g costs O(n) once the ground flows are
+materialized, or near-linear time including data-structure extraction.
+All solver/logarithmic claims here use the exact-real weighted-graph
+model; no finite-word condition-independent theorem is asserted.
+
+5. Final Gram compression can also avoid fractional-whitened solves
+------------------------------------------------------------------
+Suppose the raw construction has produced Z in R^{n x q}, with each
+column z_j represented as B^T phi_j by a known original-edge flow.
+Retain the computable scalar bounds
+
+  T_0=||Z||_F^2,
+  T_1=sum_j phi_j^T W^{-1} phi_j
+       >= tr(Z^T L^dagger Z).
+
+Only these bounds need be retained, not the full flow representation.
+The desired factor Gram is S=Z^T L^{-alpha} Z. Use
+
+  S=c_alpha integral_0^infinity s^{-alpha} Z^T(L+sI)^{-1}Z ds.
+
+The low and high Gram tails have norm bounded respectively by
+
+  c_alpha T_1 s_min^{1-alpha}/(1-alpha),
+  c_alpha T_0 s_max^{-alpha}/alpha.
+
+Thus neither endpoint uses a graph spectral parameter. At logarithmic
+scale s=(T_0/T_1)exp(y), the integrand is bounded by a constant times
+
+  K min(exp((1-alpha)y),exp(-alpha y)),
+  K=T_0^{1-alpha}T_1^alpha.
+
+This also controls a fixed complex strip. An absolute gamma-accurate
+Gram rule therefore uses O_alpha(log^2(2+K/gamma)) nodes. If T_0=0,
+Z=0 and no compression is necessary.
+
+For each node, solve (L+sI)y_j=z_j with ordinary relative energy
+tolerance eta, obtaining yhat_j. Unlike construction of raw factors,
+here only scalar bilinear forms are used. Their errors obey
+
+  |z_i^T(yhat_j-y_j)|
+     <= eta sqrt(z_i^T(L+sI)^{-1}z_i)
+                    sqrt(z_j^T(L+sI)^{-1}z_j).
+
+Hence the Frobenius (and therefore operator) error of the node Gram
+is at most eta tr(Z^T(L+sI)^{-1}Z)
+<=eta min(T_1,T_0/s). Symmetrization cannot increase its norm error.
+Taking eta of order gamma/K, with an appropriate fixed constant, makes
+the accumulated quadrature solve error O(gamma). There is no need to
+output a vector accurate after L^{-alpha/2} in this Gram computation.
+
+If the raw relative correction X X^T, X=L^{-alpha/2}Z, has error e_0
+to the true C, and the resulting symmetric Gram approximation Shat has
+||Shat-X^T X||<=gamma, let P be its spectral projector for eigenvalues
+strictly above theta. The explicit output is F=Z P Z^T, formed from
+an orthonormal basis of that projector. Then
+
+  ||L^{-alpha/2}(ZZ^T-F)L^{-alpha/2}||
+       =||(I-P)S(I-P)|| <= theta+gamma,
+
+and therefore final error to C is at most e_0+theta+gamma.
+Weyl's inequality and equality of the nonzero spectra of X^T X and
+XX^T also give
+
+  rank(P) <= #{eig(C)>theta-gamma-e_0}.
+
+For fixed delta in (0,1), choose e_0=gamma=delta eps/4 and
+theta=(1-delta/2)eps. The final two-sided relative norm error is eps
+and the determinant count gives
+
+  rank(P) <= max(0,ceil[b/log(1+(1-delta)eps)]-1),
+  b=alpha log(1+tau).
+
+This has an arbitrarily near-sharp fixed leading rank factor as
+delta tends to zero. It proves a PSD factor F and a two-sided relative
+error, not a Loewner lower approximation F<=B^alpha-A^alpha.
+
+Arithmetic for a q-column rule includes nq^2 Gram bilinear work,
+q^3 small symmetric eigendecomposition, and nq rank(P) final factor
+formation. If q is polylogarithmic in n,tau,1/eps, these are the allowed
+near-linear polylogarithmic factors, with no uncharged dense whitening.
+The main theorem still has to bound K by its previously charged
+flow-energy and node-scale estimates and allocate all confidence/error
+budgets. The identities and compression argument here have been audited;
+they should not be replaced by an uncharged oracle for L^{-alpha}.

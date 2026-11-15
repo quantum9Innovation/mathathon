@@ -1,0 +1,257 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newcommand{\R}{\mathbb R}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\Tr}{\operatorname{tr}}
+\newcommand{\pdet}{\operatorname{pdet}}
+\title{A positive three-column response and a four-vertex\protect\\
+obstruction to inherited normalized quadrature cutoffs}
+\author{Partitioning frontier research session}
+\date{November 15, 2026}
+\begin{document}
+\maketitle
+
+\paragraph{Status.}
+These are proved identities and a counterexample, rather than a new
+partitioning algorithm. The matrix-function integral, Schur-complement
+update, and operator geometric mean are classical. We record their exact
+combination and the explicit obstruction because they decide whether the
+repository's fixed-mass fractional update proof transfers to degree
+normalization. Historical novelty has not been established.
+
+\section{The normalization-aware form}
+For a connected weighted loopless undirected graph, let $L$ be its
+Laplacian and $D$ its positive degree matrix. Fix $0<\alpha<1$ and set
+\[
+ H_\alpha(L,D)=D^{1/2}(D^{-1/2}LD^{-1/2})^\alpha D^{1/2},
+ \qquad c_\alpha=\frac{\sin(\pi\alpha)}\pi.
+\]
+Its kernel is $\R\mathbf1$. Throughout, fractional powers vanish on the
+kernel. A positive edge edit has
+\[
+ L'=L+\delta bb^T,\qquad
+ D'=D+\delta(e_ue_u^T+e_ve_v^T),\qquad b=e_u-e_v,\quad\delta>0.
+\]
+For $t>0$, write
+\[
+ K_t=L+tD,\qquad
+ F_t(L,D)=D-tD K_t^{-1}D
+ =\frac1t[L-LK_t^{-1}L].
+\]
+The scalar fractional-power formula, applied spectrally, gives
+\begin{equation}\label{eq:integral}
+ H_\alpha(L,D)=c_\alpha\int_0^\infty t^{\alpha-1}F_t(L,D)\,dt.
+\end{equation}
+Both endpoint integrals converge in ordinary matrix norm, since
+$0\preceq F_t\preceq D$ and $0\preceq F_t\preceq L/t$.
+
+The companion note \texttt{higher-cheeger/markov-form-budget.tex}
+proves joint monotonicity and the exact relative determinant identity
+\begin{align}\label{eq:budget}
+ B_\alpha&:=\log\frac{\pdet H_\alpha(L',D')}{\pdet H_\alpha(L,D)}\\
+ &=\alpha\log(1+\delta b^TL^\dagger b)
+ +(1-\alpha)\log\frac{(1+\delta/d_u)(1+\delta/d_v)}
+ {1+2\delta/\Tr D}.\notag
+\end{align}
+In particular, $\Delta H=H_\alpha(L',D')-H_\alpha(L,D)\succeq0$,
+and the number of eigenvalues greater than $\varepsilon$ of
+$H_\alpha^{-1/2}\Delta H H_\alpha^{-1/2}$ is strictly smaller than
+$B_\alpha/\log(1+\varepsilon)$ when that count is positive.
+All inverses in this last statement are on $\mathbf1^\perp$.
+
+\section{An explicit positive resolvent response}
+\begin{lemma}[Schur-complement response]
+Let $\mathcal A=\left[\begin{smallmatrix} A&B\\B^T&C\end{smallmatrix}\right]$
+be symmetric with $C\succ0$, and add
+$\left[\begin{smallmatrix} U\\V\end{smallmatrix}\right]
+\left[\begin{smallmatrix} U\\V\end{smallmatrix}\right]^T$.
+The change in its Schur complement onto the first block is
+\[
+ (U-BC^{-1}V)(I+V^TC^{-1}V)^{-1}(U-BC^{-1}V)^T.
+\]
+\end{lemma}
+\begin{proof}
+Use the invertible change of variables
+$y=z-C^{-1}B^Tx$ in the block quadratic form. Its base cross term
+vanishes, while the added term becomes
+$\|(U-BC^{-1}V)^Tx+V^Tz\|^2$. Minimizing over $z$ gives the display,
+by the elementary inverse identity
+$I-V^T(C+VV^T)^{-1}V=(I+V^TC^{-1}V)^{-1}$.
+This also proves positivity and the rank bound without any nonsingular
+assumption on the full block matrix.
+\end{proof}
+
+\begin{theorem}[Three-column positive integrand]\label{thm:three}
+Define $n$-by-$3$ matrices
+\[
+ V_t=\sqrt\delta[\,b,\ -\sqrt t\,e_u,\ -\sqrt t\,e_v\,],
+\]
+\[
+ G_t=\sqrt\delta[\,\sqrt t\,D K_t^{-1}b,\
+                    LK_t^{-1}e_u,\ LK_t^{-1}e_v\,].
+\]
+Then the exact one-edge response at every positive shift is
+\begin{equation}\label{eq:factor}
+ F_t(L',D')-F_t(L,D)
+   =G_t(I+V_t^TK_t^{-1}V_t)^{-1}G_t^T.
+\end{equation}
+It is positive semidefinite, has rank at most three, and annihilates
+constants. Consequently $\Delta H$ is the positive integral of these
+matrices with weight $c_\alpha t^{\alpha-1}$.
+The rank-three assertion concerns each integrand, not the integrated
+response.
+\end{theorem}
+\begin{proof}
+The form $F_t$ is the Schur complement of the two-layer network
+\[
+ \mathcal A_t=\begin{bmatrix}D&-D\\-D&D+L/t\end{bmatrix}.
+\]
+An edge edit adds three PSD rank-one forms: an internal edge
+$\sqrt{\delta/t}[0;b]$, and two terminal-to-internal edges
+$\sqrt\delta[e_u;-e_u]$, $\sqrt\delta[e_v;-e_v]$.
+Apply the lemma with $B=-D$, $C=K_t/t$, and these columns.
+The resulting denominator is $I+V_t^TK_t^{-1}V_t$, and its numerator
+columns are exactly $G_t$, since $I-tDK_t^{-1}=LK_t^{-1}$.
+For the first column,
+$\mathbf1^TDK_t^{-1}b=t^{-1}\mathbf1^Tb=0$; the other columns
+are in the range of $L$. This proves the kernel assertion.
+\end{proof}
+
+This is a classical Kron-reduction/low-rank-update calculation. It does
+provide a concrete interface for a prospective normalized relative
+algorithm: three shifted-system columns and one $3$-by-$3$ core per node.
+It does not establish a sufficient quadrature range or a charged algorithm.
+
+\section{A four-vertex obstruction}
+Consider the weighted path $1$--$2$--$3$--$4$ with edge weights
+$(w,h,1)$, where $w>0$ is fixed and $h\downarrow0$. Let
+$L_{w,h},D_{w,h}$ be its Laplacian and degree matrix, and set
+$x=(1,1,-1,-1)^T$.
+
+\begin{lemma}[Exact slow-scale asymptotic]\label{lem:slow}
+For every fixed $w>0$ and $0<\alpha<1$,
+\[
+ x^TH_\alpha(L_{w,h},D_{w,h})x
+ =4h^\alpha\left(\frac{w+1}{2w}\right)^{\alpha-1}(1+o(1)).
+\]
+\end{lemma}
+\begin{proof}
+The normalized adjacency has spectrum $\{1,-1,\rho,-\rho\}$, where
+\[
+ \rho=\sqrt{\frac{w}{(w+h)(1+h)}}.
+\]
+Indeed its characteristic polynomial is even, it has eigenvalues
+$\pm1$ by bipartiteness, and its determinant is the product of the
+normalized weights of its first and third edges, squared. Thus the
+normalized Laplacian eigenvalues are $0,1-\rho,1+\rho,2$, and
+\[
+ \lambda_{\rm slow}=1-\rho
+ =h s+O(h^2),\qquad s=\frac{w+1}{2w}.
+\]
+At $h=0$, use the orthonormal component-constant vectors
+\[
+ q_L=(1,1,0,0)^T/\sqrt2,\qquad
+ q_R=(0,0,1,1)^T/\sqrt2.
+\]
+The limiting stationary vector has coefficients $(\sqrt{2w},\sqrt2)$,
+and the limiting slow vector has coefficients
+$(\sqrt2,-\sqrt{2w})/\sqrt{2w+2}$. The vector
+$D_{w,h}^{1/2}x$ tends to a vector with coefficients
+$(\sqrt{2w},-\sqrt2)$. Its squared projection onto the slow vector
+therefore tends to $8w/(w+1)=4/s$.
+The high spectral subspace is uniformly separated from zero. Its
+projection of $D_{w,h}^{1/2}x$ is $O(h)$, since that projection
+vanishes at $h=0$ and the corresponding spectral projector is analytic
+near zero. Its energy contribution is consequently $O(h^2)$.
+The stationary component contributes zero. The remaining contribution
+is $(hs+O(h^2))^\alpha(4/s+o(1))$, as asserted.
+\end{proof}
+
+Now double the first edge of the path with weights $(1,h,1)$, producing
+$(2,h,1)$. Put $H_h=H_\alpha(L_{1,h},D_{1,h})$ and $H'_h$ for the
+updated form. The edge is a bridge, so its leverage before doubling is
+exactly $\tau=1$. Both endpoint degrees and the graph size stay bounded
+above and below, independently of $h$.
+
+\begin{theorem}[Failure of an inherited gap-free low cutoff]\label{thm:barrier}
+The relative response on $x$ satisfies
+\begin{equation}\label{eq:limit}
+ \lim_{h\downarrow0}\frac{x^T(H'_h-H_h)x}{x^TH_hx}
+   =\left(\frac43\right)^{1-\alpha}-1>0.
+\end{equation}
+For every $a>0$, let the exact response integral retain only shifts at
+least $a$:
+\[
+ T_{h,a}=c_\alpha\int_a^\infty t^{\alpha-1}
+ [F_t(L_{2,h},D_{2,h})-F_t(L_{1,h},D_{1,h})]\,dt.
+\]
+Then
+\[
+ 0\le x^TT_{h,a}x
+ \le\frac{8c_\alpha}{2-\alpha}\,h^2a^{\alpha-2},
+ \qquad
+ \lim_{h\downarrow0}\frac{x^TT_{h,a}x}{x^TH_hx}=0.
+\]
+In particular, an accuracy below the constant in \eqref{eq:limit}
+cannot be obtained uniformly by discarding shifts below a positive
+cutoff depending only on $n=4,\tau=1,\alpha$, and that accuracy.
+\end{theorem}
+\begin{proof}
+The two cases $w=1,2$ of Lemma~\ref{lem:slow} give
+\eqref{eq:limit}. For the cutoff bound, abbreviate $L=L_{1,h}$,
+$L'=L_{2,h}$, and similarly for $D,D',K_t,K'_t$.
+Since $x$ is constant across the edited edge,
+\[
+ Lx=L'x=z_h=(0,2h,-2h,0)^T,
+ \qquad x^TLx=x^TL'x.
+\]
+The second expression for $F_t$ gives the exact identity
+\[
+ x^T(F'_t-F_t)x
+ =\frac1t z_h^T(K_t^{-1}-(K'_t)^{-1})z_h.
+\]
+Now $K'_t\succeq K_t\succeq tI$, because $D\succeq I$.
+The displayed quantity lies between zero and
+$\|z_h\|^2/t^2=8h^2/t^2$. Integrating proves the bound.
+Divide by $x^TH_hx\sim4h^\alpha$ to obtain the limit.
+The omitted part is PSD by Theorem~\ref{thm:three}, so the relative
+operator norm of its error is at least its Rayleigh quotient on $x$.
+\end{proof}
+
+\paragraph{Quantifiers and limits.}
+This theorem rules out copying the existing positive-integral truncation
+argument with an $n,\tau$-only low cutoff. It does not rule out adaptive
+quadrature, an analytic treatment of low scales, additional cluster
+corrections, a different representation, or a gap-free normalized
+algorithm. It is not a computational lower bound. The example is weighted;
+it does not prove the same obstruction for simple unweighted hosts.
+
+\section{What remains a partitioning problem}
+The generalized eigenvectors of $(H_\alpha,D)$ are exactly those of
+$(L,D)$ and their eigenvalues are the $\alpha$ powers of the normalized
+Laplacian eigenvalues. Thus fractional powering alone does not improve
+Fiedler sweeps, prevent localization, or sharpen Cheeger rounding.
+The new interface is a monotone common-kernel update and its determinant
+budget. To yield a substantial partitioning advance, a future algorithm
+must additionally resolve low-scale normalization and supply a new
+rounding, certificate, or end-to-end computational guarantee.
+
+\begin{thebibliography}{9}
+\bibitem{KA} F.~Kubo and T.~Ando, Means of positive linear operators,
+Math.~Ann.~246 (1980), 205--224.
+\url{https://doi.org/10.1007/BF01371042}.
+\bibitem{DB} F.~D\"orfler and F.~Bullo, Kron reduction of graphs with
+applications to electrical networks, IEEE Trans.~Circuits Syst.~I
+60 (2013), 150--163.
+\url{https://arxiv.org/abs/1102.2950}.
+\bibitem{BCKS} B.~Beckermann, A.~Cortinovis, D.~Kressner,
+M.~Schweitzer, Low-rank updates of matrix functions II: Rational Krylov
+methods, SIAM J.~Numer.~Anal.~59 (2021), 1325--1347.
+\url{https://arxiv.org/abs/2008.11501}.
+\end{thebibliography}
+\end{document}

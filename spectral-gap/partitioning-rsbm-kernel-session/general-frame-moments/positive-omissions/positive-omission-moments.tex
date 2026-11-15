@@ -1,0 +1,285 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newcommand{\Fp}{\mathbb F_p}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Prob}{\mathbb P}
+\newcommand{\one}{\mathbf1}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\nullity}{\operatorname{nullity}}
+\newcommand{\covol}{\operatorname{covol}}
+\title{Positive symmetric omissions:\\bounded moments and blind recovery for mixed degree frames}
+\author{Research session note}
+\date{November 15, 2026}
+\begin{document}
+\maketitle
+\begin{abstract}
+We derive bounded finite-field intertwiner moments for fixed connected reversible frames with possibly different total degrees, assuming symmetric omission weights strictly between zero and one half on every active factor and a unit weighted row at every type. The proof retains physical-slot tables, exact pairing weights, lattice periods, and the normalized reference measure. Weighted balance supplies the bipartite population equality needed by the two-space induction. The result upgrades the existing blind-recovery algorithm to unconditional expected near-quadratic work in the independent simple-factor law. It covers all connected frames with at least two types and every internal degree at least two, as well as the no-internal $K_5$ minus one edge. Zero active weights and general minimum-degree-three frames are not claimed. A scalar refinement is also recorded. Historical novelty is not certified.
+\end{abstract}
+
+\section{Model and statements}
+Fix an integer matrix $Q=(q_{ij})_{i,j\le k}$ with nonnegative entries and a positive integer vector $(a_i)$ such that
+\[
+ a_iq_{ij}=a_jq_{ji}.
+\]
+Put $d_i=\sum_jq_{ij}$, $D=\max_i d_i$, and $d_*=\min_i d_i$. Assume there are symmetric weights on every active factor, including internal factors, satisfying
+\begin{equation}\label{eq:positive}
+ 0<\theta_{ij}=\theta_{ji}<\tfrac12,\qquad
+ \sum_jq_{ij}\theta_{ij}=1\quad\text{for every }i.
+\end{equation}
+Absent factors have no weight or term. This implies $d_*\ge3$. The graph law does not depend on the choice of certificate.
+Assume the undirected old-type support is connected, with a loop at $i$ if $q_{ii}>0$. Type $i$ has $n_i=a_iN$ vertices. Each such vertex has $q_{ij}$ labeled physical stubs aimed at type $j$. Independently for each $i<j$, match the two corresponding cross-stub sets by a uniform bijection; independently pair each internal stub set uniformly. Scales are admissible when $n_iq_{ii}$ is even. Retain loops and parallel edges; a loop contributes two to the adjacency diagonal. Write $A_N$ for this adjacency matrix on $m_N=\sum_i n_i$ vertices.
+
+\begin{theorem}[Bounded vector moments]\label{thm:matrix}
+For every fixed prime $p$ and dimension $r$, there is $C=C(Q,a,p,r)<\infty$ such that for every $R\in\operatorname{Mat}_r(\Fp)$,
+\[
+ \sup_{N\ \mathrm{admissible}}
+ \E\#\{Y\in\Fp^{m_N\times r}:A_NY=YR\}\le C.
+\]
+The same conclusion holds after direct conditioning of all factors on simplicity, at sizes where the simple factors exist.
+\end{theorem}
+
+\begin{theorem}[Sharp scalar moment]\label{thm:scalar}
+Suppose the old-type support is nonbipartite. Fix an odd prime $p$ and $\lambda\in\Fp$, and set $t=\dim_{\Fp}\ker(Q-\lambda I)$. In the unconditioned configuration model, along every admissible scale,
+\[
+ \E|\ker_{\Fp}(A_N-\lambda I)|=2p^t+o_{Q,a,p}(1).
+\]
+There is no requirement that $p$ avoid any degree or size multiplier.
+\end{theorem}
+
+\begin{corollary}[Blind bounded-frame recovery]\label{cor:blind}
+Fix class and degree bounds $K,D$. In the independent uniform simple-factor law under \eqref{eq:positive}, the existing certified right-kernel algorithm, combined with the strict-weight one-hot structural theorem, recovers the unknown planted classes and quotient from $A,K,D$ with high probability and unconditional expected $\widetilde O(n^2)$ bit work, where $n$ is the total number of vertices. The algorithm is not given the frame, sizes, or certificate. The structural and sparse-linear-algebra inputs are specified in the last section.
+\end{corollary}
+
+\section{Exact ordered-star count}
+For the vector theorem use one alphabet $V=\Fp^r$. A legal star at type $i$ consists of root $x$ and one neighbor label in each of its $d_i$ ordered physical slots, satisfying $\sum_s y_s=T_i x$. We allow arbitrary type-dependent linear maps $T_i$; the original problem has $T_i x=xR$.
+
+For bipartite type support the induction also uses two spaces $V_L,V_R$, and maps $T_i:V_{\mathrm{side}(i)}\to V_{\mathrm{opposite}(i)}$. All neighbor slots at a vertex take values in its opposite space. Zero-dimensional spaces are allowed. The certificate and reversibility imply
+\begin{equation}\label{eq:sides}
+ \sum_{i\in L}n_i
+ =\sum_{i\in L,j\in R}n_iq_{ij}\theta_{ij}
+ =\sum_{j\in R,i\in L}n_jq_{ji}\theta_{ji}
+ =\sum_{j\in R}n_j.
+\end{equation}
+Thus total physical side sizes agree even though their individual type sizes and degrees may differ. This enlarged class is closed under the subspace restrictions below.
+
+Let $t_i(\omega)$ be labeled-vertex counts of legal ordered profiles and let $m_{ij}(x,y)$ pool all slots from type $i$ aimed at $j$. Cross compatibility is $m_{ji}=m_{ij}^{\mathsf T}$. Internal compatibility requires $m_{ii}$ symmetric with even diagonal. Define $W=0$ otherwise, and on compatible arrays put
+\begin{align}
+ W_{ij}&=\frac{\prod_{x,y}m_{ij}(x,y)!}{(n_iq_{ij})!}\quad(i<j),\label{eq:crossW}\\
+ W_{ii}&=\frac{\prod_x(m_{ii}(x,x)-1)!!\prod_{x<y}m_{ii}(x,y)!}
+ {(n_iq_{ii}-1)!!},\qquad W=\prod W_{ij}.\label{eq:internalW}
+\end{align}
+Absent factors are omitted and $(-1)!!=1$. The exact expected count is the sum of
+\begin{equation}\label{eq:typecount}
+ \left[\prod_i\frac{n_i!}{\prod_\omega t_i(\omega)!}\right]W(m)
+\end{equation}
+over feasible types. The multinomials already assign roots. Compatible bijections and pairings give precisely \eqref{eq:crossW}--\eqref{eq:internalW}; loops need no extra correction.
+
+Set $P_i=t_i/n_i$, $\nu_{ij}=m_{ij}/(n_iq_{ij})$. Uniform factorial estimates, including zero counts, give log contribution $N\Phi+O(\log(N+1))$, where
+\begin{equation}\label{eq:entropy}
+ \Phi=\sum_i a_iH(P_i)-\sum_{i<j}a_iq_{ij}H(\nu_{ij})
+                         -\sum_i\frac{a_iq_{ii}}2H(\nu_{ii}).
+\end{equation}
+There are polynomially many types at fixed data.
+
+\section{Entropy zeros and their finite phase family}
+Symmetrize slots only within a fixed target old type. This preserves pooled tables and the local equation and increases $H(P_i)$; equality requires the law already be symmetric. For symmetric laws, let $I_{ij}$ be root-neighbor mutual information and let $J_{is}$ be the conditional total correlation of the $d_i-1$ neighbor slots retained after omitting slot $s$, given the root. The omitted slot is determined with coefficient one. Weight omission $s$ aimed at $j$ by $\theta_{ij}$; these weights sum to one. The chain rule gives
+\[
+ H(P_i)=(2-d_i)H(\mu_i)
+       +\sum_jq_{ij}(1-\theta_{ij})H(\nu_{ij})
+       -\sum_s\theta_{is}J_{is}.
+\]
+Substituting into \eqref{eq:entropy}, symmetry and reversibility cancel root entropies, since $\sum_jq_{ij}(1-2\theta_{ij})=d_i-2$. Thus
+\begin{equation}\label{eq:allslot}
+ \Phi=-\sum_{i<j}a_iq_{ij}(1-2\theta_{ij})I_{ij}
+      -\sum_i\frac{a_iq_{ii}}2(1-2\theta_{ii})I_{ii}
+      -\sum_i a_i\sum_s\theta_{is}J_{is}\le0.
+\end{equation}
+This applies in the two-space class as well. Every present pair coefficient and every physical omission coefficient is positive. Allowing an active zero weight would lose the latter assertion and is not part of this proof.
+
+We use an elementary finite-group fact. If $d\ge3$ random variables have a fixed sum and every retained $d-1$ tuple has its product marginal law, then each coordinate is uniform on a coset of one common subspace. Indeed, condition $d-2$ coordinates to support values. The two remaining one-coordinate marginals remain unchanged and are reflected translates of each other, so their support-difference spaces agree. Varying one of the conditioned coordinates supplies translation invariance by the common difference space. Each support lies in a coset of that space and invariance makes its law uniform there.
+
+At a zero of \eqref{eq:entropy}, symmetrization has no loss, every pair is independent, and every $J_{is}$ vanishes. Apply this fact conditional on the root. Root laws are $\operatorname{Uniform}(c_i+H_i)$, and all physical neighbors of each old type have the same subspace. Hence $H_i$ is constant on even-walk components of the old support. Repeated slots do not change these components; an internal factor supplies a self-incidence.
+
+For nonbipartite support there is one common $H$, with
+\begin{equation}\label{eq:phase}
+ T_iH\subseteq H,\qquad T_ic_i-\sum_jq_{ij}c_j\in H.
+\end{equation}
+For bipartite support there are $H_L,H_R$, with $T_iH_{\mathrm{side}(i)}\subseteq H_{\mathrm{opposite}(i)}$ and the corresponding coset equation modulo the opposite subspace. Conversely these conditions produce a unique zero star law: a uniform root, any $d_i-1$ independent uniform neighbors on their cosets, and the last neighbor determined. Thus every zero is in this finite phase family. Proper phases strictly lower the common dimension or the sum of the two side dimensions.
+
+\section{The bounded full-uniform contribution}
+Retain a separate table $M_{is}(x,y)$ for every physical slot, even when several slots aim at the same old type; only the weight $W$ pools them. Write $V_i$ for the root space and $U_i$ for the common neighbor space at type $i$.
+
+Let $P$ independently sample a uniform legal star at every physical vertex, and let $Q_0$ independently sample the root and all its neighbor labels uniformly without the sum constraint. Put
+\[
+ K_N=\prod_i\bigl(|V_i||U_i|^{d_i-1}\bigr)^{n_i}.
+\]
+Exact counting gives $\E Z=K_N\E_PW$ and
+\[
+ K_N\E_{Q_0}W=\prod_i(|V_i|/|U_i|)^{n_i}.
+\]
+For one common alphabet this equals one. For two alphabets it is $(|V_L|/|V_R|)^{n_L-n_R}=1$ by \eqref{eq:sides}. Hence
+\begin{equation}\label{eq:normalizers}
+ \E Z=K_N\E_PW,
+ \qquad K_N\E_{Q_0}W=1.
+\end{equation}
+The probability law
+\[
+ \nu_N(m)=K_N Q_0(M=m)W(m)
+\]
+is exactly a random configuration followed by iid uniform root labels.
+
+The local full-table real space consists of $d_i$ rectangular tables with zero total in each and common root-row margins. On this space the covariance under both star laws is
+\begin{equation}\label{eq:cov}
+ \Sigma_i=(|V_i||U_i|)^{-1}[I+(d_i-1)\Pi_{\mathrm{row}}].
+\end{equation}
+It is positive definite: the eigenvalues are $d_i/(|V_i||U_i|)$ on common-row modes and $1/(|V_i||U_i|)$ on the other modes. To see equality of covariance, conditional on the root any two distinct legal neighbors are independent uniform, because each $d_i\ge3$ leaves another coordinate to absorb the sum. Singleton spaces simply omit zero-dimensional modes.
+
+Let $L_0$ be the full unrestricted integer table-difference lattice. The maximal legal lattice $L$ is its subgroup defined by one additive congruence per root label:
+\begin{equation}\label{eq:legalcong}
+ C_{i,x}(m)=\sum_s\sum_y y m_{is}(x,y)-T_i(x)r_i(x)=0
+ \quad\text{in }U_i.
+\end{equation}
+Here $r_i$ is the common row margin. Its exact index is
+\begin{equation}\label{eq:index}
+ I_*=[L_0:L]=\prod_i|U_i|^{|V_i|}.
+\end{equation}
+For completeness, a circle-valued character constant on legal stars has, at fixed root $x$, row functions $\theta_s(x,y)$. Vary two coordinates with a third compensating in their fixed sum. The additive Cauchy equation forces $\theta_s(x,y)=\alpha_s(x)+\chi_x(y)$ with the same additive character in every slot. Varying the root gives $\sum_s\alpha_s(x)+\chi_x(T_i(x))$ constant. Modulo unrestricted-support characters these are precisely the characters of \eqref{eq:legalcong}. A within-row transfer changes each indicated congruence arbitrarily without changing others. There are $|U_i|^{|V_i|}$ independent characters. This proves maximality, not merely necessary periods.
+
+Here are the analytic and concentration details needed beyond entropy. A finite-support full-rank lattice law has an analytic log moment generating function with positive Hessian. The inverse mean-to-tilt map exists on a fixed neighborhood of its mean. On a compact smaller neighborhood, tilted support probabilities stay positive, covariance stays positive definite, and all derivatives are bounded. Fourier inversion at the tilted mean, on the maximal-lattice torus, gives uniformly
+\[
+ \Prob(S_n=m)=\covol(L)(2\pi n)^{-h/2}
+ (\det\Sigma_{m/n})^{-1/2}e^{-n\mathcal I(m/n)}
+ [1+O(n^{-1/2})].
+\]
+Indeed, away from zero the characteristic modulus is uniformly below one; near zero its centered logarithm is its quadratic covariance form plus a uniform cubic error. Rescaling by $\sqrt n$ and Gaussian integration gives the stated relative error and exact lattice factor. It also proves positivity at all relevant affine lattice points for large $n$.
+
+Since $P,Q_0$ have the same mean and covariance, their analytic rate functions agree through second order. If $\Delta=M-\mu_N$ is the full-table deviation, this gives on the legal affine lattice
+\begin{align}
+ \frac{P(M=m)}{Q_0(M=m)}&\le C I_*\exp(C\|\Delta\|^3/N^2)
+                  &&(\|\Delta\|\le\epsilon_0N),\label{eq:cubic}\\
+ \frac{P(M=m)}{Q_0(M=m)}&=I_*(1+o(1))
+                  &&(\|\Delta\|\le\sqrt N\log N).
+ \label{eq:logratio}
+\end{align}
+Apply the local estimate separately to type sizes $a_iN$ and multiply. Legal affine lattices are contained in unrestricted ones because every legal star is also unrestricted. Incompatible pooled arrays have weight zero.
+
+Under $\nu_N$, an internal pairing is generated by a uniform stub permutation paired consecutively; a cross bijection is generated by a uniform permutation. A transposition changes at most four directed incidences. Changing one iid root label changes at most $2d_i\le2D$. Expose these $O(N)$ permutation images and root labels. Completions for two choices of the next permutation image are coupled by one transposition preserving earlier images, so the Doob increments have bounded ranges. The elementary martingale exponential bound and a fixed-dimensional union bound give
+\begin{equation}\label{eq:tail}
+ \nu_N(\|\Delta\|\ge t)\le C e^{-ct^2/N}\qquad(t\ge C_0\sqrt N).
+\end{equation}
+Cross means equal $\mu_N$ exactly. For an internal physical stub the chance of a partner at its own vertex is $(q_{ii}-1)/(n_iq_{ii}-1)$, so loop bias in each table mean is only $O(1)$, absorbed in \eqref{eq:tail}.
+
+Choose fixed $\epsilon>0$ small enough that $C\epsilon<c/2$. On $\|\Delta\|\le\epsilon N$, the cubic factor in \eqref{eq:cubic} is at most $\exp(\eta\|\Delta\|^2/N)$ with $\eta<c$. Integrating \eqref{eq:tail} shows that its weighted expectation outside $\sqrt N\log N$ is $O(e^{-c'\log^2N})$. Inside that window, \eqref{eq:normalizers} and \eqref{eq:logratio} bound the contribution by $I_*+o(1)$. Thus a fixed full-uniform physical-table neighborhood has bounded expected contribution. No pooled Gaussian precision calculation or polynomial Stirling error is used in place of this step.
+
+\section{Proper phases and completing the vector theorem}
+Fix a proper phase and quotient by its subspaces. Subtract its type-constant quotient point map, which is exact for every configuration by \eqref{eq:phase} or its two-space counterpart. A solution then has a homogeneous quotient defect with support $S$ of size $s$. Each exterior zero vertex touched by $S$ must receive at least two incidences from it; one nonzero value cannot sum to zero. Incidences are counted with multiplicity. If $i$ certificate edges are within $S$, $j$ go outside, and $\ell$ exterior vertices are reached, then
+\[
+ 2i+j=\sum_{v\in S}d_v\ge d_*s,\quad \ell\le j/2,
+ \quad E=i+j\le Ds,\quad E-(s+\ell)\ge(d_*-2)s/2.
+\]
+Loops count once in $i$ and twice in degree. The certificate prescribes every incident support stub, so no separate absent-edge condition is required.
+
+A fixed quotient assignment has an affine fiber, empty or of cardinality exactly $Z_H(G)$, the homogeneous restricted kernel count. To control its correlation with the certificate, force its stub pairs explicitly. For a cross bijection, force $u\mapsto v$ by swapping the image of $u$ with the current preimage of $v$; every output has the same number of preimages. For an internal pairing with $m$ free stubs, force $\{u,v\}$ by replacing $\{u,x\},\{v,y\}$ with $\{u,v\},\{x,y\}$, unless already paired. Every permitted output has $1+2(m-2)/2=m-1$ preimages. Earlier forced pairs are preserved. Hence after at most $E$ switches the result has exactly the law conditional on the certificate.
+
+At most $4E$ physical rows change, so for a fixed ambient dimension bound $r_*$,
+\[
+ \E[Z_H\mid\text{certificate}]\le p^{4r_*E}\E Z_H.
+\]
+This is an actual rank comparison under a conditional-law coupling. For $s\le\epsilon N$, each prescribed edge probability is at most $C/N$, since every remaining stub pool has size $\Theta(N)$. Support and exterior placements cost at most $(C N)^{s+\ell}/(s!\ell!)$, quotient values at most $p^{r_*s}$, exterior stub choices at most $2^{D\ell}$, and chosen-stub pairings at most $(2Ds)^E$. Absorbing fixed factors and the rank charge gives
+\begin{equation}\label{eq:boundary}
+ \E\#\{\text{solutions with }s\text{ defects}\}
+ \le M_H(N)\,Ds B^s(s/N)^{(d_*-2)s/2},
+\end{equation}
+where $M_H=\E Z_H$. The powers follow from
+\[
+ \frac{s^E N^{s+\ell-E}}{s!\ell!}
+ =(s/N)^{E-s-\ell}\frac{s^s}{s!}\frac{s^\ell}{\ell!},
+\]
+using $s^s/s!\le e^s$ and summing $s^\ell/\ell!\le e^s$. Choose $\epsilon$ so the terms decrease geometrically. Singleton supports must be retained in the configuration model. Summing \eqref{eq:boundary} from $s=1$ gives $O(N^{-(d_*-2)/2})M_H$. The zero-defect contribution is at most $M_H$ by the affine-fiber observation.
+
+Induct on ambient dimension, or total side dimension in the bipartite class. Every proper phase has a strictly lower-dimensional restricted homogeneous system and is therefore bounded by induction. There are finitely many phases. They are covered by the controlled root-coset neighborhoods and the full-uniform physical-table neighborhood. On the complementary compact feasible-type set the continuous entropy exponent is strictly negative. Formula \eqref{eq:typecount} bounds that complement by a polynomial times $e^{-cN}$. This proves a finite limsup. The finitely many smaller admissible scales have finite moments; the finitely many maps at each fixed dimension allow a uniform maximum. This proves the configuration part of Theorem~\ref{thm:matrix}.
+
+Every fixed-degree factor has a positive limiting simplicity probability along its admissible scales. Conditioning finitely many factors thus costs a bounded factor. Each simple projection has the same number of labeled-stub representations and is exactly uniform; factors remain independent. This proves the simple-model assertion directly, without applying qualitative contiguity to an unbounded moment.
+
+\section{Scalar refinement by compatible-lattice translations}
+Assume the hypotheses of Theorem~\ref{thm:scalar}. In the scalar full-table lattice let $K_0\subseteq L_0$ impose pooled cross reversal and internal symmetry with even diagonal. The all-zero star array $m_0(N)$ is legal and compatible at every admissible size. Thus compatible arrays have affine lattice $m_0(N)+K_0$ and legal compatible arrays have affine lattice $m_0(N)+(K_0\cap L)$. Write $J_*=[K_0:K_0\cap L]$.
+
+For each fixed $z\in K_0$, uniformly in the logarithmic window,
+\begin{equation}\label{eq:shift}
+ \nu_N(m+z)/\nu_N(m)=1+o(1).
+\end{equation}
+The $Q_0$ ratio follows from its relative full-table local limit estimate. For a cross pool the factorial ratio has leading factor $(n_iq_{ij}/p^2)^{\sum z_{ij}}=1$. For an internal pool its even diagonal shifts give leading exponent
+\[
+ \frac12\sum_x z_{ii}(x,x)+\sum_{x<y}z_{ii}(x,y)
+ =\frac12\sum_{x,y}z_{ii}(x,y)=0.
+\]
+All entries are $\Theta(N)$ there, so the ratios are uniform and fixed translations preserve nonnegativity. The translated windows differ only in fixed-width outer shells, of mass $o(1)$ by \eqref{eq:tail}. Translation by representatives of the finite quotient $K_0/(K_0\cap L)$ and \eqref{eq:shift} therefore make its coset masses equal up to $o(1)$. Their total mass is $1-o(1)$, so the legal coset has mass $1/J_*+o(1)$. Equations \eqref{eq:logratio} and the annular estimate give exact full-uniform contribution
+\begin{equation}\label{eq:centralexact}
+ I_*/J_*+o(1).
+\end{equation}
+
+We compute $J_*$ without assuming mod-$p$ saturation of the compatible integer lattice. Here $I_*=p^{kp}$. An annihilator of the congruence image \eqref{eq:legalcong} has coefficient functions $h_i(x)\in\Fp$. A pooled cross $2\times2$ interaction transfer with zero margins, placed in one physical slot in each orientation, is an integer direction in $K_0$ and forces
+\[
+ [h_i(x)-h_i(x')](y-y')+[h_j(y)-h_j(y')](x-x')=0.
+\]
+Anchor labels zero and one show $h_i(x)=s_ix+c_i$, with $s_i+s_j=0$ on cross support edges. For an internal factor, put twice the symmetric transfer with $+1$ at $(x,x),(y,y)$ and $-1$ at $(x,y),(y,x)$ into one physical slot. Its pooled diagonal is even and margins zero. It forces
+\[
+ 2[h_i(x)-h_i(y)](x-y)=0,
+\]
+so $h_i$ is constant. An odd cross cycle likewise kills alternating slopes because $p$ is odd. Connected nonbipartite support makes all $h_i$ constant, say $c_i$.
+
+Their functional on an arbitrary compatible direction is exactly
+\[
+ \sum_i[(Q-\lambda I)c]_i\sum_x x r_i(x).
+\]
+The root margins really are free modulo $p$. Given integer zero-total margins $r_i$, use twice them. For a cross pool choose any integer table with row $2q_{ij}r_i$ and column $2q_{ji}r_j$, using label zero as anchor. For an internal pool choose the diagonal table with entries $2q_{ii}r_i(x)$, which has even diagonal. Split each pooled table into its $q_{ij}$ physical-slot tables with row $2r_i$, by taking $q_{ij}-1$ anchor-neighbor tables and the residual. Negative entries are allowed in a direction. This constructs actual elements of $K_0$, and multiplication by two is invertible modulo $p$.
+
+Thus the annihilator consists exactly of $c\in\ker(Q-\lambda I)$ and has dimension $t$. Conversely those $c$ annihilate every compatible direction by its pooled margins. The image of the $kp$ congruences has rank $kp-t$, giving
+\[
+ J_*=p^{kp-t},\qquad I_*/J_*=p^t.
+\]
+This argument permits degrees divisible by $p$ and all size multipliers.
+
+For the scalar alphabet its only subspaces are zero and the full field. The zero-phase classification therefore consists of the full-uniform phase and exactly $p^t$ point phases satisfying $Qc=\lambda c$. Each point phase is an exact type-constant eigenvector of every configuration. Equation \eqref{eq:boundary} with restricted count one shows that its small defect neighborhood contributes $1+o(1)$. Choose these neighborhoods disjoint, with defect radius smaller than one quarter of the smallest type size coefficient, and shrink the full-uniform neighborhood to be disjoint from them. The compact entropy complement is exponentially small. Combining their contributions with \eqref{eq:centralexact} proves Theorem~\ref{thm:scalar}.
+
+\section{Fixed integer eigenvalues}
+The scalar theorem has a direct real consequence beyond the moment bound. Suppose the type support is nonbipartite and fix an integer $\ell$. Put $t_0=\dim_{\mathbb R}\ker(Q-\ell I)$. Outside the finitely many primes dividing one nonzero maximal-rank minor of $Q-\ell I$, its finite-field nullity equals $t_0$. The type-indicator embedding gives a deterministic $t_0$-dimensional real old eigenspace, and $p^{t_0}$ old modular vectors. Real nullity at least $t_0+1$ forces modular nullity at least that much, by vanishing integer minors. Subtracting the old baseline from Theorem~\ref{thm:scalar} gives
+\[
+ \limsup_N\Prob_{\rm config}
+       (\nullity_{\mathbb R}(A_N-\ell I)>t_0)\le\frac1{p-1}.
+\]
+Let the fixed admissible odd prime tend to infinity. Simplicity conditioning has a positive limiting probability independent of $p$, so at every admissible simple-model size sequence the real multiplicity equals $t_0$ with high probability. This includes exclusion of a fixed integer eigenvalue absent from the quotient. No uniform growing-prime estimate or polynomial real failure rate is asserted.
+
+The original RSBM is the special frame with rows $(d_1,d_2)$ and $(d_2,d_1)$, using $\theta=1/(d_1+d_2)$. For $d_1>d_2>0$, $\ell=d_1-d_2$ has old multiplicity one, so its real eigenspace is the planted line with high probability, including $(2,1)$. This is a specialization of the frozen regular-frame result, not the new mixed-degree headline.
+
+\section{Charged blind recovery and the covered classes}
+For clarity we specify the two previously proved inputs used in Corollary~\ref{cor:blind}. The frozen strict-weight structural theorem applies to exactly the independent simple-factor model and certificate \eqref{eq:positive}. It states that with high probability every equitable partition into at most $K$ nonempty classes is a compatible planted coarsening. Its proof uses the explicit weighted real one-hot gap, the mixed-degree no-small-support event, and an unchanged vertex in each old class. It permits internal degrees zero or one, unused candidate labels during counting, and unknown cell sizes. The actual source is the \href{../../../partitioning-frontier-session/nonregular-fibers/strict-q-recovery/strict-q-blind-frame-recovery.pdf}{frozen strict-weight recovery packet}; its hypotheses are checked in the accompanying source-bound audit.
+
+The certified sparse-kernel primitive has per-input Las Vegas expected bit cost
+\[
+ \widetilde O(n^2(h_R+1))
+\]
+for the complete right kernel of
+\[
+ K_R=I_r\otimes A-R^{\mathsf T}\otimes I_n,
+ \qquad h_R=\dim_{\Fp}\ker K_R,
+\]
+at fixed $r,p,D$. Both $K_R$ and its transpose have $O(n)$ nonzeros and apply in $O(n)$ field operations. The nonsymmetric reduction, preconditioning trials, complete-kernel certification, and field descent are charged in the \href{../../../partitioning-dynamic-session/rsbm-full-kernel/certified-full-kernel.pdf}{certified full-kernel packet} and its intertwiner supplement. The auxiliary left kernel is projected away before enumeration. The moment theorem is not itself a proof of this primitive.
+
+Enumerate the finite family of nonnegative integer matrices $R$ of order $r\le K$ and row sums at most $D$, over a fixed prime such as $p=3$. Enumerate the $p^{h_R}$ right-kernel vectors by an odometer update. Its total number of digit changes is $O_p(p^{h_R})$, giving generation and verification cost $\widetilde O(np^{h_R})$. Keep only one-hot matrices with nonempty columns satisfying the original \emph{integer} identity $AY=YR$, and return an accepted partition with largest class count. The true quotient and indicator are present, with no certificate supplied to the algorithm. On the structural event every accepted partition is a planted coarsening; the maximum has the true class count and hence is the planted partition up to names. Integer neighbor counts recover its unknown quotient.
+
+Theorem~\ref{thm:matrix} gives $\E p^{h_R}=O(1)$ and hence $\E(h_R+1)=O(1)$ after direct simplicity conditioning. Averaging the valid per-input kernel charge and odometer cost proves unconditional expected $\widetilde O(n^2)$ work, including rare large kernels and failed computational trials. There is no uncharged high-probability truncation. At fixed $K,D$ there are finitely many qualifying true frames, their connected reversible proportions are fixed, and constants can be maximized over that finite family. This proves Corollary~\ref{cor:blind}. All fixed higher exponential moments also follow by applying the vector theorem to block-diagonal repeated targets.
+
+Here are explicit covered classes.
+\begin{enumerate}
+\item For a common degree $d\ge3$, set every active $\theta_{ij}=1/d$.
+\item Suppose $k\ge2$ is connected and every internal degree $h_i=q_{ii}\ge2$, with mixed cross totals $b_i=\sum_{j\ne i}q_{ij}$. Connectedness gives $b_i>0$. Set $\epsilon=1/(4D)$, every active cross weight to $\epsilon$, and $\theta_{ii}=(1-\epsilon b_i)/h_i$. These are positive and below one half, including strictness when $h_i=2$, and every weighted row is one.
+\item For the no-internal base $K_5$ minus an edge, give weight $1/3$ to edges between its two degree-three and three degree-four vertices, and $1/6$ to edges within the latter group. Every weighted row is one. Independent lifts are included without simplicity conditioning.
+\end{enumerate}
+The hypothesis cannot be replaced by minimum degree three. An $N$-lift of $K_{3,12}$ has bipartite sides $3N,12N$, so its adjacency rank is at most $6N$ and its nullity at least $9N$ over every field. Its zero-eigenvalue moment is exponential. It has no certificate \eqref{eq:positive}, since that certificate would force equal physical side sizes by \eqref{eq:sides}. Active zero weights, half-weight boundaries, growing frames or fields, noise, and arbitrary deterministic factors are outside the present theorem. In particular the more heterogeneous finite-field phases when active weights vanish have not been silently included.
+\end{document}

@@ -1,0 +1,1121 @@
+IPCC - Improved Perfect Code Cryptosystems⋆
+
+    Jieun Ryu1 , Yongbhin Kim2 , Seungtai Yoon3 , Ju-Sung Kang4 , and Yongjin
+                                     Yeom5
+                    1
+                      Kookmin University, Seoul, Republic of Korea
+                               ofryuji@kookmin.ac.kr
+                    2
+                      Kookmin University, Seoul, Republic of Korea
+                                coji67@kookmin.ac.kr
+                    3
+                      Cold Spring Harbor, NY 11724, United States
+                                    yoon@cshl.edu
+                    4
+                      Kookmin University, Seoul, Republic of Korea
+                                jskang@kookmin.ac.kr
+                    5
+                      Kookmin University, Seoul, Republic of Korea
+                                 salt@kookmin.ac.kr
+
+
+
+        Abstract. IPCC is a graph-based public key cryptosystem based on
+        Perfect Code Cryptosystem(PCC) proposed by Koblitz in 1993. The se-
+        curity of IPCC relies on the difficulty of finding the Perfect Dominating
+        Set(PDS) in a given 3-regular graph. The existing PCC has not received
+        much attention so far because of its low efficiency. In fact, encryption
+        speed of PCC is slower than standard PKC such as RSA and the size of
+        ciphertext is extremely large. However, we can improve the efficiency of
+        PCC by combining several graphs during the encryption process. With
+        multiple graphs, IPCC not only increases the level of security but also
+        reduce encryption times drastically. The unique properties of IPCC, the
+        small public key and large ciphertext, make it suitable for one-way func-
+        tion or white box encodings that allow for large amouonts of memory.
+        In this proposal, IPCC key generation and encryption/decryption algo-
+        rithms are explained. In addition, design rationale, security, and perfor-
+        mance analysis of IPCC are briefly discussed.
+
+        Keywords: Perfect dominating set · Perfect code cryptosytem · combi-
+        natorics · Public key cryptosystem.
+
+
+1     Introduction
+We propose a public key cryptosystem called IPCC(Improved Perfect Code
+Cryptosystem) that is secure against attacks using quantum computers. The
+security of IPCC is based on the hardness of finding the Perfect Dominating
+Set(PDS) in a 3-regular graph [2]. The problem of determining whether a graph
+has PDS is an NP-complete problem [4] and finding the PDS in the graph con-
+taining this is also believed to be an NP-complete problem but not proved yet. A
+⋆
+    This work is submitted to ‘Korean Post-Quantum Cryptography Competition’
+    (www.kpqc.or.kr).
+2      J. Ryu et al.
+
+cryptosystem based on this problem has first been described in 1993 by Koblitz
+and Fellows under the name Perfect Code Cryptosystems [1]. The public key
+of Perfect Code Cryptosystems is a 3-regular graph that hides the PDS, and
+the private key is a function called PDF that maps elements of the PDS to 1
+and the remaining vertices to 0. This cryptography system could be used as
+post-quantum cryptography, since finding PDFs seems to be an NP-complete
+problem [5].
+    In this proposal, we introduce the design rationale of the improved crypto-
+graphic system first. Then, the security of the algorithm with proposing param-
+eter set is analyzed against dedicated attacks. Also, implementation techniques
+and experimental results are discussed.
+
+1.1   Design rationale
+Perfect Code Cryptosystem has a problem in that the level of security is greatly
+decreased by a plaintext recovery attack among known attack techniques for
+cryptosystems. Adjusting the security parameters to solve this problem makes
+the efficiency of the cryptographic system worse. In the existing PCC, it is very
+difficult to achieve an appropriate balance between security and efficiency.
+    The design of IPCC is based on the additional difficulty of polynomial fac-
+torization to alleviate this. The key recovery attack depends on the size n of the
+graph, and the plaintext recovery attack depends on the maximum order k of
+the ciphertext polynomials in Perfect Code Cryptosystem.
+    Since the encryption speed of a cryptographic system is highly dependent on
+k, we came up with a way to build a high-order polynomial with polynomials
+of low degree. By multiplying and adding the low-order polynomials to generate
+a high-order polynomial, it is possible to encrypt message at high speed and
+increase the security against plaintext recovery attacks. Given a ciphertext, an
+adversary cannot attack each polynomial separately, unless the ciphertext poly-
+nomial is factored into low-order polynomials. Since polynomial factorization is
+a hard problem, we can enhance the security in this way. IPCC does not modify
+the key generation and decryption designs of the existing Perfect Code Cryp-
+tosystems, which were already efficient enough, but improves the encryption
+process so that PCC could be practical.
+
+1.2   Advantages and limitations
+The IPCC has the advantage of very fast key generation and decryption speed,
+though encryption speed is relatively slow. In addition, it has a distinctive prop-
+erty based on a new problem that is different from the encryption schemes that
+have been proposed in the post-quantum cryptography standardization process
+hosted by NIST. This encryption system has limitations in that the size of the
+memory used in the encryption process and the size of the ciphertext are ex-
+tremely large. However, it is expected to be more useful than other PQCs for
+one-way functions or whitebox encryption in environmemts without memory
+limitations.
+                                                                       IPCC     3
+
+2     Preliminaries
+This section introduces the basic concept, definitions and notation for describing
+out cryptosystem.
+
+2.1   Definition
+Definition 2.1 (k-regular graph). For some positive integer k, A graph G =
+(V, E) such that deg(v) = k for ∀v ∈ V .
+
+
+
+
+                        Fig. 1. example of 3-regular graph
+
+
+Definition 2.2 (Perfect Dominating Set (P DS) [6]). A set of vertices A ⊆
+V is called a perfect dominating set(P DS) of G if for every vertex v ∈ V , N [v]
+contains exactly one element of A.
+
+
+
+
+                    Fig. 2. example of Perfect Dominating Set
+
+
+
+
+               Fig. 3. explain for example of Perfect Dominating Set
+4      J. Ryu et al.
+
+Definition 2.3 (Perfect Dominating Function (P DF ) [3]). Let f : V →
+{0, 1} be a function which assigns to each vertex of a graph G an element of the
+set {0, 1}. f is a perfect dominating function(P DF ) if for every vertex v ∈ V ,
+                                   X
+                                        f (u) = 1.
+                                u∈N [v]
+
+
+
+
+                 Fig. 4. example of Perfect Dominating Function
+
+
+2.2   Algorithm of PDF cryptosystems
+This subsection describes the algorithm of the existing PDF cryptosystem [5].
+Algorithm 1 Key generation in PDF-cryptography
+Input: The security parameters (n0 , k) and modulus p
+Output: A pair of keys (pk, sk)
+Step 1: Divide a set V into 4 subsets which are called A, B, C,and D such
+    that |A| = |B| = |C| = |D| = n0
+Step 2: Randomly create six one-to-one correspondences between the sets and
+    connect related vertices each. Then the resulting graph G = (V, E) with a
+    PDS is generated
+Step 3: WLOG set A is used as P DS, and assign a value to each vertex v ∈ V
+    from P DF mapping f : V → {0, 1} by
+                                      
+                                      1, if v ∈ A,
+                              f (v) =
+                                      0, otherwise.
+Step 4: pk ← graph G = (V, E) and sk ← P DF f
+Step 5: return pk, sk
+                                                                          IPCC   5
+
+
+Algorithm 2 Encryption in PDF-cryptography
+Input: public key pk(G = (V, E)), message m ∈ Zp , degree of polynomial k,
+and prime p
+Output: ciphertext ct
+Step 1: Choose an arbitrary subset I of P(V ).
+                    I = {S1 , S2 , ..., St } for som positive integer t
+                          such that for all S ∈ I, |S| ≤ k.
+Step 2: Assign an integer cS to each set in I such that
+                                 X
+                                      cS = m (       mod p).
+                                S∈I
+
+
+   We denote this integer set C by
+                                                     P
+             C = {cS1 , cS2 , ..., cSt } such that     S∈I cS = m (   mod p).
+Step 3: Form the following polynomial over H = Z/pZ
+                                  P      Q   P
+           h(x1 , x2 , ..., xn ) = S∈I cS u∈S v∈N [u] xv ∈ H[{xv }].
+Step 4: Expand a polynomial h, replace all higher powers of a variable by its
+    first power, and delete any monomial in which two variables occur that
+    correspond to vertices whose distance from one to another in the graph G
+    is ≤ 2. Consequently, ct is obtained as a simplified form of h.
+Step 5: return ct
+
+
+
+
+                   Fig. 5. example of reduction process in Step 4
+
+
+Algorithm 3 Decryption in PDF-cryptography
+Input: Private key sk(P DF f ), ciphertext ct ∈ H[{xv }], and prime p
+Output: message m
+Step 1: Evaluate the polynomial h = ct using the private key sk
+                            m ← h(f (x1 ), f (x2 ), ..., f (xn )).
+Step 2: return m
+6         J. Ryu et al.
+
+3     Specification
+
+This section introduces the notation, definition, and algorithm used to describe
+IPCC.
+
+
+3.1     Notation
+This subsection introduces the definitions of symbols.
+
+                           Table 1: definitions of Symbols
+          symbol           definition
+              $              $
+             ←             a←A : Select one of the elements of set A randomly
+                           (i.e., a ∈ A)
+              $                  $
+             ←             A ← B : Select set A with size i among subsets of set
+              i                  i
+                           B randomly (i.e., A ⊆ B)
+              $                  $
+             ↔             A ↔ B : Generate a random one-to-one correspondence
+                           between two sets A and B where A, B have equal size
+           P ∗ (S)         The power set (all subsets) of the set S excluding the
+                           empty set i.e., P ∗ (S) = {A : A ⊆ S} \ ϕ
+            N [v]          For a vertex v ∈ V of a graph G = (V, E), a set having
+                           adjacent vertices of v and itself
+        G = (V, E)         A graph G consisting of a set of vertices V and a set of
+                           edges E(⊆ V × V )
+              n            Security parameter. The number of vertices in the
+                           graph, i.e., the size of the vertex set. All 3-regular
+                           graphs satisfy n = 4 × n0 for some integer n0
+              k            Security parameter. Maximum order of ciphertext. i.e.,
+                           degree of the ciphertext polynomial
+              p            Security parameter. Determine the range of message m
+                           to be encrypted, m ∈ {0, 1, 2, ..., p − 1}.
+             xv            Variable assigned to vertex v(∈ V )
+         P DF (G)          A private key function that maps the P DS of the 3-
+                           regular graph G to 1 and the remaining vertices to 0
+      Gen(n1 , n2 , ...)   A key generation function that generates a public key
+                           graph Gi = (Vi , Ei ) with |Vi | = ni and a private
+                           key PDF corresponding to G1 , G2 , ... for i = 1, 2, ...
+                           (P DF, G1 , G2 , ...) ← Gen(n1 , n2 , ...) and P DS =
+                           P DS1||P DS2||...
+              G            family of graphs that generated by function Gen
+                                                                              IPCC        7
+
+
+
+               m              The message to encrypt. Based on the implementation
+                              of this proposal, a message is a fixed-length block of
+                              32-bit.
+   SubEnc(m, k, G)            A function that encrypts a message m into a polynomial
+                               k
+                              fG  of maximum degree k using the public key graph
+                              G = (V, E)
+                                                k
+                                               fG ← SubEnc(m, k, G)
+
+          k1     k2                                                 k1    k2
+      F (fG 1
+              , fG 2
+                     , ...)   A function that combines polynomials fG1
+                                                                       , fG 2
+                                                                              , ... gen-
+                              erated by the function SubEnc to form polynomial FGk
+                              with maximum order k
+                                                         k1     k2
+                                                FGk ← F(fG 1
+                                                             , fG2
+                                                                   , ...)
+
+              Fk              family of multivariate mixing functions. A set of mul-
+                              tivariate polynomials with a maximum degree k gener-
+                              ated using an invatiant polynomial as a variable (inde-
+                              terminate)
+ Enc(m, k, G1 , G2 , ...) A function that encrypts message m into ciphertext
+                          polynomial ct with maximum degree k using public key
+                          graphs G1 , G2 , ...
+                                                                       k1     k2
+                                   ct ← Enc(m, k, G1 , G2 , ...) = F (fG 1
+                                                                           , fG2
+                                                                                 , ...)
+
+      Dec(ct, P DS)           A function that decrypts the ciphertext ct into message
+                              m using the private key P DS
+
+                                                 m ← Dec(ct, P DS)
+
+
+
+3.2     Specification of IPCC
+Here, we describe the details of IPCC algorithm. Key generation, encryption, and
+decryption algorithms are described in each subsection; encryption algorithms
+are divided into sub-encryption algorithms and a newly devised encryption al-
+gorithm that generates a ciphertext by using the sub-encryption algorithm.
+    The modified algorithm used in the implementation to speed up is described
+in Section 4.3.
+
+Specification of key generation function
+Algorithm 4 Key generation function Gen
+Input: the number of vertices n1 , n2 , . . . for each graph
+8       J. Ryu et al.
+
+Output: public key pk, private key sk
+Step 1: For i = 0, 1, 2, . . . , allocate space for the vertex set Vi and the edge set
+    Ei of the graph Gi
+                             V1 ← {1, 2, . . . , n1 }, E1 ← ϕ
+                             V2 ← {1, 2, . . . , n2 }, E2 ← ϕ
+                                          ··· ,
+Step 2: Divide each vertex set Vi into 4 subsets which are called Di1 , Di2 , Di3
+    and Di4 such that |Di1 | = |Di2 | = |Di3 | = |Di4 | = ni /4
+                                                    $
+                                         Di1 ← Vi
+                                                  ni /4
+                                              $
+                                     Di2 ← Vi − Di1
+                                            ni /4
+                                        $
+                                Di3 ← Vi − Di1 − Di2
+                                      ni /4
+                             Di4 ← Vi − Di1 − Di2 − Di3
+Step 3: Give a random one-to-one correspondence between subsets
+    Di1 , Di2 , Di3 and Di4 , and connect vertices according to this relationship
+    to create edges
+                               $                              $
+                   E ← {Di1 ↔ Di2 } ∪ E, E ← {Di1 ↔ Di3 } ∪ E,
+                               $                              $
+                   E ← {Di1 ↔ Di4 } ∪ E, E ← {Di2 ↔ Di3 } ∪ E,
+                               $                              $
+                   E ← {Di2 ↔ Di4 } ∪ E, E ← {Di3 ↔ Di4 } ∪ E,
+Step 4: Create a P DS set by randomly choosing one of the subsets
+    Di1 , Di2 , Di3 or Di4
+           for i = 1, 2, . . . do
+                  $
+                j ← {1, 2, 3, 4}
+                P DS i ← Dij
+                P DS ← P DS i ∪ P DS
+           end for
+           i.e., P DS = P DS 1 ∥ P DS 2 ∥ · · ·
+Step 5: Define each pair (Vi , Ei ) as graph Gi
+                          G1 ← (V1 , E1 ), G2 ← (V2 , E2 ), · · ·
+Step 6: Generate private key function P DF using P DS
+                                           1, if v ∈ P DS,
+                  ∀v ∈ V, P DF (v) = xv =
+                                           0, otherwise.
+Step 7: Use graph G1 = (V1 , E1 ), G2 = (V2 , E2 ), · · · as public key and P DF as
+    private key
+                                   pk ← G = {G1 , G2 ,... }
+                                                                   IPCC           9
+
+                                        sk ← P DF
+Step 8: return pk, sk
+
+
+Specification of encryption function
+
+Algorithm 5 Sub-encryption function SubEnc
+Input: message m, maximum degree k, graph G = (V, E)
+                    k
+Output: polynomial fG
+Step 1: Randomly choose one of the subsets of P ∗ (Vi ) to satisfy the following
+    condition
+                          $
+                        I ← P ∗ (Vi ) such that ∀S ∈ I, |S| ≤ k
+Step 2: Assign an integer ci to each set in I as follows. At this time, the sum
+    of the ci should be the message m
+          for i = 1 to |I| − 1 do
+                $
+             ci ← Zp
+        end for
+                     P|I|−1
+        c|I| = m − i=1 ci ( mod p)
+Step 3: Form the following polynomial
+                                        P|I|−1 Q    P
+                   f (Xv1 , Xv2 , ...) = i=1 ci u∈Ii u∈N[u] xu
+Step 4: Expand polynomial f , then replace all higher powers of a variable by
+    its first power and delete a term consisting of a product of variables
+    corresponding to a vertices with a distance equal to or less than 2
+Step 5: f is an invariant polynomial in which each variable in the polynomial
+                                                                            k
+    corresponds to the vertex of G and the highest degree is k, denoted as fG
+                  k
+Step 6: return fG
+
+
+Algorithm 6 Encryption function Enc
+Input: message m, maximum degree k, public key graph set G = {G1 , G2 , · · · }
+Output: ciphertext ct
+Step 1: Select F to combine polynomials such that the maximum order is k
+                                             $
+                                          F ← Fk
+Step 2: For F , distribute message m to satisfy the following condition
+                                    m = F (m1 , m2 , ...)
+                                           ki
+Step 3: For each mi , create a polynomial fG i
+                                               with maximum degree ki using
+    Gi
+                                     ki
+                              i.e., fG i
+                                         ← SubEnc(mi , ki , Gi )
+10      J. Ryu et al.
+
+                                             ki
+Step 4: By combining the polynomial fG        i
+                                                according to the form of F ,
+                           k
+    generate ciphertext FG (xv1 , xv2 , ...) with maximum degree k and the
+    vertices in the ciphertext belong to G1 , G2 or others
+                                                         k1     k2
+                        ct ← FGk (xv1 , xv2 , ...) = F (fG 1
+                                                             , fG 2
+                                                                    , ...)
+Step 5: return ct
+
+
+
+
+Specification of decryption function
+
+
+
+Algorithm 7 Decryption function Dec
+Input: ciphertext ct, private function P DF
+Output: message m
+Step 1: Put P DF (vi ) into variable xvi of the polynomial ciphertext
+                                 ct = FGk (xv1 ,xv2 ,··· )
+                           m ← ct(P DF (v1 ), P DF (v2 ), · · · )
+Step 2: return m
+
+
+
+
+example of IPCC
+    We show an example of IPCC where n1 = 200, n2 = 200, k = 2, p = 11. The
+sets of vertices are V1 = {v1 , v2 , ..., v8 } and V2 = {v9 , v10 , ..., v20 }.
+
+     □ Key Generation
+First, receiver Bob generates two graphs, G1 and G2 , in which the sizes of vertex
+set are n1 and n2 , respectively, as shown in Figure 6. The process of generating
+graph G1 is shown in Figure 6, 7.
+
+
+
+
+                          Fig. 6. generate key pair (pk, sk)
+                                                                      IPCC   11
+
+
+
+
+                           Fig. 7. public key graph pk
+
+
+
+   Then generates P DF to use as a secret key by combining each P DS of graphs
+G1 and G2 as following.
+
+                          (
+                           1, if v ∈ P DS = {v1 , v8 , v18 , v19 , v20 },
+          P DF (v) = xv =
+                           0, otherwise.
+
+Bob saves the P DF and sends the public key graphs G1 and G2 as shown in
+Figure 8, to the sender.
+
+
+
+
+                           Fig. 8. public key graph pk
+
+
+
+   □ Encryption
+After receiving the public key, the sender Alice prepares a message m to be
+12       J. Ryu et al.
+
+encrypted. When a message is prepared in the pre-shared message space Zp , F
+from F is randomly selected for encryption.
+
+                                       m = 1( mod 11)
+                                       1
+                                  F = fG  f 1 + fG
+                                         1 G2
+                                                 2
+                                                   1
+                                                        2
+                                                     + fG 2
+                                                            ←F
+
+Next, she distributes the message according to the form of F .
+
+                  m = m1 m2 + m3 + m4 = 5 · 6 + 7 + 8 = 1 mod 11
+
+Then, with each mi as input, subEnc is performed according to fi .
+
+    1
+ – fG 1
+        = SubEnc(m1 = 5, k = 1, G1 )
+                             $
+     |I| = 1, I = {v2 } ← P ∗ (G1 ), c{v2 } = 5 mod 11
+                           1
+       1
+                      P
+     fG  1
+           = c {v 2 }  v∈N [v2 ] xv = 5(xv1 + xv2 + xv3 + xv7 )
+
+    1
+ – fG 2
+        = SubEnc(m2 = 6, k = 1, G2 )
+                              $
+     |I| = 1, I = {v11 } ← P ∗ (G2 ), c{v11 } = 6 mod 11
+                         1
+       1
+                    P
+     fG  2
+           = c{v11 } v∈N [v11 ] xv = 6(xv10 + xv11 + xv12 + xv19 )
+
+    2
+ – fG 1
+        = SubEnc(m3 = 7, k = 2, G1 )
+                                  $
+     |I| = 2, I = {v4 , v5 } ← P ∗ (G1 ), c{v4 ,v5 } = 7 mod 11
+                                  2
+
+                         Y X
+      2
+     fG 1
+          = c{v4 ,v5 }                    xv
+                         u∈I v∈N [u]
+
+          = 7(xv1 + xv3 + xv4 + xv5 )(xv4 + xv5 + xv6 + xv8 )
+          = 7(xv1 xv4 + xv1 xv5 + xv1 xv6 + xv1 xv8 + xv3 xv4 + xv3 xv5 + xv3 xv6 + xv3 xv8
+               + xv4 xv4 + xv4 xv5 + xv4 xv6 + xv4 xv8 + xv5 xv4 + xv5 xv5 + xv5 xv6 + xv5 xv8 )
+          = 7(xv1 xv8 + xv3 xv6 + xv4 + xv5 )
+
+    2
+ – fG 2
+        = SubEnc(m4 = 8, k = 2, G2 )
+                                      $
+     |I| = 2, I = {v16 , v20 } ← P ∗ (G2 ), c{v16 ,v20 } = 8 mod 11
+                                      2
+
+                           Y X
+      2
+     fG 2
+          = c{v16 ,v20 }                   xv
+                           u∈I v∈N [u]
+
+          = 8(xv15 + xv16 + xv17 + xv19 )(xv13 + xv14 + xv15 + xv20 )
+          = 8(xv15 xv13 + xv15 xv14 + xv15 xv15 + xv15 xv20 + xv16 xv13 + xv16 xv14 + xv16 xv15
+               + xv16 xv20 + xv17 xv13 + xv17 xv14 + xv17 xv15 + xv17 xv20 + xv19 xv13
+               + xv19 xv14 + xv19 xv15 + xv19 xv20 )
+          = 8(xv15 + xv16 xv13 + xv17 xv13 + xv17 xv14 + xv17 xv20 + xv19 xv13 + xv19 xv14 + xv19 xv20 )
+                                                                                    IPCC   13
+
+   Finally, the ciphertext ct is generated by combining the polynomial fi ac-
+cording to F .
+                1
+      ct = F = fG  f 1 + fG
+                  1 G2
+                          2
+                            1
+                                 2
+                              + fG 2
+
+         = 5(xv1 + xv2 + xv3 + xv7 )6(xv10 + xv11 + xv1 2 + xv19 )
+                   + 7(xv1 xv8 + xv3 xv6 + xv4 + xv5 ) + 8(xv15 + xv16 xv13 + xv17 xv13
+                   + xv17 xv14 + xv17 xv20 + xv19 xv13 + xv19 xv14 + xv19 xv20 ).
+
+Alice sends the generated ciphertext ct to Bob.
+
+□ Decryption
+Bob obtains the message by substituting the P DF into the ciphertext.
+
+
+       m = ct(P DF )
+          =0+0+0+8+0+0+0+0+0+0+0+0+0+0+0+0+7
+                   +0+0+0+0+0+0+0+0+0+0+8
+          =1         mod 11.
+
+3.3     Parameter sets
+The parameter set selected to satisfy 128-bit safety is as follows. The security
+strength that is satisfied when the suggested parameters are used has 158-bit
+security for key recovery attack and 162-bit security for plaintext recovery attack.
+However, the parameters used in the version implemented so far are as shown
+in [Table 3], and we plan to optimize them so that the proposed parameters can
+be used in the future.
+
+                      Table 2. The parameter set satisfied 128-bit security
+
+           p               #graph n per graph k per subpolynomial |I| per graph
+           16
+    65521 (2       − 15)       2           200                  4                      5
+
+
+
+
+                       Table 3. The parameter set satisfied 80-bit security
+
+               p            #graph n per graph k of subpolynomial |I| per graph
+    65521 (216 − 15)            2           200               2/3                     3
+
+
+p     : public parameters. A prime number defining the message space Zp ; not
+        only the message, but also an arbitrary coefficient cIi is defined in the
+        message space.
+14      J. Ryu et al.
+
+n   : public parameters. The size of the set of vertices V in graph G. The vertex
+      set size of the 3-regular graph is divisible by 4, so n = 4 ∗ n0 for any
+      integer n0 . And the public key is a set of edges of the graph; the number
+      of the edge set of the 3-regular graph is 6 ∗ n0 , and each edge has two
+      vertices. According to the above parameter set, the size of the public key
+      is 2 ∗ 2 ∗ 6 ∗ n0 = 1200 when using two graphs with ni = 200.
+k    : public parameters. Each ki can be adjusted such that the sum of the
+      maximum degrees of the subpolynomials generated with the maximum
+      degree of the ciphertext is k. For example, if two graphs are used when k =
+      4, the degree of the subpolynomial generated by each graph can be selected
+      from among (1, 3), (2, 2), and (3, 1). In the case of the above parameters,
+      the maximum degree of the ciphertext is 8 since the maximum degree of
+      the subpolynomials generated by each graph is 4.
+|I| : secret parameters. The size of the P ∗ (V ) subset I selected to generate
+      the subpolynomial. As the size of I increases and the number of polyno-
+      mial terms increases, the reduction occurence is also increases, then the
+      coefficient ci corresponding to Ii (∈ I) is spread evenly and ciphertext fac-
+      toring becomes more difficult. On the other hand, when |I| increases, the
+      encryption speed becomes very slow and the size of the ciphertext tends to
+      increase rapidly. Therefore, it is necessary to select parameters considering
+      efficiency. |I| suggested above is also a value selected considering the ratio
+      of the reducted term and the encryption speed.
+The value of each parameter were determined by analyzing the results of the
+graph below.
+
+
+
+
+                              Fig. 9. Reduction rate
+
+
+
+[Figure 9] shows the ratio of terms reduced according to |I| and the maximum
+degree of a polynomial made with a graph where n is 200. The larger the re-
+duction ratio, the lower the probability of knowing the variables configured for
+encryption, and the higher the probability of spreading the coefficients contain-
+ing the information of the message. In the case of k = 4, the rate of increase of
+the reduction ratio is slower than the rate of increase of the number of terms, and
+                                                                    IPCC          15
+
+thus the form is shown in [Figure]. Nevertheless, the parameter set was decided
+the maximum degree to 4 because the reduction ratio is higher than when k = 2
+and it generates terms of various degrees. And also, in future research, we plan
+to expand the parameter set in the direction that |I| increases when k = 2.
+
+
+4     Performance analysis
+
+It is enhanced by some improvements of preceding implementations of Perfect
+Code Cryptosystems encryption schemes[3]. The currently implemented IPCC
+is focused on increasing the operation speed. The main difference is that the
+dynamic array implementation is converted to a static array type for fast op-
+eration. And in some schemes, a table using lexical ordering is used for vertex
+operation.
+Section 4.3 describes the algorithm that applies Table to the algorithm of Section
+3.2. Although the operation time was dramatically reduced through this process,
+the size of the memory used during the operation increased significantly.
+
+
+4.1   Description of platform
+
+All benchmarks were obtained on one core of an Intel Core i7-9700K CPU
+@3.60HZ processor. The benchmarking PC has 16GB of RAM, and compiled
+with gcc version 8.3.0. All results reported are the median of the results of 10
+000 executions of the respective measurements. It has not been currently opti-
+mized for memory usage allocated during the measurement and will be optimized
+for the stack memory in the future.
+
+
+4.2   Performance of reference implementation
+
+* 1round performance goals (PC environment, 80-bit security)
+
+
+          Table 4. Performance goals (PC environment, 80-bit security)
+
+            key size             cipher size keygen time enc time dec time
+ pk = 600-byte, sk = 150-byte      ≤ 1MB         ≤ 0.1ms     ≤ 500ms      ≤ 1ms
+
+
+* Actual performance (PC environment, satisfied 80-bit security)
+
+
+          Table 5. Performance result (PC environment, 80-bit security)
+
+            key size               cipher size    keygen time enc time dec time
+                                         4
+pk = 4800-byte, sk = 400-byte 9.2 × 10 -byte        1.06ms      0.35ms     0.33ms
+16     J. Ryu et al.
+
+IPCC generates 4800 bytes of public key, 400 bytes of private key, and 9.2 × 104
+bytes of ciphertext when using the parameter that provides 109-bit security in
+Section 3.3 [Table 3]. At this time, the average key generation speed is 1.06ms,
+the average encryption speed is 0.35ms, and the average decryption speed is
+0.33ms.
+Comparing the performance of IPCC with other cryptographic algorithms is
+shown in the [Figure 10].
+
+
+
+
+      Fig. 10. Comparison with NIST PQC 3round candidate algorithms [7]
+
+
+
+The results of comparing the performance of IPCC with the performance of the
+existing Perfect Code Cryptosystems are shown in the following [Table]. This is
+the result of measuring the speed of the cryptographic system by inputting |I|
+to generate a ciphertext of a similar size when the number of graph vertices is
+200 and the maximum degree of the ciphertext is 5 [5].
+
+
+        Table 6. Performance comparing (PC environment, 80-bit security)
+
+          key size (byte)    number of terms keygen time enc time dec time
+ PDF pk = 4800, sk = 400          24,352           1ms       84781ms       4ms
+IPCC pk = 4800, sk = 400          25,555         0.028ms     2.411ms 3.363ms
+
+
+
+
+4.3   Implemetation technic for performance
+This algorithm utilizes a table using lexical ordering (so that we can calculate
+by substituting the vertex number to a bit digit) on the sub-encryption and
+decryption functions to improve implementation speed.
+
+Algorithm 8 Sub-encryption function SubEnc with table
+Input: message m, max degree k, graph G = (V, E)
+                    k
+Output: polynomial fG
+                                                                     IPCC         17
+
+Step 1: Same as Alogrithm2 upto step 3
+Step 2: For each vertex in graph G, create a table by defining the list of
+    neighboring vertices as follows
+          for i = 1 to |V | do
+              for i = vj to N [vi ] do
+                 T able(vi ) ← 2vj −2
+              end for
+          end for
+Step 3: After expanding the invariant polynomial f (xv1 , xv2 , ...), set empty
+    term list T represented by lexical ordering and calculate each term as
+    follows
+          for i = 1 to |♯terms(f )| do
+              for i = 1 to |termi | do
+                 for i = 1 to |j − 1| do
+                      if T able(vij ) & T able(vjk ) > 0 then
+                          remove the termi
+                          goto next i
+                      end if
+                 end for
+                 Ti ← Ti |2vij −1
+              end for
+          end for
+Step 4: Convert the value of undeleted Ti into polynomial form as follows
+          for i = 1 to |Ti | do
+              for i = 1 to tablecolsize do
+                 if {Ti ≫ (j − 1)}&1 = 1 then
+                      termi ← termi ∗ vj
+                 end if
+              end for
+              termi ← termi ∗ coef f icient(termi )
+          end for
+                                            k
+Step 5: f is an invariant polynomial fG       in which the variable in the
+    polynomial corresponds to the vertex of G and has the highest degree k
+            k
+                       P
+          fG  ←f =        termi
+                    k
+Step 6: return fG
+
+The if statement of step 5 of [Algorithm 5] is a process of checking whether two
+or mode vertices that are neighboring are multiplied. If the i does not go to the
+next(i + 1) by the if statement, vertex multiplication is performed through OR
+18     J. Ryu et al.
+
+operation. This ensures that the order does not increase when the same vertex is
+multiplied. Furthermore, step 4 can be pre-computed after receiving the public
+key before proceeding with encryption.
+
+
+
+Algorithm 9 Decryption function Dec with table
+Input: cipher ct, private function PDF
+Output: message m
+Step 1: For each variable xvi of the P DS element, it is converted as follows
+          for i = 1 to |P DS| do
+              yvi ← 2vi −1
+          end for
+Step 2: Generate LoP DS by XORing all yvi
+          for i = 1 to |P DS| do
+                               L        L
+              LoP DS ← yvi1       yvi2    ...
+          end for
+Step 3: Convert all terms Tj of the ciphertext as follows
+          for j = 1 to |♯terms(ct)| do
+              for k = 1 to dim(Tj ) do
+                  yvjk ← 2vjk −1
+              end for
+                         L       L
+              Tj ← yvj1     yvj2    ...
+          end for
+Step 4: If the result of AND operation with Tj and LoP DS is Tj , the
+    coefficient of the Tj term is added to pt; otherwise, check the next term
+          for j = 1 to |♯terms(ct)| do
+              if Tj & LoP DS = Tj then
+                  pt ← pt + coef f icient(Tj )
+              end if
+          end for
+Step 5: Return message m, which is the decryption result pt
+          m ← pt
+Step 6: return m
+
+
+
+Step 4 of [Algorithm 6] is a procedure of comparing the two values of the term
+and the PDS converted by lexical ordering at once, rather than comparing the
+vertices corresponding to each variable of the term with the PDS elements one
+by one.
+                                                                            IPCC        19
+
+5     Security
+
+This section describes the security strength according to the complexity of ex-
+haustive key search on IPCC, then explains the known attack technique and the
+security decreasing. And the rationale for determining the security parameters
+is also explained.
+
+
+5.1   Security definition
+
+IPCC is the PKE algorithm having configured the parameter set to satisfy 80-
+bit security. The main parameters that determine the security strength of this
+cryptosystem are the size n of each graph and the maximum order k of the
+cryptogram. In addition, the size of set I(the number of ci ) used to generate the
+ciphertext affects the attack on the cryptosystem.
+
+
+5.2   Security strength categories
+
+The complexity of key recovery attack on IPCC is O |V|V1 |/4   1|
+                                                                    + O |V|V2 |/4
+                                                                              2|
+                                                                                 
+                                                                                    + ... =
+    |Vi |
+          
+O |Vi |/4 (|Vi | ≥ |Vj | f or ∀j) where G = {G1 , G2 , ...}. For IPCC using multiple
+graphs, the complexity of key recovery attack for the largest graph is the com-
+plexity of exhaustive key search because each graphs are public and key recovery
+attacks can be performed on each. So, when the size of the set of graph vertices
+is 200, the complexity of key recovery attack is O(2158 ). [Table 7] shows the
+security level presented by NIST [8]. The strength of the cryptographic algo-
+rithm according to the size of the security parameters proposed in this proposal
+corresponds to security level 1.
+
+
+                   Table 7. strength of the cryptographic algorithm
+
+      Level                          Security Description
+         1    At least as hard to break as AES128 (exhaustive key search)
+         2        At least as hard to break as SHA256 (collision search)
+         3    At least as hard to break as AES192 (exhaustive key search)
+         4        At least as hard to break as SHA384 (collision search)
+         5    At least as hard to break as AES256 (exhaustive key search)
+
+
+
+
+5.3   Cost of plaintext recovery attacks
+
+The goal of this attack is to recover the plaintext corresponding to the ciphertext.
+In a situation where the (IS , cS ) pair is unknown, the attacker generates e     ct
+including terms in all cases and applies Gaussian-Jordan elimination to ct = e    ct
+20      J. Ryu et al.
+
+to obtain m = e  m. The attack complexity is O(t3 ) when the number of terms
+                                                            Pk
+in the arbitrary ciphertext generated by the attacker is t = i=1 nk . That is,
+                                                                   
+
+along with the size of the public key, the maximum degree k of the ciphertext
+has a great influence on complexity.
+
+
+
+
+algorithm of plaintext recovery attacks
+
+
+
+Algorithm 10 Plaintext recovery attack
+
+Input: ciphertext ct, graph G = (V, E)
+Output: message m
+Step 1: Set an adversary’s set Ie as following
+                                                              e = Pk   n
+                                                                                    
+             Ie ⊆ P (V ) such that for all S ∈ I,
+                                               e |S| ≤ k and |I|
+                                                                   j=1 k
+Step 2: The adversary leaves the set C selected by the sender as an unknown
+    set C
+        e
+                                   n                     o
+                              Ce = ce1 , ce2 , ..., ce e
+                                                        |I|
+
+Step 3: Generate a polynomial e     ct in the same way as the Algorithm2
+               e = fe(x1 , x2 , ..., xn ) = |I|−1 cei
+                                            Pf        Q    P
+              ct                                 i=1     e    u∈Ii xuu∈N [u]
+Step 4: From the condition ct   e equals to the given ciphertext ct as a
+    polynomial, we have the system of linear equations with unknowns {e                cs } by
+    comparing their coefficients
+Step 5: Applying Gaussian Jordan Elimination to the linear equations ct                e = ct;
+    if the result of adding
+                        n   each column vector  o     of nthe reduced row echelon   o   form
+    matrix on Zp is r1 , r2 , ..., r|I|
+                                     e , r|I|+1
+                                           e     , then r1 , r2 , ..., r|I|
+                                                                         e , r|I|+1
+                                                                               e      =
+    {1, 1, ..., 1, e
+                   m}
+Step 6: Return m     e as m
+Step 7: Return m
+
+
+
+
+example of plaintext recovery attacks We show an example of plaintext
+recovery attack for Perfect Code Cryptosystem where n = 8, k = 1, p = 11. The
+sets of vertices are V = v1 , v2 , ..., v8 . The receiver Bob first generates a key pair
+and publishes the graph [Figure 11] with the public key.
+                                                                                      IPCC   21
+
+
+
+
+                                Fig. 11. public key graph pk
+
+
+
+The sender Alice generated the ciphertext ct to deliver the message m = 5.
+At this time, the I selected by Alice is I = {v1 , v6 , v7 }, and coefficients set is
+C = {cv1 = 7, cv6 = 3, cv7 = 6}.
+Assume that Alice is sending a ciphertext to the recipient Bob, and the attacker
+eavesdrops on it. The ciphertext that the attacker obtained is ct = 10xv1 +2xv2 +
+7xv4 + 3xv5 + 5xv6 + 9xv7 + 6xv8 .
+First, the attacker constructs a set Ie so that all possible cases where k = 1.
+
+
+                             Ie = {v1 , v2 , v3 , v4 , v5 , v6 , v7 , v8 }
+
+
+And let the integer corresponding to each element of Ie be the unknown cei .
+
+                        e = {e
+                        C    cv1 , cev2 , cev3 , cev4 , cev5 , cev6 , cev7 , cev8 }
+
+Then, an attacker generates an arbitrary ciphertext ct for attacky referring to
+the public key.
+
+ct = e
+e    ctv1 (xv1 + xv2 + xv4 + xv6 ) + e ctv2 (xv1 + xv2 + xv3 + xv7 )
+      +ectv3 (xv2 + xv3 + xv4 + xv8 ) + e ctv4 (xv1 + xv3 + xv4 + xv5 )
+      +e ctv5 (xv4 + xv5 + xv6 + xv8 ) + e ctv6 (xv1 + xv5 + xv6 + xv7 )
+      +e ctv7 (xv2 + xv6 + xv7 + xv8 ) + e ctv8 (xv3 + xv6 + xv7 + xv8 )
+    = xv1 (ctv1 + ctv2 + ctv4 + ctv6 ) + xv2 (ct
+            e      e      e     e               e v1 + ct
+                                                       e v2 + ct
+                                                              e v3 + ct
+                                                                     e v7 )
+      + xv3 (ctv2 + ctv3 + ctv4 + ctv8 ) + xv4 (ctv1 + ctv3 + ctv4 + ct
+               e     e      e      e               e      e      e      e v5 )
+      + xv5 (ctv4 + ctv5 + ctv6 + ctv8 ) + xv6 (ctv1 + ctv5 + ctv6 + ct
+               e     e      e      e               e      e      e      e v7 )
+      + xv7 (ctv2 + ctv6 + ctv7 + ctv8 ) + xv8 (ctv3 + ctv6 + ctv7 + ct
+               e     e      e      e               e      e      e      e v8 )
+
+Knowing ct = 10xv1 + 2xv2 + 7xv4 + 3xv5 + 5xv6 + 9xv7 + 6xv8 , an attacker can
+generate a system of equations by comparing the coefficients of each term. As
+shown in [Figure 12] below, Gauss-Jordan elimination is applied by expressing
+the system of e
+              ct = ct equations as a matrix.
+22     J. Ryu et al.
+
+
+
+
+                   Fig. 12. apply the Gauss-Jordan elimination
+
+
+
+
+The message m can be recovered by adding the column vector of the matrix cal-
+culated in the Reduced Row Echelon Form over Zp . An attacker cannot compute
+the unique eC, but can obtain the message.
+
+
+
+
+                       Fig. 13. Recover the message on Zp
+
+
+
+
+Algorithm 11 Plaintext recovery attack against IPCC
+Input: ciphertext ct, private function P DF
+Output: message m
+Step 1: Check whether ct can be decomposed into Fe
+Step 2: Execute Algorithm7 for each fei of Fe
+Step 3: Compute me as m by composing m
+                                     e j calculated for each fej into Fe
+Step 4: return m
+                                                                        IPCC       23
+
+Expansion of plaintext recovery attack to IPCC In the case of IPCC, it is
+not necessary for the encrypting user to randomly selectF and not to disclose it.
+Therefore, if each subpolynomial cannot be attacked by factoring the ciphertext,
+the security against plaintext recovery attacks is maintained.
+For example, suppose that Alice uses the graphs G1 = (V1 , E1 ) and G2 = (V2 , E2 )
+with |V1 | = |V2 | = 200 to generate a ciphertext with a maximum degree of 2. The
+                                                 2      1
+F chosen by Alice to make the ciphertext is fG     1
+                                                     + fG  f 1 + fG
+                                                          1 G2
+                                                                  2
+                                                                    2
+                                                                      , and |I| = 5for
+each polynomial. Then, the time required for encryption is 0.186 ms, and the
+cipher text consists of 531 terms. If Alice uses a graph with |V | = 400 to encrypt
+a ciphertext with a maximum degree of 2 and |I| = 35(= 5+5∗5+5), a ciphertext
+consisting of 345 terms is obtained by consuming 4.3463ms of encryption time.
+Attacker Eve can scan the ciphertext and separate the terms generated using
+only one graph, G1 or G2 , and both graphs. Then, for ciphertext generation, the
+number of selectable vertex sets is 200 C1 +200 C2 from G1 , 200 C1 +200 C2 from
+G2 , and 200 C1 ∗200 C1 when two graphs are used. However, it is the same as
+the number of possible vertex combination when plaintext recovery is performed
+where the maximum degree is 2 and graph size is 400. In both cases, the number
+of terms in the random ciphertext that Eve needs to generate is 80200.
+As the order increases, the difference in encryption speed increases when dividing
+the two graphs, and the difference between the size of the generated ciphertext
+and the number of random ciphertexts that an attacker must generate also in-
+creases sharply. Therefore, with respect to the parameters proposed in Section
+3.3, it can be expected that the IPCC will be safe against plaintext recovery
+attacks. Above all, it is important not to affect the complexity of attack when
+the attacker separates even a part of F . The goal is to generate F so that the
+attacker’s factoring ability has no effect on the attack complexity.
+Since the current implementation uses a selecting one of four list in F as a
+secret, there is a possibility of being attacked with a computational ability sim-
+ilar to that of a user who encrypts by operating each F directly, but in future
+implementations, we plan to generate F be configured randomly.
+
+
+                    Table 8. complexity according to k (n=400)
+                         k             e 6
+                               size of ct       complexity
+                         2     8.02 × 104           49
+                         3     1.06 × 107           71
+                         4     1.06 × 109           90
+                         5     8.42 × 1010         109
+                         6     5.56 × 1012         127
+                         7     3.13 × 1014         145
+                         8     1.54 × 1016         162
+
+
+If the proposed parameter set is followed, the number of vertices that can appear
+in the ciphertext is 400 and the maximum degree is 8, so it has 162-bit safety
+24      J. Ryu et al.
+
+against plaintext recovery attacks. However, in this parameter setting, follows
+the key recovery attack safety because the key recovery attack for each graph has
+158-bit security, unlike generally following the security against plaintext recovery
+attack since the complexity of a key recovery attack is greater than that of a
+plaintext recovery attack.
+
+
+6    Conclusion
+
+In public key cryptography, Perfect Code Cryptosystems has not received much
+attention due to its inefficiency in terms of speed and memory. However, the
+IPCC proposes a way to improve encryption/decryption speed using multiple
+graphs. Designing a cryptosystem based on combinatorics is not a mature tech-
+nology. We expect that our proposal will be an initial step toward practical
+cryptosystems based on an NP-problem in graph theory. In this paper, we try to
+determine appropriate parameters such as the size of each graph, the number of
+graphs, and the number of terms in ciphertext polynomial, the degree of polyno-
+mials and so on. However, there is still room for improvement. In future studies,
+we have to provide precise security analysis and optimal implementation.
+                                                                        IPCC        25
+
+References
+1. Fellows, M., Koblitz, N.: Kid krypto. pp. 371–389 (2021(1993))
+2. Fellows, M.R., Koblitz, N.: Combinatorially based cryptography for children (and
+   adults). Congressus Numerantium pp. 9–9 (1994)
+3. Haynes, T.W., Hedetniemi, S., Slater, P.: Fundamentals of domination in graphs
+   (2013)
+4. Kratochvı́l, J.: Regular codes in regular graphs are difficult. Discrete Mathematics
+   133(1), 191–205 (1994)
+5. Kwon, S., Kang, J.S., Yeom, Y.: Analysis of public-key cryptography using a 3-
+   regular graph with a perfect dominating set. pp. 1–6 (2021)
+6. Livingston, M., Stout, Q.: Perfect dominating sets. Congressus Numerantium 79
+   (1997)
+7. Moody, D.: The 2nd Round of the NIST PQC Standardization Process (2019)
+8. NIST: Submission requirements and evaluation criteria for the post-quantum cryp-
+   tography standardization process (2016)
+9. Yoon, S.: (1,-1, 0)-perfect minus dominating function and its application to the
+   public key cryptosystem (2001)
+

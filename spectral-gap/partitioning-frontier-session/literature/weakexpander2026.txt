@@ -1,0 +1,2684 @@
+                                        Faster Weak Expander Decompositions and Approximate Max Flow
+                                                             Henry Fleischmann1 , George Z. Li1 , and Jason Li1
+                                                   1
+                                                       Carnegie Mellon University {hfleisch, gzli, jmli}@cs.cmu.edu
+
+
+
+
+arXiv:2511.02943v1 [cs.DS] 4 Nov 2025
+                                                                                     Abstract
+                                              We give faster algorithms for weak expander decompositions and approximate max flow on
+                                           undirected graphs. First, we show that it is possible to “warm start” the cut-matching game
+                                           when computing weak expander decompositions, avoiding the cost of the recursion depth. Our
+                                           algorithm is also flexible enough to support weaker flow subroutines than previous algorithms.
+                                              Our second contribution is to streamline the recent non-recursive approximate max flow
+                                           algorithm of Li, Rao, and Wang (SODA, 2025) and adapt their framework to use our new weak
+                                           expander decomposition primitive. Consequently, we give an approximate max flow algorithm
+                                           within a few logarithmic factors of the limit of expander decomposition-based approaches.
+
+
+
+
+                                                                                         1
+Contents
+1 Introduction                                                                                       3
+
+2 Technical Overview                                                                                 4
+
+3 Organization of the Paper                                                                          8
+
+4 Preliminaries                                                                                      8
+
+5 Faster Algorithm for Weak Expander Decomposition                                                  10
+  5.1   Weak Expander Decomposition with Deleted Demand . . . . . . . . . . . . . . . . . 10
+  5.2   Grafting in Deleted Demand . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20
+
+6 Sufficient Conditions for Constructing a Congestion-Approximator                                  23
+  6.1   Running Time . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 31
+
+7 Building Our Congestion-Approximator                                                              31
+  7.1   Cut-Matching via a Pseudo-Congestion-Approximator . . . . . . . . . . . . . . . . . 32
+  7.2   Grafting Deleted Nodes . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 35
+  7.3   Proof of Theorem 7.1 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 38
+        7.3.1   Justifying Oracle Runtimes . . . . . . . . . . . . . . . . . . . . . . . . . . . . 39
+
+A Faster Algorithm for One-Sided Fair Cuts                                                          41
+
+B Omitted Proofs                                                                                    45
+  B.1 Proof of Lemma 5.1 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 46
+
+
+
+
+                                                  2
+1     Introduction
+In the maximum flow problem, we are given a set of vertex demands, where each vertex is re-
+quired to send or receive a certain amount of flow, and the goal is to route these demands while
+minimizing the maximum congestion along any edge. It is one of the oldest problems in theo-
+retical computer science [Dan51], with surprising connections to other famous problems including
+minimum cut, bipartite matching, and Gomory-Hu trees [GH61]. And yet, despite its status as a
+notoriously difficult problem, modern algorithmic techniques have produced exciting breakthroughs
+in both the exact directed setting [DS08, Mad16, CKL+ 25] and the approximate undirected set-
+ting [LRS13, She13, She17]. These techniques include the interior point method from continuous
+optimization [DS08, Mad16, CKL+ 25], electrical flows and Laplacian solvers [ST14, LRS13, Mad16],
+expander decompositions and congestion approximators [She13, RST14], and dynamic data struc-
+tures [CKL+ 25].
+    On the other hand, despite the rapid advancement of modern flow algorithms, progress towards
+understanding max flow, especially its underlying structural properties, has arguably lagged behind:
+
+    1. The state of the art (1 − ϵ)-approximate max flow algorithm on undirected graphs runs in
+       O(m log41 n log2 log n) time even for constant ϵ > 0 [Pen16]. The algorithm is fairly complex,
+       recursively alternating between multiple different problems, and it took a decade before the
+       first non-recursive algorithm was developed for this problem [LRW25].
+
+    2. While the exact max flow algorithms based on interior point methods are impressive, they
+       do not shed light on the combinatorial structure of max flow. In response, a recent trend of
+       studying combinatorial max flow has emerged [CK24a, CK24b, BBST24, BBL+ 25], obtaining
+       augmenting path-style algorithms that are more faithful to traditional approaches.
+
+     This paper is dedicated to improving our understanding of approximate max flow in the undi-
+rected setting. Our starting point is the recent non-recursive algorithm for approximate max
+flow [LRW25], which computes a hierarchy of so-called weak expander decompositions, using previ-
+ously computed levels of the hierarchy to build the next level. From this hierarchy, a congestion
+approximator is extracted and used in Sherman’s framework [She17] to obtain the desired approxi-
+mate max flow. However, [LRW25] do not state an explicit running time, since the weak expander
+hierarchy construction requires calls to fair cut/flow [LNPS23], which introduce a large running
+time overhead.
+     The contribution of this paper is twofold:
+
+    1. First, we develop a faster weak expander decomposition algorithm by “warm starting” the cut-
+       matching game [KRV09] whenever a sparse cut is found. This algorithm can be implemented
+       using O(log2 n) calls to max flow, compared to O(log3 n) for the standard weak expander
+       decomposition implementation [SW19], and may be of independent interest.
+
+    2. Next, we streamline the framework of [LRW25] to obtain a non-recursive approximate max
+       flow algorithm with an improved running time of O(m log9 n log log n). In particular, we
+       implement our weak expander decomposition using approximate max flow, compared to prior
+       algorithms which require fair cut/flow or similarly strong guarantees [SW19, LRW25]. Similar
+       to [LRW25], these max flow calls are specialized enough to be solvable using the existing levels
+
+
+                                                   3
+     of the hierarchy. However, a weaker flow oracle introduces a number of technical difficulties
+     which we discuss in the technical overview.
+
+Theorem 1.1 (Informal version of Corollary 7.2). Given an undirected graph with integral and
+polynomially-bounded edge capacities, there is an O(m log9 n) time algorithm to construct a congestion-
+approximator with quality O(log5 n). Together with Sherman’s framework [She17], we obtain an
+(1 − ϵ)-approximate max flow algorithm in time O(m log9 n log log n + ϵ−1 m log6 n).
+
+     While the logarithmic exponent of 9 is too large to be practical, we remark that expander
+decomposition-based algorithms have historically led to similarly large constants. For example, the
+state of the art (strong) ϕ-expander decomposition [SW19] deletes O(ϕ log3 n) fraction of edges
+and runs in time O(m log5 n/ϕ) on capacitated graphs; to delete a constant fraction of edges, we
+require ϕ ≈ 1/ log3 n which results in O(m log8 n) time. Even our faster implementation of weak
+expander decomposition runs in O(m log4 n) time in the most ideal setting. Therefore, our max
+flow algorithm is within a few logarithmic factors of the limit to any expander decomposition-based
+approaches, and substantial future improvements will require either breakthroughs in computing
+expander decompositions, or bypassing expander decompositions altogether.
+
+
+2    Technical Overview
+Faster weak expander decompositions. All known algorithms for computing expander de-
+compositions in near-linear time rely on the cut-matching game. Our first main technical contribu-
+tion is a faster algorithm for computing weak expander decompositions. We do this by observing
+that it is possible to “warm start” our recursive instances of the cut-matching game. Importantly
+for our application to approximate max flow, our algorithm is robust enough to support general
+vertex weights and to implement the matching steps using approximate max flow oracles.
+     We now describe the techniques in more detail. In the standard cut-matching game (on an
+unweighted graph), we have T = Θ(log2 n) rounds in total. In each round, the cut player finds two
+disjoint sets LA and RA . The matching player then tries to route a flow from LA to RA , implicitly
+defining a matching between the sets. If at any iteration the matching player fails to route the
+flow, the cut certifying infeasibility of the flow is a sparse cut, showing that the graph is not an
+expander. Otherwise, if all matching step flows are feasible, the cut player is defined so that the
+union of the matchings found in the T iterations is itself an expander. Combined with the fact that
+the matchings embed into the original graph with low congestion, this proves that G must be an
+expander.
+      In the non-stop version of the cut-matching game [RST14, SW19], when the matching player
+fails to route the flow from LA to RA , thus finding a sparse cut S, the algorithm does not (neces-
+sarily) immediately terminate. Instead, the cut-matching game continues on V \ S. More generally,
+let A be the current set on which the cut-matching game is being played; when the matching player
+finds a cut S, the algorithm continues on A \ S. It can be shown that after T iterations, the
+remaining set A is a near-expander in G, meaning that its degree vertex weighting mixes in G (but
+possibly not G[A]) with low congestion.
+    To convert the non-stop cut-matching game into a weak expander decomposition algorithm,
+[FLL25] adds an early termination condition: if vol(A) ≤ 99 vol(V )/100 at any point, the non-stop
+cut-matching game terminates and recurses on A and V \ A. Otherwise, if the cut-matching game
+
+                                                 4
+terminates in certifying that A is a near-expander, we recurse onto V \ A if it is non-empty. If A is
+certified as a near-expander in some iteration, we then know that vol(V \ A) ≤ vol(V )/100 so the
+recursive call decreases by a constant factor in size. If we reach the early termination condition,
+then vol(A) ≤ 99 vol(V )/100 and we have the additional guarantee that V \ A is partitioned by
+sparse cuts into subsets of at most 2/3 of the volume each. Hence, the recursive calls also decrease
+in size by a constant factor in this case. As a result, the recursive depth is at most O(log n), so we
+can compute a weak expander decomposition in O(log3 n) iterations of the cut-matching game.
+      We give a new weak expander decomposition algorithm which only uses O(log2 n) iterations
+of the cut-matching game. Let A again be the current set of vertices. If we find a matching
+successfully, then we continue the cut-matching game on A. Otherwise, we find a sparse cut S ⊆ A.
+In the previous algorithm, we would only continue on A \ S, delaying continuing on S until reaching
+the early termination condition or certifying that some subset of A \ S is a near-expander in G. Our
+main observation is that we can continue the cut-matching game on both A\S and S simultaneously
+without a loss in the runtime. This amounts to “warm-starting” on S. Slightly more formally, we
+maintain a partition of V into sets At = {A1 , . . . , Akt } at each iteration t. At the beginning of
+the algorithm, we set A0 = {V } and at each iteration t, we run the cut-matching game on each
+Ai ∈ At simultaneously. When we find some cut Si ⊆ Ai , we add Si (if nonempty) and Ai \ Si to
+At+1 . After T rounds, we will certify that each component in AT is a near-expander. We remark
+that warm-stating crucially uses the fact that we are ultimately constructing a weak expander
+decomposition, not a strong one. Indeed, the matching embeddings from steps prior to restricting
+to a subgraph (from finding a cut) are not guaranteed to embed into our current subgraph. This
+is fine for certifying near-expansion but too weak a guarantee for strong expansion.
+     Importantly for our application to approximate max flow, this algorithm still reveals sufficient
+structure when implementing the matching steps with an approximate max flow oracle. To this end,
+we give our algorithm in two steps. The first step is to compute a weak expander decomposition
+where there can be a small “deleted,” non-expanding portion of the input vertex weighting (Sec-
+tion 5.1). The non-deleted portion is certified to mix simultaneously (i.e., each component expands
+with respect to the non-deleted portion of the vertex weighting) and there are guaranteed to be few
+intercluster edges, as usual. Then, in the second step (Section 5.2), we attempt to graft the demand
+deleted in each cluster back into the cluster, as in [FLL25]. After this step, every expanding cluster
+will not have any deleted demand, and nearly all demand will belong to an expanding cluster. We
+state an informal version of our result in Theorem 2.1.
+Theorem 2.1 (Informal version of Theorem 5.15). Suppose we have G = (V, E, c) with integer
+edge capacities at most poly(n). In addition, suppose we have vertex weighting d ∈ ZV≥0 , expansion
+parameter ϕ > 0, and a suitable approximate max flow oracle running in time F (n, m, ε). Then,
+there is an algorithm computing a partition A = A◦ ⊔ A× of V with the following properties:
+
+  1. The algorithm runs in time O(F (n, m, ε) log2 n + m log4 n).
+
+  2. d( A∈A× A) = O((ε log2 n + ϕ log n) d(V )).
+       S
+
+  3. The total capacity of edges cut by A is at most O(ϕ d(V ) log n).
+
+  4. Each A ∈ A◦ is a (ϕ/ log2 n, d)-near-expander in G.
+
+    Importantly for our applications, we actually obtain a stronger simultaneous mixing expansion
+property instead of (4), but we omit that here for simplicity (see Theorem 5.15). Also note that,
+
+                                                  5
+unlike standard weak expander decompositions, our result does not exactly decompose all vertices
+into near-expanders (i.e., usual decompositions would get A× = ∅ or the guarantee of (2) to
+be 0). However, this relaxation is critical for obtaining such a result and still suffices for some
+important applications of weak expander decompositions. Indeed, the relaxation of (2) suffices for
+our application to constructing congestion-approximators and approximate max flow, as we discuss
+next.
+
+Faster congestion-approximators. Recall that a laminar family C of subsets of V forms an α-
+congestion-approximator if for every vertex demand, the minimum ratio over cuts C ∈ C between the
+capacity of the cut and the demand crossing the cut is an α-approximation to the optimal congestion
+of any flow routing the demand. Our goal is to construct α-congestion-approximators faster and
+with smaller α. To discuss our improvement over previous work, we restate the informal Theorem
+2.1 from [LRW25], which gave a novel approach for constructing congestion-approximators.
+
+Theorem 2.2 (Theorem 2.1 of [LRW25]). Consider a capacitated graph G = (V, E, c), and let
+α ≥ 1 and β ≥ 1 be parameters. Suppose there exist partitions P1 , P2 , . . . , PL of V such that
+
+  1. P1 is the partition {{v} : v ∈ V } of singleton clusters, and PL is the partition {V } with a
+     single cluster.
+
+  2. For each i ∈ [L − 1], for each C ∈ Pi+1 , the intercluster edges of Pi internal to C along
+     with the boundary edges of C mix in the graph G. Moreover, the mixings over all the clusters
+     C ∈ Pi+1 have congestion α simultaneously.
+
+  3. For each i ∈ [L − 1], there is a flow in G with congestion β such that each intercluster edge
+     of Pi+1 sends its capacity in flow, and each intercluster edge of Pi receives half its capacity
+     in flow.
+
+For each i ∈ [L], let partition R≥i be the common refinement of partitions Pi , Pi+1 , . . . , PL , i.e.,
+
+                  R≥i = {Ci ∩ · · · ∩ CL : Ci ∈ Pi , . . . , CL ∈ PL , Ci ∩ · · · ∩ CL ̸= ∅}.
+                                                                                      2
+                         S
+Then, their union C =        i∈[L] R≥i is a congestion-approximator with quality 16αβL .
+
+     The partitions Pi described in the theorem essentially form a weak expander hierarchy, where
+each level is essentially a (boundary-linked) weak expander decomposition. Using the existence
+of routings guaranteed by (2) and (3), [LRW25] show that a demand respecting the congestion-
+approximator can be iteratively routed. They then show that this weak expander hierarchy can be
+constructed using existing tools for constructing expander decompositions [SW19, LNPS23]. By
+doing this, they construct a sequence of partition P1 , . . . , PL satisfying properties (1), (2), and (3)
+with parameters α = O(log5 n) and β = O(log3 n).
+     Our main observation is that we do not need the full power of a weak expander decomposition
+at each level in order to show the existence of this routing. If a small constant fraction of the
+vertices (measured in terms of volume in the subgraph) do not have the expander mixing property,
+this is still sufficient to show that the congestion-approximator routing exists. Specifically, we relax
+conditions (2) and (3) on the partitions Pi to allow for a small constant fraction of edges to not
+participate in the routings at level i and be instead be handled at level i + 1. More formally, we let
+
+
+                                                      6
+P1 , . . . , PL be partitions of subsets V1 , . . . , VL ⊆ V . We only require the mixing properties (2) and
+(3) on Vi+1 for each i ∈ [L − 1], so we should think of Pi as a weak expander decomposition of Vi .
+To extend the partitions Pi of Vi to a partition P i of V , we define Qi to be the induced partition
+from the previous level P i−1 on V \ Vi . That is, we define
+
+                            Qi = {C ∩ (V \ Vi ) : C ∈ P i−1 , C ∩ (V \ Vi ) ̸= ∅}.
+
+Then we can define P i = Pi ∪ Qi . Intuitively, when we only have a partition on Vi , we are giving
+up on routing the demand from the intercluster edges from P i−1 in V \ Vi and dealing with it at a
+higher level. In order to move it to the higher level, we include it in P i through the definition of
+Qi .
+    We now state a morally true version of our relaxed conditions for constructing congestion-
+approximators.
+
+Theorem 2.3 (Informal version of Theorem 6.1). Consider a capacitated graph G = (V, E, c), and
+let α ≥ 1 and β ≥ 1 be parameters. Let P1 , . . . , PL be partitions of V1 , . . . , VL , respectively and
+extend these to partitions P 1 , . . . , P L as described above. Suppose the partitions P 1 , . . . , P L satisfy:
+
+   1. P 1 is the partition {{v} : v ∈ V } of singleton clusters and P L is the partition {{V }} with a
+      single cluster.
+
+   2. For each i ∈ [L − 1], for each C ∈ Pi+1 , the intercluster edges of P i internal to C along
+      with the boundary edges of C mix in the graph G. Moreover, the mixings over all the clusters
+      C ∈ Pi+1 have congestion α simultaneously.
+
+   3. For each i ∈ [L − 1], there is a flow in G with congestion β such that each intercluster edge
+      of Pi+1 sends its capacity in flow, and each intercluster edge of P i receives at most a quarter
+      its capacity in flow.
+
+For each i ∈ [L], let partition R≥i be the common refinement of partitions P i , P i+1 , . . . , P L , i.e.,
+
+                   R≥i = {Ci ∩ · · · ∩ CL : Ci ∈ P i , . . . , CL ∈ P L , Ci ∩ · · · ∩ CL ̸= ∅}.
+                                                                                       2
+                          S
+Then, their union C =         i∈[L] R≥i is a congestion-approximator with quality 48αβL .
+
+       The first advantage of this relaxation is that our algorithm for constructing the partitions
+P1 , . . . , PL is faster. In particular, we can use approximate max flow algorithms to implement the
+cut-matching game. This may cause some nodes to be “deleted,” as described in the previous sub-
+section, but this is okay for us since we only need expander mixing guarantees on a (large) constant
+fraction of the vertices for property (2). In contrast, [LRW25] used a fair-cuts algorithm [LNPS23]
+to implement the same step in their paper, which incurred several additional log factors in their
+runtime.
+    The second advantage is for obtaining smaller β. In [LRW25], they prove that the flow from
+∂Pi+1 to ∂Pi exists using the boundary-linkedness property of the expander decompositions. This
+approach naturally suffers from β = Ω(log3 n) because the flows guaranteed by the expander de-
+composition have congestion Ω(log3 n). Instead, our approach is to directly attempt to send flow
+from ∂Pi+1 to ∂Pi at each level. Using a max-flow/min-cut algorithm, we will find a (possibly
+empty) cut and a flow which saturates the cut. If we simply remove the vertices which are cut
+
+                                                        7
+out, we have that in the remainder of the graph, there is a flow from ∂Pi+1 to ∂Pi (since the flow
+saturates the cut). This gives us the desired β = O(1), and also crucially uses our relaxation of
+properties (2) and (3).
+     Finally, we note that we obtain a smaller α = O(log3 n) in our construction. This is because
+we construct a weak expander decomposition on each level, which we observed is sufficient for
+the simultaneous mixing guarantees required by property (2). This enables us to avoid the costly
+trimming step used in [LRW25], and also enables our speedup using warm-starting, which no longer
+helps for strong expander decompositions.
+
+The approximate max flow algorithm. We apply Sherman’s framework [She17] to con-
+vert a congestion-approximator into an approximate max flow algorithm. Our approach for con-
+structing a congestion-approximator is to construct a weak expander hierarchy using the cut-
+matching game. In implementing the cut-matching game, we need to solve flow problems (ap-
+proximately), and we do this using the previous layers of the hierarchy as a “pseudo”-congestion-
+approximator. Our (pseudo)-congestion-approximators have quality αβL2 = O(log5 n), giving us
+an O(m log6 n log log n) time algorithm for solving the flow problems in the cut-matching game.
+Our improved weak expander decomposition algorithm takes T = O(log2 n) rounds to obtain a full
+weak expander decomposition. Finally, there are L = O(log n) layers of the hierarchy, totalling
+O(m log9 n log log n) runtime.
+
+
+3    Organization of the Paper
+In Section 5 we give a faster algorithm for weak expander decompositions. This algorithm supports
+implementing its flow subroutines with weaker than usual properties, which are described in Oracle 1
+and Oracle 2. In Section 6 and Section 7 we give a faster algorithm for computing a congestion-
+approximator from the bottom up, using the faster weak expander decomposition as a critical
+subroutine. To do this, we show how to efficiently implement Oracle 1 and Oracle 2. As a direct
+consequence of our new algorithm for constructing a congestion-approximator, we obtain the fastest
+known approximate max flow algorithm. In Section A, we give a faster algorithm for one-sided fair
+cuts which we need to implement Oracle 2. Section B includes all other technical proofs omitted
+from the main body of the paper.
+
+
+4    Preliminaries
+Sets. We use Z≥0 to denote the set of non-negative integers. For k a positive integer, we use
+[k] to denote {1, 2, . . . , k}. When S ⊆ X, we sometimes use S to denote its complement; that is,
+S = X \ S.
+
+Functions. For two functions f, g : X → R let f ≤ g denote that, for all x ∈ X, f (x) ≤ g(x).
+We write supp(f ) to denote the subset of X on which f takes nonzero values. For S ⊆ X and S
+                                            P
+finite, we also write f (S) as shorthand for x∈S f (x). We use f |S to mean the restriction of f
+to S. When clear from context, we sometimes abuse notation and use f |S to denote the function
+f on the same domain but set equal to 0 outside of S. We also use all of the above notation for
+
+
+                                                 8
+vectors, interpreting those vectors as functions. We often bold vectors to distinguish them from
+scalars (e.g., write d ∈ RV ).
+
+Graphs. We consider capacitated (weighted) graphs G = (V, E, c) where c ∈ [1, W ] ∩ Z. Unless
+otherwise specified, we use n to denote the order of G and m to denote its size. Sometimes we
+write VG (or V (G)), EG (or E(G)), and cG to clarify that they are the parameters of the graph G.
+For S ⊆ V , denote the induced subgraph of G as G[S]. In other words, G[S] is the subgraph of G
+formed by retaining exactly vertices in S and edges between vertices in S.
+     Given a partition A of V , we write ∂A to denote the set of intercluster edges in G. When
+A is just a single cut (S, V \ S), we sometimes write ∂S instead. We often consider ∂A as an
+edge subgraph of G. We also use the notation δA = c(∂A) and δS = c(∂S) (or δ(A) and δ(S))
+as shorthand denoting the total capacity of intercluster or cut edges. For u ∈ V , we denote the
+(weighted) degree of u in G as degG (u) = δG ({u}). We will often also consider deg∂A (u) = δ∂A ({u})
+which treats ∂A as an edge subgraph of G. Finally, throughout we consider vertex weights d ∈ ZV≥0 ,
+with the most common weight function being d = degG or degH for H a subgraph of G.
+
+Flow. A demand is a vector b ∈ RV whose entries sum to 0. We say a flow f : E → R routes a
+demand b if for each v ∈ V the net flow at v in f is b(v). We say that f has congestion κ if the
+flow through any edge in f is at most κ times its capacity. Given a flow f , a path decomposition of
+f is a collection of weighted paths in G such that, for each (u, v) ∈ E, the flow from u to v in f is
+the sum of weights of paths containing the edge from u to v in the path decomposition.
+
+Expansion. Let G = (V, E, c) be a capacitated graph, and let d ∈ RV≥0 be a vertex weighting.
+Let S ⊆ V . Then, the conductance of S in G with respect to d is
+
+                                                    δG (S)
+                                 ΦG,d (S) =                       .
+                                              min(d(S), d(V \ S))
+
+We say that a cut S is ϕ-sparse (in G with respect to d) if ΦG,d (S) ≤ ϕ. We say that G is a
+(ϕ, d)-expander if, for all S ⊆ V , we have ΦG,d (S) ≥ ϕ. For A ⊆ V , we say that A is ϕ-nearly
+d-expanding in G (or A is a (ϕ, d)-near-expander in G) if, for all S ⊆ A, we have
+
+                                           δG (S)
+                                                         ≥ ϕ.
+                                     min(d(S), d(A \ S))
+
+Note that if A is ϕ-nearly d-expanding in G, then the same holds for all A′ ⊆ A, since the
+denominators of the relevant expressions only decrease. When d = degG or d is clear from context
+we say G is a ϕ-expander (respectively, near-expander).
+     We can also define expansion with respect to flows. We say that a vertex weighting d ∈ RV≥0
+mixes in G with congestion κ if, for all demands b ∈ RV with |b| ≤ d, we have that b is routable
+in G with congestion at most κ. In fact, d mixes in G with congestion 1/ϕ if and only if G is a
+(ϕ, d)-expander. Note that while d |A mixing in G with congestion κ implies that A is a (ϕ, d)-
+near-expander in G, the converse does not hold in general. Flow-based expansion is stronger than
+cut-based expansion for near-expanders.
+    Sometimes we require an even stronger notion of expansion with respect to multi-commodity
+
+
+                                                  9
+flows. We say that a collection of vertex weights {di : i ∈ I} mixes simultaneously in G with
+congestion κ if, for all tuples of demands (bi )i∈I with each bi ∈ RV satisfying |bi | ≤ di , there
+exists a multicommodity flow F with one commodity per demand which routes all bi and has total
+congestion κ.
+
+Congestion-approximators. Given a graph G = (V, E, c), a congestion-approximator C of qual-
+ity α is a family of subsets of V such that, for any demand b satisfying |b(C)| ≤ δG (C) for all
+C ∈ C, there is a flow routing demand b with congestion α.
+
+
+5     Faster Algorithm for Weak Expander Decomposition
+Our input is an undirected, capacitated graph G = (V, E, c) of order n, size m, and with c ∈
+Z ∩ [1, W ]; an expansion parameter ϕ > 0; and a vertex weighting d : V → Z≥0 . For intuition, it
+may be helpful to think of d as degG . Our goal is to compute a decomposition of V , AT , and some
+dT ≤ d such that:
+
+    1. Decomposition into expanders: {dT |A : A ∈ AT } mix simultaneously in G with congestion
+       O(1/ϕ).
+
+    2. Few cut edges: The total capacity of edges cut by AT is O(ϕ d(V ) log nW ).
+
+    3. Limited deleted demand: d(V ) − dT (V ) ≤ ϵ′ d(V ), for some small constant ϵ′ > 0.
+
+In the case of implementing the matching steps of cut-matching with an exact max flow oracle or a
+fair cuts-based approximate max flow oracle, we can set ϵ′ = 0. For our application to approximate
+max flow, our max flow oracles are too weak to achieve such a guarantee ϵ′ = 0, but the guarantee
+of (3) still suffices. We defer stating the main result of this section, Theorem 5.15, so it can be
+stated in the context of the flow oracles it assumes.
+
+5.1    Weak Expander Decomposition with Deleted Demand
+
+We begin by stating some basic definitions. For A ⊆ V and a vertex weighting b : A → Z≥0 , define
+an A-commodity flow as a multicommodity flow where each v ∈ A is a source of b(v) of its unique
+flow commodity.
+    For the purposes of our analysis, we will implicitly maintain a flow matrix F ∈ RV≥0×V through-
+out. We say a flow matrix F is routable with congestion κ if there exists a V -commodity flow f
+such that for each (u, v) ∈ V 2 , f simultaneously routes F(u, v) of u’s commodity to v with no edge
+e having more than κ c(e) flow passing through it.
+     We initialize our flow matrix as F0 = diag(d), where we view d as a vector in V Z≥0 . We also
+initialize our set of “deleted vertices” as the empty set; D0 = ∅. At each step t ≥ 1, dt is equal to
+d, except set equal to 0 on Dt−1 . The algorithm then proceeds in T rounds.
+     Some components of At become inactive over the course of the algorithm. The components
+that are active are those for which we have not marked all nodes as deleted and for which we have
+not certified that the component is an expander. We decompose At = A◦t ⊔ A×  t into the active and
+inactive portions, respectively. In each step, we will make progress towards certifying expansion
+
+
+                                                 10
+Algorithm 1 Weak Expander Decomposition with Deletions
+ WeakDecomp(G = (V, E, c), d, ϕ)
+ . Initialize A0 = {V }, xV0 = 0, d0 = d, and implicitly initialize F0 = diag(d)
+ . for t ∈ [T ]:
+ . . for A ∈ A×                       ×           A
+                 t−1 : add A to At and set xt = xt−1 ;
+                                                      A
+                 ◦
+ . . for A ∈ At−1 :                                                                       // Cut step
+                                  ◦            ◦
+ . . . Find sets LA , RA ⊆ A , where A = {v ∈ A : dt−1 (v) > 0}
+ . . Compute cuts CA and matching Mt between LA to RA in each A ∈ A◦t−1 // Matching step
+ . . for u ∈ V :                                                                       // Update dt
+                                                  ′
+ . . . if u ∈ LA ∩ (A \PCA ) ⊆ A for A ∈ At−1 ⊆ At−1 :  ◦
+
+ . . . . Let Mt (u) = v∈A◦ Mt (u, v)
+ . . . . if Mt (u) < d(u)/2: set dt (u) = 0;
+ . . . else: dt (u) = dt−1 (u);
+ . . for A ∈ A◦t−1 :                                                   // Form At , update counters
+ . . . for S ∈ {CA , A \ CA } nonempty:
+ . . . . if A ∈ A′t−1 : set xSt = xA     t−1 + 1;
+ . . . . else: set xSt = xA  t−1 ;
+ . . . . if dt (S) ≤ 15 d(S)/16:
+ . . . . . for u ∈ S: set dt (u) = 0;
+ . . . . if dt (S) = 0 or xSt > 105 C log n log nW or | supp(dt |S )| = 1: add S to A×t ;       // C
+ sufficiently large constant
+ . . . . else: add S to A◦t ;
+ . . for u ∈ V :                                                                       // Update Ft
+ . . . if u ∈ A ∈ A◦t−1   :            
+ . . . . Set Ft (u) = 1 − M       t (u)
+                               2 d(u) Ft−1 (u) + 2
+                                                    1P    Mt (u,w)
+                                                      w∈A◦ d(w) · Ft (w)
+ . . . else: set Ft (u) = Ft−1 (u);
+ . return AT
+
+
+on some A′t ⊆ A◦t . For each active component A ∈ A◦t , we maintain a counter xA
+                                                                               t recording how
+many times we have made progress on this set. When the counter is high enough, we have certified
+expansion on A with high probability and we can set the component to be inactive. We state the
+algorithm more formally in Algorithm 1.
+
+Cut Player.    We implement our cut step as follows.
+
+   • Sample rt ∈ RV , a random unit vector.
+
+   • For each A ∈ A◦t−1 :
+
+        – For each u ∈ A◦ = {v ∈ A : dt−1 (v) > 0}, compute
+                                                               
+                                                   Ft−1 (u)
+                                        pt (u) =            , rt .
+                                                     d(u)
+
+        – Compute a partition LA ⊔ RA = A◦ such that:
+            1. dt−1 (LA ) = ⌈dt−1 (A)/8⌉.
+
+
+                                                 11
+            2. maxu∈LA pt (u) ≤ η ≤ minu∈RA pt (u) or maxu∈RA pt (u) ≤ η ≤ minu∈LA .
+
+In particular, we compute a partition of A◦ such that LA is guaranteed to contain a set of vertices
+certifying progress towards expansion. We show the existence of such a set certifying progress via
+a technical lemma. This is a variant of Lemma 5.15 of [FLL25] adapted to the undirected setting.
+Lemma 5.1. Let X be a finite multi-subset of R with |X| ≥ 2. There exists η ∈ R inducing a
+partition X = Lη ⊔ Rη with max(Lη ) ≤ η ≤ min(Rη ) or max(Rη ) ≤ η ≤ min(Lη ), |Lη | = ⌈|X|/8⌉,
+                                                           1 P
+and with the following additional guarantees. Define µ̄ = |X| x∈X x. There exists S ⊆ Lη such
+that
+
+  1. For each s ∈ S, we have (s − η)2 ≥ 19 · (s − µ̄)2 .
+     P             2  1 P             2
+  2.   s∈S (s − µ̄) ≥ 36  x∈X (x − µ̄) .
+
+      The proof is similar to the proof of Lemma 5.15 in [FLL25]. We defer the proof to the appendix
+for the sake of exposition. To construct our partition LA ⊔ RA , we apply Lemma 5.1 to the multiset
+of pt (u), where each value is repeated dt (u) times. Elements whose duplicates appear in both Lη
+and Rη have pt (u) = η and will not be relevant for our potential reduction analysis.
+Lemma 5.2. For each t ≤ T , we can compute the cut step partitions for all A ∈ A◦t−1 in total time
+O(mt).
+
+Proof. To compute pt (u) for each u ∈ A◦ ∈ A◦t−1 , we use the recursive formulation of Ft−1 (u)
+(see Eq. (1)). For t = 1, we just use the initialization. Otherwise, since Mt−1 has at most m
+nonzero entries (as do all the other computed matching matrices), we can compute ⟨Ft−1 (u), rt ⟩ for
+all such u ∈ A◦ ∈ A◦t−1 given each ⟨Ft−2 (u), rt ⟩ in total time O(m). The base case inner products
+take O(m) time to compute, so in total it takes O(mT ) time to compute all pt (u) for t ≤ T .
+     Given the pt (u), for each A ∈ A◦t−1 , we need to decide whether to choose η in the application
+of Lemma 5.1 so that r|X| or (1 − r)|X| of the pt (u) are at most η, where r = ⌈|X|/8|⌉
+                                                                                   |X| . This takes
+O(|A|) time (we can, for example, check whether Equation (7) holds). Since At−1 is a partition,
+this only contributes an additional O(n) total time.
+
+Matching Player. In the tth matching step, we consider the following flow problem. Let Gt be
+the graph with all edges between different components in At−1 deleted and all remaining edges with
+capacity scaled by 2/ϕ. For v ∈ LA for some A ∈ A◦t−1 , we set its source to be ∆(v) = dt−1 (v).
+For v ∈ RA , we set its sink to be ∇(v) = dt−1 (v).
+    We assume access to an approximate max flow oracle with the following guarantees.
+
+  Oracle 1 (Matching Player Flow Oracle). On such a flow instance, we find A′t−1 ⊆ A◦t−1 with
+                                                               
+                                          [           1       [
+                              dt−1               A ≥ dt−1     A
+                                                      2        ◦
+                                        A∈A′t−1             A∈At−1
+
+
+  such that, for each A ∈ A′t−1 :
+
+     1. We find a (possibly empty) cut CA ⊆ A with dt−1 (CA ) ≤ dt−1 (A)/2. In addition, we
+
+
+                                                       12
+        have that the total capacity of computed cuts (CA , A \ CA ) is at most
+
+                                      ϕ X
+                                           dt−1 (CA ) + 2γ d(V ).
+                                      8  ′
+                                        A∈At−1
+
+
+     2. We find a flow routing at least ∆(A \ CA ) − 2γ d(A) source of ∆|A\CA within A, for
+        γ < 1/2.
+
+Remark 5.3. Note that, if given access to a (1 − γ)-approximate max flow oracle, we could apply
+the oracle on each A ∈ A◦t−1 and get the desired properties with A′t−1 = A◦t−1 .
+
+Updating the flow matrix. Each application of the flow oracle induces a weighted matching in
+each component between the source and the sink. We update the implicit flow matrix F accordingly.
+In particular, let Mt ∈ V × V be the symmetric matrix where, for u a source vertex, Mt (u, v)
+is the amount of flow sent from vertex u to vertex v in the flow (after computing some path
+decomposition using link-cut trees). Importantly, since Mt (u, v) is formed by a path decomposition,
+we can guarantee that Mt (u, v) has at most m nonzero entries. For convenience, for u ∈ A, define
+                                          ◦
+           P
+Mt (u) :=     v∈A Mt (u, v). Also define A := {v ∈ A : dt−1 (v) > 0}. We can then define Ft
+recursively from Ft−1 and Mt as follows. For u ∈ A ∈ A◦t−1 ,
+                                      
+                                Mt (u)              1 X Mt (u, w)
+                   Ft (u) = 1 −          Ft−1 (u) +               · Ft−1 (w).                    (1)
+                                2 d(u)              2  ◦
+                                                         d(w)
+                                                       w∈A
+
+For u ∈ A ∈ A×
+             t−1 , u is not involved in the matching step, so Ft (u) = Ft−1 (u).
+
+Claim 5.4. For all t and for all u ∈ V with dt (u) > 0,
+                                      X
+                                          F(u, w) = d(u).
+                                        w∈V
+
+Proof. The claim is by definition for F0 . Then, it remains true inductively as well since
+                            
+                      Mt (u)           1 X                         Mt (u) Mt (u)
+                  1−           d(u) +          Mt (u, w) = d(u) −        +         .
+                      2 d(u)           2     ◦
+                                                                     2         2
+                                         w∈A
+
+
+
+
+Claim 5.5. For all t ≥ 0, Ft is routable with congestion 2t/ϕ.
+
+Proof. Note that we can route the flow inducing each Mt with congestion 2/ϕ by definition of the
+flow instance. Then, for each flow update step, if u and w have Mt (u, w) > 0, for each v ∈ V , we
+route M2 td(w)
+          (u,w)
+                Ft (w, v) of commodity u to v by routing from u to w and then from w to v. The only
+new congestion arises from the flow between the matched vertices, yielding the desired result.
+
+Convergence Analysis. To prove that we achieve the desired decomposition after T = O(log n log nW )
+total steps, we consider the following potential function. For each A ∈ A◦t , first define the average
+
+
+
+                                                 13
+flow vector
+                                                      1     X
+                                        µA
+                                         t =              ·    Ft (u).
+                                                   dt (A)    ◦ u∈A
+
+As before, A◦ := {u ∈ A : dt (u) > 0}. Then,
+                                                                                 2
+                                                    X                Ft (u)
+                              ψt (A) = dt (A) ·            d(u)             − µA
+                                                                               t   .
+                                                                     d(u)        2
+                                                    u∈A◦
+
+First we show that small potential implies simultaneous mixing.
+Lemma 5.6. Suppose that ψt (A) < 1/(mW )8 for all A ∈ At with A◦ ̸= ∅. Then,
+
+                                               {dt |A : A ∈ At }
+
+mix simultaneously in G with congestion 4t/ϕ.
+
+Proof. Let At = {A1 , A2 , . . . , Ar }. For each i ∈ [r], let bi be a demand respecting dt |Ai . That is,
+|bi | ≤ dt |Ai and bi (Ai ) = 0.
+    Now, consider the multicommodity flow with one commodity per demand that, for each i ∈ [r]
+and each u ∈ A◦i , sends bi (u) · Ftd(u)
+                                     (u,w)
+                                           to each w ∈ V . Since we have
+                                             X
+                                                   Ft (u, w) = d(u),
+                                             w∈V
+
+by Claim 5.4, we have that this multicommodity flow routes bi (u) flow out of u in the ith commodity.
+Since for j ̸= i, bj (u) = 0, the net flow out in the other commodities is 0. It then remains to show
+that the net flow into u is approximately 0 in every commodity.
+    To this end, for any j ∈ [r], the net flow that u receives is
+
+                                                                    
+           X           Ft (w, u)   X           Ft (w, u)    Aj    Aj
+                bj (w)           =    bj (w)             − µt + µ t
+              ◦
+                        d(w)        ◦
+                                                d(w)
+          w∈Aj                       w∈Aj
+                                                                            
+                                      X                   Ft (w, u)    A
+                                 =           bj (w)                 − µt j                    (Since bj (Aj ) = 0)
+                                                           d(w)
+                                     w∈A◦j
+                                     X                  Ft (w, u)    A
+                                 ≤           |bj (w)|             − µt j
+                                                         d(w)
+                                     w∈A◦j
+                                     X      d(w)
+                                 ≤                                   (|bj | ≤ dt |Aj ≤ d and ψt (Aj ) ≤ 1/(mW )8 )
+                                         ◦
+                                           (mW )4
+                                     w∈Aj
+                                       1
+                                 ≤          .
+                                     (mW )3
+                          1
+So, u receives bj (u) ± (mW )3
+                               in commodity j via a routing of congestion 2t/ϕ (using the congestion
+bound from Claim 5.5). We can then trivially route the residual error demand with congestion at
+             1
+most n3 · (mW  )3
+                  ≤ 1/ϕ. The total congestion is then at most 2t/ϕ + 1/ϕ ≤ 4t/ϕ, as needed.
+
+
+                                                          14
+Remark 5.7. Given demands bi respecting dt |Ai for each i ∈ [r], we can compute the mixing
+routing in O(mt log nW ) time by rescaling the paths in the path decompositions computed in the
+prior rounds’ matching steps. Like the original path decomposition computation, we can implement
+this using link-cut trees [ST83].
+
+    Now that we have shown ψt is a good potential function, we show that we decrease ψt in each
+round.
+
+Lemma 5.8. Let t ≥ 0. For each A ∈ A′t ⊆ A◦t and S ⊆ A with dt+1 (S) ̸= 0, we have
+                                                                                2
+           ψt (A) ψt+1 (S)   1 X             Mt (u)   Ft (u)   X Mt (u, w) Ft (w)
+                 −         ≥      Mt (u) 1 −                 −
+           dt (A) dt+1 (S)   2  ◦
+                                             2 d(u)   d(u)      ◦
+                                                                  Mt (u) d(w)
+                                     u∈S                                           w∈A                      2
+                                                                         2
+                                 1     X                 Ft (u)
+                            +                    d(u)           − µA
+                                                                   t   .
+                                 2                       d(u)        2
+                                     u∈A◦ \S ◦
+
+Proof. First, note that
+                                                   2                        2
+                ψt+1 (S)   X       Ft+1 (u)           X       Ft+1 (u)
+                         =    d(u)          − µSt+1 ≤    d(u)          − µA
+                                                                          t   .                                     (2)
+                dt+1 (S)    ◦
+                                    d(u)           2   ◦
+                                                               d(u)         2
+                           u∈S                                          u∈S
+
+This uses the fact that
+                                                                                  2
+                                                        X              Ft+1 (u)
+                                µSt+1 = arg min                 d(u)            −x ,
+                                            x∈RV                        d(u)      2
+                                                        u∈S ◦
+
+which in turn can be verified by computing the derivative coordinate-wise and setting it equal to
+0.
+    We further manipulate this upper bound on ψt (A)   ψt+1 (S)
+                                              dt (A) − dt+1 (S) , expanding the recursive definition
+of Ft+1 (u). Continuing from Equation (2), we can upper bound ψt (A)   ψt+1 (S)
+                                                              dt (A) − dt+1 (S) by
+
+
+                                                                     !     2
+   X             1           Mt (u)              1 X Mt (u, w)             A
+           d(u)      ·    1−          Ft−1 (u) +               · Ft (w) − µt
+         ◦
+                d(u)         2 d(u)              2  ◦
+                                                      d(w)
+   u∈S                                                           w∈A                             2
+                                                                                                        ! 2
+     X           Mt (u)    Ft (u)    A   Mt (u)                              X   Mt (u, w)
+   =    d(u) 1 −                  − µt +                                                    · Ft (w) − µA
+                                                                                                        t
+      ◦
+                 2 d(u)    d(u)          2 d(u)                               ◦
+                                                                                Mt (u) d(w)
+     u∈S                                                                 w∈A                                    2
+                                                                                                2
+                     Mt (u) 2 Ft (u)       2
+                                                  Mt (u) 2 X Mt (u, w)
+     X                                                 
+                                         A                                                    A
+   =       d(u) 1 −                   − µt   +                                    · Ft (w) − µt
+                     2 d(u)     d(u)       2      2 d(u)            Mt (u) d(w)
+     u∈S ◦                                                    w∈A◦                              2
+                                     *                                                 +
+       X               Mt (u)    Mt (u)    Ft (u)         X     Mt (u, w)
+     +        d(u) 1 −                            − µAt ,                   · Ft (w) − µAt
+            ◦
+                       2 d(u)    d(u)      d(u)             ◦
+                                                               M t (u) d(w)
+          u∈S                                                           w∈A
+                                                                            2
+      X              Mt (u)      Mt (u)    Ft (u)    X Mt (u, w)
+   =−       d(u) 1 −                              −                   · Ft (w)
+                      2 d(u)     2 d(u)     d(u)         Mt (u) d(w)
+      u∈S ◦                                         w∈A◦                        2
+                                                             !
+                              2                                          2
+      X                 Mt (u)            Mt (u)     Mt (u)      Ft (u)
+   +        d(u)    1−            + 1−                                  − µAt
+         ◦
+                        2 d(u)            2 d(u)     2 d(u)      d(u)          2
+          u∈S
+
+
+                                                                15
+                                   2                      !                                          2
+         X                 Mt (u)             Mt (u)    Mt (u)         X    Mt (u, w)
+   +            d(u)                     + 1−                                          · Ft (w) − µA
+                                                                                                   t
+                           2 d(u)             2 d(u)    2 d(u)             Mt (u) d(w)
+        u∈S ◦                                                            ◦
+                                                                       w∈A                                 2
+                                                                  2
+      X           Mt (u)    Mt (u)   Ft (u)   X Mt (u, w)
+   =−    d(u) 1 −                           −                · Ft (w)
+       ◦
+                  2 d(u)    2 d(u)   d(u)      ◦
+                                                 Mt (u) d(w)
+        u∈S                                                 w∈A                          2
+                                        2                                                                    2
+         X           Mt (u)   Ft (u)          X Mt (u)                  X       Mt (u, w)
+   +        d(u) 1 −                 − µA
+                                        t   +                                              · Ft (w) − µA
+                                                                                                       t
+          ◦
+                     2 d(u)   d(u)        2    ◦
+                                                 2                           ◦
+                                                                               Mt (u) d(w)
+        u∈S                                              u∈S            w∈A                                    2
+                                                                          2
+      X              Mt (u)    Mt (u)     Ft (u)    X Mt (u, w)
+   ≤−       d(u) 1 −                             −                  · Ft (w)
+                     2 d(u)    2 d(u)     d(u)          Mt (u) d(w)
+      u∈S ◦                                        w∈A◦                       2
+                                         2                                        2
+      X              Mt (u)   Ft (u)             X   X    Mt (u, w) Ft (w)
+   +        d(u) 1 −                 − µA
+                                        t     +                              −  µ A
+                                                                                  t
+         ◦
+                     2 d(u)    d(u)        2       ◦    ◦
+                                                              2       d(w)          2
+        u∈S                                              u∈S w∈A
+                                                                            2
+      X              Mt (u)    Mt (u)     Ft (u)    X Mt (u, w)
+   ≤−       d(u) 1 −                             −                   · Ft (w)
+          ◦
+                     2 d(u)    2 d(u)     d(u)         ◦
+                                                         Mt (u) d(w)
+      u∈S                                          w∈A                          2
+                                         2                                2
+      X              Mt (u)   Ft (u)             X    Mt (u) Ft (u)
+   +        d(u) 1 −                 − µA
+                                        t     +                     − µAt     .
+         ◦
+                     2 d(u)    d(u)        2        ◦
+                                                         2    d(u)          2
+        u∈S                                              u∈A
+
+ In the first three steps, we just expand the quadratic term. In the next step, we use the expansion of
+                                        2
+  Ft (u)   P         Mt (u,w)
+  d(u)   −        ◦
+              w∈A Mt (u) d(w) · F t (w)   to cancel out the inner product term. In the next two steps, we
+                                        2                                     P
+simplify and then apply Jensen’s inequality to the last term, using that w∈A◦ Mt (u, w) = Mt (u).
+Finally, the last inequality follows from swapping the order of summation in the last term and using
+       P
+that u∈S ◦ Mt (u, w) ≤ Mt (w).
+    Using the above and expanding the definition of ψt (A)
+                                                    dt (A) , we then have
+
+                                                                                            2
+       ψt (A) ψt+1 (S)   X          Mt (u)       Mt (u)     Ft (u)      X Mt (u, w)
+             −         ≥                     1−                     −                  · Ft (w)
+       dt (A) dt+1 (S)    ◦
+                                      2          2 d(u)     d(u)           Mt (u) d(w)
+                               u∈S                                    w∈A◦                      2
+                                 X                                  2
+                                             Mt (u)    Ft (u)
+                             +        d(u) −                  − µA t
+                                  ◦ ◦
+                                              2         d(u)          2
+                               u∈A \S
+                                                                                                       2
+                               X  Mt (u)     Mt (u)
+                                                       
+                                                          Ft (u)    X Mt (u, w)
+                             ≥               1−                  −                  · Ft (w)
+                                   ◦
+                                       2        2 d(u)     d(u)       ◦
+                                                                        Mt (u) d(w)
+                               u∈S                                 w∈A                       2
+                                 X  d(u)  Ft (u)       2
+                             +                     − µAt   .
+                                  ◦  ◦
+                                         2    d(u)       2
+                               u∈A \S
+
+The last inequality uses Mt (u) ≤ d(u). This yields the desired result.
+
+     We can now use Lemma 5.8 to show that we make progress on each A ∈ A′t . We know that
+dt+1 (CA ) ≤ dt (A)/2 from Oracle 1. Then by Lemma 5.8, setting S = CA ,
+
+                                              ψt (A) ψt+1 (CA )
+                                                    −           ≥ 0.
+                                              dt (A) dt+1 (CA )
+
+
+                                                       16
+This implies that
+                                                ψt (A) ≥ 2ψt+1 (CA ),
+and hence that ψt+1 (CA ) ≤ 21 ψt (A). To show a decrease in potential for A \ C        A , we will ap-
+                                                                                       DP                           E
+                                                A                ◦                              Mt (u,w) Ft (w)
+ply Lemma 5.8 in a less trivial way. Let µt = µt , rt . For u ∈ A , define pt (mu ) :=     w∈A◦ Mt (u) d(w)     , rt .
+That is, pt (mu ) is the inner product of the linear combination of the flow vectors matched with
+Ft (u) and rt . We need the following standard lemma about the expectation and concentration of
+these random inner products.
+Lemma 5.9. For all t, we have
+                                                                          2
+                                                            1 Ft (u)
+                                    E[(pt (u) − µt )2 ] =            − µA
+                                                                        t   ,
+                                                            n d(u)        2
+
+                                                                                         2
+                                              1 Ft (u)   X Mt (u, w) Ft (w)
+                                            2
+                    E[(pt (u) − pt (mu )) ] =          −                                     .
+                                              n d(u)      ◦
+                                                            Mt (u) d(w)
+                                                                w∈A                      2
+
+Moreover, each is at most C log n times its expectation (for constant C > 0) with high probability
+in n.
+    Note that by linearity of inner products and the definition of the cut and matching steps, we
+have the following.
+Claim 5.10. For all t ≥ 1 and u ∈ A◦ , we have
+
+                                      (pt (u) − pt (mu ))2 ≥ (pt (u) − η)2 .
+
+Proof. Suppose that pt (u) ≥ η. We show that pt (mu ) ≤ η. By bilinearity of inner products,
+                                X Mt (u, w)  Ft−1 (w) 
+                    pt (mu ) =                          , rt
+                                  ◦
+                                     Mt (u)      d(w)
+                                    w∈A
+                                     X Mt (u, w)
+                                =                     pt (w)
+                                            Mt (u)
+                                    w∈A◦
+                                     X Mt (u, w)
+                                ≤                     η                         (By definition of the cut step)
+                                            Mt (u)
+                                    w∈A◦
+                                    Mt (u)
+                                =          η = η.
+                                    Mt (u)
+
+The proof for the case of pt (u) < η is analogous.
+
+    We are now ready to show that the potential decreases in A \ CA as well.
+Lemma 5.11. For each A ∈ A′t ⊆ A◦t , we have
+
+                    E[ψt+1 (A \ CA )] ≤ (1 − Ω(1/ log n)) · E[ψt (A)] + O(1/ poly n).
+
+Proof. With high probability, we have
+
+                                ψt (A) ψt+1 (A \ CA )
+    ψt (A) − ψt+1 (A \ CA ) ≥         −
+                                dt (A) dt+1 (A \ CA )
+
+                                                          17
+                                                                        2
+      1        X                     Mt (u)   Ft (u)   X Mt (u, w) Ft (w)
+    ≥                     Mt (u) 1 −                 −
+      2                 ◦
+                                     2 d(u)   d(u)      ◦
+                                                          Mt (u) d(w)
+            u∈(A\CA )                                           w∈A                          2
+                                                    2
+        1           X                Ft (u)
+    +                         d(u)          − µA
+                                               t
+        2                            d(u)        2
+            u∈A◦ \(A\CA )◦
+                                                                      2                                               2
+      1        X               Ft (u)   X Mt (u, w) Ft (w)                    1         X                 Ft (u)
+    ≥                     d(u)        −                                   +                        d(u)          − µA
+                                                                                                                    t
+      8                 ◦
+                               d(u)      ◦
+                                           Mt (u) d(w)                        2                           d(u)        2
+            u∈(A\CA )                       w∈A                       2           u∈A◦ \(A\CA )◦
+            |A◦ |        X                                        |A◦ |             X
+    ≥                              d(u)(pt (u) − pt (mu ))2 +                                d(u)(pt (u) − µt )2
+        8C log n                                                2C log n
+                     u∈(A\CA )◦                                            u∈A◦ \(A\CA )◦
+            |A◦ |         X                                  |A◦ |                X
+    ≥                                d(u)(pt (u) − η)2 +                                      d(u)(pt (u) − µt )2
+        8C log n                                           2C log n
+                     u∈S∩(A\CA )◦                                     u∈S∩(A◦ \(A\CA )◦ )
+             |A◦ |      X
+    ≥                         d(u)(pt (u) − µt )2
+        72C log n
+                        u∈S
+         |A◦ |    X
+    ≥                d(u)(pt (u) − µt )2 .
+      2592C log n  ◦      u∈A
+
+ The first inequality uses dt+1 (A \ CA ) ≤ dt (A). In the second, we apply Lemma 5.8 with S =
+A \ CA . Next, we use that Mt (u) ≤ d(u) and that we delete any source nodes in which Mt (u) <
+d(u)/2. The fourth inequality follows from an application of Lemma 5.9. In the fifth inequality, we
+apply Claim 5.10 and restrict both sums to u ∈ S ⊆ A◦ , where S is the subset certifying progress
+from Lemma 5.1. In the next inequality, we apply the first guarantee on S from Lemma 5.1 and
+combine the sums. Finally, we apply the second guarantee on S from Lemma 5.1. Note that
+by Lemma 5.9,
+                                                                                      2
+                |A◦ |    X                                1       X       Ft (u)
+                            d(u)E[(pt (u) − µt )2 ] =                d(u)        − µA
+                                                                                    t   .
+             2592C log n  ◦
+                                                      2592C log n  ◦
+                                                                          d(u)        2
+                               u∈A                                                u∈A
+
+Hence, incorporating the high probability events above, we get
+
+                          E[ψt (A) − ψt+1 (A \ CA )] ≥ Ω(ψt (A)/ log n) − O(1/ poly n),
+
+as needed.
+
+     The combination of the immediate consequence of Lemma 5.8 for CA and Lemma 5.11 is the
+following.
+
+Corollary 5.12. Let A ∈ At such that dt (A) > 0, and recall the variable xAt from Algorithm 1. If
+ A     5                                      8
+xt > 10 C log n log nW , then ψt (A) < 1/(mW ) with high probability in n.
+
+     To complete the proof of the main result of this section, we also need to show that d(V ) −
+dT (V ) ≤ ϵ′ d(V ).
+
+Lemma 5.13. For all t ≥ 0, we have
+
+                                              d(V ) − dt (V ) ≤ 64tγ d(V ).
+
+                                                           18
+Proof. Recall that we either have dt (u) = d(u) or dt (u) = 0 for each t ≥ 0 and u ∈ V . We just
+need to bound the amount of total demand of deleted vertices in the latter case. In Algorithm 1,
+we delete vertices in only two cases.
+     First, if there exists s ≤ t such that u ∈ LA ∩ A \ CA ⊆ A ∈ A′s and we route less than half
+of its source in the corresponding matching step, we delete it. Secondly, if the total proportion of
+non-deleted demand in some component in the partition is at most 15/16 of the total demand, we
+delete all of the demand in the component. We can charge deletions of the second kind to the first
+kind, incurring a factor of 16.
+     So, it remains to bound the amount of demand deleted from unrouted source. For this, we can
+appeal to the second property of the matching player flow oracle: we route at least ∆(A \ CA ) −
+2γ d(A) of the source in LA ∩ A \ CA . As such, the amount of deleted demand can only increase by
+4γ d(V ) ≤ 4γ d(V ) from deletions of the first kind on each step. Summing over all the steps yields
+the desired bound.
+
+    We can now put all of this together to prove our first main result.
+
+Theorem 5.14 (Weak Expander Decomposition with Partial Deletions). Given G = (V, E, c), d ∈
+RV≥0 , ϕ > 0, and access to an approximate max flow oracle as in Oracle 1 with parameter 1 ≥ γ > 0,
+running in time R(n, m, γ) per query, there is an algorithm running T = O(log n log nW ) rounds
+of cut-matching which computes a partition AT of V and dT ≤ d with the following properties:
+
+  1. For each A ∈ AT with dT (A) > 0, dT (A) ≥ 15 d(A)/16. Moreover, with high probability
+     {dT |A : A ∈ A} mix simultaneously in G with congestion 4T /ϕ.
+
+  2. The total capacity of edges cut by AT is at most O((ϕ log nW + γT ) d(V )).
+
+  3. d(V ) − dT (V ) ≤ 64T γ d(V ).
+
+  4. The algorithm runs in time O(T (R(n, m, γ) + mT )).
+
+Proof. We output AT from Algorithm 1. To prove (1), consider the following potential function
+                             X
+                       Φt =      (105 C log n log nW − xA
+                                                        t ) dt (A) ≥ 0.
+                                A∈A◦t
+
+
+In each iteration, Oracle 1 outputs A′t ⊆ A◦t with
+                                                         
+                                       [           1   [
+                                 dt        A ≥ dt       A .
+                                          ′
+                                                   2     ◦
+                                        A∈At             A∈At
+
+
+Consequently, Φt decreases by a (multiplicative) factor of at least 1 − 2·105 C log1 n log nW in each
+iteration. Hence, after T iterations (for T = O(log n log nW ), with high probability we have
+Φt = 0. At that point, AT = A×                        ×         ◦
+                               T . Thus, for all A ∈ AT , with A ̸= ∅, by Corollary 5.12, we have
+ψT (A) < 1/(mW )8 or | supp(dT |A )| = 1. Note that, by Algorithm 1, each such A with A◦ ̸= ∅
+must have dT (A) ≥ 15 d(A)/16. Moreover, by Lemma 5.1, we have that {dT |A : A ∈ AT } mix
+simultaneously in G with congestion 4T /ϕ. This yields (1).
+
+
+
+                                                 19
+     To prove (2), note first that, by the first property of Oracle 1, the total capacity of the computed
+cuts in a given round is at most
+
+                     ϕ X                          ϕ X
+                          dt−1 (CA ) + 2γ d(V ) ≤      d(CA ) + 2γ d(V ).
+                     8  ′
+                                                  8  ′
+                       A∈At−1                            A∈At−1
+
+
+The latter term contributes at most 2γT d(V ) over all the rounds. To account for the first term,
+in each iteration we charge each vertex v ∈ CA a total of ϕ8 d(v). Since we have the additional
+guarantee in first property of Oracle 1 that dt−1 (CA ) ≤ dt−1 (A)/2, each vertex can only be charged
+O(log nW ) times this way. Each intercluster edge in AT is accounted for in this argument, yielding
+(2).
+      (3) is immediate from Lemma 5.13.
+     Finally, for (4), the running time of the algorithm comes from T cut steps and T matching
+steps. The tth cut step takes O(mt) ≤ O(mT ) time from Lemma 5.2. Each matching step takes
+O(R(n, m, γ)) time from the flow oracle call, plus an additional O(m log m) time for using link-cut
+trees to find a flow path decomposition of the matching flow (to form Mt ). Since T ≥ log m, the
+link-cut tree runtime is subsumed by the cut step running time. Summing these bounds over all T
+rounds of the algorithm yields the desired result.
+
+5.2    Grafting in Deleted Demand
+
+One potential weakness of the partition from Theorem 5.14 is property (1), its mixing guarantee.
+It is not quite the case that every A ∈ AT is either certified as a (simultaneously mixing) (ϕ, d)-
+near-expander or entirely deleted. Instead, the expanding components might have some deleted
+nodes inside them still (i.e., dT (A) < d(A)). Moreover, it might be the case that we want some
+stronger notion of expansion, e.g., boundary-linked expansion [GRST21].
+     Fortunately, we can strengthen the decomposition with one additional grafting step, similarly
+to [FLL25]. Let deg∂AT : V → Z≥0 be the additional vertex weighting on G corresponding to the
+boundary of AT . Let ψ > 0 be a parameter. Think of ψ as ϕ in the case of expander decompositions;
+for our application, we will set ψ = Ω(1). Consider the flow instance on a subgraph of G, generated
+as follows.
+
+   • Let A+
+          T = {A ∈ AT : dT (A) > 0}.
+
+   • For each A ∈ A+
+                   T:
+
+         – For each u ∈ A, add ∆(u) = deg∂AT (u) + d(u) − dT (u) source.
+         – For each u ∈ A with dT (u) = d(u), add sink ∇(u) = d(u)/5.
+
+   • Remove all edges cut by AT from G, and scale the capacity of remaining edges by 1/ψ.
+
+     The intuition for this flow instance is the following. If it is feasible, then we can route all
+the deleted and boundary demand to non-deleted demand that is certified to mix. (We set the
+sinks as d(u)/5 rather than d(u) purely to streamline our specific application.) As such, at the
+cost of a slight increment in the congestion, we certify that all the expanding components A mix
+simultaneously with respect to demands (d + deg∂AT (u))|A , not just dT |A . If the flow is not feasible,
+because we scaled the edges and since the source is small relative to the sink, we will find sparse
+
+                                                   20
+cuts in most components. We want the additional guarantee that any remaining source is almost
+entirely routed and the new boundary can be routed as well. This condition is achievable with fair
+cut-based max flow algorithms (e.g., [LNPS23, LL25]), and we require something analogous in the
+definition of our flow oracle.
+
+  Oracle 2 (Grafting Flow Oracle). On such a flow instance, for some parameter γ > 0, we find
+  a flow with the following properties:
+
+     1. For each A ∈ A+
+                      T , if deg∂AT (A) ≤ dT (A)/8, we find a pair (CA , A \ CA ) such that:
+
+         (a) For each u ∈ A \ CA with ∆(u) > 0, we route at least (1 − γ)∆(u) source from u to
+             A \ CA .
+        (b) The flow saturates at least a (1 − γ) fraction of the capacity of each edge from CA
+            to A \ CA .
+                     P
+        (c) We have A cG (E(CA , A \ CA )) ≤ 8ψ d(V ).
+
+     2. We have                        
+                             [
+                           d   CA  ≤ 30(d(V ) − dT (V ) + deg∂AT (V )).
+                                   
+                               A∈A+
+                                  T
+
+
+
+     We can now state the main result of this section, a strengthening of Theorem 5.14 using a
+grafting post-processing step.
+
+Theorem 5.15 (Weak Expander Decomposition with Deletions). Suppose we have G = (V, E, c),
+d ∈ ZV≥0 , ϕ > 0, ψ > 0, and access to Oracle 1 with parameter 1 ≥ γ1 > 0 and Oracle 2 with
+parameter γ2 ≤ 1/10, running in time R1 (n, m, γ1 ) and R2 (n, m, γ2 ) per query, respectively. Let
+T = O(log n log nW ). Then, there is an algorithm computing a partition A = A◦ ⊔ A× of V with
+the following properties:
+
+  1. The algorithm runs in time O(T (R1 (n, m, γ1 ) + mT ) + R2 (n, m, γ2 )).
+       S
+  2. d( A∈A× A) = O((γ1 T + ϕ log nW ) d(V )).
+
+  3. The total capacity of edges cut by A is at most O((ϕ log nW + γ1 T + ψ) d(V )).
+
+  4. {(d + deg∂A )|A : A ∈ A◦ } mix simultaneously in G with congestion T /ϕ + ψ2 .
+
+  5. There exists a flow of congestion ψ2 such that each u ∈ A ∈ A◦ sends deg∂A (u) flow and each
+     v ∈ V receives at most d(v)/4 flow.
+
+Proof. First we compute a partition AT of G with respect to ϕ and d, using Theorem 5.14 and Al-
+gorithm 1. Then, we construct the flow instance above with respect to ψ and call Oracle 2. For
+each A ∈ A+T with deg∂AT (A) ≤ dT (A)/8, Oracle 2 outputs a pair (CA , A \ CA ). If CA is nonempty,
+we add CA to A× . We add A \ CA to A◦ . For each A ∈ A+             T with deg∂AT (A) > dT (A)/8 and
+A ∈ AT \ A+ T , we add A   to A× . All together this forms A. By Theorem 5.14, this algorithm runs
+
+in time O(T (R1 (n, m, γ1 ) + mT ) + R2 (n, m, γ2 )), yielding (1).
+
+
+
+                                                21
+    By the second property of Oracle 2 and the third property of Theorem 5.14, we get that
+                             
+       [             [
+     d       A + d        CA  ≤ (d(V ) − dT (V )) + 30(d(V ) − dT (V )) + 30 deg∂AT (V )
+                               
+             A∈A×
+                T         A∈A+
+                             T
+
+                                         ≤ 2000T γ1 d(V ) + 30 deg∂AT (V ).
+
+For (2), we also need to account for the sum of d(A) over A ∈ A+
+                                                               T with
+
+                                deg∂AT (A) > dT (A)/8 > 15 d(A)/144,
+
+where the last inequality uses that A ∈ A+
+                                         T , so dT (A) > 15 d(A)/16. Hence, summing over all such
+A, we get                            X
+                                                d(A) < 10 deg∂AT (V ).
+                                      A∈A+T
+                                deg∂A (A)>dT (A)/8
+                                     T
+
+Combining these bounds and using the second property of Theorem 5.14 yields (2).
+    All the cut edges between A ∈ AT are already accounted for by the second property of Theo-
+rem 5.14. So, we just need to bound the capacity of the cuts (CA , A). But by Oracle 2, this is at
+most 8ψ d(V ). This gives (3).
+    Finally, we prove (4). Let A◦ = {A′1 , A′2 , . . . A′r }. For each i ∈ [r], let bi be a demand
+respecting (d + deg∂A )|A′i . Each A′i belongs to some set in AT ; denote that set by Ai . Decompose
+       (1)      (2)       (1)                                   (2)
+bi = bi + bi where bi respects (d + deg∂AT )|A′i and bi respects (deg∂A − deg∂AT )|A′i . The
+idea is to route each bi to a residual demand respecting dT |Ai ; then we can appeal to the first
+property of Theorem 5.14 to finish the routing.
+     Let f be the flow computed by Oracle 2. Take a path decomposition of f . So, f (u, v) denotes
+the amount of flow sent from u to v via paths in the path decomposition of f . Let f (u) :=
+P
+  v∈V f (u, v). We can ensure that f (u, v) is nonzero only if ∆(u) − ∇(u) > 0 and ∇(v) − ∆(v) > 0.
+Since Oracle 2 guarantees that edges crossing the cut (CA , A \ CA ) are at least (1 − γ2 ) fraction
+saturated, the net flow across them is at least (1 − 2γ2 ) their capacity. Since γ2 ≤ 1/5 < 1/2, we
+can in addition assume that each path in the path decomposition has at most one edge crossing
+the cut.
+                                                                                                 (1)
+                                                                                      f (u,v)b         (u)
+     We can use f to route bi for each i. First, for each u ∈ A′i and v ∈ V , route            i
+                                                                                           f (u)   flow,
+using flow paths in the path decomposition starting in A′i and remaining in A′i . Additionally, for
+                        (2)
+each u ∈ A′i , route bi (u) total flow using flow paths from the path decomposition which cross
+(CAi , Ai \ CAi ) via u, scaling flow paths by at most 1/(1 − 2γ2 ). We can route all of these flows
+                                      1
+simultaneously with congestion (1−2γ    2 )ψ
+                                             since f is routable in G with congestion at most 1/ψ. This
+uses that we route at least a (1 − γ2 ) fraction of source for each u ∈ A \ CA with ∆(u) > 0 and the
+edges crossing the cuts are at least a (1 − γ2 ) fraction saturated.
+    After this routing, for each u ∈ A′i with ∆(u) − ∇(u) > 0, we routed bi (u) total flow. Each
+v ∈ Ai with dT (v) = d(v) receives at most
+
+                                      ∇(v)        d(v)       d(v)
+                                             =             ≤
+                                     1 − 2γ2   5(1 − 2γ2 )    4
+
+
+                                                     22
+total demand, since we scaled flow paths by at most 1/(1 − 2γ2 ) and γ2 ≤ 1/10.
+    Furthermore, the residual demand bi − b′i satisfies (bi − b′i )(Ai ) = 0, bi (u) − b′i (u) = 0 for
+u ∈ Ai with dT (u) = 0, and
+                                      |bi − b′i | ≤ d /4.
+That is, bi (u) − b′i (u) is a demand respecting 14 d |Ai and hence {(bi (u) − b′i (u))|Ai ∈ AT } can be
+routed with congestion T /ϕ. In total then we can route
+
+                              {bi |A′i : i ∈ [r]} = {(bi − b′i + b′i )|A′i : i ∈ [r]}
+
+with total congestion at most T /ϕ + ψ2 , using that γ2 ≤ 1/4.
+     (5) follows directly from the same argument as constructing the routing of bi − b′i .
+
+
+
+
+6     Sufficient Conditions for Constructing a Congestion-Approximator
+This section is dedicated to proving that the following properties suffice to obtain a congestion-
+approximator.
+Theorem 6.1. Consider a capacitated graph G = (V, E, c), and let α ≥ 1 and β ≥ 1 be parameters.
+Consider a sequence of partitions P1 , . . . , PL of V1 , . . . , VL ⊆ V . For ease of notation, let P 0 denote
+the singleton partition. For each i ∈ [L], define Qi to be the induced partition of P i−1 on V \ Vi
+i.e.,
+                         Qi = {C ∩ (V \ Vi ) : C ∈ P i−1 , C ∩ (V \ Vi ) ̸= ∅},
+and let P i = Pi ∪ Qi for each i ∈ [L]. Suppose the partitions P 1 , . . . , P L satisfy:
+
+    1. P 1 is a partition {{v} : v ∈ V } of singleton clusters, and P L is a partition {{V }} with a
+       single cluster.
+
+    2. For each i ∈ [L − 1], the collection of vertex weightings {deg∂P i ∪∂C |C ∈ RV≥0 : C ∈ P i+1 , C ⊆
+       Vi+1 } mixes simultaneously in G with congestion α.
+
+    3. For each i ∈ [L − 1], there is a flow in G with congestion β such that each v ∈ Vi+1 sends
+       deg∂P i+1 (v) flow and receives at most 14 deg∂P i (v) flow.
+
+For each i ∈ [L], let partition R≥i be the common refinement of partitions P i , . . . , P L , i.e.,
+
+                  R≥i = {Ci ∩ · · · ∩ CL : Ci ∈ P i , . . . , CL ∈ P L , Ci ∩ · · · ∩ CL ̸= ∅}.
+                                                                                       2
+                          S
+Then, their union C =         i∈[L] R≥i is a congestion-approximator with quality 48αβL .
+
+     Note that most in most natural algorithms, we have VL = V in the top layer. The rest of the
+section proves the theorem. As in [LRW25], we will actually need a pseudo-congestion-approximator
+analogue of Theorem 6.1, where P L is not necessarily the partition {{V }}. The precise guarantees
+are given below. In particular, note that assumptions (2) and (3) remain unchanged.
+Lemma 6.2. Consider a capacitated graph G = (V, E, c) with c ∈ [1, W ] ∩ Z, and let α ≥ 1 and
+β ≥ 1 be parameters. Consider a sequence of partitions P1 , . . . , PL of V1 , . . . , VL ⊆ V . For ease
+
+                                                        23
+of notation, let P 0 denote the singleton partition. For each i ∈ [L], define Qi to be the induced
+partition of P i−1 on V \ Vi i.e.,
+
+                            Qi = {C ∩ (V \ Vi ) : C ∈ P i−1 , C ∩ (V \ Vi ) ̸= ∅},
+
+and let P i = Pi ∪ Qi for each i ∈ [L]. Suppose the partitions P 1 , . . . , P L satisfy:
+
+   1. P 1 is the partition {{v} : v ∈ V } of singleton clusters.
+
+   2. For each i ∈ [L − 1], the collection of vertex weightings {deg∂P i ∪∂C |C ∈ RV≥0 : C ∈ P i+1 , C ⊆
+      Vi+1 } mixes simultaneously in G with congestion α.
+
+   3. For each i ∈ [L − 1], there is a flow in G with congestion β such that each v ∈ Vi+1 sends
+      deg∂P i+1 (v) flow and each v ∈ Vi+1 receives at most 14 deg∂P i (v) flow.
+
+For each i ∈ [L], let partition R≥i be the common refinement of partitions P i , . . . , P L , i.e.,
+
+                   R≥i = {Ci ∩ · · · ∩ CL : Ci ∈ P i , . . . , CL ∈ P L , Ci ∩ · · · ∩ CL ̸= ∅}.
+
+Consider their union C = i∈[L] R≥i . For any demand b ∈ RV satisfying |b(C)| ≤ δC for all
+                          S
+
+C ∈ C, there exists a demand b′ ∈ RV satisfying |b′ | ≤ deg∂P L and a flow routing b − b′ with
+congestion 48αβL2 .
+
+     Instead of proving Theorem 6.1 directly, we will prove Lemma 6.2, which is needed for the
+algorithm. Below, we give the proof Theorem 6.1 assuming Lemma 6.2.
+
+Proof of Theorem 6.1. Consider the partitions P 1 , . . . , P L that satisfy the assumptions of Theo-
+rem 6.1. For a given demand vector b ∈ RV satisfying |b(C)| ≤ δC for all C ∈ C, we want
+to establish a flow routing demand b with congestion 48αβL2 . Theorem 6.1 then follows by the
+definition of a congestion-approximator.
+     Apply Lemma 6.2 to the partitions P 1 , . . . , P L and demand b. We obtain a demand b′ ∈ RV
+satisfying |b′ | ≤ deg∂P L and a flow f routing demand b−b′ with congestion 48αβL2 . By assumption
+(1) of Theorem 6.1, we have P L = {{V }} which implies ∂P L = ∅. Since |b′ | ≤ deg∂P L = 0, we
+must have b′ = 0. It follows that flow f routes demand b with congestion 48αβL2 , completing the
+proof.
+
+     In the rest of the section, we prove Lemma 6.2. We first begin with a few observations about
+the structure of the partitions R≥i , which will be needed later. The first two are direct analogues
+of Claim 4.3 and 4.4 of [LRW25], and their proofs are identical.
+
+Observation 6.3. For all i, j ∈ [L] with i < j, the partition R≥i of V is a refinement of the
+partition R≥j . That is, each set in R≥j is a disjoint union of sets in R≥i . In particular, ∂R≥i ⊇
+∂R≥j .
+
+Proof. Consider a set C = Cj ∩ · · · ∩ CL ∈ R≥j for some Cj ∈ P j , . . . , CL ∈ P L . Since P i , . . . , P j−1
+are all partitions of V , the set C is the disjoint union of all non-empty sets of the form Ci ∩ . . . ∩
+Cj−1 ∩ C for Ci ∈ P i , . . . , Cj−1 ∈ P j−1 . Therefore, R≥i is a refinement of R≥j . Since refinements
+can only increase the boundary set, the second statement ∂R≥i ⊇ ∂R≥j follows.
+
+
+                                                        24
+Observation 6.4. For all i ∈ [L − 1], we have ∂R≥i \ ∂R≥i+1 ⊆ ∂P i .
+
+Proof. Consider an edge (u, v) ∈ ∂R≥i \ ∂R≥i+1 . Since (u, v) ̸∈ ∂R≥i+1 , there must exist a set
+C ∈ R≥i+1 which contains both u and v. Since P i is a partition of V , the set C is the disjoint
+union of non-empty sets of the form C ∩ Ci , for Ci ∈ P i . Since u, v ∈ C, we know u and v each
+belong to some set of the form C ∩ Ci . But since u, v ∈ ∂R≥i , they must lie in different sets. These
+sets can only differ in the choice of Ci ∈ P i , so we have that u and v lie in different sets in partition
+P i , implying (u, v) ∈ ∂P i , as desired.
+
+Observation 6.5. For i ∈ 0 ∪ [L − 1], we have that if u ̸∈ Vi+1 , then:
+
+  1. deg∂P i+1 \∂Vi+1 (u) ≤ deg∂P i (u)
+
+  2. deg∂R≥i (u) = deg∂R≥i+1 (u).
+
+Proof. First, we prove property (1). If u ̸∈ Vi+1 , then note that u belongs to a set in Qi+1
+in P i+1 . Hence, by definition of Qi+1 , there exists C ∈ P i such that u ∈ C ∩ (V \ Vi+1 ) and
+C ∩ (V \ Vi+1 ) ∈ P i+1 . Consider that any edge (u, v) that is part of the boundary ∂P i+1 \ ∂Vi+1 .
+This means that (u, v) crosses the boundary of C ∩ (V \ Vi+1 ) ∈ P i+1 but does not cross through
+the boundary of Vi+1 , which implies that (u, v) must cross through the boundary of C. But this
+implies that (u, v) also crosses through the boundary ∂P i since C ∈ P i , completing the proof.
+     Next, consider property (2). Again, we have that there exists C ∈ P i such that u ∈ C ∩
+(V \ Vi+1 ) and C ∩ (V \ Vi+1 ) ∈ P i+1 . But we also have that u belongs to C in P i . Then, since
+C ∩ (V \ Vi+1 ) ⊆ C, for any (u, v) ∈ ∂P i , we must have (u, v) ∈ ∂P i+1 ⊆ ∂R≥i+1 . In other words,
+any edge in ∂P i that contains u is also in ∂R≥i+1 . Since ∂R≥i \ ∂R≥i+1 ⊆ ∂P i by Observation 6.4,
+we conclude that there are no edges in ∂R≥i \ ∂R≥i+1 containing u, concluding the second part of
+the claim.
+
+     Now, let b ∈ RV be a demand satisfying |b(C)| ≤ δC for each C ∈ C. Our goal is to construct
+a demand b′ ∈ RV satisfying |b′ | ≤ deg∂PL and a flow routing demand b − b′ with congestion
+48αβL2 . We follow the same high-level strategy as [LRW25]. The flow is constructed over L − 1
+iterations. On iteration i ∈ [L − 1], we construct a flow fi and demand bi such that:
+
+   1. fi routes bi−1 − bi , where we define b0 = b for iteration i = 1,
+
+   2. fi has congestion 48Lαβ,
+
+   3. for each C ∈ R≥i+1 , we have (bi−1 − bi )(C) = 0, and
+
+   4. bi satisfies |bi | ≤ deg∂R≥i+1 .
+
+    Properties (1), (2), and (4) alone are sufficient to prove Lemma 6.2 with demand b′ = bL−1
+and flow f1 + · · · + fL−1 . Indeed, noting that ∂R≥L = ∂P L by definition, we have the following.
+
+Observation 6.6. Suppose that properties (1), (2), and (4) hold for each i ∈ [L − 1]. Then the
+demand bL−1 satisfies |bL−1 | ≤ deg∂P L and the flow f1 + · · · + fL−1 routes demand b − bL−1 with
+congestion 48αβL2 .
+
+
+
+
+                                                    25
+     Despite the fact that (3) is not directly necessary to establish Lemma 6.2, we will use this
+property in our iterative construction. In order to establish the conditions (1)–(4) above, we will
+use the following technical lemma.
+
+Lemma 6.7. Consider an iteration i ∈ [L − 1] and a vector s ∈ RV such that
+
+ (a) |s| ≤ deg∂R≥i and
+
+ (b) |s(C)| ≤ δC for all C ∈ R≥i+1 .
+
+Then, we can construct a flow f such that
+
+  (i) f routes demand s − t for vector t ∈ RV with |t| ≤ deg∂R≥i+1 ,
+
+ (ii) f has congestion 48Lαβ, and
+
+(iii) for all C ∈ R≥i+1 , we have (s − t)(C) = 0.
+
+    Before proving the lemma, we first establish that it implies properties (1)–(4) for suitable fi
+and bi . This proof is identical to the proof of Lemma 4.7 in [LRW25].
+
+Lemma 6.8. Assuming Lemma 6.7, we can construct fi and bi satisfying properties (1)–(4) for
+i ∈ [L − 1].
+
+Proof. We induct on i ∈ [L − 1], with the base case being i = 0. In this base case, we set f0 as the
+empty flow, which routes b−b0 = 0, so properties (1)–(3) follow trivially. For property (4), observe
+that the singleton sets {v} are in P 1 , so they are also in C. This implies that |b({v})| ≤ deg(v) for
+all v ∈ V , which thereby implies that |b0 | = |b| ≤ deg = deg∂R≥1 , as desired.
+    For the inductive step, we apply Lemma 6.7 on i ≥ 1 and s = bi−1 . We first verify the
+conditions on s required by Lemma 6.7.
+
+ (a) Condition (a) follows by property (4) for iteration i − 1, which is assumed inductively.
+
+ (b) To establish condition (b), fix a set C ∈ R≥i+1 . We claim that b0 (C) = bi−1 (C). Assuming
+     this were the case, then s(C) = bi−1 (C) = b0 (C) = b(C) ≤ δC, where the inequality follows
+     since the original flow demand b ∈ RV satisfies b(C) ≤ δC, establishing property (b).
+      To show b0 (C) = bi−1 (C), observe that it is trivial for i = 1 so assume i > 1. For any given
+      j ∈ [i − 1], the set C is the disjoint union of sets C1 , . . . , Cℓ ∈ R≥j+1 by Observation 6.3.
+      Apply property (3) for iteration j to obtain (bj−1 − bj )(Ck ) = 0 for all k ∈ [ℓ]. Summing
+                                                 P
+      over k ∈ [ℓ], we have (bj−1 − bj )(C) = k∈[ℓ] (bj−1 − bj )(Ck ) = 0 so bj−1 (C) = bj (C) for
+      all j ∈ [i − 1]. Combining this over all iterations j ∈ [i − 1] gives b0 (C) = · · · = bi−1 (C), as
+      desired.
+
+With the conditions fulfilled, Lemma 6.7 outputs a flow f , which we set as fi , and a vector t ∈ RV ,
+which we set as bi . The flow satisfies property (1) due to property (i) and satisfies property (2)
+due to property (ii) of the flow f . The demand bi satisfies property (3) due to property (iii) and
+property (4) due to the second part of property (i), completing the proof.
+
+
+
+
+                                                   26
+    For the rest of this section, we establish Lemma 6.7. We start with a helper claim about
+constructing certain demands and flows. Throughout the proof, we say a vector x ∈ RV is supported
+on U if x(v) = 0 for all v ̸∈ U .
+Claim 6.9. For any i ∈ [L − 1] and x ∈ RV supported on Vi+1 with |x| ≤ deg∂R≥i , there exists
+y ∈ RV such that
+
+  1. |y| ≤ 6 deg∂P i +6Lβ deg∂P i+1 ,
+
+  2. y is supported on Vi+1 ,
+
+  3. for all clusters C ∈ P i+1 , we have (x − y)(C) = 0, and
+
+  4. there exists a flow routing demand x − y with congestion 12Lβ.
+
+Proof. Much of the argument mimics the proof of Claim 4.8 of [LRW25].
+Subclaim 6.10. For any s ∈ RV≥0 with s(v) ≤ deg∂P i+1 (v) for v ∈ Vi+1 and s(v) ≤ deg∂Vi+1 (v) for
+v ̸∈ Vi+1 , there exists t ∈ RV≥0 supported on Vi+1 with t ≤ deg∂P i /2 and a flow routing s − t with
+congestion 3β.
+
+Proof. By assumption (3) of Lemma 6.2, there is a flow in G with congestion β such that each vertex
+v ∈ Vi+1 sends deg∂P i+1 (v) flow and receives at most 14 deg∂P i (v) flow. Scaling this flow up by a
+factor of 2, there exists a flow sending 2 deg∂P i+1 (v) flow and receiving at most 12 deg∂P i (v) flow,
+for each v ∈ Vi+1 . We augment this flow by adding full flow on each edge (u, v) ∈ ∂Vi+1 , which only
+increases the flow along any edge by a factor of 1 ≤ β times its capacity. Hence, the total congestion
+is at most 3β. Note that ∂P i+1 includes ∂Vi+1 as a subset, so augmenting the flow causes vertices
+v ̸∈ Vi+1 to send deg∂Vi+1 (v) flow, and vertices in v ∈ Vi+1 to receive deg∂Vi+1 (v) ≤ deg∂P i+1 (v)
+flow, moving some source without changing any of the sinks. This results in a flow with congestion
+3β sending at least deg∂P i+1 (v) for each v ∈ Vi+1 and deg∂Vi+1 (v) for each v ̸∈ Vi+1 , and still
+receiving at most 12 deg∂P i (v) flow for each v ∈ Vi+1 . Take the path decomposition of the flow
+where each v ∈ Vi+1 is the start of at least deg∂P i+1 (v) total capacity of flow paths, each v ̸∈ Vi+1
+is the start of at least deg∂Vi+1 (v) total capacity of flow paths, and each v ∈ Vi+1 is the end of at
+most 21 deg∂P i (v) total capacity of flow paths. Since s ≤ deg∂P i+1 on Vi+1 and s ≤ deg∂Vi+1 on
+V \ Vi+1 , we can remove or decrease the capacity of paths until each v ∈ V is the start of s(v) total
+capacity of paths. Let t ∈ RV≥0 be the vector such that each vertex v ∈ V is the end of t(v) total
+capacity of paths, which satisfies t ≤ deg∂P i /2. The resulting flow routes s − t with congestion 3β,
+as desired.                                                                                            ⋄
+
+Subclaim 6.11. For any i ∈ [L − 1] and x ∈ RV≥0 with x ≤ deg∂R≥i , there exists y ∈ RV≥0 with
+y ≤ 2 deg∂P i and a flow routing demand x − y with congestion (6L − 6i)β.
+
+Proof. We prove the statement by induction from i = L down to i = 1. For the base case i = L,
+we can simply set y = x since R≥L = P L so that x − y = 0 is trivially routable.
+    For the inductive step, define x′ ∈ RV≥0 from x as
+                                 deg
+                                 ∂R≥i+1 (v) · x(v)       if deg∂R≥i (v) > 0 and
+                     x′ (v) =        deg∂R
+                                         ≥i
+                                              (v)
+                                                                                                    (3)
+                                 0                        otherwise,
+                                
+
+
+                                                    27
+which in particular satisfies x′ ≤ deg∂R≥i+1 . This means we can use the inductive hypothesis to
+route the x′ portion of x. Indeed, by induction, there exists y′ ∈ RV≥0 with y′ ≤ 2 deg∂P i+1 and a
+flow f1 routing demand x′ − y′ with congestion (6L − 6(i + 1))β.
+     Let s ∈ RV be the vector where s(v) = y′ (v)/2 for each v ∈ Vi+1 and s(v) = min(deg∂Vi+1 (v), y′ (v)/2)
+for v ̸∈ Vi+1 . Applying Subclaim 6.10 on s, there exists a vector t ∈ RV≥0 supported on Vi+1 with
+t ≤ deg∂P i /2 and a flow routing demand s − t with congestion 3β. Scaling this flow up by a factor
+of 2, we obtain a flow f2 routing demand 2s − 2t with congestion 6β.
+     The final flow is the sum f = f1 + f2 , which routes demand (x′ − y′ ) + (2s − 2t) and has
+congestion (6L − 6(i + 1))β + 6β = (6L − 6i)β, as desired. We define y = x − x′ + y′ − 2s + 2t so
+that the demand routed by f is exactly x − y. Note that since x′ ≤ x and 2s ≤ y′ , we have y ≥ 0,
+as desired. To complete the induction, it remains to prove that y(v) ≤ 2 deg∂P i (v) for v ∈ V . We
+consider the cases where v ∈ Vi+1 and v ̸∈ Vi+1 separately.
+     If v ∈ Vi+1 , then y′ (v) = 2s(v) so y(v) = (x − x′ + 2t)(v). Since t(v) ≤ deg∂P i (v)/2, it
+suffices to prove that x(v) − x′ (v) ≤ deg∂P i (v). If deg∂R≥i (v) = 0, then x(v) = x′ (v) = 0, so
+(x − x′ )(v) = 0 ≤ deg∂P i (v) trivially. Otherwise, we have deg∂R≥i (v) > 0, so
+                                                        !
+                         deg∂R≥i (v) − deg∂R≥i+1 (v)                 deg∂P i (v)
+        (x − x′ )(v) =                                      x(v) ≤                 x(v) ≤ deg∂P i (v),
+                                  deg∂R≥i (v)                        deg∂R≥i (v)
+
+where the first inequality holds by Observation 6.4.
+     If v ̸∈ Vi+1 , then we know s(v) = min(deg∂Vi+1 (v), y′ (v)/2) by definition and t(v) = 0 since t
+is supported on Vi+1 . Furthermore, we have that deg∂R≥i (v) = deg∂R≥i+1 (v) by Observation 6.5,
+so x(v) = x′ (v). Combining the above, we have that
+
+  y(v) = y′ (v) − 2s(v) = y′ (v) − 2 min(deg∂Vi+1 (v), y′ (v)/2) = max(y′ (v) − 2 deg∂Vi+1 (v), 0).      (4)
+
+By definition of y′ , we already have y′ (v) ≤ 2 deg∂P i+1 (v). Furthermore, we have already shown in
+Observation 6.5 that for v ̸∈ Vi+1 , we have ∂P i+1 \ ∂Vi+1 ⊆ ∂P i . This implies that
+
+                    deg∂P i+1 (v) − deg∂Vi+1 (v) = deg∂P i+1 \∂Vi+1 (v) ≤ deg∂P i (v),                   (5)
+
+where the equality uses ∂P i+1 ⊇ ∂Vi+1 . Combining Equations (4) and (5) completes the proof.
+                                                                                           ⋄
+
+    The remainder of the proof is almost identical to that of Claim 4.8 and Subclaim 4.11 in [LRW25].
+The following subclaim almost completes the proof of Claim 6.9, except x and y are restricted to
+being non-negative.
+Subclaim 6.12. For any i ∈ [L − 1], consider any vector x ∈ RV≥0 supported on Vi+1 with x ≤
+deg∂R≥i . There exists a vector y ∈ RV≥0 such that
+
+  1. y ≤ 6 deg∂P i +6Lβ deg∂P i+1 ,
+
+  2. y is supported on Vi+1 ,
+
+  3. for all clusters C ∈ P i+1 , we have (x − y)(C) = 0, and
+
+  4. there is a flow routing demand x − y with congestion 6Lβ.
+
+                                                   28
+Proof. Apply Subclaim 6.11 on vector x to obtain a vector y′ ∈ RV≥0 and a flow f routing demand
+x − y′ with congestion (6L − 6i)β ≤ 6Lβ. Take a path decomposition of f where each vertex v is
+the start of x(v) total capacity of (potentially empty) flow paths and the end of y′ (v) total capacity
+of (potentially empty) flow paths. For each path starting at a vertex v in some cluster C ∈ P i+1 ,
+perform the following operation. If the path contains an edge (u, w) ∈ ∂C with u ∈ C, replace the
+path with its prefix ending at u; otherwise, do nothing with the path. These modified paths form a
+new flow f ′ , which also has congestion 6Lβ. Note that the modified path ends in the same cluster
+as its starting point.
+     We now bound the difference in the demands routed by f and f ′ . To do so, we consider the
+difference in the new and old path decompositions. Each vertex u ∈ V was initially the endpoint
+of y′ (u) total capacity of paths. We claim that for each cluster C ∈ P i+1 , each vertex u ∈ C
+becomes the new endpoint of at most 6Lβ deg∂C (u) = 6Lβ deg∂P i+1 (u) total capacity of paths.
+This is because each new endpoint is the result of an edge (u, w) ∈ ∂C in some path, and the total
+capacity of such paths is at most 6Lβ deg∂C (u), since the congestion of f is 6Lβ. It follows that
+each vertex u ∈ V is the endpoint of at most y′ (u) + 6Lβ deg∂P i+1 (u) total capacity of paths in the
+new flow f ′ .
+     Define vector y ∈ RV≥0 such that each vertex u ∈ V is the endpoint of y(u) total capacity of
+flow paths in the new flow f ′ . In other words, the new flow f ′ routes demand x − y, as desired. As
+previously mentioned, since f ′ is a truncation of f , it has congestion 6Lβ, giving property (4). We
+have shown that y ≤ y′ + 6Lβ deg∂P i+1 , which, combined with the fact that y′ ≤ 2 deg∂P i from
+Subclaim 6.11, gives (1). Since x is supported on Vi+1 and we constructed f ′ so that each flow path
+starts and ends in the same cluster C ∈ P i+1 , all the flow paths in f ′ also lie in Vi+1 . (Clusters
+in P i+1 are either contained in Vi+1 or V \ Vi+1 , by construction.) Hence, the residual demand y
+unrouted by f ′ also is supported on Vi+1 , yielding (2). Finally, again by our path truncation step,
+we have (x − y)(C) = 0 for all C ∈ P i+1 . This yields (3) and completes the proof.                  ⋄
+
+     Finally, we prove Claim 6.9 using Subclaim 6.12. Given a vector x ∈ RV with |x| ≤ deg∂R≥i ,
+let x+ , x− ∈ RV≥0 be the positive and negative parts of x, so that x+ − x− = x. We apply
+Subclaim 6.12 on x+ and x− separately to obtain y+ and y− , respectively, and set y = y+ − y− .
+The four properties are satisfied immediately by the corresponding four properties in Subclaim 6.12;
+note that the congestion is now 12Lβ because we take the difference of the two flows routing demand
+x+ − y+ and x− − y− .
+
+     Our expander decomposition constructed at level i will be on the set Vi+1 ⊆ V . That is, we
+will construct a partition P i+1 consisting of (1) a partition of Vi+1 , which will be the expander
+decomposition and (2) a partition of V \ Vi+1 , which will be an induced partition from P i .
+    We now prove Lemma 6.7, restated below, using Claim 6.9.
+
+Lemma 6.7. Consider an iteration i ∈ [L − 1] and a vector s ∈ RV such that
+
+ (a) |s| ≤ deg∂R≥i and
+
+ (b) |s(C)| ≤ δC for all C ∈ R≥i+1 .
+
+Then, we can construct a flow f such that
+
+  (i) f routes demand s − t for vector t ∈ RV with |t| ≤ deg∂R≥i+1 ,
+
+                                                  29
+ (ii) f has congestion 48Lαβ, and
+
+(iii) for all C ∈ R≥i+1 , we have (s − t)(C) = 0.
+
+Proof. We first construct vector t ∈ RV as follows. For each set C ∈ R≥i+1 such that C ⊆ Vi+1 ,
+define t(v) = s(C) · deg∂R≥i+1 (v)/δC for all v ∈ C. For each set C ∈ R≥i+1 such that C ⊆ V \ Vi+1 ,
+define t(v) = s(v). Note that each set C ∈ R≥i+1 falls into one of the two cases since P i+1 consists
+of a partition of Vi+1 and a partition of V \ Vi+1 , so this fully defines t.
+     To see that t satisfies the second part of property (i), consider v ∈ V . If v ∈ Vi+1 , then
+t(v) = s(C)·deg∂R≥i+1 (v)/δC which satisfies |t(v)| ≤ deg∂R≥i+1 (v) by condition (b). If v ∈ V \Vi+1 ,
+then t(v) = s(v) satisfies the second part of property (i) by assumption (a) and the fact that
+deg∂R≥i (v) = deg∂R≥i+1 (v) for v ̸∈ Vi+1 by Observation 6.5. For property (iii), consider some set
+C ∈ R≥i+1 . If C ⊆ Vi+1 , then
+
+                                 X              X              deg∂R≥i+1 (v)
+                        t(C) =         t(v) =         s(C) ·                   = s(C).
+                                                                    δC
+                                 v∈C            v∈C
+
+If C ⊆ V \ Vi+1 , then we have t(C) = s(C) trivially because t(v) = s(v) for each v ∈ C.
+    Next, we define the flow f . Observe that demand s − t is supported on Vi+1 and furthermore,
+we have
+                      |s − t| ≤ |s| + |t| ≤ deg∂R≥i + deg∂R≥i+1 ≤ 2 deg∂R≥i .
+
+Thus, we can apply Claim 6.9 with x = 21 (s − t) to obtain a vector y ∈ RV≥0 supported on Vi+1 such
+that |y| ≤ 6 deg∂P i +6Lβ deg∂P i+1 and ( 12 (s−t)−y)(C) = 0 for all clusters C ∈ P i+1 . Furthermore,
+we have a flow f1 routing 21 (s−t)−y with congestion 12Lβ, so 2f1 routes s−t−2y with congestion
+24Lβ.
+     It remains to route 2y. Consider a cluster C ∈ P i+1 . Since ( 21 (s − t) − y)(C) = 0 and
+(s − t)(C) = 0, we have y(C) = 0 as well. Moreover, for all vertices v ∈ C, we have
+
+                    |y(v)| ≤ 6 deg∂P i (v) + 6Lβ deg∂C (v) ≤ 12Lβ deg∂P i ∪∂C (v).
+
+                               1                              1
+Thus, the scaled down demand 12Lβ y|C satisfies             12Lβ y|C   ≤ deg∂P i ∪∂C |C . By assumption (2) of
+Lemma 6.2, the collection of vertex weightings {deg∂P i ∪∂C |C ∈ RV≥0 : C ∈ P i+1 , C ⊆ Vi+1 } mixes
+simultaneously with congestion α, so there is a flow f2 routing demand
+                            X              1        X   1          1
+                                              y|C =        y|C =      y,
+                                         12Lβ         12Lβ       12Lβ
+                       C∈P i+1 ,C⊆Vi+1                  C∈P i+1
+
+where the first equality follows since y is supported on Vi+1 . Thus, we have that 24Lβf2 routes
+demand 2y with congestion 24Lαβ.
+    The final flow is f = 2f1 + 24Lβf2 , which routes demand (s − t − 2y) + 2y = s − t and has
+congestion 24Lβ + 24Lαβ ≤ 48Lαβ, concluding the proof.
+
+
+
+
+                                                       30
+6.1    Running Time
+
+For some of our applications, we will actually need to algorithmically find the routing of the demand,
+rather than just establishing that such a routing exists. Our proof above already implicitly gives
+an algorithm for finding the routing. In this subsection, we analyze the runtime. Formally, we will
+assume two oracles for finding a routing, corresponding to properties (2) and (3) of Lemma 6.2.
+For a demand b ∈ RV satisfying |b| ≤
+                                             P
+                                                C∈P i+1 ,C⊆Vi+1 deg∂P i ∪∂C |C and b(C) = 0 for each
+C ∈ P i+1 , C ⊆ Vi+1 , assume we can find a flow routing b in T2i time for each i ∈ [L − 1]. Let T2 =
+maxi∈[L−1] T2i . For a demand b ∈ RV satisfying b(v) = 0 for v ̸∈ Vi+1 and − deg∂P i (v)/4 ≤ b(v) ≤
+deg∂P i+1 (v), assume we can find a flow routing the demand in T3i time. Let T3 = maxi∈[L−1] T3i .
+    Recall that our flow is constructed over L − 1 iterations. At each iteration, we need to obtain
+the routing guaranteed by Lemma 6.7 once. To obtain the routing from Lemma 6.7, we need
+to obtain the routing guaranteed by Claim 6.9, find a routing using oracle T2 , and appropriately
+modify the routings in O(m log(nW )) additional time.1 To obtain the routing from Claim 6.9, we
+again have L inductive steps, each of which uses one oracle call to T3 and O(m log(nW )) additional
+time. In total, the runtime is O(L · T2 + L2 T3 + mL2 log(nW )).
+    In our algorithm, we will have the property that T2 = O(m log3 (nW )) and T3 = O(m log(nW )).
+We will justify this later in Section 7.3 but first state our lemma which we use later assuming these
+parameters.
+
+Lemma 6.13. Let C be as defined in Lemma 6.2 and let b be a demand such that |b(C)| ≤ δC
+for each C ∈ C. Assuming T2 = O(m log3 (nW )) and T3 = O(m log(nW )), we can obtain a flow
+routing b − b′ such that |b′ | ≤ deg∂P L with congestion 48αβL2 and in time O(m log4 (nW )).
+
+
+7     Building Our Congestion-Approximator
+The partitioning algorithm starts with the partition P 1 = {{v} : v ∈ V } of singleton clusters. The
+algorithm then iteratively constructs partition P i+1 given the current partitions P 1 , . . . , P i . The
+lemma below establishes this iterative algorithm, where we substitute L for i.
+
+Theorem 7.1. Consider a capacitated graph G = (V, E, c). Suppose there exists partitions P 1 , . . . , P L
+that satisfy the following properties:
+
+    1. P 1 is the partition {{v} : v ∈ V } of singleton clusters.
+
+    2. For each i ∈ [L − 1], the collection of vertex weightings {deg∂P i ∪∂C |C ∈ RV≥0 : C ∈ P i+1 , C ⊆
+       Vi+1 } mixes simultaneously in G with congestion α = O(log3 (nW )).
+
+    3. For each i ∈ [L − 1], there is a flow in G with congestion β = O(1) such that each v ∈ Vi+1
+       sends deg∂P i+1 (v) flow and each v ∈ Vi+1 receives at most 14 deg∂P i (v) flow.
+
+    4. For each i ∈ [L − 1], the size of the boundaries are decreasing: δP i+1 ≤ δP i /2.
+   1
+     Throughout the algorithm, we use the following subroutine: take a path decomposition of a flow vector f
+and rescale the flow along flow paths with some specified set of endpoints and scalings. This can be implemented
+using link-cut trees in O(m log(nW )) time, using the transcript of the algorithm from computing the original path
+decomposition [ST83].
+
+
+
+                                                       31
+Then, there is an algorithm running in O(m log8 (nW )) time that constructs a partition P L+1 such
+that properties (2), (3), and (4) hold for i = L as well.
+
+     Note that the first three properties of Theorem 7.1 are the same as those in Lemma 6.2. As
+suggested in Lemma 6.2, the new partitions will be constructed by finding a partition PL+1 of a
+subset VL+1 ⊆ V and combining it with the induced partition from P L on the remaining vertices
+V \ VL+1 . This will be done via our faster algorithm for weak expander decompositions from
+Section 5. Before describing our algorithm further, we first show that L = O(log(nW )) iterations
+suffice to obtain a congestion-approximator.
+
+Corollary 7.2. Let G = (V, E, c) be a capacitated graph with c ∈ [1, W ] ∩ Z. There is an
+O(m log9 (nW ) log log(nW )) time algorithm to construct a congestion-approximator C of G with
+quality O(log5 (nW )). This implies an O(m log9 (nW ) log log(nW ) + m log6 (nW )/ϵ) time algorithm
+for (1 − ϵ)-approximate max flow.
+
+Proof. Recall that we have δP i+1 ≤ δP i /2 for each i ∈ [L]. This ensures that for L = O(log(nW )),
+we have δP L < 1. Since all edge capacities are assumed to be integral, this implies that δP L = 0
+so we must have P L = {V }, fulfilling property (1) of Theorem 6.1. By construction, the partitions
+P 1 , . . . , P L also satisfy properties (2) and (3) with α = O(log3 (nW )) and β = O(1), so Theorem 6.1
+implies that C is a congestion-approximator with quality 16αβL2 = O(log5 (nW )). The runtime fol-
+lows since we apply Theorem 7.1 iteratively L times, the total runtime is O(m log9 (nW ) log log(nW )).
+The claim about approximate max flow then follows by [She17, JT23].
+
+     In the remainder of the section, we prove Theorem 7.1. To do so, we apply our weak ex-
+pander decomposition algorithm from Section 5, which requires us to implement Oracles 1 and 2
+of Theorem 5.15. An approximate max flow oracle suffices to implement both of these oracles, but
+that is exactly the problem we are trying to solve. To resolve this, [LRW25] observed that the
+pseudo-congestion-approximator is a real congestion-approximator on some modified graph. They
+then use the real congestion-approximator on the modified graph to obtain the required flow oracles
+via additional post-processing, at the loss of additional log factors. Instead, we directly show that
+the pseudo-congestion-approximator made up of the partitions P 1 , . . . , P L suffices for solving the
+approximate max flow instances required by the cut-matching game, with no log factor loss. This
+suffices for achieving properties (2) and (3) of Theorem 7.1 for the next iteration of our partitioning
+algorithm, as proven already in Section 5.
+
+7.1   Cut-Matching via a Pseudo-Congestion-Approximator
+
+We apply our weak expander decomposition algorithm from Section 5. The main difficulty here
+is developing an efficient algorithm for the matching player (i.e., implementing Oracle 1), which
+requires solving a max flow problem (approximately). Previous work [She17] shows how to convert
+a congestion-approximator into an approximate max flow algorithm. In this section, we build
+on [She17] to show that our pseudo-congestion-approximator is sufficient to approximately solve
+our specific max flow instance arising in the cut-matching game.
+    We first recall the flow instance which we need to solve for the matching player. We start with
+a demand d = deg∂P L and the starting partition A◦0 = {V }. At each iteration t of the cut-matching
+game, we will maintain a collection A◦t of disjoint subsets of V . From the cut player, we obtain
+
+
+                                                  32
+sets LA ⊔ RA = A for each A ∈ A◦t . We wish to solve the following flow problem guaranteeing the
+properties of Oracle 1. Let Gt be the graph of G with all edges between components in A◦t removed
+and all edge capacities scaled up by a factor of 2/ϕ. Add a source vertex s and a sink vertex t. For
+A ∈ A◦t , we do the following: for each u ∈ LA , we add an edge (s, u) with capacity dt−1 (u), and,
+for each v ∈ RA , we add an edge (v, t) with capacity dt−1 (v).
+     To solve this flow problem, We use the following instantiation of Sherman’s algorithm [She17]
+as stated in [LL25], but with the running time speedup from [JT23] (see Section 5 of their arXiv
+version), which partially routes the demand, leaving a small amount of residual demand.
+
+Lemma 7.3 (Almost-Route). Consider a graph G = (V, E, c), two vertices s, t ∈ V , parameters
+ϵ, τ > 0, and a laminar family of vertex subsets C. There is an O(m log(n)/ϵ) time algorithm that
+computes either
+
+  1. An (s, t)-cut in G of value less than τ , or
+
+  2. A flow f in G routing a demand d such that the residual demand d̃ = τ (1s − 1t ) − d satisfies
+     |d̃(C)| ≤ ϵ · δC for all C ∈ C.
+
+     In the setting where C is a congestion-approximator, the residual demand can be routed via
+the congestion-approximator so that the flow satisfies the input demand. We will show that in our
+case, a pseudo-congestion-approximator also suffices to route the residual demand.
+
+Lemma 7.4. Given a laminar family of sets C defined as in Lemma 6.2 for G = (V, E, c), there is
+an algorithm running in O(m log6 (nW ) log log(nW )) time which satisfies the guarantees of Oracle 1.
+
+Proof. Let Ct = C∪{{s}, {t}}. Note that Ct is a laminar family of subsets of vertices in Gt . We apply
+Lemma 7.3 on the flow problem on Gt with laminar family Ct , with parameter ϵ = γ/(4320αβL2 )
+for γ = Θ(1/ log2 (nW )) and τ ranging from γd(V ) to dt−1 (V ). We choose our τ via binary
+search up to error γd(V )/2: if we find a flow, we increase τ and if we find a cut, we decrease τ .
+Thus, we apply Lemma 7.3 a total of O(log(1/γ 2 )) = O(log log(nW )) times, giving a runtime of
+O(m log6 (nW ) log log(nW )).
+     At the end of the binary search, we will find some τ where we find a flow f1 of value τ but
+there is no flow of value τ + γd(V ), as certified by an (s, t)-cut (S ∪ {s}, V ∪ {t} \ S) of value less
+than τ + γd(V ). By property (2) of Lemma 7.3, if we find a flow routing the residual demand d̃,
+the combined flow routes τ (1s − 1t ), as desired. As a result, we turn to finding a flow routing d̃.
+We will not be able to do this exactly, but we will still construct some flow f ′ routing τ ′ (1s − 1t )
+for some τ ′ ≥ τ − γd(V ). Note that if τ ≤ γd(V ), we just take f ′ as the empty flow.
+      Recall that we have the guarantee that |d̃(C)| ≤ ϵ · δGt C for C ∈ Ct . In particular, this implies
+that |d̃({s})| ≤ ϵ · A∈A◦ deg∂P L (Al ) and |d̃({t})| ≤ ϵ · A∈A◦ deg∂P L (Ar ). We first send the
+                     P                                         P
+                           t                                         t
+flow from s and t to the nodes in ∪A∈A◦t LA and ∪A∈A◦t RA , proportional to the induced degrees
+on ∂P L , such that there is no residual left on s or t. Let f2 denote this flow. Due to our bound
+on the residual on {s} and {t}, sending this flow increases the residual on each vertex by at most
+ϵ · deg∂P L (v).
+      Next, we wish to route the residual of f1 + f2 , which lies entirely on V . Let b denote this
+residual. We have the guarantee that |b| ≤ |d̃| + ϵ · deg∂P L . Since |d̃(C)| ≤ ϵ · δGt (C) ≤ ϵ · δG (C) +
+ϵ · deg∂P L (C), this implies that |b(C)| ≤ ϵ · δG (C) + 2ϵ · deg∂P L (C). Recall that C is a refinement
+
+
+                                                    33
+of P L , so every set C ∈ C is completely contained in a component of P L . Consequently, we have
+deg∂P L (C) ≤ δG (C), which implies that |b(C)| ≤ 3ϵ · δG (C).
+     It remains to route demand b. To do this, we apply the routing guaranteed by the pseudo-
+congestion-approximator. By Lemma 6.13, there exists a flow f3 in G with congestion 3ϵ·48αβL2 =
+γ/30 routing b − b′ for |b′ | ≤ 3ϵ · deg∂P L which we can find in O(m log6 (nW )) time. Note that
+this same flow would have congestion ϕγ/60 in Gt , since the edges are scaled up by a 2/ϕ factor
+(except that the flow f3 uses some edges not in Gt ). Now, we have a flow f1 + f2 + f3 which routes
+the demand τ (1s − 1t ) − b′ such that the residual demand is at most |b′ | ≤ 3ϵ · deg∂P L .
+     Observe that this flow is not immediately a flow in Gt , since f3 may use intercomponent edges
+in G, not in Gt . We perform a path decomposition of this flow, so that the start and end of each
+flow path is an endpoint of some edge in ∂P L . To obtain our final flow f ′ , we first remove every
+flow path that crosses the boundary ∂G A of some A ∈ A◦t or ends at some node v ∈ V which is not
+a source or sink in any flow instance. Finally, we scale down the flow by a factor of 1 + γ/25, and
+denote the resulting flow f ′ . It now remains to show that f ′ satisfies our desired properties.
+      First, we wish to show that f ′ is a valid flow from s to t in Gt . By construction, we removed
+all flow paths that crosses the boundary ∂G A of some A ∈ A◦t , so the flow is indeed on Gt . For the
+congestion, recall that f1 had congestion 1, f2 had congestion ϵ, and f3 had congestion γ/30. In
+total, the congestion is upper bounded by 1 + γ/25, so the resulting flow f ′ has congestion at most
+1. Finally, we remove all flow paths in the path decomposition that have an endpoint at some node
+other than s or t, so it is an s-t flow.
+     Next, we want to show that the total volume of flow removed in defining f ′ from f1 + f2 + f3
+is small. Recall that f1 routes τ (1s − 1t ) − d̃ and f2 + f3 routes d̃ − r, where |r| ≤ 3ϵ · deg∂P L , so
+f1 + f2 + f3 routes τ (1s − 1t ) − r. The volume of flow paths removed due to having an endpoint
+at a node other than s and t is upper bounded by the total residual demand r, which is upper
+bounded by 3ϵ · δP L . To bound the volume of flow paths removed due to the flow path crossing
+some boundary edge in ∂G A, first observe that all such flow paths must come from f3 , since f1 and
+                                                                                           P
+f2 are both supported on Gt . But the volume of flow paths in f3 is at most (γ/30) · A∈A◦ δG A,
+                                                                                                  t
+since the congestion of f3 is at most γ/30. We know that the boundary of the decomposition A◦t
+is at most 0.5 · δP L , which implies that the total volume of flow paths removed in total is at most
+(γ/15) · δPgL ≤ (γ/15) · d(V ). Since we scale the flow down by 1 + γ/25, this means that the
+resulting flow f ′ sends at least
+                                      1
+              (τ − γd(V )/15) ·            ≥ (τ − γd(V )/15) · (1 − γ/25) ≥ τ − γd(V )
+                                  1 + γ/25
+
+flow from s to t, with the second inequality using that τ ≤ d(V ).
+      Finally, we define the output of the oracle. Recall that we have an (s, t)-cut (S ∪{s}, V ∪{t}\S)
+of value less than τ + γd(V ). For each A ∈ A◦t , define CA ⊆ A as A ∩ S. First, we wish to show
+                                                             P                  P
+that these cuts are sufficiently sparse. Note that we have A ∆(CA ) ≥ τ − A ∆(A \ CA ) − γd(V )
+since f ′ sends at least τ − γd(V ) flow from s to t. We additionally have that τ + γd(V ) ≥
+P
+   A (δGt (CA , A \ CA ) + ∆(A \ CA ) + ∇(CA )) since the right hand side is the value of the cut
+(S ∪ {s}, V ∪ {t} \ S), and we know the cut value is at most τ + γd(V ). Combining these together
+                P              P                       P
+implies that A ∆(CA ) ≥ A δGt (CA , A \ CA ) + A ∇(CA ) − 2γd(V ). Since the capacities in
+G are scaled up 2/ϕ from those in G, this in particular implies that ϕ2 A δG (CA , A \ CA ) ≤
+                                                                                 P
+Pt
+   A dt−1 (CA ) + 2γd(V ), as required by property (1) of the oracle.
+
+
+
+                                                   34
+                                                                                          S
+     Next, we wish to lower bound the amount of source routed in the remaining graph A (A\CA ).
+Since f ′ sends at least τ − γd(V ) through the cut and the cut has capacity at most τ + γd(V ),
+there is at most 2γd(V ) capacity of cut edges which are unsaturated by f ′ . Initialize A′′t = A◦t .
+For each A ∈ A′′t , if f ′ does not send more than ∆(A \ CA ) − 20000γd(A) source through the cut
+(CA , A \ CA ), then remove A from A′′t . Observe that if A is removed, this implies that 20000γd(A)
+volume of edges from s to A\CA is not saturated. Consequently, if the volume of removed A exceeds
+0.001dt−1 (V ), this would contradict the fact that there are at most 2γd(V ) capacity of cut edges
+which are unsaturated. This uses that we can choose γ to ensure that dt−1 (V ) ≥ d(V )/10. Hence,
+dt−1 ( A∈A′′ A) ≥ 0.999dt−1 ( A∈A◦ A), and each A ∈ A′′t satisfies property (2) of the oracle.
+      S                         S
+           t                        t
+     Lastly, we wish to prove that dt−1 (CA ) ≤ dt−1 (A)/2. Since dt−1 (CA ) = ∆(CA ) + ∇(CA ), it
+suffices to bound these terms separately. We have ∆(CA ) ≤ d(A)/8 by construction of the cut
+                                               P
+A = LA ⊔ RA . To bound the sink, recall that A∈At−1 ∇(CA ) ≤ τ + γd(V ) ≤ dt−1 (V )/7 because
+each sink in CA corresponds to a cut edge and τ ≤ dt−1 (V )/8. Now, initialize A′t = A′′t . For
+each A ∈ A′′t , remove A if ∇(CA ) ≥ dt−1 (A)/3. Suppose the volume of removed A in defining A′t
+from A′′t is more than 0.43dt−1 (V ). This would imply that the total sink in CA in all the removed
+components A ∈ A′′t \A′t is more than 0.43·dt−1 (V )/3 > dt−1 (V )/7. But this is impossible, since we
+                                      P                                                  S
+previously bounded the total sink as A∈At ∇(CA ) ≤ dt−1 (V )/7. Thus, we have dt−1 ( A∈A′ A) ≥
+         S                                                                                      t
+0.5dt−1 ( A∈At A).
+
+    With this, we have an implementation of Oracle 1 in O(m log6 (nW ) log log nW ) time, which
+we can already use to apply Theorem 5.14. Next, we will also implement Oracle 2, so we can apply
+Theorem 5.15.
+
+7.2   Grafting Deleted Nodes
+
+In this section, we will use the pseudo-congestion-approximator to solve another approximate max
+flow problem needed to construct the weak expander decomposition, Oracle 2 from Section 5. We
+are using Oracle 2 to guarantee boundary-linkedness in our weak expander decomposition and
+obtain the full guarantees given in Theorem 5.15.
+     Now, we restate the flow problem which we want to solve. Recall that in our setting, dT (u) is
+either 0 or d(u) for all u ∈ V , and ψ = Θ(1).
+
+   • Let A+                               + =
+                                                       S
+          T = {C ∈ AT : dT (C) > 0} and V                  C∈A+
+                                                              T
+                                                                C.
+
+   • For each C ∈ A+
+                   T:
+
+        – For each u ∈ C, add ∆(u) = deg∂C (u) + d(u) − dT (u) source.
+        – For each u ∈ C with dT (u) = d(u), add sink ∇(u) = d(u)/5.
+
+   • Remove all edges cut by A+
+                              T from G, and scale the capacity of remaining edges by 1/ψ.
+
+     Note that this flow problem on G is the combination of independent flow problems in each
+component of A+ T . We wish to find a fair (one-sided) flow-cut pair, as defined in Section A, for this
+flow problem. In order to solve this, we first state our subroutine for one-sided fair cuts, which we
+prove in Section A.
+
+
+
+                                                  35
+Theorem 7.5. Consider a graph G = (V, E, c) with c ∈ Z ∩ [1, W ], a vertex subset U ⊆ V , and
+a vertex t ∈ U . Let C be a laminar family of vertex subsets of V \ {t} of total size z, such that
+any demand vector b ∈ RV satisfying |b(C)| ≤ δC can be routed in G with congestion q in time
+T . There is an algorithm in time O(z log nW + ϵ−1 qm log3 nW + T log nW ) that computes a set
+A ⊆ U containing t and a flow f such that
+
+  1. δA ≤ 4δU .
+
+  2. Each edge (u, v) ∈ ∂A with u ∈
+                                  / A, v ∈ A sends at least (1 − ϵ) fraction capacity of flow into
+     A.
+
+  3. Each vertex v ∈ A \ {t} carries a net flow of zero.
+
+     In order to simulate the independent flow problems on each component of A+      T , we need to
+define a slightly augmented graph Gflow starting from G = (V, E, c), on which we will define our
+flow problems. Start with the graph G. For each C ∈ A+  T and each edge e = (u, v) on the boundary
+∂C, we add a new “split node” xe , remove the edge (u, v), and add two edges, (u, xe ) and (xe , v),
+each with capacity c(e). We also add a new node t, and, for each C ∈ A+ T , add an edge connecting
+every node u ∈ C satisfying dT (u) = d(u) to t. This node t will represent the sink in the flow
+problem, and we specify the rest of the capacities next.
+    We set the capacities of edges (u, t) to be d(u)/5, simulating the sink in the original flow
+problem. Then for each vertex u ∈ V + with dT (u) = 0, add a “leaf node” from u denoted ũ and an
+edge (ũ, u) with capacity d(u) − dT (u) = d(u). We ensure that u ∈ U and ũ ∈/ U , which intuitively
+                                                 +
+simulates a source of d(u) at each such u ∈ V . In particular, note that if, for example, u ∈ A,
+then (1 − ϵ) c(e) flow is sent along (ũ, u) from (2) of Theorem 7.5. Furthermore, for each edge
+e = (u, v) ∈ ∂C for C ∈ A+   T , we ensure that u, v ∈ U and xe ∈/ U ; since the capacity of (u, xe )
+and (xe , v) are both c(e) and these are the only edges incident to split node xe , this intuitively
+simulates having source of c(e) on u and v, with the additional property that no flow can be sent
+between components.
+     For technical reasons, we also connect each leaf node ũ to t with an edge (ũ, t) of capacity
+(d(u) − dT (u))/5 = d(u)/5. For similar technical reasons, we also add an edge connecting each
+vertex u ̸∈ V + to t with an edge of capacity of d(u)/5. All flow using these edges will be removed,
+so our solution is a valid flow for Oracle 2, but we need these edges for routing some residual
+demands.
+     Finally, to apply Theorem 7.5, we define U = V ∪ {t} (not including the additional leaf nodes
+or split nodes). Importantly, the total capacity of the boundary is still not too much larger than
+the total source.
+
+Claim 7.6. We have δGflow U ≤ 6∆(V )/5.
+
+Proof. Note that the boundary edges of U consist of exactly the edges incident to leaf nodes and
+split nodes representing sources, and the edges (ũ, t) which were added for technical reasons.
+
+     Let C be defined as in Lemma 6.2, so that C is a pseudo-congestion-approximator. We augment
+C to a congestion-approximator C flow in Gflow as follows. For each C ∈ C, define C e = C ∪ {ũ : u ∈
+  +
+V ∩ C} ∪ {xe : e = (u, v), u, v ∈ C} as the set with the copy ũ added (if it exists) for each u ∈ C,
+
+
+
+                                                 36
+and split node xe added if both endpoints are in C. Now define
+
+                   C flow = {C
+                             e : C ∈ C} ∪ {{ũ} : u ∈ V + } ∪ {{xe } : split node xe }.
+
+We show that C flow has the required properties to apply Theorem 7.5.
+
+Lemma 7.7. C flow is a laminar family of vertex subsets excluding t of total size z = O(nL) such
+that any demand vector b on Gflow satisfying |b(C)| ≤ δGflow C for each C ∈ C flow can be routed
+with congestion O(αβL2 ) in time O(m log4 (nW )).
+
+Proof. The size of C flow and the fact that it is a laminar family follows immediately by the definition
+of C and our construction of C flow . For the rest of the proof, we assume that there is no scaling
+(i.e., ψ = 1) since scaling by 1/ψ = Θ(1) only affects congestion by a constant factor.
+     Consider a demand vector b ∈ RV satisfying |b(C flow )| ≤ δGflow C flow for all C flow ∈ C flow .
+First, route the at most δGflow {xe } = 2c(e) demand at each split node xe to an arbitrary endpoint,
+which changes each b(C) for C ∈ C by at most 2δG C. Next, route the at most δGflow {ũ} ≤ 1.2 d(u)
+demand at each vertex ũ to u, which changes each b(C) for C ∈ C by at most 1.2 d(C). It
+follows that after routing demand out of all xe and ũ, replacing b by the new demand, we have
+|b(C)| ≤ δGflow C + 2δG C + 1.2 d(C), which we will now bound by O(δG C). First, by construction
+of C, each set C ∈ C is a subset of a set C ′ ∈ P L , so d(C) = deg∂P L (C) = deg∂C ′ (C) ≤ δG C.
+Also, by construction of Gflow , we have δGflow C ≤ δG C + d(C) + d(C)/5 ≤ 2.2δG C. It follows
+that after routing demand out of all xe and ũ, we have |b(C)| ≤ δGflow C + 2δG C + 1.2 d(C) ≤
+2.2δG C + 2δG C + 1.2δG C = O(δG C) for all C ∈ C. Up to a constant factor scaling in congestion,
+we may assume that |b(C)| ≤ δG C instead.
+    Next, we route this demand using the pseudo-congestion-approximator C, routing through split
+nodes xe instead of the original edge e whenever necessary.
+     By the routing properties of pseudo-congestion-approximators (the routing guaranteed by
+Lemma 6.2), we can route demand b − b′ such that b′ ≤ | deg∂P L | with congestion O(αβL2 ).
+By Lemma 6.13, this routing can be found in O(m log4 (nW )) time. Next, recall that for every
+node u ∈ V , there is either an edge (u, t) with capacity d(u)/5 = deg∂P L (u)/5 or two edges (ũ, t)
+and (ũ, u), both with capacity at least d(u)/5 = deg∂P L (u)/5. This implies that any demand
+b′ ≤ | deg∂P L | can be trivially routed with congestion 5 by going through t. Specifically, have each
+node u send b′ (u) flow through the edge (u, t) (where negative values mean the flow is sent from t
+to u). Each edge used in this flow has congestion 5, and this flow routes the demand b′ .
+    Summing up all of the routings, the overall congestion is O(αβL2 ).
+
+Lemma 7.8. Assuming the conditions of Theorem 7.1, there is an algorithm implementing the
+guarantees of Oracle 2 in time O(m log8 (nW )).
+
+Proof. We apply Theorem 7.5 on Gflow with U = V ∪{t} and ϵ = γ/2, for the desired γ from Oracle 2
+to obtain a flow f . To obtain our final flow, we first remove all flow on edges (ũ, t) or (v, t)
+for v ̸∈ V + . Next, take a flow decomposition of the resulting flow and only keep flow paths
+starting on the boundary ∂A entering A. Finally, we truncate each flow path to end at t to
+obtain our final flow f ′ . This has the desired runtime by Theorem 7.5 and Lemma 7.7 (recall that
+L = O(log nW ), α = O(log3 nW ), and β = O(1)).
+
+
+
+                                                   37
+    Next, we prove the two properties which Oracle 2 needs to satisfy. For property (1), consider
+each component C ∈ AT satisfying deg∂A+ (C) ≤ dT (C)/8. We define the pair (CA , C \ CA ) to be
+                                        T
+CA = C \ A, where A is the set output by Theorem 7.5. For each u ∈ C \ CA , we have that u ∈ A.
+       For property (1a), we wish to argue that we route at least (1 − γ)∆(u) source from u to A \ CA .
+For each edge e = (u, v) ∈ ∂C, we add a split node xe and an edge (u, xe ) with capacity c(e). If
+dT (u) = 0, we also add a leaf node ũ along with an edge (ũ, u) of capacity d(u) − dT (u). The
+total capacity of these two types of edges is exactly ∆(u), by definition. Furthermore, both of these
+types of edges are in the boundary ∂A because split nodes xe and leaf nodes ũ are not in U by
+definition, so they are also not in A. Hence, by property (2) of Theorem 7.5, the flow f (and thus
+f ′ ) sends at least (1 − γ)∆(u) flow from each u ∈ C \ CA , satisfying property (1a) of the oracle.
+     For property (1b), we wish to argue that the flow f ′ saturates a (1 − γ) fraction of the capacity
+of each edge from CA to C \ CA . Again, note that C \ CA ⊆ A and CA ∩ A = ∅, so each edge from
+CA to C \ CA lies in the boundary ∂A. Property (2) of Theorem 7.5 again guarantees that the flow
+saturates a (1 − γ) fraction of the capacity of each such edge.
+     For property (1c), we wish to argue that the cut (CA , C\CA ) is small (on average). By Claim 7.6,
+δU = 6∆(V )/5 ≤ 2d(V ). Furthermore, we know that the capacity of each edge in the flow problem
+we are simulating is scaled up by 1/ψ, and the edges in δA are a superset of those in the boundary
+of cuts (CA , C \ CA ) because δA may also contain edges to leaf nodes. All together, this implies
+that                    X
+                            cG (CA , C \ CA ) ≤ ψ · δA ≤ 4ψ · δU ≤ 8ψ · d(V ),
+                         C
+
+as desired. The first and third inequality follow from the above discussion, and the second inequality
+follows from property (1) of Theorem 7.5.
+                                                   P
+     Finally, for property (2), we wish to bound C∈A+ d(CA ). Note that, by definition of ∇(CA ),
+                                                          T
+we have
+                                                     15 d(CA )    3 d(CA )
+                            ∇(CA ) = dT (CA )/5 ≥       ·      =           .
+                                                     16     5        16
+The first inequality uses that for each C ∈ A+T , we have dT (C) > 15 d(C)/16. But observe that
+each edge from CA to t is cut, because t ̸∈ CA = C \ A, which implies that
+                    X
+                       ∇(CA ) ≤ δA ≤ 4δU ≤ 5 · (d(V ) − dT (V ) + deg∂A+ (V )).
+                                                                           T
+                     C
+                                                                                            S
+The last inequality uses Claim 7.6 and the definition of ∆(V ). Combining gives that d(         C CA ) ≤
+30 · (d(V ) − dT (V ) + deg∂AT (V ))
+
+7.3   Proof of Theorem 7.1
+
+In this previous two subsections, we have shown how to implement Oracles 1 and 2, so we can
+apply Theorem 5.15. We restate it here for convenience:
+
+Theorem 5.15 (Weak Expander Decomposition with Deletions). Suppose we have G = (V, E, c),
+d ∈ ZV≥0 , ϕ > 0, ψ > 0, and access to Oracle 1 with parameter 1 ≥ γ1 > 0 and Oracle 2 with
+parameter γ2 ≤ 1/10, running in time R1 (n, m, γ1 ) and R2 (n, m, γ2 ) per query, respectively. Let
+T = O(log n log nW ). Then, there is an algorithm computing a partition A = A◦ ⊔ A× of V with
+the following properties:
+
+                                                  38
+  1. The algorithm runs in time O(T (R1 (n, m, γ1 ) + mT ) + R2 (n, m, γ2 )).
+       S
+  2. d( A∈A× A) = O((γ1 T + ϕ log nW ) d(V )).
+
+  3. The total capacity of edges cut by A is at most O((ϕ log nW + γ1 T + ψ) d(V )).
+
+  4. {(d + deg∂A )|A : A ∈ A◦ } mix simultaneously in G with congestion T /ϕ + ψ2 .
+
+  5. There exists a flow of congestion ψ2 such that each u ∈ A ∈ A◦ sends deg∂A (u) flow and each
+     v ∈ V receives at most d(v)/4 flow.
+
+     Now, we prove Theorem 7.1. Choose γ1 = T /1010 , γ2 = 1/1010 , ϕ = log(nW )/1010 , ψ =
+1/1010 , and define d = deg∂P L . Assuming the conditions given in Theorem 7.1, we have given an al-
+gorithm implementing Oracle 1 in time R1 (m, n, γ1 ) = O(m log6 (nW ) log log(nW )) and Oracle 2 in
+time R2 (m, n, γ2 ) = O(m log8 (nW )) (see Lemmas 7.4 and 7.8). Hence, we can apply Theorem 5.15,
+to obtain a partition A = A◦ ⊔A× of V with properties (1)–(5) in time O(m log8 (nW ) log log(nW )).
+     We define PL+1 = A◦ , VL+1 = A∈A◦ A, and extend PL+1 from a partition of VL+1 to a
+                                        S
+
+partition of V by defining QL+1 = {C ∩ (V \ VL+1 ) : C ∈ P L } and P L+1 = PL+1 ⊔ QL+1 .
+We now verify properties (2), (3), and (4) in Theorem 7.1. Property (2) follows by property (4)
+from Theorem 5.15. Property (3) follows from property (5) from Theorem 5.15. Finally, consider
+property (4). The capacity of edges cut by PL+1 is upper bounded by the capacity of edges cut
+by A and the capacity of edges cut by QL+1 and not already cut by PL+1 is upper bounded by
+         S               S
+deg∂P L ( A∈A× A) = d( A∈A× A). By properties (2) and (3) from Theorem 5.15, the claimed
+bound follows.
+
+7.3.1   Justifying Oracle Runtimes
+
+In the above proof, we assumed that the routings guaranteed by properties (2) and (3) of Theo-
+rem 7.1 can be computed in T2 = O(m log3 (nW )) and T3 = O(m log(nW )) time, respectively. We
+explain how to obtain these routings here. For property (2), fix i ∈ [L − 1] and consider some
+demand d ∈ RV satisfying |d| ≤ C∈P i+1 ,C⊆Vi+1 deg∂P i ∪∂C |C . We already show in Remark 5.7
+                                     P
+
+that any demand |b| ≤ dT can be routed in O(m log3 (nW )) time. Thus, it suffices to route d such
+that the residual b satisfies |b| ≤ dT . To do this, we use the flow f obtained from Oracle 2 to route
+d − b as described in the proof of Theorem 5.15. This takes O(m log(nW )) time using link-cut
+trees to implement the flow-path decomposition manipulations [ST83]. For property (3), we obtain
+the flow explicitly using Theorem 5.15 property (5) in each previous level i ∈ [L − 1], so we can
+obtain this in T3 = O(m log(nW )) time.
+
+
+Acknowledgments
+This material is based upon work supported by the National Science Foundation Graduate Research
+Fellowship Program under Grant No. DGE2140739. Any opinions, findings, and conclusions or
+recommendations expressed in this material are those of the author(s) and do not necessarily
+reflect the views of the National Science Foundation.
+
+
+
+
+                                                 39
+References
+[BBL+ 25] Aaron Bernstein, Joakim Blikstad, Jason Li, Thatchaphol Saranurak, and Ta-Wei Tu.
+          Combinatorial maximum flow via weighted push-relabel on shortcut graphs. 2025.
+
+[BBST24] Aaron Bernstein, Joakim Blikstad, Thatchaphol Saranurak, and Ta-Wei Tu. Maximum
+         flow by augmenting paths in n2+o(1) time. In 2024 IEEE 65th Annual Symposium on
+         Foundations of Computer Science (FOCS), pages 2056–2077. IEEE, 2024.
+
+[CK24a]   Julia Chuzhoy and Sanjeev Khanna. A faster combinatorial algorithm for maximum
+          bipartite matching. In Proceedings of the 2024 Annual ACM-SIAM Symposium on
+          Discrete Algorithms (SODA), pages 2185–2235. SIAM, 2024.
+
+[CK24b]   Julia Chuzhoy and Sanjeev Khanna. Maximum bipartite matching in n2+o(1) time via a
+          combinatorial algorithm. In Proceedings of the 56th Annual ACM Symposium on Theory
+          of Computing, pages 83–94, 2024.
+
+[CKL+ 25] Li Chen, Rasmus Kyng, Yang Liu, Richard Peng, Maximilian Probst Gutenberg, and
+          Sushant Sachdeva. Maximum flow and minimum-cost flow in almost-linear time. Journal
+          of the ACM, 72(3):1–103, 2025.
+
+[Dan51]   George B Dantzig. Application of the simplex method to a transportation problem.
+          Activity analysis and production and allocation, 1951.
+
+[DS08]    Samuel I Daitch and Daniel A Spielman. Faster approximate lossy generalized flow via
+          interior point algorithms. In Proceedings of the fortieth annual ACM symposium on
+          Theory of computing, pages 451–460, 2008.
+
+[FLL25]   Henry Fleischmann, George Z Li, and Jason Li. Improved directed expander decompo-
+          sitions. arXiv preprint arXiv:2507.09729, 2025.
+
+[GH61]    Ralph E Gomory and Tien Chung Hu. Multi-terminal network flows. Journal of the
+          Society for Industrial and Applied Mathematics, 9(4):551–570, 1961.
+
+[GRST21] Gramoz Goranci, Harald Räcke, Thatchaphol Saranurak, and Zihan Tan. The expander
+         hierarchy and its applications to dynamic graph algorithms. In Proceedings of the 2021
+         ACM-SIAM Symposium on Discrete Algorithms (SODA), pages 2212–2228. SIAM, 2021.
+
+[JT23]    Arun Jambulapati and Kevin Tian. Revisiting area convexity: Faster box-simplex games
+          and spectrahedral generalizations. Advances in Neural Information Processing Systems,
+          36:57583–57596, 2023.
+
+[KRV09]   Rohit Khandekar, Satish Rao, and Umesh V. Vazirani. Graph partitioning using single
+          commodity flows. J. ACM, 56(4):19:1–19:15, 2009.
+
+[LL25]    Jason Li and Owen Li. A simple and fast algorithm for fair cuts. In Nicole Megow and
+          Amitabh Basu, editors, Integer Programming and Combinatorial Optimization - 26th
+          International Conference, IPCO 2025, Baltimore, MD, USA, June 11-13, 2025, Pro-
+          ceedings, volume 15620 of Lecture Notes in Computer Science, pages 400–411. Springer,
+          2025.
+
+
+                                              40
+[LNPS23] Jason Li, Danupon Nanongkai, Debmalya Panigrahi, and Thatchaphol Saranurak. Near-
+         linear time approximations for cut problems via fair cuts. In Nikhil Bansal and
+         Viswanath Nagarajan, editors, Proceedings of the 2023 ACM-SIAM Symposium on Dis-
+         crete Algorithms, SODA 2023, Florence, Italy, January 22-25, 2023, pages 240–275.
+         SIAM, 2023.
+
+[LRS13]    Yin Tat Lee, Satish Rao, and Nikhil Srivastava. A new approach to computing maximum
+           flows using electrical flows. In Proceedings of the forty-fifth annual ACM symposium on
+           Theory of computing, pages 755–764, 2013.
+
+[LRW25] Jason Li, Satish Rao, and Di Wang. Congestion-approximators from the bottom up.
+        In Yossi Azar and Debmalya Panigrahi, editors, Proceedings of the 2025 Annual ACM-
+        SIAM Symposium on Discrete Algorithms, SODA 2025, New Orleans, LA, USA, Jan-
+        uary 12-15, 2025, pages 2111–2131. SIAM, 2025.
+
+[Mad16]    Aleksander Madry. Computing maximum flow with augmenting electrical flows. In 2016
+           IEEE 57th Annual Symposium on Foundations of Computer Science (FOCS), pages
+           593–602. IEEE, 2016.
+
+[Pen16]    Richard Peng. Approximate undirected maximum flows in o (m polylog (n)) time.
+           In Proceedings of the twenty-seventh annual ACM-SIAM symposium on Discrete algo-
+           rithms, pages 1862–1867. SIAM, 2016.
+
+[RST14]    Harald Räcke, Chintan Shah, and Hanjo Täubig. Computing cut-based hierarchical
+           decompositions in almost linear time. In Proceedings of the twenty-fifth annual ACM-
+           SIAM symposium on Discrete algorithms, pages 227–238. SIAM, 2014.
+
+[She13]    Jonah Sherman. Nearly maximum flows in nearly linear time. In 2013 IEEE 54th Annual
+           Symposium on Foundations of Computer Science, pages 263–269. IEEE, 2013.
+
+[She17]    Jonah Sherman. Area-convexity, ℓ∞ regularization, and undirected multicommodity
+           flow. In Proceedings of the 49th Annual ACM SIGACT Symposium on Theory of Com-
+           puting, pages 452–460, 2017.
+
+[ST83]     Daniel Dominic Sleator and Robert Endre Tarjan. A data structure for dynamic trees.
+           J. Comput. Syst. Sci., 26(3):362–391, 1983.
+
+[ST14]     Daniel A Spielman and Shang-Hua Teng. Nearly linear time algorithms for precondi-
+           tioning and solving symmetric, diagonally dominant linear systems. SIAM Journal on
+           Matrix Analysis and Applications, 35(3):835–885, 2014.
+
+[SW19]     Thatchaphol Saranurak and Di Wang. Expander decomposition and pruning: Faster,
+           stronger, and simpler. In Proceedings of the Thirtieth Annual ACM-SIAM Symposium
+           on Discrete Algorithms, pages 2616–2635. SIAM, 2019.
+
+
+A     Faster Algorithm for One-Sided Fair Cuts
+In this section, we prove the following fair cuts routine, following the general strategy of [LL25]. The
+main difference is that we have a specific congestion approximator to work with, which introduces
+
+                                                  41
+some technical difficulties. We actually obtain what is called a one-sided fair cut from [LNPS23],
+a weaker object but sufficient for our purposes.
+
+Theorem 7.5. Consider a graph G = (V, E, c) with c ∈ Z ∩ [1, W ], a vertex subset U ⊆ V , and
+a vertex t ∈ U . Let C be a laminar family of vertex subsets of V \ {t} of total size z, such that
+any demand vector b ∈ RV satisfying |b(C)| ≤ δC can be routed in G with congestion q in time
+T . There is an algorithm in time O(z log nW + ϵ−1 qm log3 nW + T log nW ) that computes a set
+A ⊆ U containing t and a flow f such that
+
+  1. δA ≤ 4δU .
+
+  2. Each edge (u, v) ∈ ∂A with u ∈
+                                  / A, v ∈ A sends at least (1 − ϵ) fraction capacity of flow into
+     A.
+
+  3. Each vertex v ∈ A \ {t} carries a net flow of zero.
+
+     For the rest of this section, we prove Theorem 7.5. We use the following instantiation of
+Sherman’s algorithm [She17] as stated in [LL25], but with the running time speedup from [JT23]
+(see Section 5 of their arXiv version). We also implicitly use the fact that the necessary matrix-
+vector multiplications from [JT23] can be done in O(m) time since C is assumed to be laminar.
+
+Theorem A.1 (see Theorem 4 of [LL25]). Consider a graph G = (V, E, c), a residual graph G′ of
+G, two vertices s, t ∈ V , parameters ϵ, τ > 0, and let C be a laminar family of vertex subsets. There
+is an O(ϵ−1 m log nW ) time algorithm that computes either
+
+  1. An (s, t)-cut in G′ of value less than τ , or
+
+  2. A flow f in G′ routing a demand d such that the residual demand d̃ = τ (1s − 1t ) − d satisfies
+     |d̃(C)| ≤ ϵδC for all C ∈ C.
+
+     Throughout the algorithm, we use a more convenient parameter ϵ′ = Θ(ϵ/ log n). The algo-
+rithm initializes A(0) ← U and f (0) ← 0 ∈ RE as the empty flow, and proceeds for a number of
+                                        ⃗ (k) be the residual graph of flow f (k) . The algorithm first
+iterations. On a given iteration k, let G
+computes a set B (k) ⊆ A(k) as follows. Initialize B (k) ← A(k) and iterate through the sets C ∈ C in
+decreasing order of set size |C|. For each set C ∈ C in this order, if
+                                  X         X
+                                                    cG⃗ (k) (u, v) > 2δG C,
+                               v∈B (k) ∩C u:(u,v)∈ ⃗
+                                                  ∂B (k)
+
+
+then the algorithm updates B (k) ← B (k) \ C. To implement this checking efficiently, we maintain
+          P
+the value u:(u,v)∈ ⃗∂B (k) cG⃗ (k) (u, v) at each vertex v ∈ V . Checking the sets C ∈ C takes O(z) time
+total, and each update to the value at v is the result of removing a neighbor u from B (k) , so there
+are at most deg(v) many updates to v and at most 2m updates total.
+
+Lemma A.2. At the end of this procedure, for each set C ∈ C,
+                            X         X
+                                               cG⃗ (k) (u, v) ≤ 4δG C.
+                               v∈B (k) ∩C u:(u,v)∈ ⃗
+                                                  ∂B (k)
+
+
+
+
+                                                      42
+Proof. Immediately after C is processed, we must have
+                               X         X
+                                                cG⃗ (k) (u, v) ≤ 2δG C.
+                                                   ⃗ (k)
+                                v∈B (k) ∩C u:(u,v)∈∂B
+
+
+(The left expression is 0 if the algorithm updated B (k) ← B (k) \ C.) Consider the potential function
+                                                X
+                                    Φ(C) =               cG⃗ (k) (u, v)
+                                                (u,v)∈ ⃗
+                                                      ∂(B (k) ∩C)
+
+immediately after processing C, which is bounded by
+              X                         X       X                                            X
+                       cG⃗ (k) (u, v) ≤                                 cG⃗ (k) (u, v) +              cG⃗ (k) (u, v)
+           (u,v)∈ ⃗
+                 ∂(B (k) ∩C)               v∈B (k) ∩C u:(u,v)∈ ⃗
+                                                              ∂B (k)                       (u,v)∈ ⃗
+                                                                                                 ∂C
+                                              X             X
+                                       ≤                                cG⃗ (k) (u, v) + 2δG C
+                                           v∈B (k) ∩C           ⃗ (k)
+                                                        u:(u,v)∈∂B
+
+                                       ≤ 4δG C.
+
+We now claim that Φ(C) can only decrease upon processing later sets C ′ ∈ C. Observe that it
+can only change if C ′ ∩ C ̸= ∅. Since C is a laminar family that we iterate in decreasing order of
+size, any such set C ′ is contained in C. We can view updating B (k) ← B (k) \ C ′ for some C ′ ⊆ C
+as removing the contribution of cG⃗ (k) (u, v) from edges (u, v) ∈ ⃗
+                                                                   ∂B (k) with v ∈ B (k) ∩ C ′ , which
+are also edges in the summation in Φ(C), and then adding back a subset of δG C to form the new
+boundary, which introduces a total contribution of at most 2δG C to the summation (where the
+factor 2 is because the residual capacity can be at most twice the original). It follows that Φ(C)
+can only decrease upon processing C ′ . Since Φ(C) ≤ 4δG C upper bounds the expression from the
+lemma statement, the proof follows.
+
+    Next, we build the following graph on which to run Theorem A.1. Let H (k) be the undirected
+graph consisting of G[B (k) ] and a new vertex s with the following undirected edges: for each vertex
+v ∈ B (k) , add the edge (s, v) of capacity
+
+                                                    1       X
+                                  cH (k) (s, v) =                       cG⃗ (k) (u, v).
+                                                    2
+                                                                ⃗ (k)
+                                                        u:(u,v)∈∂B
+
+
+Let H ⃗ (k) be the directed graph consisting of G    ⃗ (k) [B (k) ] and a new vertex s, with directed edges
+                                                     ⃗ (k) is a residual graph of H (k) : take the flow f (k)
+(s, v) of capacity 2 cH (k) (s, v). It is clear that H
+restricted to the edges of G[B (k) ] and add cH (k) (s, v) flow along each edge (s, v) in the direction
+from v to s. Apply Theorem A.1 on graph H (k) , residual graph H             ⃗ (k) , vertices s, t, parameters
+ϵ = ϵ′ /q and τ = degH (k) (s), and the family of sets
+
+                                   C (k) = {C ∩ B (k) : C ∈ C} ∪ {{s}}.
+
+There are now two cases:
+
+   1. If Theorem A.1 outputs a cut, let S be the side containing s. Update A(k+1) = B (k) \ S and
+      f (k+1) = f (k) , i.e., update the cut and leave the flow unchanged.
+
+                                                          43
+  2. If Theorem A.1 outputs a flow f , then we first map the flow to a feasible flow f ′ in G        ⃗ (k) by
+                                                                            ⃗ (k) . This can always
+     splitting the flow across edges (s, v) into flow across edges (u, v) ∈ ∂B
+                                                                    P
+     be done because each edge (s, v) has capacity 2 cH (k) (s, v) = u:(u,v)∈ ⃗∂B (k) cG⃗ (k) (u, v). Then,
+     update f (k+1) = f (k) +f ′ and A(k+1) = B (k) , i.e., update the flow and leave the cut unchanged
+     from B (k) .
+
+    We first prove a lemma about the family C (k) .
+Lemma A.3. δH (k) (C ∩ B (k) ) ≤ 3δG C for all C ∈ C.
+
+Proof. For each C ∈ C, the only edges in ∂H (k) (C ∩ B (k) ) \ ∂G C are those incident to s. By the
+construction of H (k) , the total capacity of edges between s and C is
+                                        1      X            X
+                                                                        cG⃗ (k) (u, v),
+                                        2
+                                            v∈B (k) ∩C         ⃗ (k)
+                                                         (u,v)∈∂B
+
+
+which is at most 2δG C by Lemma A.2. It follows that δH (k) (C ∩ B (k) ) ≤ 3δG C.
+
+    To measure progress over the iterations, consider the potential function
+                                             X
+                                  Φ(k) =            cG⃗ (k) (u, v).
+                                                          ⃗ (k)
+                                                    (u,v)∈∂A
+
+
+
+Lemma A.4. Φ(k+1) ≤ 43 Φ(k) for all iterations k ≥ 1.
+
+Proof. We first show that on iteration k, the parameter τ in the call to Theorem A.1 satisfies
+τ ≤ 12 Φ(k) . We first claim that
+                            X                                   X
+                                        cG⃗ (k) (u, v) ≤                   cG⃗ (k) (u, v) = Φ(k) .                         (6)
+                         (u,v)∈ ⃗
+                               ∂B (k)                       (u,v)∈ ⃗
+                                                                  ∂A(k)
+
+
+This is because we can view each update B (k) ← B (k) \ C as removing more than 2δG C from the
+summation on the left of (6), and then adding at most 2δG C to it (where the factor 2 is because
+the residual capacity can be at most twice the original). We conclude that
+
+                                                    1       X                           1
+                          τ = degH (k) (s) =                            cG⃗ (k) (u, v) ≤ Φ(k) .
+                                                    2                                   2
+                                                         (u,v)∈ ⃗
+                                                               ∂B (k)
+
+We now consider the two possible outputs of Theorem A.1.
+
+  1. If Theorem A.1 outputs a cut, then the new value of Φ(k) is exactly the capacity of this cut
+        ⃗ (k) , which is at most τ ≤ 1 Φ(k) . Here, we use the fact that the edges incident to s in the
+     in H                            2
+     cut map to edges in ∂B ⃗ (k+1) with the same total capacity.
+
+  2. If Theorem A.1 outputs a flow f , then since {s} ∈ C (k) , the flow out of vertex s is at least
+
+                        ϵ′                   1              1    1                           X
+                   τ−      degH (k) (s) ≥ τ − degH (k) (s) = τ =                                         cG⃗ (k) (u, v).
+                        q                    2              2    4
+                                                                                          (u,v)∈ ⃗
+                                                                                                ∂B (k)
+
+
+                                                             44
+      Therefore, the mapped flow f ′ sends at least that much flow across ⃗
+                                                                          ∂B (k) . By the property
+                                                           ⃗ (k) = ∂A
+      of residual graphs, the new residual capacity across ∂B      ⃗ (k+1) is at most 3/4 fraction
+                                                     3 (k)
+      of the old residual capacity, which is at most 4 Φ by (6).
+
+     Therefore, after O(log nW ) iterations, we have Φ(k) ≤ 1/poly(n), which means there is (effec-
+tively) no remaining residual capacity along ⃗∂A(k) . By standard flow rounding, we can even ensure
+no remaining residual capacity, in which case the final flow f (k) sends full capacity along each edge
+   ⃗ (k) . However, this flow may not satisfy property (3) of Theorem 7.5, so we need to route the
+in ∂A
+residual demands.
+                                                                                           ⃗ (k) ,
+Lemma A.5. For each iteration k, if Theorem A.1 outputs a flow f which is mapped to f ′ in G
+                                 ′′                       ′                        ′ ′′
+then we can compute a flow f in G of congestion 3ϵ such that in the flow f + f , each vertex
+v ∈ B (k) \ {t} carries a net flow of zero, and vertex t receives at most Φ(k) flow.
+
+                                            ⃗ (k) . Since net flow from vertices in B (k) do not change
+Proof. Suppose that f ′ routes demand d′ in G
+                                                                                ′                        ′
+when mapping from f to f ′ , the demand d′ still satisfies |d′ (C ∩B (k) )| ≤ ϵq δH (k) (C ∩B (k) ) ≤ 3ϵq δG C
+for all C ∈ C, where the last inequality holds by Lemma A.3. Let d′′ be demand d′ with all
+coordinates outside B (k) zeroed out and with demand at t modified to ensure that d′′ (V ) = 0.
+                                                                                             ′
+For each C ∈ C, since C does not contain t, we have |d′′ (C)| = |d′ (C ∩ B (k) )| ≤ 3ϵq δG C. By the
+assumption of C scaled by q, we can route d′′ on G with congestion 3ϵ′ in time T , obtaining our
+desired flow f ′′ .
+      It remains to show that vertex t receives at most Φ(k) flow. If we added flow f ′′ onto f instead,
+where the new flow is allowed to use edges of G  ⃗ (k) outside B (k) , then it is an (s, t)-flow. This flow
+is feasible, so it has value at most the sum of capacities of edges out of s, which is at most Φ(k) by
+(6).
+
+      The algorithm uses the previous lemma on each of the O(log nW ) flows f ′ seen throughout
+the iterations. The sum of the flows f ′′ has congestion O(ϵ′ log nW ) ≤ ϵ, and adding this flow onto
+f (k) fulfills property (3) of Theorem 7.5 while ensuring each edge still sends at least (1 − ϵ) fraction
+capacity into A, fulfilling property (2).
+                                                                                P (k)
+      Finally, by the previous lemma, vertex t receives a total of at most         kΦ     flow over the
+                                                             (0)
+iterations. By Lemma A.4, this summation is at most 4Φ = 4δU , fulfilling property (1).
+     For the final running time, each iteration is dominated by the O(z) time to compute B (k) , the
+single call to Theorem A.1 with error parameter ϵ′ /q = Θ( q logϵnW ), and using C to route a demand
+in time T . There are O(log nW ) iterations, so the total running time is
+
+  O(log nW ) · O(z + ϵ−1 q log nW · m log nW + T ) = O(z log nW + ϵ−1 qm log3 nW + T log nW ),
+
+as promised by Theorem 7.5.
+
+
+B     Omitted Proofs
+In this section, we prove the results whose proofs were omitted from the main body.
+
+
+
+
+                                                     45
+B.1    Proof of Lemma 5.1
+
+We restate Lemma 5.1 for convenience.
+
+Lemma 5.1. Let X be a finite multi-subset of R with |X| ≥ 2. There exists η ∈ R inducing a
+partition X = Lη ⊔ Rη with max(Lη ) ≤ η ≤ min(Rη ) or max(Rη ) ≤ η ≤ min(Lη ), |Lη | = ⌈|X|/8⌉,
+                                                           1 P
+and with the following additional guarantees. Define µ̄ = |X| x∈X x. There exists S ⊆ Lη such
+that
+
+  1. For each s ∈ S, we have (s − η)2 ≥ 19 · (s − µ̄)2 .
+     P             2  1 P             2
+  2.   s∈S (s − µ̄) ≥ 36  x∈X (x − µ̄) .
+
+Proof. If |X| = 2, the result is trivial; set η = µ̄.
+    Otherwise, for any c, define Ac := {x ∈ X : x < c} and Bc := {x ∈ X : x ≥ c}. Observe that
+we have                            X            X
+                                       µ̄ − x =    x − µ̄ =: d.
+                                         x∈Aµ̄             x∈Bµ̄
+
+Let η be such that |Bη | = r|X|, where r = ⌈|X|/8|⌉
+                                              |X| . Suppose now that µ̄ ≥ η. The other case will
+be analogous. First, if
+                                  X               1 X
+                                     (x − µ̄)2 ≥       (x − µ̄)2 ,                          (7)
+                                                 36
+                                        x∈Bµ̄                   x∈X
+
+then, in particular,
+                                        X                     1 X
+                                                (x − µ̄)2 ≥       (x − µ̄)2 ,
+                                                              36
+                                        x∈Bη                    x∈X
+
+so we can output Bη as Lη , with S = Lη . As such, assume that Equation (7) does not hold. Hence,
+we have                           X              35 X
+                                     (x − µ̄)2 >        (x − µ̄)2 .                           (8)
+                                                 36
+                                        x∈Aµ̄                   x∈X
+
+Since µ̄ ≥ η the elements in Aµ̄ \ Aη satisfy
+              X
+                        (x − µ̄)2 ≤ |Aµ̄ \ Aη |(η − µ̄)2
+            x∈Aµ̄ \Aη
+
+                                 ≤ r|X|(η − µ̄)2                                        (Since Aµ̄ \ Aη ⊆ Bη )
+                                      r    X
+                                 ≤              (x − µ̄)2 .               (Since |Aη | ≥ (1 − r)|X| and µ̄ ≥ η)
+                                   (1 − r)
+                                                x∈Aη
+
+
+Combining the above with Equation (8), we can conclude that
+                                                    X
+                         X              35        r
+                            (x − µ̄)2 >     1−             (x − µ̄)2 .                                     (9)
+                                        36      1−r
+                                x∈Aη                                   x∈X
+
+
+Now, let η ′ ≤ η such that |Aη′ | = r|X|. By Equation (9) and the fact that |Aη′ | = r|X| and
+
+
+
+
+                                                           46
+|Aη | = (1 − r)|X|, we get
+                                                                           X
+                           X
+                                           2    35r                    r
+                                  (x − µ̄) >                     1−                (x − µ̄)2 .                 (10)
+                                             36(1 − r)                1−r
+                          x∈Aη′                                             x∈X
+
+
+In this case, we will output Aη′ as Lη . It remains to find S ⊆ Aη′ with the desired properties.
+Crucially, observe that η ′ ≥ µ̄ − r|X|
+                                     d
+                                        . Indeed, otherwise we have
+                                      X
+                              d=              µ̄ − x
+                                      x∈Aµ̄
+                                      X
+                                  ≥            µ̄ − x                                            (Since Aη′ ⊆ Aµ̄ )
+                                      x∈Aη′
+
+                                                d
+                                  > |Aη′ |                                         (By assumption, η ′ < µ̄ − r|X|
+                                                                                                                d
+                                                                                                                   )
+                                              r|X|
+                                  = d.                                                           (As |Aη′ | = r|X|)
+
+Consequently, for any x ∈ X with µ̄ − x = C|X|
+                                            rd          3
+                                               for Cr ≥ 2r , the second property of S is satisfied:
+
+                                                                 d
+                                         (η ′ − x)2 ≥ (µ̄ −         − x)2
+                                                               r|X|
+                                                         (C 2 − 1/r)2 d2
+                                                        = r
+                                                               |X|2
+                                                         C 2 d2
+                                                        ≥ r 2 = (µ̄ − x)2 /9.
+                                                         9|X|
+                                     3d
+Let I := {x ∈ Aη′ : 0 < µ̄ − x < 2r|X|   } be the set of intermediate elements in Aη′ that do not
+satisfy the second property of S by the above. Note that
+                                         X                    9d2 |I|     9d2
+                                               (µ̄ − x)2 ≤     2     2
+                                                                       ≤       ,
+                                                             4r |X|      4r|X|
+                                         x∈I
+
+using that I ⊆ Aη′ and |Aη′ | = r|X|. On the other hand,
+                                    P                    2
+              X                          x∈Bµ̄ (µ̄ − x)
+                      (µ̄ − x)2 ≥                                           (By the Cauchy-Schwarz inequality)
+                                               |Bµ̄ |
+              x∈Bµ̄
+
+                                     d2       d2
+                               =           ≥      .                           (Since |Bµ̄ | ≤ r|X| because µ̄ ≥ η)
+                                    |Bµ̄ |   r|X|
+
+
+
+
+                                                               47
+Since we are assuming Equation (7) does not hold, we get
+
+                   1 X             X
+                       (x − µ̄)2 >   (µ̄ − x)2                        (Equation (7) does not hold)
+                   36
+                      x∈X               x∈Bµ̄
+
+                                       d2
+                                    ≥
+                                      r|X|
+                                      4X
+                                    ≥      (µ̄ − x)2 .
+                                      9
+                                          x∈I
+
+So, we get
+                                  X             9 X
+                                   (µ̄ − x)2 ≤      (x − µ̄)2 .
+                                               144
+                                  x∈I                    x∈X
+
+Hence, we have, by Equation (10),
+                                                                    X
+            X
+                           2        35r            r           1      9
+                   (x − µ̄) ≥                1−             1−     −           (x − µ̄)2
+                                 36(1 − r)        1−r          z     144
+          x∈Aη′ \I                                                         x∈X
+                                           X
+                                 35      9
+                             ≥       −            (x − µ̄)2           (Since |X| ≥ 3, 1/8 ≤ r ≤ 3/8)
+                                 360 144
+                                              x∈X
+                               1 X
+                             ≥        (x − µ̄)2 .
+                               36
+                                 x∈X
+
+Then S := Aη′ \ I satisfies the desired properties.
+
+
+
+
+                                                  48
+

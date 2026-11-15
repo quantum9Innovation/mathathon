@@ -1,0 +1,214 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{remark}[theorem]{Remark}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Prob}{\mathbb P}
+\newcommand{\one}{\mathbf 1}
+\title{An adaptive cross-matching defeats planted-kernel simplicity:\\
+a clean short-cycle proof}
+\author{Independent adversarial boundary audit}
+\date{November 15, 2026}
+\begin{document}
+\maketitle
+
+\paragraph{Scope.}
+This note proves the requested boundary between an independent cross
+graph and a cross graph selected after seeing the internal graphs.
+The growing-cycle calculation below is self-contained in the cubic
+configuration model. The only imported probability fact is the standard
+positive simplicity probability, here cited precisely to
+Janson~\cite[Corollary 1.5]{janson}.
+No historical novelty claim is made.
+
+\begin{lemma}[A clean cycle with high probability]\label{lem:cycle}
+Let $N$ be even, and let $H_N$ be a uniform simple cubic graph on $N$
+labelled vertices. Put $\ell=\lfloor\log\log N\rfloor$, with natural
+logarithms. With probability tending to one, $H_N$ contains a cycle of
+length exactly $\ell$ that has no chord and whose $\ell$ third neighbors
+are outside the cycle and pairwise distinct.
+\end{lemma}
+
+\begin{proof}
+We first work with the configuration model: three labelled half-edges
+at each vertex, paired uniformly among the $3N$ half-edges. For a
+positive integer $h$ define
+\[
+ D_h=\prod_{j=0}^{h-1}(3N-2j-1).
+\]
+Any specified $h$ disjoint half-edge pairs occur with probability $D_h^{-1}$.
+Let $X$ count unoriented half-edge cycles of length $\ell$ with distinct
+vertices. There are $(N)_\ell6^\ell/(2\ell)$ candidates, because at each
+vertex its ordered incoming and outgoing half-edges have six choices.
+Consequently
+\begin{equation}\label{eq:mean}
+ \mu:=\E X=\frac{(N)_\ell6^\ell}{2\ell D_\ell}
+       =\frac{2^\ell}{2\ell}
+                       \bigl(1+O(\ell^2/N)\bigr)\longrightarrow\infty.
+\end{equation}
+
+We bound the second factorial moment, retaining the dependence on
+$\ell$. Ordered pairs of vertex-disjoint cycles contribute exactly
+\[
+ \frac{(N)_{2\ell}6^{2\ell}}{(2\ell)^2D_{2\ell}}
+                =\mu^2\bigl(1+O(\ell^2/N)\bigr).
+\]
+For distinct cycles sharing a vertex, their union is connected and
+contains two distinct cycles, so if the union has $v$ vertices and $e$
+edges, then $e\ge v+1$. This also holds for half-edge multigraphs;
+incompatible prescribed pairs have zero probability.
+
+Here is a deliberately crude uniform bound on all such overlapping
+pairs. Present both cycles by ordered vertex sequences. An identification
+pattern chooses which positions in the second sequence coincide with
+positions of the first, and which first positions they use. The number
+of patterns is at most
+\[
+              \sum_{s=0}^{\ell}\binom\ell s\ell^s=(1+\ell)^\ell.
+\]
+For a pattern with $v$ union vertices there are at most $N^v$ vertex
+labellings and at most $6^{2\ell}$ choices of cycle half-edges. Since
+$e\le2\ell$ and eventually $N\ge2\ell$, each compatible distinct
+overlapping pair occurs with probability
+\[
+                   D_e^{-1}\le N^{-e}\le N^{-v-1}.
+\]
+Ignoring the rotational/orientation divisions only increases this upper
+bound. Thus the total overlapping-pair contribution is at most
+\begin{equation}\label{eq:overlap}
+           \frac{36^\ell(1+\ell)^\ell}{N}=N^{-1+o(1)}.
+\end{equation}
+Diagonal pairs contribute $\mu$ to $\E X^2$. Therefore
+\[
+ \frac{\operatorname{Var}X}{\mu^2}
+ \le\frac1\mu+O(\ell^2/N)
+       +\frac{36^\ell(1+\ell)^\ell}{N\mu^2}=o(1).
+\]
+Chebyshev's inequality gives $\Prob(X=0)=o(1)$.
+
+We next show that with high probability every such cycle is clean.
+Condition on one specified candidate cycle occurring. Its vertices have
+one unused half-edge apiece, and the remaining pairing is uniform on
+$R=3N-2\ell$ half-edges. A chord requires a pair among the $\ell$
+unused cycle half-edges, with probability at most
+\[
+                         \frac{\binom\ell2}{R-1}.
+\]
+Two third neighbors coincide outside the cycle only if two distinct
+cycle half-edges are paired to two distinct half-edges at the same
+outside vertex. A union bound gives probability at most
+\[
+             \frac{6\binom\ell2(N-\ell)}{(R-1)(R-3)}.
+\]
+The sum is $O(\ell^2/N)$, uniformly over the specified cycle. If $Y$
+counts bad cycles, then
+\[
+       \E Y\le O(\ell^2/N)\mu
+                  =O(\ell2^\ell/N)=o(1).
+\]
+Markov therefore gives $\Prob(Y>0)=o(1)$. Combining with $X>0$ proves
+the clean-cycle assertion for configurations.
+
+Conditioning the configuration on simplicity yields the uniform simple
+cubic graph. By Janson~\cite[Corollary 1.5]{janson}, the simplicity
+probability tends to $e^{-2}>0$ (its parameter there equals one in the
+cubic case). Dividing the just-proved failure probability by this
+positive conditioning probability transfers the claim to $H_N$.
+\end{proof}
+
+\begin{remark}
+The same estimates work for any integer sequence $\ell\to\infty$ with
+$\ell\log\ell=o(\log N)$. No fixed-length Poisson approximation has
+been applied outside its proved range; the second-moment calculation
+explicitly controls the growing length.
+\end{remark}
+
+\begin{proposition}[Deterministic adaptive matching construction]
+\label{prop:matching}
+Let $C,D$ be cubic simple graphs on two labelled blocks $V_+,V_-$ of
+equal size $N$. Suppose each contains a clean cycle of the same length
+$\ell$, with $2\ell<N$. There exists a simple perfect cross-matching
+$B$ such that the resulting graph has two different balanced
+$(3,1)$-equitable partitions and its adjacency matrix has eigenvalue two
+of multiplicity at least two.
+\end{proposition}
+
+\begin{proof}
+Let $S\subset V_+$ and $T\subset V_-$ be the cycles, and let
+$U\subset V_+\setminus S$ and $W\subset V_-\setminus T$ be their third
+neighbor sets. Cleanliness gives $|S|=|T|=|U|=|W|=\ell$, with each
+vertex of $U$ adjacent to exactly one vertex of $S$, and likewise for
+$W,T$.
+
+Choose arbitrary bijections matching $S$ to $W$ and $U$ to $T$.
+Complete this to a perfect cross-matching by any bijection from
+$V_+\setminus(S\cup U)$ to $V_-\setminus(T\cup W)$.
+Every vertex then has three internal neighbors and one cross neighbor,
+so the original block partition is balanced $(3,1)$-equitable.
+
+Flip the membership of exactly $S\cup T$. A cycle vertex has two
+internal neighbors that flip with it, one internal neighbor that does
+not, and a cross-matching neighbor in the unflipped boundary set on the
+other original block. It consequently has three same-side and one
+opposite-side neighbors in the new partition. A boundary vertex has
+one internal neighbor that flips, two that do not, and its matching
+neighbor on the other cycle, which flips; it too has three same-side
+and one opposite-side neighbors. Every remaining vertex has no internal
+neighbor on either cycle and its matching neighbor also remains
+unflipped, so its three-to-one degree pattern is preserved. Both sides
+still have $N$ vertices, because $|S|=|T|$.
+
+Equivalently, the vector $v$ equal to $+1$ on $S$, $-1$ on $T$, and
+zero elsewhere satisfies $Av=2v$: cycle vertices see the two cycle
+neighbors, and at boundary vertices the cycle and cross-matching
+contributions cancel. Let $\sigma$ be $+1$ on $V_+$ and $-1$ on
+$V_-$. Then $A\sigma=2\sigma$, while $v$ and $\sigma$ are linearly
+independent since $0<2\ell<2N$. The alternative planted sign vector is
+exactly $\sigma-2v$, proving both conclusions.
+\end{proof}
+
+\begin{theorem}[Failure under a cross graph selected adaptively]
+Let $C,D$ be independent uniform simple cubic graphs on even block size
+$N$. With probability tending to one, there exists a perfect cross
+matching $B=B(C,D)$ for which
+\[
+ \operatorname{nullity}_{\mathbb R}
+ \left(\begin{pmatrix}C&B\\B^T&D\end{pmatrix}-2I\right)\ge2.
+\]
+It can be chosen to produce a second admissible partition differing
+from the original on exactly $2\lfloor\log\log N\rfloor$ vertices.
+\end{theorem}
+\begin{proof}
+Apply Lemma~\ref{lem:cycle} to both internal graphs, then
+Proposition~\ref{prop:matching}. Lexicographically choose the cycles
+and bijections when they exist to obtain a definite selection function;
+choose any matching on the vanishing-probability failure event.
+\end{proof}
+
+\paragraph{Quantifier boundary.}
+This is consistent with a theorem saying
+\[
+ \sup_{B\text{ deterministic}}\Prob_{C,D}(\text{failure for }B)=o(1).
+\]
+The theorem here instead has the quantifiers
+\[
+ \Prob_{C,D}(\exists B:\text{failure for }B)=1-o(1).
+\]
+The adaptive construction depends on the actual internal graphs and
+does not challenge a result for an independent cross graph. It exhibits
+an explicit localized additional eigenvector, rather than inferring
+kernel multiplicity merely from an approximate spectral argument.
+
+\begin{thebibliography}{9}
+\bibitem{janson}
+S.~Janson, \emph{The probability that a random multigraph is simple},
+arXiv:math/0609802v1, 2006, Corollary~1.5.
+\url{https://arxiv.org/pdf/math/0609802v1}.
+The only imported facts are positive fixed-degree simplicity probability
+and the conditional uniform-simple model, stated in its introduction.
+\end{thebibliography}
+\end{document}

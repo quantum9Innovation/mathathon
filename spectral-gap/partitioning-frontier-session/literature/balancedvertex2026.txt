@@ -1,0 +1,1685 @@
+                                                               Fast Approximation Algorithms for
+                                                              Balanced Edge and Vertex Separators
+
+                                                               Vladimir Kolmogorov                             Jack Spalding-Jamieson
+                                                Institute of Science and Technology Austria (ISTA)                  Independent
+                                                                   vnk@ist.ac.at                                jacksj@uwaterloo.ca
+
+
+                                                                                        Abstract
+                                                  We present a family of fast pseudo-approximation algorithms for the minimum balanced
+                                              element cut problem in a graph, which includes vertex and edge separators. Given a graph
+                                              G = (V, E) with polynomially-bounded finite integer element weights with n vertices and
+
+
+
+
+arXiv:2603.15782v2 [cs.DS] 22 Oct 2026
+                                              m edges, and a (constant) balance parameter c ∈ (0, 1/2), where G has some (unknown) c-
+                                              balanced element cut of size OPTc , we give a (Monte-Carlo randomized) algorithmprunning in
+                                              O(nε m1+o(1) ) time that produces a Θ(1)-balanced element cut of size O(OPTc · (log n)/ε)
+                                              for any value ε ∈ [Θ(1/ log(n)), Θ(1)]. In particular, for any function f (n) = ω(1)
+                                                                                                                                √ (including
+                                              f (n) = log log n, for instance), we can produce an element cut of size O(OPTc · log n · f (n))
+                                              in time O(m1+o(1) ). Moreover, for an arbitrarily small constant ε = Θ(1), our algorithm also
+                                              achieves the best-known approximation ratio for the vertex-separator specialization in O(m1+ε )
+                                              time.
+                                                  Our algorithms are based on a semidefinite programming (SDP) relaxation of the problem.
+                                              A standard approach to solving an SDP relaxation for this kind of problem would use the primal-
+                                              dual Matrix Multiplicative Weights Update framework of Arora and Kale, but this framework
+                                              does not seem to apply, since we cannot express all of our SDPs primal variables explicitly.
+                                              Instead, we present a new MMWU framework for our problem that allows us to represent
+                                              some of our variables implicitly. We also extend our framework to a general Partial-variable
+                                              MMWU framework, which we expect will be useful for future work. Our oracle for the
+                                              balanced element cut problem within our framework uses O(nε polylog(n)) almost-linear time
+                                              maximum-flow computations, and would be sped up if the time complexity of maximum-flow
+                                              improves.                                                              √
+                                                  For graphs with padding bound β, another oracle gives an O( β/ε) approximation in
+                                              m1+o(1) nε polylog(n) time. It is known that β ≤ O(log h) for Kh -minor-free graphs (and
+                                              in particular β ≤ O(log n)).
+
+
+                                         1    Introduction
+                                         Partitioning a graph into smaller pieces is a fundamental problem that arises in many fields. One
+                                         kind of graph partition with widespread applications in algorithms is the vertex separator: A
+                                         small set of vertices whose removal disconnects the graph into small components.
+                                            More generally, let G = (V, E) be a graph with n = |V | vertices, let w : V ∪ E → Z≥0 assign
+                                         a polynomially-bounded P  weight to each vertex and edge, and let c ∈ (0, 1/2) be a constant. For
+                                         Z ⊆ V ∪E, write w(Z) = z∈Z w(z). We treat vertex and edge separators in a common framework.
+                                         A c-balanced element cut is a partition V = A ⊔ B ⊔ C with max{|A|, |B|} ≤ (1 − c)n, of cost
+
+                                                                         cost(A, B, C) = w(C) + w(E(A, B)).
+
+                                         It deletes the vertices in C and the edges between A and B. We also use w(z) = ∞ as notation
+                                         for forbidding deletion of an element z. Vertex separators are the specialization w(e) = ∞ for all
+                                         e ∈ E, and edge cuts are the specialization w(x) = ∞ for all x ∈ V . Write OPTc for the minimum
+                                         finite cost of a c-balanced element cut, wmax for the maximum finite element cost, and W for the
+                                         sum of all finite element costs. Balance always counts original vertices. For fixed sets to separate,
+
+                                                                                            1
+this is weighted element connectivity: attach an undeletable terminal leaf to each original vertex
+by an undeletable edge, and regard the original vertices as deletable nonterminals. Thus paths
+pay for their original endpoints as well as their internal vertices.
+    Small vertex separators are known to exist for many classes of graphs with uniform weights
+                                                                                             √
+w(·) = 1. Planar graphs are known to admit 13 -balanced vertex separators of size O( n) [43,
+                                                                                      √
+33], genus-g graphs are known to admit 31 -balanced vertex separators of size O( gn) [21], and
+similar results are known for minor-free graphs [22], geometric graphs [37, 42], induced-minor-free
+graphs [25], and other classes [36, 12]. These small separators also have numerous applications. To
+name a few, they naturally allow devising divide and conquer algorithms, dynamic programming
+algorithms, subexponential algorithms for NP-hard problems on special graphs, and maximum
+matching algorithms [39, 34, 25].
+    Unfortunately, while optimal planar separators can be found in linear time, none of these other
+results correspond to particularly fast algorithms often requiring exponential time in a parameter.
+For genus-g graphs, the best-known separator theorem requires a surface-map/rotation system [21],
+which takes time exponential in g to compute [38, 6], meaning it cannot be used to compute separa-
+tors for graphs with even a small genus of polylog(n) in polynomial time. In the case of minor-free
+graphs, the time complexity can be even worse: One of the best-known separator theorems [22] cor-
+responds to an algorithm which uses time proportional to multiple tower functions in the size of the
+minor. At best, some of the constructions correspond to polynomial-time algorithms (with a large
+polynomial overhead), such as those of induced-minor-free graphs [25], but such results are typically
+conjectured to be significantly sub-optimal existential bounds for the classes to begin with. Due
+to the significant overhead of these algorithms, many direct applications of recursively-separable
+graphs assume some routine is provided that produces a separator, and the time complexity of the
+assumed routine is incorporated into their final result [15, 26, 2, 16, 23, 17, 10, 32, 44].
+    Even for cases where the graph class might admit a fast algorithm (such as planar graphs),
+such algorithms only apply to graphs within their respective classes. In most practical settings for
+graph partitioning, we do not have any special guarantees that the graph falls into a certain class,
+but a graph might still have a small separator without properly falling into a special class: For
+instance, road networks, which are known to admit empirically good separators [14], are almost
+planar, in the sense that removing a relatively small number of vertices corresponding to structures
+like bridges will make them planar. Or, more theoretically, a graph could be nearly minor-free, in
+the sense that it contains a very large minor-free induced subgraph.
+    Thus, we naturally turn to the question of approximation algorithms: Given a graph G, can
+we approximate the minimum c-balanced vertex separator? It turns out that this is essentially
+impossible as-stated: It is NP-hard to approximate the minimum c-balanced vertex separator up
+                                         1
+to an additive approximation of O(n 2 −ϵ ) for any ϵ > 0 [7]. Fortunately, we may instead use
+pseudo-approximations (also called bi-criteria approximations): For a graph G whose minimum
+c-balanced vertex separator has size OPTc , we can produce a Θ(c)-balanced vertex separator with
+size close to OPTc .
+    Our first result is the following fast pseudo-approximation algorithm for finding a minimum
+balanced element cut. (When stating complexities, we always assume that m = Ω(n) to simplify
+expressions; if it is not the case, then m would need to be replaced with m + n).
+Theorem 1. For any ε ∈ [Θ(1/ log n), Θ(1)] and any constant c ∈ (0, 1/2), there is a Monte-Carlo
+randomized algorithm (succeeding w.h.p.) that, given a graph G = (V, E) and polynomially-bounded
+finite
+p      integer element weights w, finds a Θ(1)-balanced element cut of size at most O(OPTc ·
+   (log n)/ε), where OPTc is the minimum size of a c-balanced element cut. The algorithm runs
+in time O (nε · Tmaxflow (m, m) · polylog(n)), where Tmaxflow (N, M ) is the time to solve a max-flow
+problem on a graph with N vertices and M edges with capacities all poly(n).
+   By applying the almost-linear time maximum flow algorithm of Chen, Kyng, Liu, Peng, Guten-
+berg, and Sachdeva [9], we know that Tmaxflow = O(m1+o(1) ). Specific choices of ε lead to the
+                                                 2
+following conclusions.
+                                              √
+       • Taking any fixed ε > 0, we obtain O( log n)-approximation in O(m1+ε ) time. This approx-
+         imation factor is the best known for both vertex- and edge balanced separators.
+       • Taking ε = Θ(1/ log n), we obtain an O(log n)-approximation in O(Tmaxflow (m, m)·polylog(n))
+         time. This will be useful if Tmaxflow (m, m) is ever improved to be near-linear.
+
+1.1      Padding bound
+Definition 2. Graph (V, E) has padding bound β ≥ 1 if, for every nonnegative edge length vector
+ξ ∈ RE ≥0 and every D > 0, the shortest-path pseudometric d(·, ·) with edge lengths ξxy admits a
+distribution of partitions into sets of diameter at most D such that
+                                Pr [B(x, ΓD) ⊆ P (x)] ≥ e−Γβ           (x ∈ V )
+where B(x, r) = {y ∈ V : d(y, x) ≤ r} is the ball of radius r centered at x, and P (x) is the part
+containing x. Here Γ > 0 is a fixed absolute constant. We write β(G) for the smallest padding
+bound of G = (V, E).
+    If we restrict to the case of edge length vectors ξ ∈ RE                                      V
+                                                             ≥0 arising from vertex lengths ξv ∈ R≥0
+(so ξuv = 21 ξu + 12 ξv ), we obtain an analogous quantity we call βv (G).
+    Many existing results are known for these padding bounds. Most are implied by the following
+results.
+Theorem 3 (Conroy–Filtser [11], Theorem 2). Every Kh -minor-free graph G has β(G) ∈ O(log h).
+Theorem 4 ([13, Theorem 1.4]). Every string graph G has βv (G) ∈ O(1).
+       We will prove the following algorithmic result in terms of the padding bound.
+Theorem 5. For any ε ∈ [Θ(1/ log n), Θ(1)] and any constant c ∈ (0, 1/2), there is a Monte-Carlo
+randomized algorithm (succeeding w.h.p.) that, given a graph G = (V, E) with padding bound β (or
+with βv (G) ≤ β in the special case of vertex separators) and polynomially-bounded
+                                                                               √       finite integer
+element weights w, finds a Θ(1)-balanced element cut of size at most O(OPTc · β/ε), where OPTc
+is the minimum size of a c-balanced element cut. The algorithm runs in time m1+o(1) nε polylog(n).
+For fixed ε > 0, this is O(m1+ε ).
+                                                             √
+    In particular, by taking any fixed ε > 0 we obtain an O( β) approximation in O(m1+ε ) time.
+    For comparison, when the partitions in Theorem 2 can be sampled efficiently, a standard
+polynomial-time LP-based approach [31] gives a O(β)-approximation
+                                                                √    (e.g., a O(log h)-approximation
+for Kh -minor-free graphs [11]). Theorem 5 improves this to O( β). Moreover, it does not require
+that the partitions can be sampled efficiently. See table 1 for the direct applications to various
+graph classes.
+                     Class          Cut          Previous ratio    Year   Ref    This paper
+                                                                                   √
+                     Kh -minor-free edge, vertex O(log h)          2025   [11]   O( log h)
+                                                                                   √
+                     Genus g        edge, vertex O(log g) 1        2010   [29]   O( log g)
+                                                   √
+                                    vertex       O( log tw)        2005   [18]     √
+                     Treewidth tw                                                O( log tw)
+                                    edge         O(log tw)         2024   [19]
+                     String graphs vertex        O(1)              2026   [13]   O(1)
+
+Table 1: Class-dependent ratios of polynomial-time pseudo-approximations for balanced separa-
+tors.
+
+   1                                             √
+    The history of this bound is nuanced. A O( log g)-approximation was claimed in [29], but a proof was absent,
+and one of the explicit claimed theorems is false [42, Appendix B]. In the same work, a padding bound of O(log g)
+was claimed, but this bound also lacks proof. Ratio O(log g) also follows from a later work that does include a
+proof [11].
+
+                                                       3
+1.2   History
+
+  Separator Size        Running Time             Year            Ref      Notes
+  O(OPT · log n)        O(n) large LP solves     1988          [30, 31]
+          √                                                               Best-known polynomial-time
+  O(OPT · log n)        O(n) large SDP solves    2005          [18, 1]
+                                                                          approximation ratio.
+                        e 1.5 )                                           Uses e
+                                                                               O(1) strongly-polynomial
+  O(OPT · log n)        O(m                      2007           [4, 3]
+                                                                          max-flows.
+           √                2     1.5
+  O(OPT · log n)        O(n + m )
+                        e                        2007           [4, 3]
+  O(OPT)
+  e                     O(m1+o(1) )
+                        e                        2010            [35]     Proof missing.
+        2                     3
+  O(OPT
+  e       )             O(OPT
+                        e       m)               2019             [5]
+        p                                                                      O(n1+O(ε) )
+                                                                          Uses e
+  O(OPT log n/ε)        O(n1+O(ε) m1+o(1) )      2024            [28]
+                                                                          strongly-polynomial max-flows.
+        p
+  O(OPT log n/ε)        O(nO(ε) m1+o(1) )               Ours              Works for any ε ∈ [1/Θ(log n), Θ(1)].
+
+Table 2: Previous pseudo-approximation algorithms for the balanced vertex separator problem.
+OPT denotes the size of the smallest 23 -balanced vertex separator. The notation O
+                                                                                 e hides polylog-
+arithmic factors.
+
+     Approximation algorithms for balanced vertex separators have a long history. First, it should
+be noted that there is a standard reduction from the balanced vertex separator problem to the
+(weighted) balanced directed edge separator problem based on vertex-splitting, preserving approx-
+imation ratios up to constants. For papers that study balanced directed edge separators directly,
+we will only discuss their implications for vertex separators.
+     Polynomial-time O(log n)-approximations date back to√       Leighton and Rao in 1988 [30, 31], and
+the best-known polynomial-time approximation ratio is O( log n), achieved independently by two
+groups at STOC 2005 [18, 1]. However, all of these algorithms are quite slow. The first requires
+up to O(n) solves of linear programs with a large number of constraints, while the latter two
+require up to O(n) solves of large semidefinite programs with a large number of constraints. The
+number of solves is because each problem is solving the related problem of minimum-ratio vertex
+cut: Roughly speaking, this refers to finding a set of vertices S whose removal disconnects a small
+component C of the graph, while minimizing |S|/|C|.
+     Progress on fast approximation algorithms with polylogarithmic approximation ratios has been
+much slower, and often involves unusual tradeoffs. In 2007, Arora and Kale presented an O(log n)-
+approximation using O(1)  e     strongly-polynomial maximum flow computations [3], and hence runs
+in e     1.5
+    O(m ) time for a graph with m edges. It should be noted that their algorithm does very much
+require strongly-polynomial maximum-flow, and does not admit an immediate replacement: The
+bit-complexity of the inputs to their flow problem is polylogarithmic only if they are represented
+with floating point arithmetic. This prevents an immediate application of almost-linear time
+maximum flow [9], which applies for integer inputs of polynomial magnitude. That said, we think
+it is feasible that a slightly-modified form of their algorithm could be made to appropriately√handle
+bit-complexity. This would require more work. Arora and Kale also presented an O( log n)-
+approximation running in O(n   e 2 + m1.5 ) time using multicommodity flow.
+     Since then, there have been a number of alternative results. In 2010, Louis [35] posted a preprint
+claiming to attain a polylogarithmic approximation in a polylogarithmic number of maximum flow
+computations using a “cut-matching game”. Unfortunately, the details of this proof were never
+published. However, if the suggested algorithm does work, it does at least appear that it would
+not require any extra care for handling bit-complexity.
+     In 2019, Brandt and Wattenhofer [5] presented an algorithm with an alternative approximation
+guarantee: For a graph admitting a balanced 2/3-separator of size OPT, their algorithm produces
+a separator of size O(OP
+                      e      T 2 ) in time O(OP
+                                           e    T 3 m). This is useful for graphs with particularly small
+separators.
+                                                   4
+                                                                         p
+    In 2024, Lau, Tung, and Wang [28] published a result implying a O( log n/ε)-approximation
+for the “vertex expansion” problem in O(nO(ε) )p   maximum flow computations, for a parameter ε
+similar to ours. This consequently implies a O( log n/ε)-approximation for the balanced vertex
+separators in O(n1+O(ε) ) maximum flow computations via a standard reduction [18]. Unfortu-
+nately, their analysis omits consideration of bit-complexity, and so faces the same issue as Arora
+and Kale’s work (although it is again likely possible to handle with a more careful derivation).
+
+1.3   Technical Overview
+The overall structure of our algorithm is closest to the methods of Arora and Kale and follow-up
+works [3, 40, 24] for the balanced (edge) separator problem. Accordingly, we first give a brief
+overview of the latter problem, and discuss the precise point at which the same approach fails,
+requiring new ideas. Our method also bears some similarities to a slightly different approach of
+Lau, Tung, and Wang [28] for the directed edge expansion problem, and we discuss where this
+approach fails as well. Both of these previous works, as well as ours, make use of the “Matrix
+Multiplicative Weights Update” algorithm (MMWU), which is an online learning algorithm for
+the so-called “Matrix game” [3, Algorithm 1]. However, their implementations of this algorithm
+differ significantly.
+Balanced edge separator First, the methods of Arora and Kale define an SDP relaxation of the
+problem that involves vector-valued variables vi ∈ Rn for each node i ∈ V . This relaxation is then
+approximately solved using a primal-dual Matrix Multiplicative Weights Update framework [3,
+Algorithm 2] (called the “Primal-Dual Algorithm for SDPs” in the cited version of their work),
+which internally runs the MMWU algorithm while maintaining the variables vi explicitly. The
+main subroutine of the primal-dual MMWU framework is a procedure called Oracle that does
+the following: given the current primal solution (i.e. vectors vi ), it either finds a balanced separator
+of small cost, or finds an inequality violated by this solution (specified by dual variables). This
+inequality is then used to update vectors vi . This pair of valid outputs is key to keeping the
+“width” low, which in turn allows for a fast time complexity.
+    Different implementations of the oracle are presented in [3], [40] and in [24]. In particular, the
+oracle in [24] works by running a sequence of maximum flow computations, extracting directed
+matchings from these computations (via flow decompositions), and then “chaining” together these
+matchings.
+Sparse directed edge cuts Lau, Tung, and Wang take an alternative approach to integrating
+the MMWU algorithm into their problem. There is a natural SDP relaxation of their problem
+as well, but it would naturally involve both a vector-valued variable vi ∈ Rn and a separate real-
+valued variable ri ∈ R for each node i ∈ V , with surprisingly challenging inequalities relating these
+two (see also [27] for related SDPs with similar structure). The standard primal-dual MMWU
+framework has no way to handle this structure, so Lau, Tung, and Wang instead use a min-max
+form of their problem, with outer vector-valued variables vi ∈ Rn . In their case, the constraints on
+the vector-valued variables in this min-max form happen to coincide with precisely the guarantees
+that are maintained by the MMWU algorithm at all times. They then construct another Oracle
+procedure that either solves the inner problem in a way that has low “width”, or outputs a
+combinatorial solution.
+    Importantly, their approach to analysis is rather ad-hoc, and only seems applicable to their
+specific problem, while making constraints like balance much more difficult to handle nicely.
+    On the technical level, our work introduces two new ideas, which are described below.
+Technical contibution #1: partial variable MMWU framework For simplicity, let us
+consider vertex separators. We start by defining an SDP relaxation of the problem which is a
+variant of the SDP for the balanced edge separator (and distinct from previous SDP relaxations
+for balanced vertex separators such as the SDP of Feige–Hajiaghayi–Lee [18]). Besides variables
+
+                                                   5
+vi ∈ Rn , we use scalar variables xi ≥ 0 that indicate whether node i belongs to the separator.
+     One could now try to apply the primal-dual MMWU framework described above: maintain
+primal variables vi , xi , find an inequality violated by these variables, and update these variables.
+Unfortunately, we were unable to find such a scheme. Variables vi and xi play very different roles,
+and it is not clear how to jointly update them while having a small “width” of the oracle. We also
+tried to find a usable min-max formulation, but, as mentioned, the balance requirement prevents
+the same trick of [28] from being applied to our problem, since the MMWU algorithm does not
+automatically satisfy these constraints.
+     Overcoming this difficulty was the first technical challenge that we faced. To resolve it, we
+avoid the standard primal-dual MMWU framework, and instead use a hybrid of the two approaches
+(which we will call the “partial-variable” MMWU framework): we maintain and update variables
+vi , but not xi . The latter are maintained neither explicitly nor implicitly, even though they are
+part of the primal SDP formulation. We carefully design an oracle that does not need variables
+xi as input, while still outputting dual variables, and we apply the MMWU regret-minimization
+bound directly to the output of this oracle. We also extend this framework to a more general class
+of SDPs.
+Technical contribution #2: new oracle for the padding bound To prove Theorems 1
+and 5, we provide two different implementations of the oracle. The oracle for the first theorem
+is very close to the one in [24]; the main difference is that we generalize the minimum s-t cut
+subroutine for edge separator to element separators. For Theorem 5 we use a very different
+approach. First, we use random sampling to construct an instance of a multicommodity flow
+problem, which we then approximately solve using the algorithm in [8]. If the flow is large then its
+demand graph gives a valid output of the oracle (a feedback matrix of small width). The case of
+small flow is the most technically challenging part of the analysis. First, we use dual prices of the
+multicommodity flow problem to construct a shortest path pseudometric on V . We then apply the
+definition of the padding bound and show the existence of Lipschitz approximation to Gaussian
+projections. Using this approximation, we finally prove that an s-t minimum cut computation for
+a random Gaussian direction yields a balanced element cut of small cost with constant probability.
+
+1.3.1   Bit complexity
+Like previous works [3, 28], we apply maximum flow as an important subroutine. Moreover, de-
+pending on the value of the maximum flow, we may need to produce a corresponding minimum
+cut. For both vertex capacitated and directed graphs, the fastest-known maximum flow algorithm
+(exact, approximate, or otherwise) is the recent almost-linear time exact maximum flow result of
+Chen et al. [9], which only applies to networks with bounded integral capacities. This presents an
+issue for prior work: As presented, both the work of Arora and Kale for balanced edge separator [3]
+and its follow-up works [40, 24], as well as the work of Lau, Tung, and Wang [28] present their algo-
+rithms for real-valued weights. Since almost-linear time maximum flow requires bounded integers,
+a bit more work would be required to complete the analysis in these works in this paradigm.
+    In the case of balanced edge separator, there are alternative strongly near-linear-time undi-
+rected maximum flow routines that may be used instead [20]. However, in the case of directed
+edge expansion, there is no such alternative.
+    For our problem, we use the element-capacitated network to devise our maximum flow instances
+in such a manner that their capacities do not depend on the maintained variables {vi } in any way.
+However, while this is the main step required to avoid such issues, this does not automatically
+handle our bit complexity bounds, since our capacities do still depend on a number of different
+quantities, including our finite element costs, a guess at the value of the optimum solution (obtained
+via binary search), and several constants. To handle this cleanly, we parametrize some of our
+maximum flow instance capacities with a parameter µ, and prove several intermediate results for
+
+
+                                                  6
+a value of µ falling into a wide range. Then, our final proofs pick an appropriate value of µ that
+falls into that range while having small bit-complexity.
+
+
+2    Preliminaries
+We will now define   the main convex relaxation we will work with. Let ξ := 94 c2 , let S := {S ⊆
+V : |S| ≥ 1 − 4c n}, and let P be the set of sequences p = (p0 , . . . , pℓ(p) ) of distinct nodes in G.
+                  
+
+We use the notation p = (p0 , . . . , pℓ(p) ) for the sequence of vertices along a path p ∈ P. We use
+nonnegative scalar deletion variables xz for all elements z ∈ V ∪ E; in particular, xij is the variable
+for edge ij, distinct from the Gram-matrix entry Xij . (We write ij for an undirected edge with
+endpoints i, j.) We consider the following relaxation of the c-balanced element cut problem:
+
+                                X
+                        min             w(z)xz                                                     (1a)
+                               z∈V ∪E
+              xi + xj + xij ≥ ∥vi − vj ∥2         xi + xj + xij − Lij • X ≥ 0         ∀ij ∈ E      (1b)
+                           2
+                      ∥vi ∥ = 1                                      Xii = 1          ∀i ∈ V       (1c)
+      ℓ(p)
+      X
+             ∥vpj − vpj−1 ∥2 ≥ ∥vpℓ(p) − vp0 ∥2                   Tp • X ≥ 0          ∀p ∈ P       (1d)
+      j=1
+        X
+                 ∥vi − vj ∥2 ≥ ξn2                               KS • X ≥ ξn2         ∀S ∈ S       (1e)
+     i,j∈S:i<j
+
+                          x≥0                                   X ⪰ 0, x ≥ 0                       (1f)
+
+    Variables for elements of infinite cost are fixed to zero and their objective terms are omitted. In
+particular, at the optimum we have xi = 0, xij = ∥vi −vj ∥2 in the case of edge separators and xij =
+0 in the case of vertex separators. The left and right sides here both denote the same optimization
+problem. The difference is notational. The matrix X is defined as X := V T V , where V is the n×n
+matrix with columns v1 , . . . , vn . We have Lij = L(G(i,j) ) and Tp = L(Gp ) − L(G(p0 ,pℓ(p) ) ) where
+L(·) is the Laplacian of the corresponding graph (the diagonal degree matrix minus the adjacency
+matrix) and Gq for a path q is the undirected unweighted graph containing all edges of q. Finally,
+we define KS (i, i) = |S| − 1 for i ∈ S, KS (i, j) = −1 for distinct i, j ∈ S, and KS (i, j) = 0 in all
+other cases.
+
+Proposition 6. The optimal value of problem (1) divided by 4 is a lower bound on the minimum
+c-Balanced Element Cut problem.
+
+Proof. Let (A, B), C be an optimal c-balanced element cut, so max{|A|, |B|} ≤ (1 − c)n. We need
+to construct a feasible solution of problem (1) of value at most 4(w(C) + w(E(A, B))). In the
+construction below, the last n − 1 coordinates of vectors vi will be set to 0; we can thus assume
+for brevity of notation that vi ∈ R rather than vi ∈ Rn .
+     Let us choose a partition (Â, B̂) of V with A ⊆ Â, B ⊆ B̂ which is the “most balanced”,
+i.e. it minimizes the absolute value of |Â| − |B̂|. In particular, if max{|A|, |B|} ≤ n/2 then
+min{|Â|, |B̂|} ≥ ⌊n/2⌋, otherwise either (Â, B̂) = (A, V − A) (if |A| > n/2) or (Â, B̂) = (V − B, B)
+( |B| > n/2). In all three( cases we have |Â| ≥ cn and |B̂| ≥ cn, since c < 1/2. Set xi =
+(if
+   0 if i ∈ A ∪ B              −1 if i ∈ Â
+                    and vi =                  . Set xij = 4 for ij ∈ E(A, B) and xij = 0 otherwise.
+   4 if i ∈ C                  +1 if i ∈ B̂
+Checking conditions (1b), (1c), (1d), (1f) is straightforward. (For each edge ij with vi ̸= vj , either
+an endpoint lies in C, or ij ∈ E(A, B), so xi + xj + xij ≥ 4.) Let us show (1e). Consider a set
+
+
+                                                    7
+S ⊆ V with |S| ≥ (1 − 4c )n. We have |Â ∩ S| ≥ |Â| − 4c n ≥ 3c
+                                                              4 n, and similarly for B̂ ∩ S. Therefore,
+                                                                                                                                 2
+      X
+                        2
+                                       X
+                                                             2
+                                                                          X         X                                      3c
+                ∥vi − vj ∥ ≥                      ∥vi − vj ∥ =                           4 = 4|Â ∩ S| |B̂ ∩ S| ≥ 4           n
+                                                                                                                           4
+    i,j∈S:i<j                  i∈Â∩S,j∈B̂∩S                          i∈Â∩S j∈B̂∩S
+
+The last expression equals 94 c2 n2 = ξn2 , and so eq. (1e) is indeed satisfied.
+
+   The dual of problem (1) is as follows. It has variables yi for every node i ∈ V , λij for every
+edge ij ∈ E, fp for every path p, and zS for every set S of size at least (1 − c/4)n. Let diag(y) be
+the diagonal matrix with vector y on the diagonal:
+                                   X            X
+                              max      yi + ξn2    zS                                           (2a)
+                                                  i                   S
+                                             X               X                      X
+                            diag(y) +              fp Tp +        zS KS ⪯                λij Lij                                       (2b)
+                                              p               S                     ij
+                                                                 X
+                                                                            λij ≤ w(i)             ∀i                                  (2c)
+                                                              j:ij∈E
+
+                                                                            λij ≤ w(ij)             ∀ij ∈ E                            (2d)
+                                                             fp , zS , λij ≥ 0                ∀p, S, ij                                (2e)
+                                 def
+For a vector λ ≥ 0 let Gλ = (V, E, λ) be the graph with edge weights λ. Note that λ satisfies eq. (2c)
+               deg(Gλ ) ≤ w|V component-wise, where deg(Gλ ) ∈ RV is the vector of node degrees
+if and only if P
+in G . Also, ij λij Lij = L(Gλ ) is the Laplacian of Gλ .
+     λ
+
+
+
+3      A new matrix multiplicative weights method
+As previously discussed, we are unable to apply the general primal-dual framework of Arora
+and Kale [3]. However, we still leverage some of the same high-level steps. Instead of solving
+optimization problem (1) directly, we will use a binary search on the objective value. Accordingly,
+let us fix value α ∈ [1, 8W ]. We will present a procedure that will either (i) certify that the
+optimum value of problem (1) is at least α/2, or (ii) produce a Θ(1)-balanced element cut of cost
+at most Θ(κα), for some parameter κ to be specified later. Clearly, by running this procedure
+for O(log n) values of α we will obtain a O(κ) pseudo-approximation to the minimum element cut
+problem.
+    The procedure above will be implemented via the Matrix Multiplicative Weights Update
+(MMWU) algorithm of Arora and Kale [3, Algorithm 1] given below.
+    Algorithm 1: MMWU algorithm.
+ 1 for t = 1, 2, . . . , T do
+ 2       Compute
+                                                        t−1
+                                                                            !
+                                       (t)
+                                                        X
+                                                                      (r)                            W (t)
+                                   W         = exp η             N              ,   X (t) = n ·
+                                                        r=1
+                                                                                                   Tr(W (t) )
+
+ 3       Either output Fail, or find “feedback matrix” N (t) of the form
+                                                                 X                  X               X
+                                N (t) = diag(y) +                         fp Tp +        zS KS −             λij Lij
+                                                                  p                  S                  ij
+
+           where fp ≥ 0, zS ≥ 0, i yi + ξn2 S zS ≥ α, λij are non-negative variables with
+                                P           P
+           deg(Gλ ) ≤ w|V and λij ≤ w(ij), and N (t) • X (t) ≤ 0.
+
+                                                                      8
+                                   4n ρ ln n            2 2
+                     δ
+Theorem 7. Set η = 2nρ 2 and T = ⌈    δ2
+                                             ⌉. Suppose that the algorithm does not fail during
+the first T iterations, and the spectral norms are bounded as ∥N (t) ∥ ≤ ρ for all t ∈ [T ]. Then
+optimal values of problems 1 and 2 are at least α − δ.
+   We will set δ = 21 α, and require Algorithm 1 to produce a Θ(1)-balanced element cut of cost
+at most Θ(κα) whenever it outputs Fail.
+
+3.1    Partial-variable MMWU framework
+To prove Theorem 7, we will first derive an MMWU framework for more general SDPs, and then
+specialize it to Algorithm 1.
+   Let us consider an SDP with a block-diagonal symmetric-matrix X = blkdiag(X1 , . . . , XK ),
+Xk ∈ Snk given by
+                                          K
+                                          X
+                                min         ⟨Ck , Xk ⟩                                                          (3a)
+                             X1 ,...,XK
+                                          k=1
+                                          XK
+                                   s.t.         ⟨Aik , Xk ⟩ ≥ bi                           ∀i ∈ I               (3b)
+                                          k=1
+                                          XK
+                                                ⟨Aik , Xk ⟩ = bi                           ∀i ∈ I ′             (3c)
+                                          k=1
+                                          Xk ⪰ 0                                           ∀k ∈ [K]             (3d)
+     The corresponding dual problem is
+                       max       b⊤ y                                                                           (4a)
+                         y
+                                          def
+                                                        X
+                        s.t.     Sk (y) = Ck −                yi Aik ⪰ 0                      ∀k ∈ [K]          (4b)
+                                                         i
+                                                    ′
+                                 y ∈ RI≥0 × RI                                                                  (4c)
+where i means the sum over i ∈ I ∪ I ′ .
+       P
+    We will describe an algorithm that maintains variables Xk only for some blocks k. The set of
+such blocks will be denoted as K ⊆ [K].
+    We assume that there exists R > 0 such that for each k ∈ K the linear constraints (3b),
+(3c) of the primal problem imply that Tr(Xk ) ≤ R, i.e. a linear combination of these constraints
+yields constraint Tr(Xk ) ≤ R. We further assume that if the i-constraint is present in this linear
+combination with a non-zero coefficient then Aiℓ = 0 for all ℓ ̸= k.
+ Algorithm 2: Partial-variable MMWU algorithm.
+ 1 for t = 1, 2, . . . , T do
+ 2      For each k ∈ K compute
+
+                                                        t−1
+                                                                        !                        (t)
+                                  (t)
+                                                        X      (r)               (t)          Wk
+                                 Wk = exp          η          Nk            ,   Xk = R ·              (t)
+                                                        r=1                                 Tr(Wk )
+                                                                                       ′
+ 3      Either output Fail, or find vector y = y (t) ∈ RI≥0 × RI such that b⊤ y ≥ α and
+
+                         (t)        (t)                   (t) def
+                       Nk • Xk ≤ 0,                 Nk = − Sk (y)                             ∀k ∈ K         (5a)
+                                Sk (y) ⪰ 0                                                    ∀k ∈ [K] − K   (5b)
+
+
+                                                                    9
+                                          4R ρ ln nmax    2 2
+                          δ
+Theorem 8. Set η = 2Rρ      2 and T = ⌈        δ2
+                                                       ⌉ where nmax = maxk∈K nk . Suppose that
+the algorithm does not fail during the first T iterations, and the spectral norms are bounded as
+   (t)
+∥Nk ∥ ≤ ρ for all k ∈ K and t ∈ [T ]. Then optimal values of problems (3), (4) are at least
+α − δ · |K|.
+
+   Note that the standard MMWU framework is obtained by setting K = [K] = {1}. In this case
+Theorem 8 reduces to (a special case of 2 ) Theorem 4.6 in [3].
+
+Proof. Since the constraints (3b), (3c) imply constraint −Tr(X    P k ) ≥ −R, there exist
+                                                                                      P coefficients
+γik with γik ≥ 0 for i ∈ I such that for each k ∈ K we have i γik Aik = −I and i γik bi ≥ −R.
+Define ȳ = T1 Tt=1 y (t) , and let y be the vector with yi = ȳi + k∈K γik Rδ for each i. Clearly, we
+              P                                                    P
+                    ′
+have y ∈ RI≥0 × RI .
+    Note that b⊤ ȳ = T1 Tt=1 b⊤ y (t) ≥ α. We can also write
+                          P
+
+                                           XX                 δ           X δ
+                       b⊤ y = b⊤ ȳ +                bi γik     ≥ b⊤ ȳ −  R ≥ α − δ · |K|
+                                                              R             R
+                                           k∈K   i                            k∈K
+
+To prove the claim, it thus now suffices to show that vector y is a feasible solution of the dual
+problem (4), i.e. that Sk (y) ⪰ 0 for each k ∈ [K].
+   Using the assumption before Algorithm 2, we obtain
+                                     X           δ                δ
+                Sk (y) = Sk (ȳ) −         γik     Aik = Sk (ȳ) + I                             ∀k ∈ K
+                                                 R                R
+                                       i
+                Sk (y) = Sk (ȳ)                                                                 ∀k ∈ [K] − K
+
+   First, let us consider k ∈ K. Let us apply the standard MMWU regret bound [3, Corollary 3.2]
+                           (t)                 (t)
+with matrices P (t) = R1 Xk and M (t) = − ρ1 Nk . We obtain
+
+                              T                                 T
+                                                                              !
+                              X                                 X                              ln n
+                                    M (t) • P (t) ≤ λn                M (t)       + ηρ · T +
+                                                                                                ηρ
+                              t=1                               t=1
+
+where n = nk and λ1 (A) ≥ · · · ≥ λn (A) denote eigenvalues of symmetric matrix A. Equivalently,
+                                T                 T
+                                         !
+                     1         X     (t)       1 X (t)       (t)        ln n
+                       λn −        Nk      ≥−        Nk • Xk −ηρT −
+                     ρ                        Rρ                         ηρ
+                               t=1               t=1
+                                            |        {z        }
+                                                                       ≥0
+
+                     PT      (t)
+By noting that −        t=1 Nk = T Sk (ȳ) we obtain
+                                                                             
+                        1                δ  1                       2    ln n    δ δ        ln n
+           λn (Sk (y)) = λn (T Sk (ȳ)) + ≥                      −ηρ T −        + = − ηρ2 −
+                        T                R  T                             η      R R         ηT
+
+Using definitions of η and T , we conclude that the last expression is nonnegative, and hence
+Sk (y) ⪰ 0.
+    Now consider k ∈ [K] − K. We have Sk (y (t) ) ⪰ 0 for each t and hence Sk (y) = Sk (ȳ) ⪰ 0.
+
+   2                                            (t)   P             (t)                 (t)                      (t)
+P [3, Theorem 4.6] allows the oracle to set Nk = i yi Aik − Fk for some matrix F ⪯ Ck , instead of Nk =
+  i yi Aik − Ck . The same could be done in our case, but since our algorithm does not need this extra flexibility, for
+simplicity we state the theorem without this generalization.
+
+
+
+                                                                10
+Proof of Theorem 7. Apply Theorem 8 to problem (1) by treating its Gram matrix X as one n × n
+block and every finite-cost scalar variable xz as a 1 × 1 block. Maintain only the Gram-matrix
+block, so K consists of this single block. The constraints Xii = 1 imply Tr(X) = n, and hence we
+take R = n and nmax = n. The update for the maintained block in Algorithm 2 is then exactly
+the update in Algorithm 1.
+    For thePGram-matrix                              (t) = −S (y (t) ) is precisely the feedback matrix
+                      P block, the  P matrix N                X
+diag(y) + p fp Tp + S zS KS − ij λij Lij used in Algorithm 1. Positive semidefiniteness of the
+unmaintained 1 × 1 slacks says exactly that deg(Gλ ) ≤ w|V and λij ≤ w(ij), while b⊤ y ≥ α is
+the displayed lower bound on the dual objective. Thus the oracle conditions in the two algorithms
+agree. Finally, |K| = 1, so Theorem   l 82 gives   m the lower bound α − δ; substituting R = n and
+                            δ           4n ρ2 ln n
+nmax = n also gives η = 2nρ2 , T =         δ2
+                                                    . These are exactly the conclusion and parameter
+choices of Theorem 7.
+
+
+4    Implementation of Algorithm 1
+Consider the matrix X = X (t) computed at the t-th step of Algorithm 1. It can be seen that X
+is positive semidefinite, so we can consider its Gram decomposition: X = V T V . Let v1 , . . . , vn be
+the columns of V ; clearly, they uniquely define X. Note that computing v1 , . . . , vn requires matrix
+exponentiation, which is a tricky operation because of accuracy issues. Furthermore, even storing
+these vectors requires Θ(n2 ) space and thus Ω(n2 ) time, which is too slow for our purposes. To
+address these issues, Arora and Kale compute approximations ṽ1 , . . . , ṽn to these vectors using the
+following result.
+
+Theorem 9 ([3, Lemma 7.2]). For any constant c > 0 there exists an algorithm that does the
+following: given values γ ∈ (0, 21 ), λmax > 0, τ = O(n3/2 ) and (implicit) symmetric matrix
+A ∈ Rn×n of spectral norm ∥A∥ ≤ λmax , it computes a matrix Ṽ ∈ Rd×n with column vectors
+ṽ1 , . . . , ṽn of dimension d = O( log
+                                       γ2
+                                          n
+                                            ) such that matrix X̃ = Ṽ T Ṽ has trace n, and with probability
+at least 1 − n−c , one has
+
+                            | ∥ṽi ∥2 − ∥vi ∥2 | ≤ γ(∥ṽi ∥2 + τ )                         ∀i               (6a)
+                 | ∥ṽi − ṽj ∥2 − ∥vi − vj ∥2 | ≤ γ(∥ṽi − ṽj ∥2 + τ )                   ∀i, j            (6b)
+
+                                                                           exp(A)
+where v1 , . . . , vn are the columns of a Gram decomposition of X = n · Tr(exp(A)) . The complexity
+of this algorithm equals the complexity of computing kd matrix-vector products of the form A · u,
+                                          5/2
+u ∈ Rn , where k = O(max{λ2max , log n τ }).
+
+  PIft−1we (r)
+             use this theorem inside Algorithm 1, then the matrices A will have the form A =
+η r=1 N ; their spectral norm will be bounded by ηρT . Therefore, we can set λmax = ηρT =
+Θ( ρn log
+      α
+          n
+            ) in Theorem 9. Parameters γ and τ will be specified later.
+    We will write (v1 , . . . , vn ) ≈γ,τ (ṽ1 , . . . , ṽn ) if conditions (6) hold. We now need to show how
+to solve the following problem.
+ Input: (unobserved) matrix V ∈ Rn×n with columns v1 , . . . , vn ∈ Rn and (observed) matrix
+ Ṽ ∈ Rd×n with columns ṽ1 , . . . , ṽn ∈ Rd such that (v1 , . . . , vn ) ≈γ,τ (ṽ1 , . . . , ṽn ) and Tr(X) =
+ Tr(X̃) = n where X = V T V and X̃ = Ṽ T Ṽ .
+ Output: either                              P          P                 P
+ (i) matrix N of the form N = diag(y) + p fp Tp + S zS KS − ij λij Lij where fp ≥ 0, zS ≥ 0,
+             2                                                              λ
+ P             P
+    i yi + ξn   S zS ≥ α, λij are non-negative variables with deg(G ) ≤ w|V and λij ≤ w(ij), and
+ N • X ≤ 0; or
+ (ii) a Θ(1)-balanced element cut of value at most κα.
+
+                                                       11
+    A procedure that solves the problem above will be called an “Oracle”, and the spectral norm
+∥N ∥ of matrix N will be called the width of the oracle.
+    First, we will handle an easy case that returns early if triggered.
+    Let us denote S = {i ∈ V : ∥ṽi ∥2 ≤ 4/c}. We have i∈V ∥ṽi ∥2 = Tr(Ṽ T Ṽ ) = n and thus
+                                                             P
+|S| ≥ (1 − c/4)n.
+                                                       2
+Proposition 10. Suppose that KS • X̃ < ξn4 . Then setting yi = − αn for all i ∈ V , zS = ξn        2α
+                                                                                                     2,
+                  ′                                                                       α
+zS ′ = 0 for all S ̸= S, and λij = 0 gives a valid output of the oracle with width ρ = O( n ) assuming
+that parameters τ, γ in Theorem 9 satisfy γ ≤ 12 and τ ≤ 2ξ .
+                                                                                                            2
+Proof. Denote zij = ∥vi − vj ∥2 and z̃ij = ∥ṽi − ṽj ∥2 . We know that Z̃ := ij z̃ij = KS • X̃ < ξn4
+                                                                                   P
+where the sum is over i, j ∈ S with i < j. Also, |zij − z̃ij | ≤ γ(z̃ij + τ ) for all i, j. This implies that
+                             X                          2                 2      2          2
+              KS • X =            zij < Z̃ + γ Z̃ + n2 γτ ≤ (1 + γ) ξn4 + n2 γτ ≤ ξn2
+                              i,j∈S:i<j
+
+Note that N = − αn I + ξn
+                       2α                                2                    α       2  2α
+                                                   P       P
+                         2 KS . We have        i yi + ξn    S ′ zS ′ = n · (− n ) + ξn · ξn2 = α and
+                                         2α ξn2
+N •X = − αn I •X + ξn
+                   2α              α                                                  α      2α
+                     2 (KS •X) ≤ − n ·n+ ξn2 · 2 = 0, as desired. Also, ∥N ∥ ≤ ∥− n I∥+∥ ξn2 KS ∥ =
+
+O( αn ).
+
+       From now on we make the following assumption.
+                                                                                                                   2
+Assumption 1. ∥ṽi ∥2 ≤ 4/c for all i ∈ S, |S| ≥ (1−c/4)n and                          ∥ṽi − ṽj ∥2 = KS • X̃ ≥ ξn4 .
+                                                                               P
+                                                                           i,j∈S:i<j
+
+                       for all i ∈ V and zS ′ = 0 for all S ′ , then i yi + ξn2 S ′ zS ′ = α. Note that
+           set yi = αn P
+                                                                          P    P
+   Let us P
+N = αn I + p fp Tp − ij λij Lij and αn I • X = αn Tr(X) = α, so condition N • X ≤ 0 is equivalent to
+( p fp Tp − ij λij Lij ) • X ≤ −α. With a variable substitution, our goal thus becomes as follows.3
+ P          P
+
+ Find either
+ (i) a matrix N of the form N = p fp Tp − ij λij Lij where fp ≥ 0, λij ≥ 0, deg(Gλ ) ≤ w|V
+                                   P          P
+ and λij ≤ w(ij), and N • X ≤ −α; or
+ (ii) a Θ(1)-balanced element cut of value at most κα.
+    A procedure for solving this problem will be called a “reduced Oracle”, and the norm ∥N ∥
+will be its width. Note that the width of the full oracle is at most αn plus the width of the reduced
+oracle, since ∥ αn I + N ∥ ≤ αn + ∥N ∥. We will show the following.
+
+Theorem 11. Assume that the reduced oracle has the same input as Oracle that additionally
+satisfies Assumption 1. Then it can be implemented so that it
+                                                                      √
+    • runs in m1+o(1) nO(ε) polylog(n)
+                                 √     time and has parameter κ = Θ( β/ε), assuming that pa-
+       rameters Γ and β ∈ [1, O( log n)] of the padded bound are known;
+                                                                                  p
+    • runs in O nO(ε) · Tmaxflow (m, m) · polylog(n) time and has parameter κ = Θ( log n/ε).
+                                                    
+
+In both cases the oracle succeeds (i.e. produces either output (i) or (ii)) with probability at
+least 1 − n−Θ(1) . Both cases use τ = Θ(1) and γ = Ω(1/ log n). Matrix N satisfies ∥N ∥ ≤
+αn−1+O(ε) polylog(n) and has O(mnO(ε) polylog(n)) non-zero entries.
+
+       Assuming this result, we can easily prove Theorems 1 and 5.
+   3
+    An analogous specification (for the balanced edge separator problem) appeared in [24], but in [24] it was further
+assumed that S = V . However, the justification for this simplification in Appendix A.2 is incorrect: it works if the
+oracle returns a feedback matrix, but does not work if the oracle returns a cut. A similar simplification claim also
+appeared in [40]. In this work we do not assume that S = V .
+
+                                                           12
+Proof of Theorems 1 and 5. Theorem 11 and Proposition 10 give oracle implementations with and
+without Assumption 1, respectively. In both cases the oracle width isρ = O(αn     −1+O(ε) polylog(n)).
+                                                                                  
+                                                                      n2 ρ2 log n
+Thus, the number of iterations in Theorem 7 with δ = α/2 is T = O         α2
+                                                                                    = nO(ε) polylog(n).
+Moreover, ηρT = O(ρn log n/α) = nO(ε) polylog(n). Since γ = Ω(1/ log n), Theorem 9 uses
+dimension d = O(log3 n) and nO(ε) polylog(n) matrix-vector products per iteration. Each such
+product can be computed in O(mnO(ε) polylog(n)) times, so we need O(mnO(ε) polylog(n)) extra
+time per iteration. This time is dominated by the runtime of the reduced oracle.
+    The total number of iterations will be T ′ = T · O(log W ) = T · O(log n), since we need to run
+the algorithm inside the binary search over α ∈ [1, 8W ]. Each iteration succeeds with probability
+at least 1 − n−Θ(1) , so all T ′ iterations succeed with probability at least 1 − T ′ n−Θ(1) ≥ 1 − o(1).
+    This gives the statements of Theorems 1 and 5, except that the complexities have factors nO(ε)
+instead of nε . Rescaling ε by an appropriate constant gives the desired results.
+
+
+   In Sections 6 and 7 below we describe the two implementations of the reduced oracle stated
+in Theorem 11. To simplify notation, we will assume that vectors ṽi for i ∈ V are unique, and
+rename the nodes in V so that ṽx = x for each x ∈ V . Thus, we now have V ⊆ Rd . The “true”
+vector in Rn corresponding to x ∈ V is still denoted as vx .
+   For a path p = (x, . . . , y) we will denote ∂p = {x, y} to be the pair of its endpoints.
+   We write u ∼ N (0, Id ) for a standard Gaussian vector in Rd , whose components are independent
+N (0, 1) variables. Notation Pru [·] denotes probability over this choice of u.
+
+
+5     Maximum flow subroutine
+Before presenting the two approaches, we describe a construction that will be used in both of
+them.
+   For disjoint subsets A, B ⊆ S and parameter µ > 0 let N (A, B, µ) be the directed weighted
+graph with the nodes {x+ , x− : x ∈ V } ∪ {e− , e+ : e ∈ E} ∪ {s, t} and the edges
+ [                [                                                                   [              [
+   {(x+ , x− )} ∪    {(e− , e+ ), (x− , e− ), (y − , e− ), (e+ , x+ ), (e+ , y + )} ∪   {(s, x+ )} ∪   {(y − , t)}
+    | {z }            | {z } |                          {z                      }        | {z }         | {z }
+x∈V               e=xy∈E                                ∞                          x∈A        µ    y∈B      µ
+       w(x)/2               w(e)
+
+(The numbers below the edges indicate their weights).
+
+                                                                              s
+                                                                  µ
+
+                                                                   ∞                      ∞
+                                                        x+                   e+                   y+
+Figure    1:        The     network
+N ({x}, {y}, µ) for a graph consist-             w(x)/2                           w(xy)              w(y)/2
+ing of one edge e = xy. Arc labels
+are capacities.                                         x−                   e−                   y−
+                                                                   ∞                      ∞
+
+                                                                                          µ
+                                                                              t
+
+   An s-t cut (Scut , Tcut ) in N (A, B, µ) will be called valid if there is no node x ∈ V with
+x+ ∈ Tcut , x− ∈ Scut . An invalid cut can be converted to a valid one by moving x+ to Scut whenever
+x− ∈ Scut ; this transformation does not increase the cost of the cut. Let us define a mapping
+
+                                                       13
+from valid cuts (Scut , Tcut ) to element cuts (X, Y, U ) by setting X = {x ∈ V : x+ , x− ∈ Scut },
+Y = {x ∈ V : x+ , x− ∈ Tcut }, U = V − X − Y . The lemma below gives some structural properties
+of this construction.
+Lemma 12. (a) For each element cut (X, Y, U ), the cost of a minimum valid cut (Scut , Tcut ) that
+maps to (X, Y, U ) equals
+                           w(U )                                          1
+           Φ(X, Y, U ) :=          + w(E(X, Y )) + µ|A ∩ Y | + µ|B ∩ X| ≥ cost(X, Y, U )
+                              2                                           2
+In particular, if (Scut , Tcut ) is a minimum valid cut in N (A, B, µ) and (X, Y, U ) is the corre-
+sponding element cut then F := cost(Scut , Tcut ) = Φ(X, Y, U ) = min(X ′ ,Y ′ ,U ′ ) Φ(X ′ , Y ′ , U ′ ). If in
+addition |A| = |B| = k and F ≤ µk/2 then (X, Y, U ) is k/(2n)-balanced.
+(b) s-t flows in N (A, B, µ) are equivalent, with the same value, to nonnegative weightings fp of
+simple A-B paths satisfying
+                      X                        X                    X
+                            fp ≤ w(x)/2,           fp ≤ w(e),           fp ≤ µ
+                        p:x∈p                            p:e∈p                       p:x∈∂p
+                                                                                P
+for all nodes x ∈ V and edges e ∈ E. If D is the demand graph of such f and λe = p:e∈p fp then
+                                          X           X
+       deg(Gλ ) ≤ w|V ,   λe ≤ w(e),          fp Tp −   λe Le = −L(D),      ∥L(D)∥ ≤ 2µ.
+                                                        p               e
+
+Proof. (a) The first claim can be checked mechanically. If F ≤ µk/2, then |A ∩ Y |, |B ∩ X| ≤
+F/µ ≤ k/2. As |A| = |B| = k, at least k/2 vertices lie outside each of X, Y , proving balance.
+(b) Each simple A-B path p = (x0 , . . . , xk ), with ei = xi−1 xi , lifts to the s-t path
+                                          − − + + −                        − + + −
+                                (s, x+
+                                     0 , x0 , e1 , e1 , x1 , x1 , . . . , ek , ek , xk , xk , t)
+in N (A, B, µ). Conversely, every simple s-t path has this form: traversing an edge gadget back
+to the same vertex, or revisiting an original vertex, would repeat its split nodes. Thus, removing
+flow cycles and decomposing the remaining flow into simple paths gives the inverse transformation
+without changing its value. The split-arc, edge-bottleneck and source/sink capacities give exactly
+the vertex, edge and endpoint load bounds, respectively, proving the first claim and λe ≤ w(e).
+Each path uses at most two edges incident to any vertex, proving the degree bound. The Laplacian
+identity follows by cancelling the edge Laplacians along each path, leaving its negative endpoint
+Laplacian. Finally, the endpoint bound gives deg(D) ≤ µ and hence ∥L(D)∥ ≤ 2µ.
+   Graph N (A, B, µ) has O(m) nodes and arcs. Note that infinite capacities can be replaced with
+nµ + 1 without affecting Lemma 12 (since the total flow cannot exceed nµ).
+   We will use graph N (A, B, µ) inside the following subroutine, which takes a vector in Rd as an
+input. (Parameter µ is assumed to be fixed).
+  Algorithm 3: DirectionalFlowCut(u).
+ 1 compute hx = ⟨x, u⟩ for each x ∈ S (“height” of x in the direction u)
+ 2 sort {hx }x∈S and let A, B ⊆ S, with |A| = |B| = 2c′ n, contain the smallest and largest
+    heights, respectively, breaking ties by a fixed rule
+ 3 construct graph G′ = N (A, B, µ)
+ 4 compute a maximum s-t flow f ′ in G′ and a minimum valid cut (Scut , Tcut ); let F be their
+    common value
+ 5 remove cycles from f ′ and implicitly decompose it into simple paths; project these to a
+    weighted A-B path routing  P f in G as in Lemma 12(b)
+ 6 compute demands dxy =         p:∂p={x,y} fp for x ∈ A, y ∈ B; let D be the undirected graph
+    with edge weights dxy
+ 7 construct the element cut (X, Y, U ) from (Scut , Tcut ) as in Lemma 12(a), and return
+    A, B, h, F, f, D, (X, Y, U )
+
+                                                              14
+    The routing f is represented implicitly; f ′ is internal to the subroutine and is a flow in
+N (A, B, µ). The decomposition has O(m) paths, but only their original endpoints and weights
+are needed to construct D. Cycle removal and endpoint decomposition can be implemented in
+O(m log n) time using dynamic trees [41],
+                                       P without listing path interiors. The implicit represen-
+tation of f also allows its edge loads p:e∈p fp to be read from the edge-bottleneck arcs of the
+cycle-free flow in O(m) total time. In particular, D has O(m) edges and total edge weight F ; its
+symmetric adjacency matrix satisfies Dxy = Dyx = dxy for x ∈ A, y ∈ B.
+
+Lemma 13 (Gaussian direction). Under Assumption 1, there are constants c′ , σ, ζ > 0, depending
+only on c, such that for u ∼ N (0, Id ) Algorithm 3 satisfies
+                                                             
+                              Pr min⟨y, u⟩ − max⟨x, u⟩ ≥ σ ≥ ζ.
+                                      y∈B       x∈A
+
+For every direction, if F ≤ c′ nµ, the returned cut gives a c′ -balanced element cut of cost at most
+2c′ nµ. Otherwise the returned flow routes at least c′ nµ units between A and B subject to the bounds
+of Lemma 12; on the event above every demand pair has projection gap at least σ.
+
+Proof. The bounded norms and spreading in Assumption 1 imply that Ω(n2 ) ordered pairs in S
+have squared distance bounded below by a positive constant. For each such pair, ⟨y − x, u⟩ is a
+centered Gaussian with variance ∥y − x∥2 , so it exceeds a suitable constant σ > 0 with constant
+probability. Thus the number Z of ordered pairs with projection gap at least σ has expectation
+Ω(n2 ). Since 0 ≤ Z ≤ n2 , there are constants θ, ζ > 0 such that Z ≥ θn2 with probability at
+least ζ. If the gap between A and B were less than σ, every pair counted by Z would have its
+lower endpoint in A or its upper endpoint in B. This would give Z ≤ (|A| + |B|)|S| ≤ 4c′ n2 , a
+contradiction for 4c′ < θ. The cut and flow conclusions follow from Lemma 12.
+
+
+6    First approach: rectangular covers
+In this section we assume that β(G) ≤ β, or that w(e) = ∞ for all e ∈ E and βv (G) ≤ β (see
+Definition 2).
+    We start with some definitions. A set Q = A × B, where A, B ⊆S are disjoint, is a rectangle.
+We denote ⟨Q⟩ = {{x, y} : (x, y) ∈ (A × B) ∪ (B × A)} ⊆ S2 . Let Qpaths consist of the
+simple graph paths p with ∂p ∈ ⟨Q⟩. For a set Q = {Q1 , . . . , Qq } with q = |Q| rectangles define
+                                   S paths
+⟨Q⟩ = i ⟨Qi ⟩ ⊆ S2 and Qpaths = i Qi
+       S           
+                                           .
+
+Definition 14. A set Q is a (ε, ∆)-rectangular cover if every pair {x, y} ∈ ⟨Q⟩ satisfies ∥x −
+                                  S
+y∥ ≥ ε, and every pair {x, y} ∈ 2 with ∥x − y∥2 ≥ ∆ belongs to ⟨Q⟩. A nonnegative vector
+   2
+                                    
+
+ν : Qpaths → R≥0 is a µ-uniform Q-flow if
+                        X
+                            ν(p) ≤ w(x)/2                      (x ∈ V )                    (7a)
+                         p:x∈p
+                         X
+                                 ν(p) ≤ w(e)                        (e ∈ E)                     (7b)
+                         p:e∈p
+                         X
+                                 ν(p) ≤ µ                           (x ∈ S)                     (7c)
+                        p:x∈∂p
+                      P
+Its value is val(ν) = p ν(p). The demand graph D   Pν is an undirected weighted graph on V with
+positive weights where the weight of edge xy equals p:∂p={x,y} ν(p).
+
+  Our algorithm will work as follows. First, we will generate a set of rectangles Q by sampling
+Gaussian directions which w.h.p. will be an (ε, ∆)-rectangular cover for ∆ = Θ(1) (Sec. 6.1). Next,
+                                                 15
+we will approximately solve the maximum µ-uniform Q-flow problem (Sec. 6.2). If this flow has
+a large value then we will use it to output a valid feedback matrix (Sec. 6.3). Otherwise, calling
+DirectionalFlowCut(u) for u ∼ N (0, Id ) will give a balanced element cut with a sufficiently high
+probability (Sec. 6.4).
+
+6.1   Generating rectangular cover
+The construction will be based on the following lemma.
+                                                                   √
+Lemma 15. Consider the following procedure for parameter σ =           6ε ln n:
+   • Sample u ∼ N (0, Id ).
+   • For an integer k and operator ◦ ∈ {≤, ≥} define S◦k = {x ∈ S : ⟨x, u⟩ ◦ kσ}.
+   • Output set of rectangles Q = {S≤k × S≥k+1 : k ∈ Z, S≤k and S≥k+1 are non-empty}.
+(a) With probability at least 1 − n1 , every {x,y} ∈ 
+                                                      ⟨Q⟩ satisfies    2
+                                                              ∥x − y∥ ≥ ε.
+                                               √
+(b) With probability at least 1 − n1 , |Q| ≤ O ln n
+                                               σ    = O √1ε .
+                                                                             √    2
+(c) Every {x, y} ∈ S2 with ∥x − y∥2 ≥ ∆ satisfies Pr [{x, y} ∈ ⟨Q⟩] ≥ e−O((σ/ ∆+1) ) . In particu-
+                      
+                                                              2
+lar, if ∆ = Θ(1) and σ = Ω(1) then this lower bound is e−O(σ ) = n−O(ε) .
+Proof. For x ∈ Rd write hx = ⟨x, u⟩. Note that for any distinct x, y ∈ Rd , the quantity hx − hy =
+⟨x − y, u⟩ is normal with zero mean and variance ∥x − y∥2 .
+(a) Consider pair {x, y} ∈ S2 with r2 = ∥x − y∥2 < ε = σ 2 /(6 ln n). If {x, y} ∈ ⟨Q⟩ then
+                                   
+
+|hx − hy | ≥ σ. Therefore,
+                                                                             2    2
+        Pr [{x, y} ∈ ⟨Q⟩] ≤ Pr |N (0, r2 )| ≥ σ = 2Pr [N (0, 1) ≥ σ/r] ≤ 2e−σ /(2r ) ≤ 2n−3
+                                              
+
+A union bound over at most n2 pairs proves the claim.
+                                 
+                                         def
+(b)   For each x ∈ S we have ∥x∥2 ≤ r2 = 4/c by Assumption 1. Therefore,
+                      h         √     i     h                √     i
+                   Pr |hx | ≥ Θ( ln n) ≤ Pr |N (0, r2 )| ≥ Θ( ln n) ≤ n−2
+
+for an sufficiently large constant
+                              √    in the Θ(·) notation. By the union bound, with probability at
+         1
+least 1− n we have |hx | ≤ Θ( ln n) for all x ∈ S. It remains to notice that |Q| ≤ O(maxx∈S |hx |/σ)
+by construction.
+(c) Consider {x, y} ∈ S2 with ∥x−y∥2 ≥ ∆. By construction, if |hx −hy | ≥ 2σ then {x, y} ∈ ⟨Q⟩.
+                           
+
+Therefore,
+                                                        h              √ i           √    2
+       Pr [{x, y} ∈ ⟨Q⟩] ≥ Pr [|N (0, ∆)| ≥ 2σ] = 2Pr N (0, 1) ≥ 2σ/ ∆ ≥ e−O((σ/ ∆+1) )
+
+
+Corollary 16. Running the procedure in Lemma 15 independently N = nΘ(ε) log n times and
+taking the union gives set Q which with probability at least 1 − n−1/2 is a (ε, ∆)-rectangular cover
+and has q = |Q| ≤ nO(ε) log3/2 n rectangles, assuming that ∆ = Θ(1) and ε ∈ [Θ(1/ log n), Θ(1)]
+with appropriate constants.
+Proof. The probability that a given {x, y} ∈ S2 with ∥x−y∥2 ≥ ∆ will not be included in any ⟨Q⟩
+                                               
+
+is at most (1− n−O(ε) )N ≤ n23 with an appropriate choice of constants. The number of such pairs
+is at most n2 . By the union bound, the output Q will have desired properties with probability at
+least 1 − N · n2 − n2 · n23 ≥ 1 − n−1/2 .
+                     
+
+   From now on we assume that we a given a (ε, ∆)-rectangular cover Q = {Q1 , . . . , Qq } with
+q ≤ nO(ε) log3/2 n rectangles. We denote OPTQ to be the maximum value of the µ-uniform Q-flow,
+where constant µ will be specified later.
+                                                   16
+6.2   Solving the maximum µ-uniform Q-flow problem
+We will reduce the problem to a maximum multicommodity flow problem in a directed weighted
+graph G and then apply the algorithm of Chen-Graur-Sidford [8] for the latter problem. Start with
+the network N (∅, ∅, µ) of Section 5, remove s, t, and add:
+
+   • for each x ∈ S, nodes x⊖ , x⊕ , an arc (x⊖ , x⊕ ) of capacity µ, and infinite-capacity arcs
+     (x⊕ , x+ ) and (x− , x⊖ );
+
+   • for each rectangle Qi = Ai × Bi , private nodes si , ti and infinite-capacity arcs (si , x⊖ ) for
+     x ∈ Ai and (y ⊕ , ti ) for y ∈ Bi .
+
+Note that G has M = O(mq) nodes and edges.
+    Now consider the maximum multicommodity flow problem in G with q terminal pairs {(si , ti )}qi=1 .
+We claim that it is equivalent to the maximum µ-uniform Q-flow problem, i.e. there are value-
+preserving transformations between the problems in each direction. Indeed, use the path lifting
+and projection from Lemma 12(b) for the vertex and edge gadgets. For a path with endpoints
+a ∈ Ai , b ∈ Bi , prepend (si , a⊖ , a⊕ ) and append (b⊖ , b⊕ , ti ). The gadget arcs enforce exactly the
+vertex and edge loads, and each endpoint gate is used once per incident demand, enforcing the
+shared bound µ across all rectangles and both endpoint roles. Conversely, remove flow cycles and
+project each simple si -ti path. Such a path cannot traverse an endpoint gate internally, since
+it would revisit the corresponding split vertex; private sources and sinks cannot occur internally
+                                                  paths
+either. The resulting paths therefore lie in Qi         and satisfy all three load constraints with the
+same total value.
+    Next, we apply the algorithm in [8] for the approximate multicommodity flow problem. It
+produces a flow of value at least (1 − ε′ ) of the optimum in O(M 1+o(1) q/ε′ ) time, assuming that
+weights are polynomially-bounded integers. (In our case edges with infinite weights can be safely
+replaced with M cmax + 1 where cmax is the maximum finite weight in G). Cycle removal and
+endpoint decomposition take O(M log(n+q)) time per commodity using dynamic trees [41, Section
+6] and pseudo-decomposition [40, Lemma 3.7]. Recording only the endpoint pairs and their weights
+constructs the demand graph Dν with O(M q) edges in total, without listing path interiors.
+    We arrive at the following result.
+
+Theorem 17. For a given value µ = a/b with polynomially-bounded integers a, b we can in
+m1+o(1) q 2+o(1) time compute a µ-uniform Q-flow ν, represented implicitly, of value at least OPTQ /2,
+and construct the demand graph Dν with O(mq 2 ) edges.
+
+Remark 1. Alternatively, an approximate µ-uniform Q-flow with desired guarantees could be
+computed via calls to a minimum-cost flow subroutine using the MWU frawework; this was the
+solution originally proposed by AI. We replaced it with a reduction to the algorithm in [8], which
+is a shorter way to get the desired complexity.
+
+6.3   Feedback matrix for a large flow (val(ν) ≥ 2α/ε)
+Let ν be the flow from Theorem 17. In this section we show the following result.
+
+Lemma 18. Suppose that parameters γ, τ in eq. (6) satisfy τ ≤ ξ/2 and γ ≤ min{1/4, ε/(2(ε+τ ))}.
+If val(ν) ≥ 2α/ε then N = −L(Dν ) is a valid feedback matrix of the reduced oracle with ∥N ∥ ≤ 2µ.
+This matrix has O(mq 2 ) non-zero entries.
+                P
+Proof. Set λe = p:e∈p ν(p). The load and Laplacian calculations in the proof of Lemma 12(b)
+apply to any path routing with these vertex, edge and endpoint bounds, including ν. Thus N =
+−L(Dν ) has the required form and satisfies ∥N ∥ ≤ 2µ.
+
+
+                                                  17
+   Every edge xy of graph Dν belongs to ⟨Q⟩ and thus satisfies dxy = ∥x − y∥2 ≥ ε. By (6) and
+the choice of γ,
+                      ∥vx − vy ∥2 ≥ (1 − γ)dxy − γτ ≥ ε − γ(ε + τ ) ≥ ε/2.
+Consequently,                                     X                             ε
+                      N •X =−                            (Dν )xy ∥vx − vy ∥2 ≤ − val(ν) ≤ −α
+                                                                                2
+                                            xy∈E(Dν )
+
+
+
+
+6.4   Randomized sampling procedure for a small flow (val(ν) < 2α/ε)
+Assume now that val(ν) < 2α/ε; this implies that OPTQ < 4α/ε. We will prove the following
+result.
+
+Lemma
+    √
+           19. There are constants c′ , ζ, ∆ > 0 such that a call to DirectionalFlowCut(u) with µ ≥
+Θ( αεnβ ) for an appropriate constant and u ∼ N (0, Id ) has minimum network-cut value F < c′ nµ
+and produces a c′ -balanced element cut (X, Y, U ) of cost at most 2c′ nµ with probability at least ζ/2.
+
+    The lemma will imply Θ(ln n) independent calls to DirectionalFlowCut(u) will give a desired
+element cut with probability at least 1 − n1 .
+    Fix some µ > 0. Let (η, ξ) ∈ RV≥0∪E × RS≥0 be an optimal solution of the dual problem, then
+P      w(x)    P                     P
+   x∈V  2 ηx +   xy∈E w(xy)ηxy + µ      x∈S ξx < 4α/ε and
+                   X                 X
+                           η x′ +               η x′ y ′ + ξ x + ξ y ≥ 1         ∀p ∈ Qpaths , ∂p = {x, y}    (8)
+                   x′ ∈p            x′ y ′ ∈p
+
+Let us modify ηx , ηxy , ξx as follows: (i) truncate all values ξx with ξx < 1/3 to 0; (ii) multiply all
+variables ηx , ηxy , ξx by 3; (iii) truncate all values ξx with ξx > 1 to 1. Clearly, (8) still holds, and
+the new variables satisfy
+                                    X w(x)                  X                        X
+                           J :=                      ηx +          w(xy)ηxy + µ            ξx < 12α/ε         (9)
+                                                2
+                                    x∈V                     xy∈E                     x∈S
+
+Furthermore, ξx ∈ {0, 1} for each x ∈ S. Define
+
+                    S ∗ := {x ∈ S : ξx = 0},                       ξxy := ηx + ηxy + ηy        (xy ∈ E).
+
+We have
+                                                      12α
+                                                     µ · |S − S ∗ | ≤ J <
+                                                             .                              (10)
+                                                         ε
+   Let ϱ be the shortest-path pseudometric on V with edge lengths ξxy . Consider x, y ∈ S ∗ with
+∥x − y∥2 ≥ ∆. Every path p with ∂p = {x, y} belongs to Qpaths , and thus satisfies
+                           X            X        X
+                               ξx′ y′ ≥   η x′ +    η x′ y ′ + 0 + 0 ≥ 1                    (11)
+                                x′ y ′ ∈p               x′ ∈p        x′ y ′ ∈p
+
+by eq. (8). Therefore,
+
+                               x, y ∈ S ∗ ,           ∥x − y∥2 ≥ ∆           =⇒       ϱ(x, y) ≥ 1,           (12)
+
+while ϱ(x, y) ≤ ξxy for every edge xy ∈ E.
+    Next, we prove a useful property of the metric ϱ constructed in this way. Below θ is assumed
+to be a parameter in (0, 1).
+
+                                                                   18
+Lemma 20 (Lipschitz approximation      √      of Gaussian projections). There exists function L =
+L(c, ∆, θ, Γ, β) with L = Θc,∆,θ,Γ ( β) with the following property: for a given set of parameters
+c, ∆, θ, Γ, β, µ there exists a set Sb ⊆ S ∗ with | b
+                                                   S| ≥ (1 − θ)|S ∗ | such that, for a standard Gaussian
+vector u ∼ N (0, Id ), there is an L-Lipschitz function Hu : (V, ϱ) → R satisfying
+                                                         √
+                                 Eu Hu (x) − ⟨u, x⟩ ≤ 2 ∆         (x ∈ b S).                        (13)
+
+In particular, if w(e) = ∞ for all e ∈ E, it suffices that βv (G) ≤ β.
+Proof. Note first that if w(e) = ∞ for all e ∈ E, then ηxy = 0 for all xy ∈ E since (9) is finite (and
+hence ϱ has edge lengths ξxy = ηx + ηy ).
+     Put r = Γ/4. Apply the padding bound to (V, ϱ) with diameter bound D = 1/2. Call a
+terminal padded if its entire ϱ-ball of radius 2r lies in its part. The padding bound gives this
+event probability at least e−Γβ , since 2r = Γ/2; using radius r for the cores below leaves positive
+slack. Take M = ⌈eΓβ ln(1/θ)⌉ independent partitions. Each terminal is unpadded in all of them
+with probability at most (1 − e−Γβ )M ≤ θ. Hence there exist M partitions of V such that at least
+(1 − θ)|S ∗ | terminals of S ∗ are padded in at least one partition. Denote these fixed partitions by
+P1 , . . . , PM , and let Sb be the set of such terminals.
+     Set                              p
+                                    2 8 ln(16M/(c∆))        p
+                              L=              √         = Θ( β),    b = Lr/2.
+                                             r c
+For every part P ∈ M
+                         S
+                            j=1 Pj , define its core by
+
+                               P core = {x ∈ P ∩ S ∗ : ϱ(x, V − P ) ≥ r}
+
+Let                                                         
+                                          M
+                                           [                 
+                                  Π := P ∈   Pj : P core ̸= ∅ ,
+                                                            
+                                               j=1
+
+and choose a representative xP ∈ P core for each P ∈ Π. Since each part has ϱ-diameter at most
+1/2, (12) gives                        √
+                           ∥x − xP ∥ < ∆        (P ∈ Π, x ∈ P ∩ S ∗ ).
+Let hP be ⟨u, xP ⟩ clipped to [−b, b], and define
+                            1                           1
+                 Hu (x) =     min{hP + Lϱ(x, P core )} + max{hP − Lϱ(x, P core )}.                 (14)
+                            2 P ∈Π                      2 P ∈Π
+Both envelopes defining Hu are L-Lipschitz, and thus so is their midpoint Hu .
+    Fix x ∈ Sb and let Πx = {P ∈ Π : x ∈ P }. Each of the M partitions has exactly one part
+containing x, and thus 1 ≤ |Πx | ≤ M .
+    We claim that each extremum in (14) is attained at a possibly different part P ∈ Πx . Indeed,
+since x is padded in some partition, there is P̃ ∈ Πx with x ∈ P̃ core . We have hP̃ ± Lϱ(x, P̃ core ) =
+hP̃ ± 0 ∈ [−b, b] for this P̃ . Now consider P ∈ Π − Πx . Pick y ∈ P core . We have x ∈ V − P , so
+ϱ(x, y) ≥ ϱ(y, V − P ) ≥ r by the definition of a core. Therefore, hP + Lϱ(x, P core ) ≥ −b + Lr = b
+and hP − Lϱ(x, P core ) ≤ b − Lr = −b. The claim follows.
+    Put dP = Lϱ(x, P core ) and define the unclipped local midpoint
+
+                      e u (x) = 1 min {⟨u, xP ⟩ + dP } + 1 max {⟨u, xP ⟩ − dP }.
+                      H
+                                2 P ∈Πx                  2 P ∈Πx
+We have
+                     |Hu (x) − ⟨u, x⟩| ≤ |H
+                                          e (x) − ⟨u, x⟩| + max (|⟨u, xP ⟩| − b)+ .
+                                         | u {z         } P ∈Πx
+                                              A(u)
+                                                            |        {z         }
+                                                                     B(u)
+
+                                                     19
+Indeed, clipping changes each height by at most B(u), hence changes each local extremum, and
+their midpoint, by at most B(u). We bound the two terms separately.
+   • Let us define
+                     e u (x) − ⟨u, x⟩ = 1 min {⟨u, xP − x⟩ + dP } + 1 max {⟨u, xP − x⟩ − dP }
+              Z(u) = H                  2                P ∈Πx      2                         P ∈Πx
+              R(u) = max {⟨u, xP − x⟩ − dP }
+                          P ∈Πx
+                                                                         √
+      Clearly, we have Z(u) = (R(u)
+                                √   −  R(−u))/2. Recall that  ∥xP − x∥ <    ∆ for every P ∈ Πx .
+      Consequently, R and Z are ∆-Lipschitz as functions of u. Moreover, Z is odd, so EZ(u) = 0.
+      The Gaussian Poincaré inequality and Cauchy-Schwarz give
+                                        p          p               √
+                              EA(u) ≤ EZ(u)2 = Var(Z(u)) ≤ ∆.
+                                          √
+  • Recall that |Πx | ≤ M and ∥xP ∥ ≤ 2/ c (by Assumption 1). The Gaussian tail bound and
+     integration give
+                                     16M −cb2 /8                     √
+                          EB(u)2 ≤        e       = ∆,    EB(u) ≤ ∆.
+                                       c
+                                                   √
+Adding the two bounds yields E|Hu (x) − ⟨u, x⟩| ≤ 2 ∆, proving (13).
+
+   We are ready to prove Lemma 19.
+
+Proof of Lemma 19. Take c′ , σ, ζ from Lemma 13. Let I ⊂ R be the projection gap between
+A and B trimmed by σ/4 at both ends (or empty if the gap is at most σ/2). By the lemma,
+Pr [|I| ≥ σ/2] ≥ ζ. Choose constants θ ∈ (0, 1), ∆ > 0 and parameter µ so that
+                                    √
+                                           c′ ζ
+                                                                        
+                                  16 ∆                     24α 4L
+                            θ+          ≤             µ≥ ′            +1
+                                    σ       4              c εn σ
+                                                                                 √                   √
+where L = L(c, ∆, θ, Γ, β) is the function from Lemma 20. Note that µ ≥ Θ( αεnβ ) since L = Θ( β)
+and√β ≥ 1. By Lemma 20 and Markov’s
+                                ∗
+                                         inequality, for each x ∈ Sb we have Pr [|Hu (x) − ⟨u, x⟩| > σ/8] ≤
+16 ∆/σ. Call a terminal in S bad if it lies outside Sb or its approximation  error√exceeds
+                                                                                              σ/8. Let
+                                                                                                ′
+N bad be the number of bad terminals. Their expected number is at most θ + σ      16 ∆
+                                                                                          n ≤ c 4ζn , and
+thus Pr N bad > c′ n/2 ≤ ζ/2 by Markov’s inequality. By the union bound, we have N bad ≤ c′ n/2
+                     
+
+and |I| ≥ σ/2 with probability at least ζ − ζ/2 = ζ/2. We will show that under this event the cost
+of the cut F in the call DirectionalFlowCut(u) satisfies F ≤ c′ nµ; Lemma 12(a) will then imply
+the desired claim (recall that k = |A| = |B| = 2c′ n).
+    On the event above, for s ∈ I define
+                                   As = {x ∈ V : Hu (x) < s − Lηx }
+                                   Bs = {x ∈ V : Hu (x) > s + Lηx }
+                                   Cs = {x ∈ V : Hu (x) ∈ [s − Lηx , s + Lηx ]}
+If a good terminal x ∈ A, then ⟨u, x⟩ ≤ s − σ/4 and hence Hu (x) ≤ s − σ/8; symmetrically, a good
+terminal y ∈ B satisfies Hu (y) ≥ s + σ/8. Thus every good terminal in A ∪ B either belongs to Cs
+or lies on its correct height shore. The triple (As , Bs , Cs ) is an element cut of G. By Lemma 12(a),
+there is a valid s-t cut in the graph N (A, B, µ) that maps to this element cut and has capacity at
+most
+                        w(Cs )
+    Φs : =                                     +                  w(E(As , Bs ))                   + µ|A ∩ Bs | + µ|B ∩ As |,
+                          2 }
+                        | {z                         P
+                                                                  |   {z       }                     |          {z        }
+             P                          w(x)
+                                                             [s∈(Hu (x)+Lηx ,Hu (y)−Lηy )]·w(xy)                Ψ
+                   [|s−Hu (x)|≤Lηx ]·    2               ⃗
+                                                   (x,y)∈E
+             x∈V
+
+
+
+                                                                      20
+where E ⃗ contains one orientation (x, y) of every edge xy ∈ E, chosen so that Hu (x) ≤ Hu (y).
+Next, we will upper-bound s∈I Φs ds. Node x ∈ V contributes at most 2Lηx · w(x)
+                             R
+                                                                              2 = Lηx w(x) to
+                                 ⃗
+this bound, while edge (x, y) ∈ E contributes at most
+                                                                   
+      |Hu (x) − Hu (y)| − Lηx − Lηy + · w(xy) ≤ Lϱ(x, y) −Lηx − Lηy + · w(xy) ≤ Lηxy w(xy)
+                                                   | {z }
+                                                 ≤ξxy =ηx +ηxy +ηy
+
+where we used L-Lipschitzness of Hu . We conclude that
+              Z              X               X
+                   Φs ds ≤ L     ηx w(x) + L     ηxy w(xy) + |I|Ψ ≤ 2LJ + |I|Ψ
+                  s∈I           x∈V             xy∈E
+
+                                                       ′             ′
+Note that Ψ ≤ µ (|S − S ∗ | + Nbad ) ≤ µ|S − S ∗ | + c 2nµ ≤ J + c 2nµ . We can now obtain the desired
+bound of F as follows:
+                                  c′ nµ                              c′ nµ   c′ nµ c′ nµ
+                                                     
+                     2LJ                     2L
+      F ≤ min Φs ≤          +J +        ≤          + 1 · 12α/ε +           ≤      +      ≤ c′ nµ
+           s∈I         |I|           2      σ/2                         2       2     2
+
+
+
+6.5   Wrap-up: proof of the first oracle bound
+We now collect the complexity, width, and sparsity bounds for the first implementation of the
+reduced oracle.
+                                                                                               √
+Lemma 21. Let ε ∈ [Θ(1/ log n), Θ(1)], and suppose that the parameters Γ and β ∈ [1, O( log n)]
+of the padding bound are known. The oracle described above√runs in m1+o(1) nO(ε) polylog(n) time
+and produces either√a Θ(1)-balanced element cut of cost O(α β/ε) or a valid feedback matrix with
+spectral norm O(α β/(εn)), with probability at least 1 − n−Θ(1) . Moreover, every feedback matrix
+has O(mnO(ε) polylog(n)) non-zero entries.
+                                                        √ 
+Proof. Choose parameters ∆ = Θ(1) and µ = Θ αεnβ as described above. Note that µ can be
+chosen as a ratio
+              √
+                   a/b of two polynomially-bounded integers within a constant factor of the required
+             α β
+value, since εn ∈ [n−Θ(1) , nΘ(1) ]. The graphs constructed inside the oracle may have non-integral
+rational weights of the form µ and w(x)   2 ; they can be converted to polynomially-bounded integers
+by multiplying all weights by 2b, and then scaling the result back.
+    By Corollary 16 and Theorem 17 a rectangular cover Q with q = nO(ε) polylog(n) rectangles and
+a corresponding Q-flow can be constructed in m1+o(1) q 2+o(1) = m1+o(1) nO(ε) polylog(n) time, with
+probability of failure at most    −Θ(1) . In the case of a large flow Lemma 18 gives a feedback matrix
+                            √ n
+N with ∥N ∥ ≤ 2µ = O(α β/(εn)) and at most O(mq 2 ) = O(mnO(ε) polylog(n)) non-zero entries.
+In the case of a small√ flow calling procedure in Lemma 19−Θ(1)  Θ(log n) times gives Θ(1)-balanced cut
+of cost at most O(α β/ε) with probability at least 1 − n             .
+    Taking τ = Θ(1) sufficiently small and γ = Θ(ε) meets Lemma 18, and the assumed range of
+ε gives γ = Ω(1/ log n).
+
+
+
+7     Second approach: chaining with correlated Gaussians
+In this section we describe an alternative implementation of the reduced oracle. It follows very
+closely the oracle in [24].
+
+
+                                                  21
+   The main building block of the oracle is a procedure that takes vector u ∈ Rd and either outputs
+a directed matching M on nodes V or terminates the oracle. It works as follows (c′ , ∆, σ, µ are
+positive constants that will be specified later):
+  Algorithm 4: Matching(u).
+ 1 call DirectionalFlowCut(u) to obtain A, B, heights hx , value F , routing f , demand
+     graph D with weights dxy , and element cut (X, Y, U )
+ 2 if F ≤ c′ nµ then return (X, Y, U ) and terminate the oracle; by Lemma 12(a), this cut is
+     c′ -balanced and has cost at most 2c′ nµ
+                                  2 ≥ 2α, then set λ
+        P                                                       P
+ 3 if       x∈A,y∈B dxy ∥x − y∥                           e =       p:e∈p fp for each e ∈ E, return λ and
+    N = −L(D), and terminate the oracle
+ 4 let Mall = {(x, y) ∈ A × B : dxy > 0, hy − hx ≥ σ} and
+    Mshort = {(x, y) ∈ Mall : ∥x − y∥2 ≤ ∆}
+ 5 pick maximal matching M ⊆ Mshort and return M
+
+                                                                                          α
+Lemma 22. Suppose that parameters τ, γ in eq. (6) satisfy τ ≤ 2, γ ≤ (32/c+2τ                 )c′ nµ . If the
+algorithm terminates at line 3, then the returned variables λij and matrix N are valid output of
+the reduced oracle. Matrix N has at most O(m) non-zero entries, and its spectral norm is at most
+2µ.
+Proof. Lemma 12(b) gives the capacity bounds on λ, the identity N = p fp Tp −L(Gλ ) = −L(D),
+                                                                           P
+
+and ∥N ∥ ≤ 2µ. It remains to show that N • X ≤ −α. By Assumption 1, ∥x∥2 ≤ 4/c for each
+x ∈ S, and hence ∥x − y∥2 ≤ 16/c for each x, y ∈ S. Since (v1 , . . . , vn ) ≈γ,τ (ṽ1 , . . . , ṽn ), we get
+                                                  α                         α
+∥x − y∥2 − ∥vx − vy ∥2 ≤ γ(∥x − y∥2 + τ ) ≤ (32/c+2τ )c′ nµ (16/c + τ ) = 2c′ nµ . We can thus write
+                            X                                   X
+              −N • X =               dxy ∥vx − vy ∥2 ≥                 dxy (∥x − y∥2 − 2cα′ nµ )
+                           x∈A,y∈B                          x∈A,y∈B
+                            X                                      XX
+                                                   2
+                       ≥             dxy ∥x − y∥       − 2cα′ nµ             dxy ≥ 2α − 2cα′ nµ · |A| · µ = α
+                           x∈A,y∈B                                 x∈A y∈B
+
+
+
+
+   We will assume that if Matching(u) terminates at line 2 or 3 then it returns an empty matching.
+Thus, we always have Matching(u) ⊆ V × V and |Matching(u)| ≤ |V |.
+Lemma 23. Suppose that µ ≥ c′6α                                         ′
+                                  n∆ . There exist positive constants c , σ, δ for which either (i)
+Eu |Matching(u)| ≥ δn, or (ii) Algorithm 4 for u ∼ N (0, Id ) terminates at line 2 or 3 with proba-
+bility at least Θ(1).
+Proof. Choose c′ , σ, ζ as in Lemma 13. If the probability of termination at line 2 or 3 is at least
+ζ/2, then (ii) holds. Otherwise, with probability at least ζ/2, the projection gap is at least σ
+and the algorithm reaches line 5. On this event, let A′ ⊆ A and B ′ ⊆ B be the endpoints of the
+matching M . The total demand is at least c′ nµ, and each vertex is incident to demand at most µ
+by Lemma 12(b). Thus, if |M | < c′ n/3, then
+                                    X                                                    c′ nµ
+                                                dxy ≥ c′ nµ − µ(|A′ | + |B ′ |) >              .
+                                                                                            3
+                            x∈A−A′ , y∈B−B ′
+
+Every positive-demand pair in this sum has projection gap at least σ and, by maximality of M ,
+squared distance greater than ∆. Consequently,
+                                        X                             c′ nµ∆
+                                                dxy ∥x − y∥2 >               ≥ 2α,
+                                                                          3
+                                     x∈A, y∈B
+
+                                                             22
+contradicting the fact that line 3 did not terminate. Hence |M | ≥ c′ n/3 on this event, and
+Eu |Matching(u)| ≥ ζc′ n/6.
+
+   Let us define c′ , σ, δ as in Theorem 23, and set
+                                           r
+                                                ε
+                                    ∆ =                                                            (15)
+                                              log n
+                                                                  6α
+                                       µ ∈ [µ0 , 2µ0 ],   µ0 =                                     (16)
+                                                                 c′ n∆
+                                                                                  p         
+The cost of the element cut in line 2 of the algorithm is then at most 2c′ nµ = Θ α (log n)/ε ,
+                          p            
+which corresponds to an O      (log n)/ε pseudo-approximation algorithm.
+
+7.1   Chaining algorithm
+The remaining part is identical to the algorithm in [24]. Assume that case (i) in Lemma 23 holds
+(otherwise calling Matching(u) for u ∼ N (0, Id ) will terminate the oracle after O(1) expected calls).
+Assume also that Matching(·) is skew-symmetric, i.e. Matching(−u) is obtained from Matching(u)
+by reversing edge orientations. (This can be easily enforced algorithmically). The idea is to use
+procedure Matching(·) to find many “violating paths”, i.e. paths p = (p0 , . . . , pℓ(p) ) that satisfy
+
+                               ℓ(p)
+                               X
+                                      ∥pj − pj−1 ∥2 ≤ ∥pℓ(p) − p0 ∥2 − ∆                           (17)
+                               j=1
+
+    For a set of directed paths M let M violating be the set of paths p ∈ M that are either violating
+or contain a violating path q as a subpath (p = (. . . , q, . . .)). For two sets of paths M, M ′ define
+
+                M ◦ M ′ = {p ◦ q : p ∈ M, q ∈ M ′ , endpoint(p) = startpoint(q)}
+
+Theorem 24 ([40, 24]). Let Matching(u) be a procedure that for given u ∈ Rd returns a directed
+matching on V in which every edge (x, y) satisfies ⟨y − x, u⟩ ≥ σ and ∥x − y∥2 ≤ ∆. Assume that
+it is skew-symmetric and Eu [|Matching(u)|] = Ω(n).
+     For any K ∈ [1, O(1/∆)] (with an appropriate constant) there exists an efficiently samplable
+distribution D of vectors u = (u1 , . . . , uK ) such that set M (u) = Matching(u1 )◦. . .◦Matching(uK )
+                                             2
+satisfies Eu∼D |M (u)violating | ≥ e−Θ(K ) n.
+                                   √           
+     Set K = Θ(∆ log n) = Θ ε log n with a sufficiently small constant, then indeed K =
+                p
+O(1/∆) = O        (log n)/ε since ε = O(1). Let us run the algorithm in Theorem 24 until we get
+                          2
+|M (u)violating | ≥ e−Θ(K ) n = n1−Θ(ε) . Since we always have |M (u)| ≤ n, this will happen after
+n/n1−Θ(ε) = nΘ(ε) runs in expectation (or KnΘ(ε) = nΘ(ε) calls to Matching(·)). Once we have
+a set P of violating paths with |P | ≥ n1−Θ(ε) , the output of the oracle is constructed as follows.
+Set λij = 0 for all ij ∈ E. Set fp = |P2α|∆ for all p ∈ P , and fp = 0 for all other paths. Then
+N = p fp Tp − L(Gλ ) = |P2α|∆ (L(F ) − L(D)) where multigraph F is the union of paths in P and
+     P
+
+multigraph D is the union of edges ∂p = {startpoint(p), endpoint(p)} over p ∈ P . Note that
+the complexity of the oracle is dominated by nΘ(ε) maximum flow computations.
+                                                                                    ∆
+Lemma 25. Suppose that parameters τ, γ in eq. (6) satisfy τ < 2 and γ ≤ 20(K+1)          . Then
+variables λij and matrix N defined above are valid output of the reduced oracle. Matrix N has at
+          √
+most O(n log n) non-zero entries, and its spectral norm is at most α·polylog(n)
+                                                                      n1−Θ(ε)
+                                                                                .
+
+
+                                                    23
+Proof. We need to show that N • X ≤ −α. Using eq. (17) and the fact that (v1 , . . . , vn ) ≈γ,τ
+(ṽ1 , . . . , ṽn ), we conclude that for any p ∈ P we have
+                ℓ(p)
+                X
+                       ∥vpj − vpj−1 ∥2 ≤ ∥vpℓ(p) − vp0 ∥2 − 21 ∆      Tp • X ≤ − 21 ∆
+                j=1
+
+
+(using the same argument as in the proof of Theorem 22). Therefore, N • X ≤ |P | · |P2α|∆ · (− 12 ∆) =
+−α, as desired.                                          √
+    By construction, matrix N has at most O(|P |·K) ≤ O(n log n) non-zero entries. Graphs F and
+D have maximum degree at most 2K, and hence ∥N ∥ ≤ |P2α|∆ (∥L(F )∥ + ∥L(D)∥) ≤ n1−Θ(ε)   2α
+                                                                                             ∆
+                                                                                                (2K +
+2K) ≤ α·polylog(n)
+        n1−Θ(ε)
+                   .
+
+7.2    Wrap-up: proof of the second oracle bound
+We now collect the complexity, width, and sparsity bounds for the second implementation of the
+reduced oracle.
+
+Lemma 26. Let ε ∈ [Θ(1/ log n), Θ(1)]. The oracle described above runs in O(n      O(ε)
+                                                                                  p ·Tmaxflow (m, m)·
+polylog(n)) time and produces either a Θ(1)-balanced
+                                         √              element cut of cost O(α log n/ε) or a valid
+feedback matrix with spectral norm O(α log     n/(n 1−Θ(ε) √ε)), with probability at least 1 − n−Θ(1) .
+                                            √
+Moreover, every feedback matrix has O(m log n) non-zero entries.
+
+Proof. Choose parameters ∆ = ε/ log n and µ ∈ [µ0 , 2µ0 ], where µ0 = 6α/(c′ n∆), as described
+                                  p
+
+above. The value µ can be chosen as a ratio p/q of two polynomially-bounded integers: since
+µ0 ≥ c′′ /n for an appropriate constant c′′ > 0, take p = ⌈(2n/c′′ )µ0 ⌉ and q = ⌊2n/c′′ ⌋. Multiplying
+all finite capacities by 2q makes them polynomially-bounded integers, including the capacities
+w(x)/2; after computing a flow, scale it back by 2q.
+    The oracle repeatedly runs Algorithm 4. If it terminates         at line 2, Lemma 12(a) gives a
+Θ(1)-balanced element cut of cost at most 2c′ nµ = O(α log n/ε). If it terminates
+                                                             p
+                                                                                  √          at line 3,
+                                                                                             √
+Lemma 22 gives a valid feedback matrix with spectral norm O(µ) = O(α log n/(n ε)) and
+O(m) non-zero entries. Otherwise,
+                                √     Lemma 25 gives a valid feedback matrix with spectral norm
+αn−1+Θ(ε) polylog(n) and O(n log n) non-zero entries. Since m = Ω(n), these alternatives satisfy
+the width and sparsity bounds in the statement.
+    Each call to Algorithm 4 makes one maximum-flow call and otherwise takes O(m polylog(n))
+time. The chaining procedure uses nO(ε) such calls per trial. A trial succeeds with probability
+at least n−O(ε) by the reverse Markov inequality, so running nO(ε) log n independent trials in
+lockstep gives a valid answer with probability at least 1 − n−Θ(1) . The total runtime is therefore
+O(nO(ε) · Tmaxflow (m, m) · polylog(n)).
+    Taking τ = Θ(1) sufficiently small and γ = Θ(∆/(K + 1)) = Θ(1/ log n) meets the hypotheses
+of Lemmas 22 and 25. This also gives the common parameter bounds in Theorem 11.
+
+
+8     Acknowledgments
+LLM assistance was used to derive Theorem 5 as a fast algorithm (particularly, GPT 6-Astra and
+Opus 5.5). However, the ideas that underly the approximation itself were human-devised, based
+on the “edge-wise non-expansive” line embeddings originally used in [42, Section 3]. LLMs were
+not used to derive any other results in this work.
+   All AI-assisted mathematical arguments were verified by the authors, who significantly revised
+and simplified them. The authors take full responsibility for the correctness and content of the
+manuscript.
+
+                                                    24
+References
+                                                                                      √
+ [1] Amit Agarwal, Moses Charikar, Konstantin Makarychev, and Yury Makarychev. O( log n)
+     approximation algorithms for min UnCut, min 2CNF deletion, and directed cut problems. In
+     Proceedings of the Thirty-Seventh Annual ACM Symposium on Theory of Computing, STOC
+     ’05, page 573–581, New York, NY, USA, 2005. Association for Computing Machinery. doi:
+     10.1145/1060590.1060675.
+
+ [2] Noga Alon and Raphael Yuster. Matrix sparsification and nested dissection over arbitrary
+     fields. Journal of the ACM (JACM), 60(4):1–18, 2013.
+
+ [3] S. Arora and S. Kale. A combinatorial, primal-dual approach to semidefinite programs.
+     Journal of the ACM, 63(2):1–35, 2016.
+
+ [4] Sanjeev Arora and Satyen Kale. A combinatorial, primal-dual approach to semidefinite pro-
+     grams. In Proceedings of the thirty-ninth annual ACM symposium on Theory of computing,
+     pages 227–236, 2007.
+
+ [5] Sebastian Brandt and Roger Wattenhofer. Approximating small balanced vertex separators
+     in almost linear time. Algorithmica, 81(10):4070–4097, 2019.
+
+ [6] Gunnar Brinkmann. A practical algorithm for the computation of the genus. arXiv preprint
+     arXiv:2005.08243, 2020.
+
+ [7] Thang Nguyen Bui and Curt Jones. Finding good approximate vertex and edge partitions is
+     np-hard. Information Processing Letters, 42(3):153–159, 1992.
+
+ [8] Li Chen, Andrei Graur, and Aaron Sidford. Accelerated approximate optimization of multi-
+     commodity flows on directed graphs. In Proceedings of the 57th Annual ACM Symposium on
+     Theory of Computing, STOC ’25, pages 2203–2212, 2025. URL: https://arxiv.org/abs/
+     2503.24373, doi:10.1145/3717823.3718267.
+
+ [9] Li Chen, Rasmus Kyng, Yang Liu, Richard Peng, Maximilian Probst Gutenberg, and Sushant
+     Sachdeva. Maximum flow and minimum-cost flow in almost-linear time. Journal of the ACM,
+     72(3):1–103, 2025.
+
+[10] Ho Yee Cheung, Lap Chi Lau, and Kai Man Leung. Graph connectivities, network coding,
+     and expander graphs. SIAM Journal on Computing, 42(3):733–751, 2013.
+
+[11] Jonathan Conroy and Arnold Filtser. How to protect yourself from threatening skeletons:
+     Optimal padded decompositions for minor-free graphs, 2025. URL: https://arxiv.org/
+     abs/2504.00278, arXiv:2504.00278.
+
+[12] James Davies, Agelos Georgakopoulos, Meike Hatzel, and Rose McCarty. Strongly sublinear
+     separators and bounded asymptotic dimension for sphere intersection graphs. In Oswin Aich-
+     holzer and Haitao Wang, editors, 41st International Symposium on Computational Geometry
+     (SoCG 2025), volume 332 of Leibniz International Proceedings in Informatics (LIPIcs), pages
+     36:1–36:16, Dagstuhl, Germany, 2025. Schloss Dagstuhl – Leibniz-Zentrum für Informatik.
+     doi:10.4230/LIPIcs.SoCG.2025.36.
+
+[13] James Davies, Pawel Rzążewski, Jack Spalding-Jamieson, and Bartosz Walczak. Revisiting
+     separators in string graphs, region intersection graphs, and induced-minor-free graphs. In
+     Proceedings of the 2027 Annual ACM-SIAM Symposium on Discrete Algorithms (SODA),
+     2027. URL: https://arxiv.org/abs/2610.23792.
+
+
+                                              25
+[14] Daniel Delling, Andrew V Goldberg, Ilya Razenshteyn, and Renato F Werneck. Graph par-
+     titioning with natural cuts. In 2011 IEEE International Parallel & Distributed Processing
+     Symposium, pages 1135–1146. IEEE, 2011.
+
+[15] Sally Dong, Gramoz Goranci, Lawrence Li, Sushant Sachdeva, and Guanghao Ye. Fast algo-
+     rithms for separable linear programs. In Proceedings of the 2024 Annual ACM-SIAM Sympo-
+     sium on Discrete Algorithms (SODA), pages 3558–3604. SIAM, 2024.
+
+[16] Guillaume Ducoffe, Michel Habib, and Laurent Viennot. Diameter, eccentricities and dis-
+     tance oracle computations on h-minor free graphs and graphs of bounded (distance) vapnik–
+     chervonenkis dimension. SIAM Journal on Computing, 51(5):1506–1534, 2022.
+
+[17] Michael Elberfeld, Frank Kammer, and Johannes Meintrup. Space-efficient depth-first search
+     via augmented succinct graph encodings. arXiv preprint arXiv:2504.19547, 2025.
+
+[18] Uriel Feige, MohammadTaghi Hajiaghayi, and James R. Lee. Improved approximation al-
+     gorithms for minimum weight vertex separators. SIAM J. Comput., 38(2):629–657, 2008.
+     doi:10.1137/05064299X.
+
+[19] Arnold Filtser, Tobias Friedrich, Davis Issac, Nikhil Kumar, Hung Le, Nadym Mallek, and
+     Ziena Zeif. Optimal padded decomposition for bounded treewidth graphs. TheoretiCS, 4,
+     2025.
+
+[20] Emily Fox. A simple deterministic near-linear time approximation scheme for transshipment
+     with arbitrary positive edge costs. arXiv preprint arXiv:2307.07440, 2023.
+
+[21] John R Gilbert, Joan P Hutchinson, and Robert Endre Tarjan. A separator theorem for
+     graphs of bounded genus. Journal of Algorithms, 5(3):391–407, 1984.
+
+[22] Ken-ichi Kawarabayashi and Bruce Reed. A separator theorem in minor-closed classes. In
+     2010 IEEE 51st Annual Symposium on Foundations of Computer Science, pages 153–162.
+     IEEE, 2010.
+
+[23] Michael Kerber, Donald R Sheehy, and Primoz Skraba. Persistent homology and nested
+     dissection. In Proceedings of the Twenty-Seventh Annual ACM-SIAM Symposium on Discrete
+     Algorithms, pages 1234–1245. SIAM, 2016.
+                                                            √
+[24] Vladimir Kolmogorov. A simpler and parallelizable O( log n)-approximation algorithm for
+     sparsest cut. Transactions on Algorithms, 21(4):1–22, 2025.
+
+[25] Tuukka Korhonen and Daniel Lokshtanov. Induced-minor-free graphs: Separator theorem,
+     subexponential algorithms, and improved hardness of recognition. In Proceedings of the 2024
+     Annual ACM-SIAM Symposium on Discrete Algorithms (SODA), pages 5249–5275, 2024.
+     doi:10.1137/1.9781611977912.188.
+
+[26] Nathaniel Adam Lahn and Sharath Raghvendra. A weighted approach to the maximum
+     cardinality bipartite matching problem with applications in geometric settings. Journal of
+     Computational Geometry, 11(2):183–204, 2021.
+
+[27] Lap Chi Lau, Kam Chuen Tung, and Robert Wang. Cheeger inequalities for directed graphs
+     and hypergraphs using reweighted eigenvalues. In Proceedings of the 55th Annual ACM Sym-
+     posium on Theory of Computing, pages 1834–1847, 2023.
+
+[28] Lap Chi Lau, Kam Chuen Tung, and Robert Wang. ”fast algorithms for directed graph
+     partitioning using flows and reweighted eigenvalues”. In Proceedings of the 2024 Annual
+     ACM-SIAM Symposium on Discrete Algorithms (SODA), pages 591–624. SIAM, 2024.
+                                              26
+[29] James R Lee and Anastasios Sidiropoulos. Genus and the geometry of the cut graph. In
+     Proceedings of the twenty-first annual ACM-SIAM symposium on Discrete Algorithms, pages
+     193–201. SIAM, 2010.
+
+[30] Tom Leighton and Satish Rao. An approximate max-flow min-cut theorem for uniform mul-
+     ticommodity flow problems with applications to approximation algorithms. In FOCS, 1988.
+
+[31] Tom Leighton and Satish Rao. Multicommodity max-flow min-cut theorems and their use
+     in designing approximation algorithms. Journal of the ACM, 46(6):787–832, November 1999.
+     doi:10.1145/331524.331526.
+
+[32] Richard J Lipton, Donald J Rose, and Robert Endre Tarjan. Generalized nested dissection.
+     SIAM journal on numerical analysis, 16(2):346–358, 1979.
+
+[33] Richard J Lipton and Robert Endre Tarjan. A separator theorem for planar graphs. SIAM
+     Journal on Applied Mathematics, 36(2):177–189, 1979.
+
+[34] Richard J. Lipton and Robert Endre Tarjan. Applications of a planar separator theorem.
+     SIAM Journal on Computing, 9(3):615–627, 1980. doi:10.1137/0209046.
+
+[35] Anand Louis. Cut-matching games on directed graphs, 2010. URL: https://arxiv.org/
+     abs/1010.1047, arXiv:1010.1047.
+
+[36] Jiřı́ Matoušek. Near-optimal separators in string graphs. Combinatorics, Probability and
+     Computing, 23(1):135–139, 2014. doi:10.1017/S0963548313000400.
+
+[37] Gary L. Miller, Shang-Hua Teng, William Thurston, and Stephen A. Vavasis. Geometric
+     separators for finite-element meshes. SIAM Journal on Scientific Computing, 19(2):364–386,
+     1998. doi:10.1137/S1064827594262613.
+
+[38] Bojan Mohar. A linear time algorithm for embedding graphs in an arbitrary surface. SIAM
+     Journal on Discrete Mathematics, 12(1):6–26, 1999.
+
+[39] Arnold L. Rosenberg and Lenwood S. Heath. Graph separators with applications. Frontiers
+     of computer science. Kluwer, 2001.
+                                                                 √
+[40] J. Sherman. Breaking the multicommodity flow barrier for O( log n)-approximations to
+     sparsest cut. In FOCS, pages 363–372, 2009.
+
+[41] Daniel D. Sleator and Robert Endre Tarjan. A data structure for dynamic trees. J. of
+     Computer and System Sciences, 26(3):362–391, 1983.
+
+[42] Jack Spalding-Jamieson. Reweighted spectral partitioning works: A simple algorithm for
+     vertex separators in special graph classes. arXiv preprint arXiv:2506.01228, 2025.
+
+[43] Peter Ungar. A theorem on planar graphs. Journal of the London Mathematical Society,
+     1(4):256–262, 1951.
+
+[44] Zongrui Zou, Chenglin Fan, Michael Dinitz, Jingcheng Liu, and Jalaj Upadhyay. A generalized
+     binary tree mechanism for private approximation of all-pair shortest distances. In D. Belgrave,
+     C. Zhang, H. Lin, R. Pascanu, P. Koniusz, M. Ghassemi, and N. Chen, editors, Advances in
+     Neural Information Processing Systems, volume 38, pages 36439–36468. Curran Associates,
+     Inc., 2025.
+
+
+
+
+                                                27
+

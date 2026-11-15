@@ -1,0 +1,502 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,hyperref}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newcommand{\R}{\mathbb R}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\renewcommand{\labelitemi}{$\bullet$}
+\title{A charged relative fractional graph update using feasible flows}
+\author{Independent dynamic research session}
+\date{November 15, 2026}
+\begin{document}
+\maketitle
+
+\paragraph{Status and scope.}
+This is a proposed constructive theorem with a complete exact-real
+arithmetic argument, including factor formation and a small relative
+Gram computation. It uses the feasible electrical-flow guarantee of
+Kelner--Orecchia--Sidford--Zhu, not merely the usual shifted-potential
+energy guarantee. Independent checks within this session verified the
+flow, clipping, and Gram-compression steps. Historical priority and
+finite-word stability have not been established.
+
+For general fixed $\alpha$, scalar evaluations of positive real powers
+are charged as scalar operations, as in the source graph-update model.
+The quadrature coefficients are computed to the same error budgets.
+For $\alpha=1/2$, one can instead take $h=\log(2)/H$ with dyadic integer
+$H=O_\alpha(\mathcal L)$, use nodes $2^{j/H}$, and construct them by
+repeated square roots; scalar constant approximations use convergent
+series. The small-matrix Jacobi step below also uses only arithmetic,
+comparisons, and positive square roots. Thus no exact general matrix
+spectral-decomposition oracle is part of the arithmetic model.
+
+\section{Statement}
+Let $L$ be the combinatorial Laplacian of a connected weighted undirected
+graph with $n$ vertices and $m$ edges. Vertex masses are one. Let
+\[
+ L'=L+d b b^T,\qquad d>0,\qquad b=e_p-e_q,\qquad
+ \tau=d b^TL^\dagger b>0,
+\]
+where insertion and increasing an existing edge are both allowed.
+Fix $0<\alpha<1$, and put $B_0=\alpha\log(1+\tau)$.
+Every inverse power below is zero on constants. Set
+\[
+ \Delta=L'^\alpha-L^\alpha,\qquad
+ C=L^{-\alpha/2}\Delta L^{-\alpha/2}.
+\]
+The known determinant identity is
+$C\succeq0$, $\log\det_{\mathbf1^\perp}(I+C)=B_0$.
+
+\begin{theorem}[Explicit relative factor, with charged construction]
+\label{thm:main}
+For $0<\varepsilon,\delta<1/2$, there is a randomized exact-real
+arithmetic algorithm constructing a matrix $X\in\R^{n\times r}$ with
+$X^T\mathbf1=0$ such that, with probability at least $1-\delta$,
+\begin{equation}\label{eq:answer}
+ -\frac\varepsilon8 L^\alpha
+ \preceq \Delta-XX^T
+ \preceq\frac{3\varepsilon}4 L^\alpha.
+\end{equation}
+In particular its two-sided relative operator error is at most
+$\varepsilon$. On the same success event, its rank obeys
+\begin{equation}\label{eq:rank}
+ r<\frac{B_0}{\log(1+\varepsilon/4)}
+ \quad\hbox{if }r>0.
+\end{equation}
+Let $\mathcal L=1+\log\bigl(2+n(1+\tau)/\varepsilon\bigr)$.
+There are raw width $q=O_\alpha(\mathcal L^2)$ and Gram quadrature
+width $N=O_\alpha(\mathcal L^2)$ such that construction uses
+\begin{itemize}
+\item expected $O(q+1)$ feasible electrical-flow calls on graphs with
+$n+1$ vertices and $m+n$ edges;
+\item expected $O(qN+q+1)$ ordinary SDD potential calls;
+\item $O(Nnq^2+q^4\mathcal L+nqr)$ further arithmetic operations, including
+all raw and final factor entries.
+\end{itemize}
+These counts include the optional certified leverage estimation and
+precede confidence amplification. With a supplied leverage bound the
+raw construction has exactly $q$ flow targets; amplification adds the
+logarithmic repetitions described below.
+All required solve and flow tolerances have
+$\log(1/\eta)=O_\alpha(\mathcal L)$, before logarithmic confidence
+amplification. The resulting expected work is
+\[
+ \widetilde O_\alpha(m+n),
+\]
+where suppressed factors depend only logarithmically on
+$n,1+\tau,1/\varepsilon,1/\delta$. There is no suppressed dependence
+on $\lambda_2(L)$, $\norm L$, conductance ratios, or a graph condition
+number. A constant-factor estimate of $\tau$ suffices and is computable
+within the same work bound.
+\end{theorem}
+
+For any fixed $0<\rho<1$, the same construction, with different error
+allocations, returns, on the same success event, relative error at most
+$\varepsilon$ and
+$r<B_0/\log(1+(1-\rho)\varepsilon)$ when $r>0$. Thus the leading
+rank constant can approach the sharp determinant count. Dependence on
+$1/\rho$ is only logarithmic in construction work.
+
+The theorem is a two-sided relative approximation by a PSD factor.
+It does not assert $XX^T\preceq\Delta$. Per edit it may reconstruct
+solver data from the current graph; no sublinear dynamic-update bound
+or uncharged initial dense fractional matrix is being asserted.
+
+\section{Graph-specific scale control}
+Scale all conductances by $1/d$. It suffices to work with $d=1$,
+$u=b$, $\norm u^2=2$, and return $d^{\alpha/2}X$ at the end.
+Write $A=L/d$ in this normalization and $v=A^\dagger u$.
+The graph maximum principle puts every coordinate of $v$ between
+$v_q$ and $v_p$, and $v_p-v_q=\tau$. Thus
+\begin{equation}\label{eq:moments}
+ \norm v^2\le n\tau^2,\qquad
+ u^TA^{-\alpha}u\le\tau^\alpha 2^{1-\alpha}.
+\end{equation}
+The second inequality is spectral H\"older interpolation.
+These estimates are special to a dipole on a unit-mass graph.
+
+Let $R_t=(A+tI)^{-1}$ on the whole vertex space and
+$s(t)=u^TR_tu$. The exact relative integral is
+\begin{equation}\label{eq:integral}
+ C=c_\alpha\int_0^\infty
+ \frac{t^\alpha A^{-\alpha/2}R_tuu^TR_tA^{-\alpha/2}}
+ {1+s(t)}\,dt,\qquad c_\alpha=\frac{\sin(\pi\alpha)}\pi.
+\end{equation}
+In particular $0\le s(t)\le\tau$.
+
+\begin{lemma}[Relative integral tails without a spectral endpoint]
+For $T>0$, the traces of the portions of \eqref{eq:integral} below
+and above $T$ are bounded respectively by
+\[
+ K_\alpha T\norm v^2,\qquad
+ K_\alpha T^{\alpha-1}\tau^\alpha2^{1-\alpha}.
+\]
+\end{lemma}
+\begin{proof}
+Drop the denominator. For the low tail use
+\[
+ \sup_{\lambda>0}
+ \frac{\lambda^{2-\alpha}}{(\lambda+t)^2}
+ =K'_\alpha t^{-\alpha},
+\]
+so the trace integrand is at most $K_\alpha\norm{A^\dagger u}^2$.
+For the high tail use $R_t^2\preceq t^{-2}I$ and
+\eqref{eq:moments}, then integrate $t^{\alpha-2}$.
+\end{proof}
+
+Choose a sufficiently large constant $K_\alpha$ and cutoffs
+\begin{equation}\label{eq:cutoff}
+ t_- = \frac{\varepsilon}{K_\alpha n(1+\tau)^2},\qquad
+ t_+ = \left(\frac{K_\alpha(1+\tau)}\varepsilon\right)^{1/(1-\alpha)}.
+\end{equation}
+Their logarithms have magnitude $O_\alpha(\mathcal L)$, and each
+omitted relative tail has norm at most $\varepsilon/100$ after enlarging
+the constant. No estimate of an extreme eigenvalue is used.
+
+\begin{lemma}[Positive logarithmic quadrature]
+There is a logarithmic trapezoid rule with $q=O_\alpha(\mathcal L^2)$,
+nodes in $[\exp(-O_\alpha(\mathcal L)),
+\exp(O_\alpha(\mathcal L))]$, and positive weights
+\[
+ a_j=\frac{c_\alpha h t_j^{\alpha+1}}{1+s(t_j)}
+\]
+whose raw exact factor $Z_0=[\sqrt{a_j}R_{t_j}u]_j$ obeys
+\[
+ \norm{A^{-\alpha/2}Z_0Z_0^TA^{-\alpha/2}-C}
+ \le\varepsilon/32.
+\]
+Moreover $J:=qh=O_\alpha(\mathcal L)$ and
+$\norm{A^{-\alpha/2}Z_0}_F^2\le K_\alpha\tau J$.
+\end{lemma}
+\begin{proof}
+Put $t=e^y$. The transformed matrix integrand is analytic in any fixed
+strip $|\operatorname{Im}y|\le a<\pi/2$. Here
+$\operatorname{Re}s(e^y)\ge0$, so $|1+s(e^y)|\ge1$.
+Also $|\lambda+te^{i\theta}|\ge\cos(\theta/2)(\lambda+t)$.
+The integral of the norm on either strip boundary is at most a constant
+times
+\[
+ c_\alpha\int_0^\infty t^\alpha
+       u^T R_t A^{-\alpha}R_tu\,dt=\alpha\tau.
+\]
+The scalar equality follows eigenvalue by eigenvalue. Shifting the
+Fourier contour and summing the sampled nonzero frequencies bounds
+infinite-trapezoid error by
+$K_\alpha\tau/(e^{2\pi a/h}-1)$.
+Choose $h^{-1}=O_\alpha(\mathcal L)$ sufficiently large.
+The same low and high envelopes from the preceding lemma bound the
+discarded grid tails by geometric sums. Rounding the cutoffs by at
+most a constant number of grid points and enlarging constants proves
+the error and width statements.
+Finally every transformed positive integrand has trace at most
+$K_\alpha\tau$, since
+$t^{\alpha+1}\lambda^{1-\alpha}/(\lambda+t)^2\le K_\alpha$.
+Summing the $q$ node traces proves the Frobenius bound.
+\end{proof}
+
+\section{Constructing relative-accurate resolvent columns}
+An arbitrary shifted-potential energy error can contaminate an
+arbitrarily small positive eigenmode of $A$. The following construction
+uses feasible flows to avoid that failure.
+
+\begin{lemma}[Clipping a dipole potential]
+Suppose $\widetilde v$ has
+$\norm{\widetilde v-v}_A\le\eta\sqrt\tau$, $0<\eta<1$.
+Clip every coordinate of $\widetilde v$ into the interval with endpoints
+$\widetilde v_q,\widetilde v_p$, then subtract its mean to obtain
+$\widehat v$. Then
+\begin{equation}\label{eq:clip}
+ \norm{\widehat v-v}_A\le\eta\sqrt\tau,\qquad
+ \norm{\widehat v}\le\sqrt n(1+\eta)\tau.
+\end{equation}
+\end{lemma}
+\begin{proof}
+Cauchy--Schwarz in the $A$ energy gives
+$|u^T(\widetilde v-v)|\le\eta\tau$, so the endpoint order is correct
+and the interval length is at most $(1+\eta)\tau$.
+Common scalar clipping is nonexpansive on every edge difference and
+fixes both endpoint values. It decreases $x^TAx$ and preserves $u^Tx$.
+Therefore it cannot increase
+$\norm{x-v}_A^2=x^TAx-2u^Tx+\tau$.
+Subtracting the mean changes neither expression. The coordinate range
+bound gives the Euclidean bound.
+\end{proof}
+
+Orient the graph, write $A=D^TWD$, and add a ground vertex with an
+edge of conductance $t$ from each original vertex. For demand
+$(\widehat v,0)$ a feasible flow consists of original-edge flows $f$
+and ground flows $g$ with
+\[
+ D^Tf+g=\widehat v,
+ \qquad \mathcal E(f,g)=f^TW^{-1}f+t^{-1}\norm g^2.
+\]
+The minimizing flow has $y=R_t\widehat v$,
+$f_*=WDy$, $g_*=ty$, and energy
+$E_*=\widehat v^TR_t\widehat v$.
+
+\begin{lemma}[Feasible-flow resolvent column]\label{lem:flow}
+Given a feasible flow of energy at most $(1+\zeta^2)E_*$, output
+$\widehat x_t=D^Tf=\widehat v-g$. Then
+\begin{align}
+ \norm{A^{-\alpha/2}(\widehat x_t-R_tu)}
+ &\le K_\alpha\eta\sqrt\tau\,t^{-(1+\alpha)/2}
+       +\zeta\norm{\widehat v}\,t^{-\alpha/2}.\label{eq:flowerr}
+\end{align}
+Also, for $\zeta\le1$,
+\begin{equation}\label{eq:flowmom}
+ f^TW^{-1}f\le2\norm{\widehat v}^2/t,
+ \qquad \norm{\widehat x_t}^2\le6\norm{\widehat v}^2.
+\end{equation}
+\end{lemma}
+\begin{proof}
+Feasible-flow optimality gives exact orthogonality, so the energy excess
+is
+$E=\norm{f-f_*}_{W^{-1}}^2+t^{-1}\norm{g-g_*}^2\le\zeta^2E_*$.
+For $e=D^T(f-f_*)=-(g-g_*)$, Thomson's variational principle and
+feasibility give $\norm e_{A^\dagger}^2\le E$ and
+$\norm e^2\le tE$. Spectral H\"older interpolation implies
+\[
+ \norm{A^{-\alpha/2}e}^2
+ \le(\norm e_{A^\dagger}^2)^\alpha(\norm e^2)^{1-\alpha}
+ \le t^{1-\alpha}E
+ \le\zeta^2t^{-\alpha}\norm{\widehat v}^2.
+\]
+The exact original-edge divergence is $A R_t\widehat v$ and
+$A R_t v=R_tu$. The remaining bias is bounded using
+\[
+ \norm{A^{-\alpha/2}A R_t(\widehat v-v)}^2
+ \le\sup_{\lambda>0}
+ \frac{\lambda^{1-\alpha}}{(\lambda+t)^2}
+ \norm{\widehat v-v}_A^2
+ \le K_\alpha t^{-1-\alpha}\eta^2\tau.
+\]
+For the moments, total energy is at most
+$2E_*\le2\norm{\widehat v}^2/t$.
+Also $\norm g^2\le2\norm{\widehat v}^2$ and
+$\widehat x_t=\widehat v-g$, giving \eqref{eq:flowmom}.
+\end{proof}
+
+\paragraph{The actual graph primitives.}
+A standard SDD solver constructs $\widetilde v$ with the energy
+guarantee above. The feasible flow is supplied by the electrical-flow
+algorithm of \cite[Definition 2.4, Theorems 3.2 and 4.1]{KOSZ}.
+Its expected excess-energy guarantee at parameter $\zeta^2/4$ gives
+the desired bound with constant probability by Markov's inequality.
+Independent repetitions and selection of the least-energy feasible
+flow give arbitrary confidence: all candidates have the same unknown
+optimum, so least energy also means least excess. The cycle algorithm
+preserves feasibility exactly. Its stored non-tree flows and residual
+demands recover tree flows by subtree sums in $O(m+n)$ work. The
+arithmetical runtime is nearly linear with logarithmic accuracy cost,
+independent of conductance ratios.
+
+Compute each scalar $s(t_j)$ separately by an ordinary shifted SDD
+solve at energy accuracy $\kappa$. Then
+$\widehat s_j=\max(0,u^T\widetilde x_j)$ satisfies
+$|\widehat s_j-s(t_j)|\le\kappa s(t_j)$.
+For $\kappa\le1/2$, replacing the denominator by $1+\widehat s_j$
+changes its square-root weight by relative $O(\kappa)$.
+Construct
+\[
+ Z_j=\sqrt{\frac{c_\alpha h t_j^{\alpha+1}}{1+\widehat s_j}}
+         \,\widehat x_{t_j}.
+\]
+All these columns are mean zero, by flow feasibility and zero ground
+demand. From \eqref{eq:flowerr}, \eqref{eq:clip}, and the quadrature
+Frobenius bound, sufficiently small tolerances with
+\[
+ \log(1/\eta),\log(1/\zeta),\log(1/\kappa)
+       =O_\alpha(\mathcal L)
+\]
+make
+\begin{equation}\label{eq:raw}
+ \norm{A^{-\alpha/2}ZZ^TA^{-\alpha/2}-C}\le\varepsilon/8.
+\end{equation}
+For clarity, a sufficient way to allocate them is to ensure
+\[
+ K_\alpha\sqrt{\tau J}\,(\eta+\kappa)
+ +K_\alpha\zeta\sqrt{n\tau^2Jt_+}
+ \le \frac{\varepsilon}{K_\alpha(1+\sqrt{\tau J})}.
+\]
+The inequality $\norm{TT^T-SS^T}\le
+(2\norm S+\norm{T-S})\norm{T-S}$ then bounds factor error;
+constants can allocate $\varepsilon/32$ to quadrature and the rest to
+column and scalar errors. Every parameter on this display has
+logarithm $O_\alpha(\mathcal L)$.
+
+The returned flow energies also provide a computable certificate
+$H_0\ge\tr Z^TA^\dagger Z$, and $N_0=\norm Z_F^2$ is directly
+computable. Specifically, sum $f_j^TW^{-1}f_j$ times their squared
+column weights. The moment bounds yield
+\begin{equation}\label{eq:rawmom}
+ H_0\le K_\alpha n\tau^2t_+^\alpha,
+ \qquad N_0\le K_\alpha n\tau^2t_+^{\alpha+1}.
+\end{equation}
+Factors $h\sum t_j^a\le K_a t_+^a$ were absorbed in constants.
+
+\section{Small-Gram compression with charged scalar solves}
+The raw width is logarithmic in $n$, but may exceed the determinant
+budget rank. It can be compressed without a fractional vector action.
+Compute the $q$-by-$q$ matrix
+\begin{equation}\label{eq:gram}
+ H=Z^TA^{-\alpha}Z
+   =c_\alpha\int_0^\infty s^{-\alpha}Z^T(A+sI)^{-1}Z\,ds.
+\end{equation}
+The low and high tails have norm at most
+\[
+ K_\alpha H_0 S_-^{1-\alpha},\qquad
+ K_\alpha N_0 S_+^{-\alpha},
+\]
+respectively. In normalized units choose, for a sufficiently large
+constant, for example
+\[
+ S_- =\left(\frac{\varepsilon}{K_\alpha(1+H_0)}\right)^{1/(1-\alpha)},
+ \qquad
+ S_+ =\left(\frac{K_\alpha(1+N_0)}\varepsilon\right)^{1/\alpha}.
+\]
+By \eqref{eq:rawmom}, both logarithms have magnitude
+$O_\alpha(\mathcal L)$.
+The logarithmic integrand has a fixed analytic strip and trace envelope
+\[
+ K_\alpha\min(H_0s^{1-\alpha},N_0s^{-\alpha}).
+\]
+Its integrated envelope is at most
+$K_\alpha H_0^\alpha N_0^{1-\alpha}$, a polynomial in
+$n,1+\tau,1/\varepsilon$. The same trapezoid argument therefore
+gives $N=O_\alpha(\mathcal L^2)$ nodes for additive error
+$\varepsilon/32$.
+
+At every Gram node solve $(A+sI)y_j=Z_j$ by the ordinary SDD energy
+solver, and form and symmetrize the matrix $Z^T\widehat Y$.
+If every column has energy relative error at most $\theta$, its Gram
+error is at most
+\[
+ \theta\tr Z^T(A+sI)^{-1}Z.
+\]
+Indeed its $(i,j)$ entry is bounded by
+$\theta\sqrt{Z_i^TR_sZ_i}\sqrt{Z_j^TR_sZ_j}$; sum squares.
+The integrated envelope bounds accumulated solve error using
+$\log(1/\theta)=O_\alpha(\mathcal L)$.
+Compute the quadrature and solves accurately enough that their total
+error is at most $\varepsilon/16$. Approximately diagonalize the
+resulting symmetric matrix as described below to a residual at most
+$\varepsilon/16$, and call the resulting explicitly orthogonally
+diagonalized matrix $\widehat H$. Then
+\begin{equation}\label{eq:gramerr}
+ \norm{\widehat H-H}\le\varepsilon/8.
+\end{equation}
+Each node requires $q$ solves and $O(nq^2)$ arithmetic to form its
+Gram. No factor whitening or inverse fractional-power action is used.
+
+Take an orthonormal matrix $U$ spanning the eigenvectors of
+$\widehat H$ with eigenvalues greater than $\varepsilon/2$, and
+return $X=ZU$. This does not require an exact algebraic eigensolver.
+Repeatedly choose the largest off-diagonal entry of the current small
+symmetric matrix and apply the exact two-dimensional Jacobi rotation,
+using arithmetic and positive square roots. Each rotation reduces the
+squared off-diagonal Frobenius norm by at least the fraction
+$2/[q(q-1)]$. Stop when the off-diagonal Frobenius norm is at most
+$\varepsilon/16$ (equivalently, its square is at most
+$\varepsilon^2/256$),
+and keep the accumulated orthogonal matrix and the remaining diagonal.
+Discarding the off-diagonal residual defines $\widehat H$ explicitly.
+Scanning for the largest entry costs $O(q^2)$ per rotation, so
+$O(q^4\log(2+\norm{H}_F/\varepsilon))=O_\alpha(q^4\mathcal L)$
+arithmetic operations suffice, with no eigenvalue-separation assumption.
+For $q=1$ this is immediate. Then
+\[
+ 0\preceq ZZ^T-XX^T,\qquad
+ \norm{A^{-\alpha/2}(ZZ^T-XX^T)A^{-\alpha/2}}
+ \le\varepsilon/2+\varepsilon/8=5\varepsilon/8.
+\]
+Combining with \eqref{eq:raw} gives \eqref{eq:answer}.
+By Weyl's inequality, every retained eigenvalue forces an eigenvalue
+of $H$ above $3\varepsilon/8$, hence one of $C$ above
+$\varepsilon/4$. The nonzero eigenvalues of $H$ and
+$A^{-\alpha/2}ZZ^TA^{-\alpha/2}$ coincide. The determinant budget
+therefore proves \eqref{eq:rank}.
+
+All primitive success events are amplified and union bounded.
+Ordinary potential solves can use energy-distance median selection;
+feasible flows use least-energy selection. Their confidence overhead
+is logarithmic in $(qN+q+1)/\delta$. Forming $ZU$ costs $O(nqr)$.
+The displayed primitive counts and algebra costs prove the construction
+bound. All normalization, sparse multiplication, flow extraction, and
+factor entries are included.
+
+To make the work bound unconditional on successful solves, schedule the
+Gram cutoffs and accuracies from the a priori upper bounds on the
+right side of \eqref{eq:rawmom}, rather than from arbitrarily large
+unsuccessful solver outputs. If a computed moment certificate exceeds
+those bounds, declare failure and stop. Likewise cap the number of
+Jacobi rotations by the bound implied by these polynomial moments;
+failure to reach its residual target declares failure. Neither cap
+fires on the simultaneous success event used in the proof. These
+guards preserve the stated expected work even on the exceptional
+outputs of graph primitives. A promised constant-factor bound on the
+fixed $\tau$ schedules all budgets. It can also be obtained by a
+certified Las Vegas preliminary procedure: compute a feasible flow
+$f$ for demand $u$ and an approximate potential $w$, and evaluate
+\[
+ D_0=2u^Tw-w^TAw\le\tau\le E_0=f^TW^{-1}f.
+\]
+Repeat independent constant-accuracy calls until
+$0<D_0$ and $E_0\le2D_0$. Standard constant-success potential and
+flow bounds make this event have probability bounded below by a
+positive constant. Every accepted interval is valid by weak duality,
+so $E_0$ is a certified upper bound between $\tau$ and $2\tau$,
+with expected nearly-linear preliminary work. Consequently failed
+resistance estimates cannot cause unbounded subsequent accuracy logs.
+
+To obtain the near-sharp variant, take raw error and total Gram error
+each at most $\rho\varepsilon/4$ and retain diagonalized Gram values
+above $(1-\rho/2)\varepsilon$. The final relative error is at most
+$\varepsilon$, while every retained value forces a true correction
+eigenvalue above $(1-\rho)\varepsilon$. All accuracy logarithms merely
+gain $O(\log(1/\rho))$.
+
+\section{Preconditioning and limits}
+Let $M=L^\alpha+XX^T$. Since $M\succeq L^\alpha$, the two-sided
+guarantee implies
+\[
+ (1-\varepsilon)M\preceq L'^\alpha\preceq(1+\varepsilon)M.
+\]
+Thus $M$ is a relative spectral preconditioner. This statement concerns
+its representation and quality. Applying $M^{-1}$ by Woodbury still
+requires a base $L^{-\alpha}$ action. If that action costs $T_{\rm base}$,
+the additional core setup is
+$rT_{\rm base}+O(nr^2+r^3)$ and each application costs
+$T_{\rm base}+O(nr+r^2)$. No base inverse action is free here.
+
+For fixed leverage the factor construction itself is nearly linear
+up to logarithms and has optimal-order worst-case rank $B_0/\varepsilon$.
+The logarithmic raw-width bound is consistent with the sharp relative
+lower examples: realizing many separated relative modes with a single
+unit-mass edge can require extremely large graph dimension. There is
+no arbitrary-SPD analogue of the dipole maximum-principle estimate.
+The restricted noisy-resolvent barrier in the companion session note
+therefore does not contradict this explicit-graph construction.
+
+\begin{thebibliography}{9}
+\bibitem{KOSZ} J. A. Kelner, L. Orecchia, A. Sidford, Z. Allen Zhu,
+\emph{A Simple, Combinatorial Algorithm for Solving SDD Systems in
+Nearly-Linear Time}, STOC 2013.
+\url{https://arxiv.org/abs/1301.6628}.
+Primary complete paper:
+\url{https://math.mit.edu/~kelner/publications/ASimpleCombinatorialAlgorithmforSolvingSDDSystemsinNearly-LinearTime.pdf}.
+\bibitem{KMP} I. Koutis, G. L. Miller, R. Peng,
+\emph{A nearly-$m\log n$ time solver for SDD linear systems}, 2011.
+\url{https://arxiv.org/abs/1102.4842}.
+\bibitem{BCKS} B. Beckermann, A. Cortinovis, D. Kressner, M. Schweitzer,
+\emph{Low-rank updates of matrix functions II: Rational Krylov methods},
+SIAM J. Numer. Anal. 59 (2021), 1325--1347.
+\url{https://arxiv.org/abs/2008.11501}.
+\bibitem{Repo} Repository manuscripts
+\texttt{spectral-gap/relative-fractional-response.tex} and
+\texttt{matmul/graph-fractional-updates.tex}, read November 15, 2026.
+\end{thebibliography}
+\end{document}

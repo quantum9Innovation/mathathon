@@ -1,0 +1,15 @@
+# Methodological credits and priority limits
+
+This proof packet establishes the precise theorem it states; it does not certify historical firstness. The following are substantive predecessors and existing inputs, not claims introduced by this session.
+
+- Vontobel gives exact average finite-cover configuration counts and their Bethe-entropy interpretation. The ordered-star/factor factorial method belongs to this established graph-cover framework. [Counting in Graph Covers](https://arxiv.org/abs/1012.0065).
+- Mori and Tanaka develop constant-order central approximations for sparse random factor graphs, including determinant prefactors and a lattice step correction. Central Gaussian and lattice bookkeeping is established methodology. [Central Approximation in Statistical Physics and Information Theory](https://arxiv.org/abs/1202.0655).
+- Mori generalizes loop calculus to nonbinary alphabets, expressing partition-function corrections by weighted generalized loops. [Loop Calculus for Non-Binary Alphabets](https://arxiv.org/abs/1309.6550).
+- Huang and Vontobel handle zero-valued message components and derive finite-cover estimates beyond an entropy exponent. In their version 2, Appendix G, equations (62)--(65) and Lemma 57 give `R_M<=1/(1-alpha_N)` under their stated strict condition, with `alpha_N<1/2`. Here `R_M` is their normalized raw cover quantity, not its `M`th root. This finite bound deserves credit alongside their asymptotic cover theorem. [Graph-Cover-based Characterization of the Bethe Partition Function of Double-Edge Factor Graphs](https://arxiv.org/html/2506.16250v2#A7).
+- Fellows and Koblitz's *Kid Krypto* supplies earlier perfect-code graph cryptography. Koblitz explicitly explains recovering the unknown vertex values by Gaussian elimination, so encoding a graph relation as a linear system is not a new cryptanalytic idea here. [Author bibliography](https://mike-fellows.net/wordpress/bibtex/), [Koblitz, Cryptography As a Teaching Tool, “Security”](https://sites.math.washington.edu/~koblitz/crlogia.html).
+
+The expected-work composition uses the existing certified sparse finite-field kernel theorem and nonsymmetric supplement at the exact source hashes identified in `fast-recovery-composition.tex`. Their classical preconditioner, Wiedemann recurrence and finite-field ingredients retain their existing credits. This session proves the specified channel moments and checks their interfaces with those inputs; it does not claim a new linear-algebra primitive.
+
+The current proof explicitly treats every heterogeneous uniform-coset phase, inactive quotient kernels, conditional correlation with restricted kernels, and the complete expected-work charge. These are descriptions of what has been proved in this packet, not assertions that no predecessor has proved an overlapping or stronger result. The references above have not been turned into a comprehensive priority determination.
+
+The external primary pages and the local available paper sources were checked on November 15, 2026. No quotation is required for these credits.

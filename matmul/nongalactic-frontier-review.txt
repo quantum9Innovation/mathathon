@@ -1,0 +1,572 @@
+NONGALACTIC FRONTIER: CONSTRUCTIVE BOUNDED-SPECTRUM RANKS AND
+RELATIVE PRINCIPAL-ROOT CORRECTIONS WITHOUT A POSITIVE SPECTRAL GAP
+=================================================================
+
+Owner: nongalactic_frontier_review. Research deduction, 2026-11-15 UTC.
+This note adds proofs to the already reviewed raw-factor algorithm. It
+does not modify any existing manuscript, claim certified priority, or
+settle unrestricted quadratic multiplication. Independent review of this
+new note is still required.
+
+Results established below:
+
+* For PSD fractional updates with endpoint norms bounded by R||E||,
+  fixed R>1, the EXISTING fully charged raw-factor construction can be
+  changed to attain leading output width
+
+       r/[4 pi^2 alpha] log^2(1/eps),
+
+  at conventional ~O_alpha(Nmr+m^3) work. This matches the exact rank
+  theorem in bounded-spectrum-fractional-counts.txt. Its upper proof no
+  longer needs a unit-cost best-rational-approximant or pole oracle.
+  The modification replaces all sufficiently large shifted solves by
+  one common polynomial Krylov block, and compresses their small cores.
+
+* For PSD A,B, possibly singular, and arbitrary symmetric rank-r
+  E=B-A, there is an ACTUAL raw-factor algorithm giving RELATIVE
+  principal-square-root-correction error eps||sqrt(B)-sqrt(A)||.
+  Its output width is
+
+       O(r L [L+log rho]),  L=log(C/eps),
+
+  where rho=4r Lambda/a, a=||C||_F for the intrinsic update core and
+  Lambda is any computable common endpoint norm bound. No smallest
+  positive eigenvalue or downdate margin occurs. The conventional work
+  is (Nmr+m^3) times a fixed polynomial in logarithms of dimensions,
+  1/eps, 1/delta, and rho. The NEW scale logarithm must not be silently
+  suppressed under the old convention for tilde-O.
+
+* A deterministic version needs no m^3 setup if the column-normalized
+  raw Gram is uniformly close to identity. This applies even with
+  arbitrarily ill-conditioned column magnitudes, singular PSD
+  endpoints, and critical downdates. It is a useful explicit class,
+  not an arbitrary-input N^2 theorem. Diagonal preconditioning is old.
+
+The tools include classical ADI, Sylvester displacement, Stieltjes
+integrals, and polynomial Krylov compression. The candidate extension is
+the precise singular-endpoint, scale-sensitive, fully costed theorem;
+those individual methods are not new.
+
+1. MODEL AND PREVIOUS ALGORITHM USED AS A PROVED INPUT
+====================================================
+
+Let X be N-by-m, U be N-by-r, 1<=r<=m<=N, and K=K^T be r-by-r.
+Put A=XX^T, E=UKU^T, and promise B=A+E>=0. All arithmetic is exact
+real field arithmetic, comparisons, scalar positive square roots, and
+discrete randomness. No finite-word stability conclusion is made.
+
+The intrinsic reduction in sharp-matrix-function-updates.tex computes
+U=Q R with Q orthonormal on its column support, C=R K R^T, and
+
+       E=Q C Q^T,       a=||C||_F,
+       ||E||<=a<=sqrt(r)||E||.                          (1.1)
+
+If a=0, every correction below is zero. Assume a>0. Its cost is
+O(Nr^2+r^3), which is O(Nmr). Singular C is allowed. The size of C
+can be smaller than r; using r throughout only enlarges bounds.
+
+The same paper constructs a common symmetric linear approximation to
+R_A(t)=(A+tI)^(-1), satisfying
+
+       ||Rhat_A(t)-R_A(t)||<=nu/t,                     (1.2)
+
+in ~O(Nmr+m^3) conventional arithmetic across a polylogarithmic number
+of t values and r-column RHS blocks. One constant-distortion sparse
+OSE of X controls ALL shifts, RHS and fixed iteration counts on one
+event of probability >=1-delta. Its proof is an even, preconditioned
+Neumann polynomial. Per-shift setup costs O(m^3); all counts here
+include that cost. At general alpha the scalar-power qualification in
+the existing paper remains in force.
+
+For the common C-core, with V=R_A(t)Q and M=Q^T R_A(t)Q,
+
+       H=(I+MC)^(-1),       K_t=C H=K_t^T,
+       D_t=R_A(t)-R_B(t)=V K_t V^T,
+       ||H||<=1+a/t.                                  (1.3)
+
+The perturbation estimate in that paper says that if
+nu(a/t)(1+a/t)<=1/2, then the approximation obtained by substituting
+Rhat_A in (1.3) is well defined, symmetric, has rank <=r, and
+
+ ||Dhat_t-D_t||<=6nu a(1+a/t)/t^2
+                    +2nu a^2(1+a/t)^2/t^3.             (1.4)
+
+In particular a common full inverse approximation
+
+       Rhat_B=Rhat_A-Dhat_t                             (1.5)
+
+has error <= (nu/t) times a fixed polynomial in 1+a/t. This is an
+operator statement uniform in all RHS, not only a residual estimate
+for the one update block. It will be used for adaptive ADI blocks.
+
+2. HIGH-SHIFT COMPRESSION: AN ACTUAL SHARP-RANK BOUNDED ALGORITHM
+================================================================
+
+Theorem 2.1. Fix alpha in (0,1), a positive integer r and R>1. Under
+the input model above, additionally promise
+
+       max(||A||,||B||)<=R||E||.                       (2.1)
+
+There is a raw-factor algorithm of conventional
+~O_alpha,R(Nmr+m^3) arithmetic returning a real signed factor F with
+error <=eps||E||^alpha with probability >=1-delta. Its width obeys
+
+ width(F)<=[r/(4 pi^2 alpha)+o_alpha,R,r(1)]log^2(1/eps).
+                                                           (2.2)
+
+The little-o is uniform over finite dimensions and all promised inputs.
+For PSD updates the factor can be PSD, and for negative updates it can
+be negative semidefinite. The lower theorem already established in
+bounded-spectrum-fractional-counts.txt proves that the leading coefficient
+in (2.2) is optimal for this class. That lower theorem covers R>1; the
+special saturation boundary R=1 has coefficient r-1 and is NOT claimed
+to be attained by this algorithm as currently stated.
+
+Proof. Use exactly the actual positive quadrature from the lemma named
+"Constructive moving strip" in sharp-matrix-function-updates.tex and
+its subsequent error allocation.
+In the notation of that source its logarithmic variable is t=a exp(y),
+L=log(1/eps)+O_alpha(log(2r)), and its nonnegative coefficients have
+total mass O_alpha(L+1). The limiting strip half-width is pi. Its
+envelope is exp[-g(y)] with
+
+       g(y)=alpha(-y)_++(1-alpha)y_+.                  (2.3)
+
+There are O_alpha(L^2) actual positive nodes and their actual log
+coordinates differ from the constructed lattice coordinates by
+exp[-C_alpha L]. Set T=2R a, so ||A||<=T/2 by (1.1),(2.1).
+Call a node LOW if t<T and HIGH otherwise. No logarithm of an input
+number is used to make this comparison.
+
+First count low nodes. The exact lattice construction uses windows of
+length ell=L^(3/4)+O_alpha(1), Gaussian enlargements b=O(sqrt(L)),
+and density [L-g(y)]_+/(2 pi d), with d=pi-L^(-1/4)+smaller
+constant-evaluation allowances. The proof of its total count applies
+to a prefix of the windows: any node y<=log(2R)+exp[-C L] belongs
+to a window with left endpoint at most log(2R)+b+1. Counting each of
+these windows completely only adds O_alpha,R(L ell+L^2 b/ell)
+nodes relative to its density integral. Therefore
+
+ q_low <= [1/(2 pi d)] int_(-infinity)^(log(2R))
+                                  [L-g(y)]_+dy
+                                  +O_alpha,R(L^(7/4))
+       <= L^2/(4 pi^2 alpha)+O_alpha,R(L^(7/4)).        (2.4)
+
+Here the negative half-line contributes EXACTLY L^2/(2alpha) to the
+integral; the bounded positive interval contributes O_R(L). The same
+window and boundary losses as in the original count are lower order.
+Replacing d by pi costs O_alpha(L^(7/4)). The approximated actual
+nodes have the same prefix upper after an immaterial constant buffer.
+Each low node contributes at most r columns, computed exactly as in
+the existing source with its common OSE inverse and error budget.
+
+All high nodes will instead use ONE common polynomial block. Choose
+an even integer k>=C_alpha(L+log(L+2)+1) and form
+
+ W=[Q,(A/T)Q,...,(A/T)^(k-1)Q].                       (2.5)
+
+For t>=T define the actual symmetric linear polynomial
+
+ Rtilde_A(t)=t^(-1) sum_(j=0)^(k-1) (-A/t)^j.
+
+Since ||A/t||<=1/2,
+
+ ||Rtilde_A(t)-R_A(t)||<=2^(-k)/t,
+       0<=Rtilde_A(t)<=R_A(t).                        (2.6)
+
+The last assertion uses even k. Every Vtilde_t=Rtilde_A(t)Q lies
+EXACTLY in range(W), with known coefficients
+
+ Vtilde_t=W B_t,
+ B_t=t^(-1)[I,-(T/t)I,...,(-T/t)^(k-1)I]^T.           (2.7)
+
+Compute Mtilde_t=Q^T W B_t and
+Ktilde_t=C(I+Mtilde_t C)^(-1). These are only r-dimensional cores.
+Since a/t<=1/(2R)<1, (1.4) and (2.6) give
+
+       ||Dtilde_t-D_t||<=C 2^(-k) a/t^2.              (2.8)
+
+If w_t>=0 is the actual physical quadrature weight, sum the high
+nodes into the common symmetric core
+
+       J_high=sum_(high t) w_t B_t Ktilde_t B_t^T.
+
+Return W J_high W^T through its congruence factorization, together
+with the low-node factors. The high contribution has width <=kr,
+irrespective of the number of high nodes. In particular no long-
+dimension basis compression that could cost Nm^2 is performed.
+
+For the normalized logarithmic integrand, multiplying (2.8) by
+t^(alpha+1) gives at most C_alpha 2^(-k) a^alpha since t>=T>=a.
+The scalar coefficient mass is O_alpha(L+1). The chosen k makes the
+total new high-node error fit in a^alpha exp(-L) after a fixed
+budget shift in L. This shift leaves (2.4) unchanged at leading order.
+Combining with the unchanged quadrature and low solve budgets proves
+the desired operator error. Equations (2.4),(2.5) prove (2.2).
+
+Forming W costs O(Nmr k). Its Q^T W costs O(Nr^2 k). Forming and
+factoring J_high costs at most a polynomial in k,r and q=O(L^2),
+bounded by m^3 times a polynomial in L. Its final factor multiplication
+costs O(Nr^2 k^2)<=Nmr times a polynomial in L. Together with all
+low nodes and the OSE, the advertised conventional cost follows.
+
+If C>=0, all Ktilde_t>=0 because Mtilde_t>=0. If C<=0, write
+C=-DD^T analytically. Since 0<=Rtilde_A<=R_A and B>=0,
+I-D^T Mtilde_t D>=I-D^T M_t D>0, so Ktilde_t<=0. Thus the new
+high core has the required sign. The existing low construction has
+the same sign guarantee. No inverse of a singular C is used. QED.
+
+The endpoint promise is MATERIAL. For a known computable Lambda>=||A||,
+T=2 max(Lambda,a) gives the same algorithm, but its prefix count can
+also contain O(L log(T/a)) nodes. A Frobenius-norm bound growing with
+dimension cannot silently be treated as a fixed R in (2.2). Under
+(2.1) we use the promised R directly, so T/a=2R is dimension-free.
+
+3. WHY THE RELATIVE ROOT PROBLEM HAS A DIFFERENT SCALE PARAMETER
+================================================================
+
+Put P=sqrt(A), Qb=sqrt(B), Delta=Qb-P, and d=||Delta||. These roots
+are used in analysis only. They are NOT supplied as algorithm inputs.
+Let Lambda>0 bound both endpoint operator norms. A cheap valid choice
+from raw factors is Lambda=||X||_F^2+a. Define
+
+       d0=a/(2 sqrt(r Lambda)),     rho=a/d0^2=4r Lambda/a.
+                                                           (3.1)
+
+The noncommutative root identity is
+
+       E=P Delta+Delta Qb.                              (3.2)
+
+It follows that
+
+ ||E||<=2 sqrt(Lambda)d,
+       d0<=d<=sqrt(||E||)<=sqrt(a).                     (3.3)
+
+The lower bound uses ||E||>=a/sqrt(r); the upper uses the operator
+Holder inequality for the square root. Hence rho>=1. Small positive
+eigenvalues or exact zeros do not enter (3.1).
+
+A naive invocation of the earlier update-scale algorithm at tolerance
+eps d0/sqrt(a) uses O(r[L+log(rho)]^2) width. This introduces an
+unnecessary log^2(rho) term at fixed relative accuracy. The next
+construction uses O(r L[L+log(rho)]) instead.
+
+There is also an instructive resolvent envelope. From (3.2),
+
+ D_t=R_A(t)P Delta R_B(t)+R_A(t)Delta Qb R_B(t),
+       ||D_t||<=d/t^(3/2).                             (3.4)
+
+Indeed ||P R_A(t)||,||Qb R_B(t)||<=1/(2sqrt(t)).
+Combining (3.4) with min(1/t,a/t^2), the logarithmic root integrand,
+divided by d and centered at t=a, is bounded by a constant times
+
+ exp[-(1/2)(|y|-log(rho))_+].                          (3.5)
+
+For complex t within the PSD logarithmic strip, the same bound holds
+with a fixed sector constant, by scalar resolvent estimates. Positive
+sinc quadrature therefore already gives a relative-correction factor
+with O(r[L+log log(2+rho)][L+log(rho)+log log(2+rho)]) width. This is
+a valid alternative, but the ADI argument below removes that extra
+loglog factor in the output width. We do not claim that (3.4) or
+the classical sinc quadrature principle is a new result by itself.
+
+4. A SINGULAR-ENDPOINT RELATIVE ADI RANK THEOREM
+================================================
+
+Theorem 4.1. Let A,B>=0, rank(B-A)<=r, and Lambda,d0 satisfy
+0<d0<=||sqrt(B)-sqrt(A)|| and max(||A||,||B||)<=Lambda. For any
+eps in (0,1) there is an explicitly specified rank <=kr matrix F with
+
+ ||F-Delta||<=eps||Delta||,
+       k=O(log(C/eps)[log(C/eps)+log(sqrt(Lambda)/d0)]).
+                                                           (4.1)
+
+It is obtained by classical low-rank ADI with elementary dyadic poles.
+The assertion allows singular endpoints. A symmetric signed factor
+has at most 2kr columns. No PSD-factor guarantee is asserted here,
+even when E>=0; the positive quadrature alternative is available if
+that output condition is essential.
+
+Proof. We give the stronger error allocation used for inexact actions.
+Set lambda=eps d0/8 and zeta=eps/8, M=sqrt(Lambda). Let h be the
+least nonnegative integer with 2^h lambda>=M. On the dyadic grid
+tau_i=2^i lambda, i=0,...,h, repeat ALL poles p times, where p is the
+least positive integer satisfying 3^(-p)<=zeta. There are
+
+       k=(h+1)p=O(L[L+log(M/d0)]),  L=log(C/eps).
+
+The counts, poles and p are computed by doubling, multiplication by
+three, and comparisons. A logarithm or elliptic-function oracle is
+not used. Define r_tau(x)=(x-tau)/(x+tau) and R(x)=prod_j r_tau_j(x).
+For x>=0, |R(x)|<=1. For lambda<=x<=M, one dyadic tau satisfies
+tau<=x<=2tau, so |r_tau(x)|<=1/3. Thus |R(x)|<=zeta on [lambda,M].
+
+Let L0 be the spectral projection of P on [0,lambda), H0=I-L0,
+and let L1,H1 be the corresponding projections for Qb. Because
+Delta=Qb-P,
+
+       ||L0 Delta L1||<=2lambda.                       (4.2)
+
+This estimate does not require P,Qb to commute: each of
+L0 Qb L1 and L0 P L1 has norm at most lambda. Decompose
+
+ R(P)Delta R(Qb)
+   = R(P)L0 Delta L1 R(Qb)
+       +R(P)H0 Delta R(Qb)+R(P)L0 Delta H1 R(Qb).
+
+The three norms are bounded by 2lambda,zeta d,zeta d. Therefore
+
+       ||R(P)Delta R(Qb)||<=2lambda+2zeta d<=eps d/2.   (4.3)
+
+For one pole, direct multiplication gives the classical ADI identity
+
+ Delta-r_tau(P)Delta r_tau(Qb)
+       =2tau(P+tau I)^(-1) E (Qb+tau I)^(-1).          (4.4)
+
+Set U_0=V_0=Q from (1.1). At each j define
+
+ L_j=(P+tau_j I)^(-1) U_(j-1),
+ R_j=(Qb+tau_j I)^(-1) V_(j-1),
+ U_j=U_(j-1)-2tau_j L_j,
+ V_j=V_(j-1)-2tau_j R_j.
+
+Then the explicit matrix
+
+       F=sum_(j=1)^k 2tau_j L_j C R_j^T              (4.5)
+
+has rank at most kr, and telescoping (4.4) proves
+Delta-F=R(P)Delta R(Qb). This proves (4.1), with the error margin
+in (4.3). The roots are presently analysis objects; Section 5 shows
+how to execute every action from the original raw factors.
+
+If F=P_f Q_f^T, its symmetrization is
+
+ (F+F^T)/2 = [(P_f+Q_f)/2][(P_f+Q_f)/2]^T
+                  -[(P_f-Q_f)/2][(P_f-Q_f)/2]^T.
+
+It has 2kr signed columns and no larger error to Hermitian Delta.
+Scalar factors C can simply be absorbed into P_f in (4.5). QED.
+
+The low-low estimate (4.2) is the substantive added qualification over
+using a separated-spectrum displacement theorem literally: the two
+positive root spectra may meet at zero. The raw Sylvester/ADI identity
+and pole-product mechanism are classical and explicitly credited.
+
+5. EXECUTING THE ADI FACTORS WITHOUT SUPPLIED ROOT ACTIONS
+========================================================
+
+For any PSD S and tau>0, scalar Stieltjes calculus gives
+
+ (sqrt(S)+tau I)^(-1)
+       =(1/pi) int_0^infinity
+            sqrt(t)/(t+tau^2) (S+tI)^(-1)dt.            (5.1)
+
+This follows, for example, by partial fractions after t=u^2 in the
+scalar integral; it remains valid at S=0. All kernels are positive.
+On t=tau^2 exp(y), the norm of the logarithmic integrand is bounded by
+
+       [1/(pi tau)] exp(y/2)/(1+exp(y))
+            <=[1/(pi tau)]exp(-|y|/2).                 (5.2)
+
+It is analytic in |Im y|<pi, with the corresponding sector constants.
+Fixing the half-width pi/2 and using the elementary infinite trapezoid
+error plus tail truncation constructs a common symmetric linear
+operator Fhat_(S,tau) with
+
+ ||Fhat_(S,tau)-(sqrt(S)+tau I)^(-1)||<=eta/tau          (5.3)
+
+using O(log^2(C/eta)) positive shifted inverse nodes. All retained
+logarithmic nodes satisfy |y|<=C log(C/eta), and the mesh is the
+reciprocal of an integer of order log(C/eta), times a fixed rational
+approximation to pi^2. The total scalar accuracy is obtained with
+positive nodes and weights by the Taylor/repeated-squaring procedure
+already explicitly proved in the existing update paper. At alpha=1/2
+only field operations and scalar square roots are used. No polynomial
+root-extraction primitive occurs in this step.
+
+For clarity, errors in the physical S resolvents can be charged simply:
+if every common inverse node has norm error <=nu/t, the sum in (5.1)
+has error at most Cnu/tau, since its positive norm-envelope quadrature
+mass is bounded independently of S and tau. Choose nu<=c eta after
+a constant scalar/truncation error allocation. The A inverse is (1.2).
+For B, (1.5) supplies the same requested absolute nu/t error by making
+the A inverse precision smaller by a fixed polynomial in 1+a/t.
+
+Every ADI pole satisfies lambda<=tau<=2M. By (3.1),
+
+       lambda^2/a=eps^2/(64rho),
+       M^2/a=Lambda/a=rho/(4r).
+
+Thus every shifted solve in (5.1) has
+
+       |log(t/a)|=O(log(C/eps)+log(rho)+log(C/eta)).     (5.4)
+
+The necessary core invertibility and inverse precisions are achieved
+with fixed iteration counts polynomial in these logarithms. They
+never require a smallest nonzero spectral value. Reuse ONE OSE of X;
+its event controls all these nodes and adaptive RHS uniformly.
+
+We spell out propagation through ADI to avoid treating approximate
+root actions as exact oracles. Use in (5.3) the same tolerance
+
+       eta=eps^2/[10^6 rho (k+1)^2].                   (5.5)
+
+The exact Cayley operators I-2tau(sqrt(S)+tau I)^(-1) have norm<=1.
+Each computed Cayley differs by norm<=2eta. Therefore the computed
+U_j,V_j in (4.5) have norm<=2 and errors <=4k eta, by multiplying
+1+2eta over at most k stages. Every inverse-action block L_j,R_j
+then differs from its exact counterpart by at most
+6(k+1)eta/tau_j. Expanding a factor product in (4.5) shows that its
+computed term differs by at most 36 a(k+1)eta/tau_j. Summing gives
+
+ ||Fhat-F||<=36a k(k+1)eta/lambda
+       <=72a(k+1)^2 eta/lambda
+       <eps d0/2.                                    (5.6)
+
+Equations (4.3),(5.6) give ||Fhat-Delta||<=eps d. The resulting
+factor width is EXACTLY kr before symmetrization; the quadrature
+stages used to compute actions do not multiply its output width.
+
+Combining (1.2)--(1.5),(5.1)--(5.5), the full conventional work is
+
+       (Nmr+m^3) polylog(N,m,r,1/eps,1/delta,rho).      (5.7)
+
+Storage includes the OSE/core workspace and Nkr output. Forming all
+dense output entries adds O(N^2 kr). No precomputed base root,
+endpoint eigendecomposition or free Sylvester solver was used.
+
+6. A DETERMINISTIC BACKEND WITH NO m^3 SETUP IN A USEFUL CLASS
+================================================================
+
+Let D=diag(||X_:1||^2,...,||X_:m||^2). Drop zero columns. Promise
+
+       (3/4)D <= X^T X <= (5/4)D.                     (6.1)
+
+Its cost to construct D is O(Nm). This is a structural promise on
+the supplied raw factors, not something we verify for free. It permits
+arbitrarily unequal column norms and hence arbitrarily large kappa(X).
+It permits N=m and algebraically full-rank A, or N>m and singular A.
+
+Use G0=D in the existing paper's PSD inverse construction. The coarse
+matrix D+tI is diagonal. Every preconditioned polynomial step costs
+O(Nmr) on an r-column block; there is no dense m-dimensional solve,
+Gram formation or OSE. Since the relative error of G to D is <=1/4,
+the same symmetric even Neumann proof gives (1.2) for every t>0 in
+O(log(1/nu)) steps. All assumptions for (1.3)--(1.5) remain valid.
+
+Consequently the algorithms of Theorems 2.1 and 4.1 can be executed
+deterministically in
+
+       Nmr polylog(N,m,r,1/eps,rho)                    (6.2)
+
+work (the bounded-spectrum update-scale theorem has no rho logarithm
+under a fixed supplied R). Small update-core work r^3 is absorbed in
+Nmr because r<=m<=N. Dense expansion is additional O(N^2 width).
+For N=m, fixed r and at most polynomial scale ratios, this is ordinary
+~O(N^2) arithmetic including every output entry. The qualification
+(6.1) is essential; this does NOT imply omega=2 or cover arbitrary X.
+
+Diagonal preconditioning and fast shifted solves for such matrices
+are standard. The point of recording this class is to give a clear
+charged setting where the new relative/singular-endpoint guarantee
+has no cubic preprocessing, not to claim a new preconditioner.
+
+7. LOWER CHECK ON THE SCALE DEPENDENCE
+=====================================
+
+The existing sqrt-update-sota-audit.txt, Section 5(c), gives for every
+n a positive rank-one update of an SPD diagonal base such that every
+rank<n approximant to the root correction has relative error >1/2.
+In its notation P=diag(R^i), A=P^2, E=tau u u^T with
+u_i=sqrt(2R^i), R>=289 and tau=1/10. Its correction has eigenvalues
+between positive constants times tau independent of n. Meanwhile
+Lambda is of order R^(2n), a is of order tau R^n, and hence
+
+       log(rho)=Theta(n).                              (7.1)
+
+Thus a rank bound independent of rho is impossible, already at fixed
+relative error, rank-one PSD update and diagonal base. The O(log rho)
+dependence in (4.1) at fixed eps has the correct order for this family.
+This is not a universal optimality statement for all two-parameter
+regimes; constants and the joint dependence on eps remain open.
+
+8. PRIMARY-SOURCE COMPARISON AND NOVELTY STATUS
+================================================
+
+Fresh web searches were made for relative square-root corrections,
+singular-endpoint ADI, fractional updates, and recent randomized
+preconditioners. The closest inspected primary statements are:
+
+[SDA] Shmueli, Drineas, Avron, Low-rank updates of matrix square roots,
+Numerical Linear Algebra with Applications 31 (2024), e2528, first
+online 2023. https://doi.org/10.1002/nla.2528
+https://arxiv.org/abs/2201.13156
+Its final Theorem 1 derives relative singular-value decay through a
+Sylvester equation and a separated-spectrum rational estimate. The
+displayed parameter includes lambda_min(A)>0. Its algorithms use root
+actions and a low-rank Riccati solver. The source already recognizes
+E=P Delta+Delta Qb; that identity is NOT new here. The bound in
+Theorem 4.1 instead admits zero endpoints and replaces a spectral
+minimum by the correction-scale cutoff and norm ratio. Section 5 is
+needed to turn this difference into a from-scratch raw-input algorithm.
+
+[BT] Beckermann, Townsend, On the Singular Values of Matrices with
+Displacement Structure, SIMAX38 (2017),1227--1248; expanded SIAM
+Review61 (2019),319--344. https://arxiv.org/abs/1609.09494
+https://doi.org/10.1137/16M1096426
+The rational-displacement rank mechanism and relative singular-value
+consequences are classical. This is a major priority antecedent for
+Theorem 4.1, not merely a generic citation. Our proof reconstructs the
+needed identities directly and adds the special low-low estimate
+using Delta=Qb-P when the positive spectra meet at zero.
+
+[BCKS] Beckermann, Cortinovis, Kressner, Schweitzer, Low-rank updates
+of matrix functions II: Rational Krylov methods, SINUM59 (2021),
+1325--1347. https://arxiv.org/abs/2008.11501
+https://doi.org/10.1137/20M1362553
+Mixed polynomial/rational Krylov spaces, exactness and matrix-function
+update projection are established. The high-shift common-span idea in
+Section 2 belongs to that framework. No novelty for polynomial Krylov
+or rational low-rank exactness is asserted. The new conclusion here
+is the constructive optimal leading bounded-spectrum matrix width,
+with the raw-factor operation count retained.
+
+[FTU] Frangella, Tropp, Udell, Randomized Nystrom Preconditioning,
+SIMAX44 (2023),718--752. https://arxiv.org/abs/2110.02820
+https://doi.org/10.1137/21M1466244
+Effective dimension controls constant-quality PSD shifted-system
+preconditioning; adaptive versions are already provided. Thus simply
+substituting a low-effective-rank preconditioner is not a novel solver.
+That alternative was not promoted as the main new result here.
+
+The updated primary searches did not locate an identical stated
+singular-endpoint raw-factor/relative-correction theorem. This bounded
+negative search does NOT establish novelty or all-method SOTA. The
+precise cutoff argument is short once found and could exist elsewhere.
+External expert review and a broader priority search remain necessary.
+
+No result here establishes general O(N^2) raw dense matrix multiplication
+or removes cubic preprocessing for arbitrary raw X. At N=m the general
+backend in (5.7) is still cubic, while (6.2) has an explicit input promise.
+
+9. VERIFICATION STATUS
+=======================
+
+All displayed algebra and cost dependencies were checked by the author.
+The existing manuscripts/audits are imported ONLY at the specified
+precise lemmas and algorithms. This note is new and has not yet been
+independently reviewed. No numerical experiment is a proof of the sharp
+constants, operator cutoff estimate or exact arithmetic complexity.
+
+Finite diagnostic check, NumPy2.5.3, seed20261115: 21 cases at dimensions
+3 through9 covered singular positive bases/positive updates, critical
+rank-one downdates, and signed rank-two updates. Explicit root ADI was
+compared with Delta-R(P)Delta R(Qb). Worst relative telescoping residual
+was 3.646e-12; every approximation met the requested relative error0.3
+(largest observed relative error1.531e-7). A scalar Stieltjes quadrature
+check at tau=0.1,1,10 and x=0,1e-10,0.2,1,1000 gave maximum relative
+error2.274e-10. These checks detect orientation/normalization mistakes;
+they do not verify the raw backend, asymptotic ranks or finite-word
+stability. The displayed proofs, not these diagnostics, support the
+theorems.
+

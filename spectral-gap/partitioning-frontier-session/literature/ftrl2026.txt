@@ -1,0 +1,1978 @@
+                                        Flow-Optimal Separators for Minor-Free and Induced-Minor-Free
+                                            Graphs in Linear Time via Follow the Regularized Leader
+                                                                           Hung Le*               Jack Spalding-Jamieson†
+
+
+                                                                                                  Abstract
+
+
+
+
+arXiv:2611.05756v1 [cs.DS] 3 Nov 2026
+                                                 We give a new algorithm for finding balanced separators for minor-free and induced-minor-free graphs. A key
+                                              new technical idea is a novel connection to online learning: we design a continuous (non-convex) optimization
+                                              problem and solve it using the Follow the Regularized Leader (FTRL) framework. Our implementation of each
+                                              FTRL step yields a purely combinatorial algorithm which simply assigns and adjusts vertex weights over multiple
+                                              rounds. As a result, we obtain:
+                                                                                                                                      p                   p
+                                                1. a balanced separator of an H-induced-minor-free graph of size O(log(|V (H)|) |V (H)| + |E(H)| m) in
+                                                   expected linear time for a fixed H. As a corollary, we obtain an algorithm to find a balanced separator for
+                                                                            p
+                                                   string graphs of size O( m) in expected linear time without requiring the string representations of the
+                                                   graphs.
+                                                                                         p
+                                                2. a balanced separator of size O(h log h n) for Kh -minor-free graphs in expected linear time for a fixed h. Our
+                                                   algorithm unifies two long lines of work on separators for minor-free graphs since Alon, Seymour, and
+                                                   Thomas [AST90]: one optimizes for the separator’s size, and the other optimizes the running time. It also
+                                                   gives a natural interpretation of the vertex weighting scheme in a recent linear-time algorithm by Bonnet,
+                                                   Korhonen, Le, Li, and Masařík [BKL+ 26].
+                                                  The separator bounds for both classes of graphs are flow-optimal: techniques that rely on flow-cut duality,
+                                              including ours, cannot give balanced separators of (asymptotically) smaller size.
+
+                                              AI Disclosure. The key high-level ideas, especially the online learning perspective, of this work were human-
+                                              devised, but many of them were fleshed out and developed using LLM assistance. GPT 5.5 and GPT 5.6-Sol played
+                                              useful roles in our initial developments for the presentation using FTRL, while GPT 6-Astra improved our initial
+                                              running time in Section 6. Other models, namely GPT 6.1-Sol and Claude Opus 5.5 have been used to proofread.
+                                              The presentation and the write-up are by the human authors only. Of course, we take full responsibility for our
+                                              results.
+
+
+                                        1    Introduction
+                                        Separator theorems are cornerstones of modern algorithmic graph theory. They facilitate divide-and-conquer
+                                        algorithms on graphs, a basic technique in algorithm design. Furthermore, research in separator theorems often
+                                        reveals deep and unexpected connections between different areas of math and computer science, some of which
+                                        we will mention here.
+
+                                        Balanced separators of sparse graphs. In 1979, Lipton and Tarjan [LT79] constructed a balanced separator of
+                                               p
+                                        size O( n) for n-vertex planar graphs, and showed various algorithmic applications of their result [LT80]. Their
+                                        main technique is to use the duality of the (planar) embedding, which was also used in a subsequent (and more
+                                        general) balanced separator result for surface-embedded graphs [GHT84]. A decade later, Alon, Seymour and
+                                        Thomas [AST90] showed how to get around using (planar or surface) embeddings and constructed a balanced
+                                          * University of Massachusetts Amherst. hungle@cs.umass.edu. Supported by the NSF CAREER award CCF-2237288 and the NSF grant
+                                        CCF-2517033.
+                                          †
+                                            Independent. jacksj@uwaterloo.ca
+
+
+                                                                                                      1
+                                                        p                  p
+separator for any Kh -minor-free graph of size O(h3/2 n) in time O(m hn). Both the (dependence on h of the)
+separator size and the running time are not optimal, and have hence motivated two long lines of work that remain
+active to this day.
+                                                                 p
+    One line of work seeks to reduce the separator size to O(h n), while treating the running time as a secondary
+concern. Kawarabayashi and Reed [KR10] used Robertson-Seymour decomposition and claimed to obtain a
+                       p
+separator of size O(h n + f (h)) for some function f of h. At around the same time, Biswal, Lee and Rao [BLR10]
+devised a new technique for constructing balanced separators via a connection to flow-cut duality. Though their
+separator’s size is worse than that of Alon, Seymour and Thomas [AST90], subsequent results [Spa25, Le26]
+followed this technique, along with recent advances with padded decomposition for Kh -minor-free graphs by
+                                                                                                   p
+Conroy and Filtser [CF25], to bring the separator size to a nearly-optimal bound of O(h log h n). This bound is
+                                                                                     p
+optimal for a class of techniques relying on flow-cut duality and hence O(h log h n) becomes a barrier. Recently,
+Le [Le26] broke this barrier by combining two combinatorial approaches of Alon, Seymour and Thomas [AST90]
+and Plotkin, Rao, and Smith [PRS94]. During the final stages of our own work on this paper, this line of work was
+fully resolved by a superset of the authors on this paper, with AI assistance, by building on Le’s techniques [CLS26].
+However, a common theme in this entire line of work is that the running time does not improve on that of Alon,
+Seymour and Thomas [AST90]. It is possible that heavy machinery from recent dynamic graph algorithms could
+improve the running time, though it is unclear what new insights one could gain. Often, a lack of good running-time
+bounds points to our lack of structural understanding of minor-free graphs.
+    A second line of work focuses mostly on the regime of h = O(1) and aims to improve the running time to linear,
+often at the cost of a larger separator, both in terms of h and n. Reed and Wood [RW09] gave the first linear-time
+algorithm for finding a balanced separator of size Oh (n2/3 ). However, the dependence on n is not optimal. And the
+dependence on h in both the running time and the separator’s size is 2O(h ) , so even a very small value of h, say
+                                                                               2
+
+
+h = log(n), makes both extremely large. For linear-time algorithms, this algorithm remained the state of the art
+until very recently; Bonnet, Korhonen, Le, Li, and Masařík [BKL+ 26] gave an O(poly(h) · n) time algorithm that
+                                      p
+gives a separator of size O(poly(h) · n). Their algorithm achieves optimal dependence on n while losing only a
+poly(h) factor instead of an exponential factor in h. Notably, they introduce a novel technique for constructing
+balanced separators: it assigns weights to the graph’s vertices, and at each step, if the algorithm fails to output a
+balanced separator, it adjusts the vertex weights for the next step. On the other hand, the poly(h) factors in both
+the running time and the separator’s size are quite large: O(h13 ).
+    The two aforementioned lines of work, while productive in pursuing their own goals, diverge in their techniques
+and bounds: either the running time is too big (even for a fixed h) or the separator size is too big. Achieving the
+best of both is left as an open problem by Bonnet et al. [BKL+ 26]:
+
+Question 1. Can we construct a balanced separator of (nearly) optimal size in time O(poly(h)n) for Kh -minor-free
+graphs?
+
+    At the conceptual level, Question 1 asks for a unification of the two long lines of work on separators for
+Kh -minor-free graphs over the last few decades.
+    Beyond minor-free graphs, Plotkin, Rao, and Smith [PRS94] introduced the notion of shallow minor-free
+graphs. Roughly speaking, Kh is an ℓ-shallow minor of G if the minor model of Kh in G can be formed from
+(disjoint) subgraphs of radius at most ℓ. Plotkin, Rao, and Smith [PRS94] adapted the separator theorem of
+Alon, Seymour, Thomas [AST90] to show that ℓ-shallow Kh -minor-free graphs have balanced separators of size
+O(n/ℓ + ℓh2 log n). The concept of shallow minors and the Plotkin-Rao-Smith separator theorem are the basis
+of the (award-winning) theory of graph sparsity by Nešetřil and Ossona de Mendez [NOdM12]. One key result,
+among others, in this theory is a precise characterization of the classes of graphs that have strongly sublinear
+separators of the form O(n1−α ) for a constant α ∈ (0, 1) [NOdM12, DN16, ER18]: these are exactly graphs with
+polynomial expansion1 .
+
+Balanced separators for dense graphs. The graph classes mentioned so far are sparse: for instance, every
+n-vertex Kh -minor-free graph has O(n) edges, where big-O hides the dependency on the class parameter. Many
+  1
+      We refrain from defining this terminology, as it requires non-trivial effort.
+
+
+
+                                                                          2
+structural graph classes of practical interest are dense. For example, unit disk graphs, which are the intersection
+graphs of unit disks on the plane, can contain a large clique. This example is generalized by the class of all
+geometric intersection graphs in the plane, also known as string graphs. Despite their density, string graphs are
+  (1)                                         (1)
+K5 -induced-minor-free [ABPT25], where K5 is the graph obtained from K5 by subdividing each edge once. Here,
+a graph H is an induced minor of a graph G if H can be obtained from G by a sequence of vertex deletions and
+edge contractions2 . In a remarkable recent work, Korhonen and Lokshtanov [KL24] gave a separator theorem for
+all induced-minor-free graphs.
+
+Theorem 1 (Korhonen and Lokshtanov [KL24]).        Any H-induced-minor-free graph G with n vertices and m
+                                              p                p
+edges has a balanced separator of size O(log n |V (H)| + |E(H)| m) that can be constructed in polynomial time.
+         p
+    The m factor is best possible: Kn has m = Θ(n2 ) edges, and every balanced separator of Kn has size
+            p
+Ω(n) = Ω( m). Their proof introduced a novel flow-based technique that also yielded the nearly optimal bound
+for balanced separators of minor-free graphs via the flow-based techniques mentioned above [Le26]. In the same
+paper, Korhonen and Lokshtanov [KL24] gave many algorithmic applications of Theorem 1; see Corollary 1.2
+of [KL24]. In these applications, computing the balanced separator is the first step. However, though polynomial,
+the running time is far from linear because it requires computing a concurrent flow between Ω(n2 ) pairs of vertices.
+A recentpwork [DRSW27] improved the separator size by Korhonen and Lokshtanov [KL24] to O(log(|V (H)| +
+                            p
+|E(H)|) |V (H)| + |E(H)| m) which is also nearly optimal. The key new idea in this work [DRSW27] is an
+embedding of vertex-weighted induced-minor-free graphs into the line with a small average distortion. In other
+words, a direct (vertex) flow-cut gap bound. Such an embedding can be used to replace a padded decomposition
+subroutine in the work of Korhonen and Lokshtanov [KL24]. The techniques of both works run in polynomial time
+(for a relatively large polynomial), so the overall question of fast running time for such results remains:
+                                                                                             p                 p
+Question 2. Can we construct a balanced separator of (nearly) optimal size O(log |V (H)| |V (H)| + |E(H)| m)
+in time O(poly(|V (H)|)(m + n))?
+
+
+1.1       Our results
+Our main results affirmatively answer both Question 1 and Question 2: we give linear-time algorithms for finding
+nearly-optimal balanced separators of both Kh -minor-free graphs (for a fixed h) and H-induced-minor-free graphs
+(for a fixed graph H).
+
+Theorem 2. Let G be Kh -minor-free with n vertices and m edges. There
+                                                                     is a randomized algorithm that returns a
+                                        p
+3/4-balanced separator of size O(h log h n) in expected O h7 (m + n) time.
+
+
+Theorem 3. Let G be H-induced-minor-free with n vertices
+                                                      p     and m edges. There is a randomized algorithm   that
+returns a 3/4-balanced separator of size O(log |V (H)| m(|V (H)| + |E(H)|)) in expected O |V (H)|7 (m + n) time.
+
+    Our Theorem 2 not only answers Question 1 but also unifies the two lines of work on balanced separators for
+minor-free graphs since Alon, Seymour, and Thomas [AST90]. Each of our separator sizes are only log h away
+from the optimal bound, and both are optimal for techniques that rely on flow-cut duality, including ours. In
+particular, both are tight for 3-regular expander graphs, which are KΩ(pn) -minor-free. Table 1 compares our results
+with previous work.
+    Both of our results are based on the same set of underlying ideas. At a very high level, our approach may
+seem quite standard: We devise a continuous optimization problem, which we solve using an online learning
+algorithm. In the course of executing this online learning algorithm, we may terminate early to output a separator.
+If we never terminate early, we instead certify the existence of a minor or induced-minor. This kind of approach
+is quite similar to many existing approximation algorithms for graph partitioning (e.g. [AK16, LTW24, KS26b]).
+However, there are two key differences that prevent us from using much of the existing machinery: The continuous
+  2
+      If we also allowed edge deletions in the sequence, then H would be a minor of G.
+
+
+
+                                                                     3
+                          Sparse Graphs                                                        Dense Graphs
+
+ Year   Reference     Separator size           Running time               Year   Reference    Separator size           Running time
+                       Kh -minor-free graphs                                                    String graphs
+                            p                    p
+1990    [AST90]       O(h3/2 n)              O(m hn)                             [FP10]
+                                                                                                     p
+                                                                          2010                O(m3/4 log m)            Not stated
+        [PRS94]                                                                                 p
+                         p                        p
+1994                  O(h n log n)           O(hm n log n)                2014   [Mat14]      O( m log m)              poly(n)
+        [BLR10]                                                                                 p
+                           p
+2008                  O(h3 n log h)          poly(n)
+                         2                         2                      2017   [Lee17]      O( m log m)              poly(n)
+2009    [RW09]        2O(h ) n2/3              2O(h ) n                                         p
+                          p                                               2026   [DRSW27]     O( m)                    poly(n)
+2010    [KR10]∗       O(h n + f (h))           O(g(h)n1+ϵ )                                     p
+                                                                          2026   [KS26b]      O( m)                    O((m + n)1+ϵ )
+2011    [Wul11]       O(poly(h)n4/5+ϵ )        O(poly(h)n)                                      p
+                                                                              This paper      O( m)                    O(m + n)
+        [Wul11]                                O(poly(h)n5/4+ϵ )
+                         p
+2011                  O(h n log n)
+                                         p
+2025    [Spa25]   †
+                      O(h log h log log h n)   poly(n)                      H-induced-minor-free graphs, hV = |V (H)|, h E = |E(H)|
+                          13 p
+2026    [BKL+ 26]     O(h      n)              O(h13 n)
+                                                                          2024 [KL24]        O( (hV + h E )m log n)
+                                                                                               p
+                                p                                                                                      poly(n)
+2026    [Le26]        O(h log h n)             poly(n)
+                                                                          2026 [DRSW27] O( (hV + h E )m log hV ) poly(n)
+                                                                                               p
+        [Le26]                                 O(h log h n2 + h4 m)
+                          p                        p
+2026                  O(h n log h)
+                                p                                                            O( (hV + h E )m log hV ) O(h7V (m + n))
+                                                                                               p
+2026    [KS26b]       O(h log h n)             O((m + n)1+ϵ )                This paper
+                          p
+2026    [CLS26]       O(h n)                   Not stated
+                                p
+    This paper        O(h log h n)             O(h7 (m + n))
+
+Table 1. Balanced separator bounds for graphs with n vertices and m edges. Here ϵ > 0 is an arbitrary fixed constant, and f (h), g(h)
+are fast-growing functions from the graph minor structure theorem. Our running times are in expectation. ∗ Full proof unavailable (see
+[BKL+ 26, Le26] for more nuanced discussions). † A corollary, distinct from the main algorithm the paper studies.
+
+
+
+optimization problem we devise is non-convex, and the online learning algorithm we employ has not yet seen any
+use in combinatorial approximation algorithms or graph partitioning (to our knowledge).
+    We discuss the online learning algorithm first. To design our algorithms, we introduce a new approach based
+on the follow the regularized leader (FTRL) framework, a well-studied technique in online learning and convex
+optimization. For readers who are not familiar with online learning and FTRL, we give a very short primer in
+Section 3.1 by outlining basic ideas in the FTRL framework. A very short summary is: learning happens in T
+rounds, where in each round t, a learner has to output a vector x t ∈ X ⊆ Rd , and suffers a loss ℓ t (x t ) for a loss
+function ℓ t : X → (−∞, +∞] that the learner does not know. (X is the domain.) In future rounds, the learner
+gets access not just to the previous losses, but also their gradients. The learner’s goal is to minimize regret, defined
+as the difference between the learner’s cumulative loss and the cumulative loss of the best fixed vector in hindsight.
+The FTRL framework would tell the learner how to choose x t based on the previous choices x 1 , . . . , x t−1 and the
+loss functions at previous steps ℓ1 (x), . . . , ℓ t−1 (x). In online learning, the loss functions are chosen by an online
+adversary. FTRL itself is a generalization of many popular online learning algorithms, including multiplicative
+weight update and matrix multiplicative weight update. However, the specific instantiation of FTRL that we will
+employ is not captured by these special cases.
+    Essentially any constrained convex optimization problem can be set up as a two-player min-max game via
+Lagrangian duality, so online learning is also frequently employed as a method for solving convex optimization
+problems. Since solutions to convex relaxations of combinatorial problems can often be rounded to approximate
+solutions of the original combinatorial problems, one may expect that this is the methodology with which online
+learning is employed for approximation algorithms. However, doing things in this manner does not make use
+of the special characteristics of online learning. Instead, many fast approximation algorithms use the idea of
+early termination: Perform a learning game over the course of (at most) T rounds between a learner and an
+adversary, where the adversary has the option of terminating the entire game prematurely and outputting a
+desired combinatorial solution (see e.g. [AK16, LTW24, KS26b]). In such games (including all the examples),
+the adversary will also often use loss functions with some helpful properties like sparse gradients, in order to
+reduce the computational overhead of the learner. This is often done in order to reduce the time complexity of the
+learner from a large polynomial to near-linear (per-round). If the learning game completes all T rounds, such
+approaches then certify a lower bound on the value of the problem. These lower bounds are guaranteed via duality
+
+
+                                                                      4
+and standard regret guarantees. Our algorithm shares a number of similar ideas with such works. However, unlike
+the cited works, our objective will not simply follow as a natural convex relaxation of a combinatorial problem. In
+fact, as previously mentioned, it will not be convex at all, which means duality and standard regret guarantees
+will not help us in proving our results.
+     At a high level, our goal, which is also our major conceptual contribution, is to set up an online learning game
+with early termination such that, for a suitable choice of T and the loss functions, learning over T rounds yields an
+early termination with a balanced separator in one of the rounds. We break this goal into three concrete steps.
+(Step 1) Formulating a (new) continuous optimization problem Fµ,ι (λ) that captures the balanced separators. (For
+now, the parameters µ and ι are not important.) Our formulation also relies on flow-cut duality. Unlike typical
+optimization problems solved via FTRL, the variable λ in our problem has an exponentially large dimension, and
+Fµ,ι (λ) is non-convex. (Step 2) Modeling the continuous optimization problem as an online learning problem.
+(Step 3) Implementing each round of the online learning using the FTRL framework. As we mentioned in Step
+1, our optimization has an exponential number of dimensions, so we cannot simply follow the standard FTRL
+template, specifically the step of designing the loss function ℓ t . Here, we simplify the problem greatly to derive a
+proxy (and simpler) optimization problem Gµ,ι (λ). A key technical innovation that we want to highlight here is
+that we can relate ∇Gµ,ι (λ), the gradient of Gµ,ι (λ), to the (vertex-weighted) graph radius, from which we can
+implement each FTRL round by doing a simple low-diameter decomposition on the input graphs. We will give a
+more detailed exposition of these steps in Section 1.2 below.
+     We mentioned above that the linear-time algorithm for minor-free graphs by Bonnet et al. [BKL+ 26] is obtained
+through a novel technique that assigns weights to the graph’s vertices. As the algorithm proceeds through Θ(h2 )
+iterations, it adjusts the vertices’ weights and outputs the separator in one of the iterations. Their vertex-weighting
+scheme is perhaps the most innovative part of their paper, yet also the most mysterious. Our paper is inspired by
+this weighting scheme, but we go one step further: by making a connection to the FTRL framework, the weighting
+scheme arises naturally from Step 3, where we design the loss function ℓ t . Our resulting weighting scheme is
+indeed simpler and more efficient: we can improve the running time from O(h13 n) [BKL+ 26] to O(h7 (m + n))
+                                                                                p
+without any additional effort, while improving the separator size from O(h13 n) [BKL+ 26] to nearly optimal as in
+Theorem 2.
+
+
+1.2    Technical overview
+We now describe the ideas leading to our algorithm, which uses a learning game with early termination.
+
+Step 1: Designing an objective. Our objective will be inspired by three related concepts: An existing probabilistic
+path bound, subset flow problems, and the stochastic connectors of Bonnet et al. [BKL+ 26].
+    Our starting point is a key component of Korhonen and Lokshtanov’s proof of Theorem 1. They gave a bound
+on a vertex-variant of the L∞ -concurrent flow problem studied by Leighton and Rao [LR99], which routes one unit
+of flow between every pair of vertices, and seeks to minimize the maximum “congestion” (sum of flows) through
+any vertex. The maximum congestion is itself called the L∞ congestion, hence the name “L∞ -concurrent flow
+problem”. This problem had been bounded for many classes in earlier works [BLR10, Mat14, Lee17]. However,
+almost all these prior bounds were based on various combinatorial methods and were inherently suboptimal as
+a result. Korhonen and Lokshtanov instead used a probabilistic construction, essentially proving the following
+intermediate result.
+
+Proposition 1 (adapted from [KL24, proofs of Lemmas 4.2–4.4]). Let H be a nonempty graph and G an H-
+induced-minor-free graph. Sample u, v independently from a probability distribution π on V (G), then sample a
+simple u–v path P from any fixed distribution for that ordered pair. If u = v, take P = {u}. For an independent
+copy P ′ , we have
+                                                                                       c1
+                     Pr[P and P ′ share a vertex or are joined by an edge] ⩾                    ,
+                                                                               |V (H)| + |E(H)|
+
+where c1 > 0 is an absolute constant.
+
+
+                                                          5
+   Later, Le [Le26] and then Kolbe and Spalding-Jamieson [KS26a] used variations of this argument for minor-free
+graphs as well, essentially proving the following.
+
+Proposition 2 (adapted from [KS26a, proof of Proposition 3.2]). Let G be a Kh -minor-free graph, where h ⩾ 3,
+and let π be a probability distribution on V (G). Sample u, v independently from π, then sample a simple u–v path
+P from any fixed distribution for that ordered pair. If u = v, take P = {u}. For an independent sample P ′ resulting
+from the same process,
+                                                                       c0
+                                            Pr[V (P) ∩ V (P ′ ) ̸= ∅] ⩾ 2 ,
+                                                                       h
+where c0 > 0 is an absolute constant.
+
+    Both of these propositions will come up again later in our work, but for now we will use them only as general
+ideas. Korhonen and Lokshtanov and Le used these ideas to bound the L∞ -concurrent flow problem, while Kolbe
+and Spalding-Jamieson used them to bound the L2 -concurrent flow problem initially studied by Biswal, Lee, and
+Rao [BLR10]. All of these bounds use the propositions in a straightforward manner: Assume the existence of a
+concurrent flow bypassing the claimed bound, sample u, v from V uniformly, and then sample a path from u to v
+using the flow values, obtaining a probability below the lower bounds in the propositions.
+    Kolbe and Spalding-Jamieson also lifted their bound to get a more general bound on the L2 -subset flow problem
+initially studied by Kelner, Lee, Price, and Teng [KLPT11]. Subset flow problems (which are dual to “spreading
+metric” problems), are generally relaxations of balanced separator problems (see e.g. [ENRS99]), so they are a
+natural tool to try and use for finding balanced separators. These problems can be formulated as follows, for a
+value 1 ⩽ r ⩽ n, and various definitions of congestion:
+                                                                     X                
+                           min                          congestion             λ(A) FA
+                       λ: ( r )→R⩾0
+                            V
+                                                                       A∈( r )
+                                                                          V
+        FA a multicommodity flow in G for every A∈( r )
+                                                   V
+
+                                                         X
+                                        subject to              λ(A) = 1,
+                                                        A∈( r )                                                                 (1)
+                                                           V
+
+
+                                                                     1
+                                                                                              
+                                                                                               V
+                                                        FA[u, v] = 2           for every A ∈      and u, v ∈ A,
+                                                                     r                         r
+                                                                                            
+                                                                                             V
+                                                        FA[u, v] = 0         for every A ∈       and u, v ∈ V with {u, v} ̸⊆ A,
+                                                                                             r
+where F [u, v] denotes the amount of flow that a multicommodity flow F sends between u and v. This is equivalent
+to the form used by Kelner, Lee, Price, and Teng, but the form here is much more relevant to our purposes. In
+particular, these kinds of flows are quite similar to what we will use, while the objective we will use will be more
+directly inspired by the goal of leveraging the propositions.
+    The last ingredient is a slight modification of these subset flows inspired by Bonnet et al.’s “stochastic connec-
+tors” [BKL+ 26]. They define a stochastic connector as a collection of rooted trees, each containing a large number
+of vertices, so that the collision probability of rooted paths on distinct trees is bounded. While we will not leverage
+the specific parametrization of their definition, it turns out that this general idea is exactly what we need: Rooted
+trees can be viewed as a naturally structured variant of the flows FA in Eq. (1) that are easy to work with and
+compute. The analogous flows here are those between pairs of vertices on the rooted tree, and they are sent only
+along the tree itself. Moreover, collision probability is exactly what will allow us to leverage Propositions 1 and 2.
+    That said, rooted trees alone are not quite the right analogue, since they are slightly too restrictive. Instead, we
+define the idea of a wide connector: A rooted tree containing a subset of 3n/4 specified terminals. The flows we use
+to sample our paths will then be the root-to-terminal paths, rather than all rooted paths.
+    Altogether, this would give us an objective, defined over wide connectors, given by the probability of the two
+different kinds of collisions bounded in Propositions 1 and 2 (with the two parameters controlling how to weigh
+the two kinds of collision). To simplify bookkeeping, we define our objective Fµ,ι as a maximization problem
+capturing only the probability of collisions between distinct wide    P connectors, while also incorporating a term
+serving as an analogue to the total cost sum constraint in Eq. (1) ( λ(A) = 1). An extra constraint is also required
+
+
+                                                                6
+so that our online learning algorithm is able to make sufficient forward progress (an analogue of “width” in many
+common learning algorithms). The precise choice is given in Section 3.2.
+
+Step 2: Formulating an online learning problem. We formulate the two players of the learning game as follows.
+In each round t, the learner plays a vector λ t of weights over all wide connectors, and the adversary responds with
+a loss function. We constrain the game so that, at each round t, λ t has weight updates induced by at most one
+new wide connector (in fact, up to normalization only one entry changes), or the game is terminated early with a
+small balanced separator. If too many rounds complete (O(h2 ) for Kh -minor-free graphs, O(|V (H)| + |E(H)|) for
+H-induced-minor-free graphs), an application of either Proposition 2 or Proposition 1 will be used to prove that
+the graph contains a minor or induced-minor, respectively.
+
+Step 3: Implementing each round of the online learning problem using the FTRL framework. It remains
+to discuss several implementation details. First, during the course of the algorithm, we maintain the list of
+wide connectors C t played so far, as well as a load vector p t for each one, containing the probability of being
+an element of a sampled path (according to a certain distribution). We also maintain a prefix sum vector q t of
+load vectors. At each iteration, the adversary uses these values to define a weight vector w t over the vertices,
+inducing a vertex-weighted shortest-path metric (equivalently, an edge-weighted shortest-path metric where each
+edge uv is given weight 12 (w t [u] + w t [v])). Using this metric, we will leverage a form of the flow-cut gap for
+induced-minor-free graphs. Davies, Rz ˛   ażewski, Spalding-Jamieson, and Walczak recently proved the following
+result.
+
+Theorem 4 ([DRSW27, Theorem 3.4]). Let G = (V, E) be a graph with vertex weights w: V → R⩾0 , d = dwG be
+the vertex-weighted shortest-path metric of G, H be a graph with hV vertices and h E ⩾ 1 edges, and δ, ε, η ⩾ 0. If
+(2hV + 2)ε + (hV + h E )η < 1, then, in time polynomial in |V |, one can obtain one of the following outputs:
+
+    1. a vertex x ∈ V with |B(x, 11δ)| > η|V |;
+    2. vertex sets A, B ⊆ V with |A| > ε|V |, |B| > ε|V |, and d(A, B) > δ;
+    3. an induced minor model of the 1-subdivision of H in G.
+
+    We give an expected-linear-time (for constant H) analogue of this result for some specific choices of δ, ε, η in
+Section 6. The three outcome types induce different behaviors for the adversary: The first kind of outcome will be
+sufficient for the adversary to choose a new wide connector and use it to generate a corresponding loss function;
+the second kind of outcome would be needed in an interative manner (which may instead terminate early with
+either the first or third kind of outcome), but would be eventually sufficient for the learner to produce a small
+separator, and the third kind of outcome of course gives an induced minor model in G.
+    For the first type of outcome, a loss function for the learning game is generated using a proxy objective Gµ,ι (p t ),
+which itself is defined using a new load vector p t and the prefix sum of previous load vectors q t . These vectors,
+unlike λ t , are of linear size, and are thus much easier to work with computationally. Our particular choice of Gµ,ι
+also gives us a direct relationship between ∇Gµ,ι (λ) and the vertex-weighted graph radius. These are almost the
+weights induced above, except that we also require a regularization term as part of the FTRL framework, and
+some appropriate scaling. The scaling happens to correspond to the idea of a learning rate as defined in various
+optimization methods, as well as the diameter of our metric.
+    Note that the boundary between the learner and adversary (e.g., which one of them computes the vertex
+weights or the prefix sum) becomes fuzzy within the efficient implementation of the algorithm. In fact, in the
+actual algorithm we implement, the weights λ t are not computed explicitly at all.
+
+
+2     Preliminaries
+We use mostly standard graph terminology. Given a graph H and a graph G, a minor model of H in G is a collection
+K of vertex-disjoint connected subgraphs of G such that:
+
+
+
+                                                            7
+    • [Vertex correspondence]: there is a one-to-one correspondence between subgraphs of K and vertices of H.
+      This means K has exactly |V (H)| subgraphs.
+    • [Edge correspondence]: For every edge (u, v) ∈ E(H), there is an edge in G between the two corresponding
+      subgraphs Cu and C v in K.
+
+   G is H-minor-free if it does not contain a minor model for H.
+   We say that K is an induced minor model of H in G if, in addition to satisfying the vertex correspondence and
+edge correspondence properties above, it satisfies:
+
+    • [Non-edge correspondence]: If there is no edge between two vertices u and v of H, then there is no edge
+      in G between the two corresponding subgraphs Cu and C v in K.
+
+    G is H-induced-minor-free if it does not contain an induced minor model for H. Because of the non-edge
+correspondence property, an H-induced-minor-free graph can be dense. For example, the clique Kn excludes P2 (a
+                                                                                              (1)
+path of length 2) as an induced minor. Every graph H with |V (H)| = h is an induced minor of Kh , so if G does
+                                                                  (1)
+not contain H as an induced minor, then it does not contain Kh as an induced minor either. Thus, in some parts
+                                     (1)
+of our paper, we work directly with Kh -induced-minor-free graphs.
+    We also use the following single-source shortest path algorithm on graphs with integer weights by Dial [Dia69].
+
+Theorem 5 (Dial’s algorithm [Dia69]). Let G = (V, E, w) be a graph with integer weights on the edges. Let D be
+the diameter of G, n = |V |, and m = |E|. Then computing the single-source shortest path from any source vertex
+takes O(n + m + D) time.
+
+
+3     Balanced Separators from Follow the Regularized Leader
+Since our algorithms for balanced separators are inspired by the Follow the Regularized Leader (FTRL) framework
+in online learning, we first give a brief overview of online learning and FTRL.
+
+
+3.1    Online Learning: A Primer
+The setup. The general setup is a game over T rounds, where in each round t ∈ [T ], a player picks a vector
+x t ∈ X, called a strategy, where X ⊆ Rd is the domain. (Often X is a convex set.) The player could choose x t
+based on the information from previous rounds. Once the player chooses x t , a loss function ℓ t : X → (−∞, +∞]
+is revealed; the player pays ℓ t (x t ) loss; and the game continues to the next round.
+    The goal of the player is to minimize the regret, defined as follows:
+                                                                       T                       
+                                                                       X
+                                     Regret(x 1 , . . . , x T ) = sup     (ℓ t (x t ) − ℓ t (u))             (2)
+                                                          u∈X   t=1
+
+which is the loss difference w.r.t. the best fixed strategy.
+
+Follow the regularized leader (FTRL) is a meta-algorithm that a player can use to pick a strategy x t ∈ X in every
+step. To apply this meta-algorithm, the player has to first choose a function ψ : X → R called a regularizer. Once
+                                                                                                       P t−1
+the regularizer is chosen, in every step t, the player chooses a strategy x t ∈ X that minimizes ψ(x) + i=1 ℓi (x).
+That is:
+                                                                 t−1
+                                                                          
+                                                                 X
+                                          x t = arg min ψ(x) +       ℓi (x)                                     (3)
+                                                  x∈X                 i=1
+
+   The second term in Equation (3) is not hard to see: the only information given up to round t is the loss
+                                                                                                P t−1
+functions {ℓi (x)}i<t , and it makes sense to find a strategy for round t that minimizes the sum i=1 ℓi (x). On the
+other hand, it is well known in online learning that minimizing this sum alone is not enough, since the adversary
+
+
+                                                           8
+who knows the strategy could come up with a new loss next round to throw off the player; see, e.g., [Tre19].
+A simple fix that works well is to add the regularizer ψ(x) [AHR08]. The algorithm’s pseudocode is given in
+Algorithm 1.
+
+Algorithm 1 FTRL(ψ, X): Follow the Regularized Leader Meta-Algorithm
+Input: Regularizer ψ : X → R
+Output: {x 1 , x 2 , . . . , x T }
+ 1: for each round t ← 1¨to T do
+                                   t−1
+                                             «
+                                   X
+ 2:     pick x t ∈ arg min ψ(x) +      ℓi (x)
+                      x∈X              i=1
+ 3:    loss function ℓ t (x) : Rd → (−∞, +∞] is revealed
+ 4:    player pays loss ℓ t (x t )
+ 5: return {x 1 , x 2 , . . . , x T }
+
+
+    The choice of the regularizer matters in minimizing the regret bounds. We will not discuss the details of these
+choices, as we will not use these regret bounds in our paper. Curious readers are referred to [Ora26] for details.
+Instead, we briefly review how FTRL solves a convex optimization problem, since our algorithms for balanced
+separators follow the same strategy.
+
+Convex optimization via FTRL.           Given a convex function f (x) : X → R where X ⊆ Rd is convex, find:
+
+                                                          arg min f (x)                                                      (4)
+                                                            x∈X
+
+We can approximately solve this problem via the FTRL framework as follows. First, choose any initial feasible
+                                            η
+point x 0 ∈ X, a regularizer ψ(x) = 2 ∥x − x 0 ∥22 where η > 0 is a parameter called the learning rate. Then we play
+the online game for T rounds (with T chosen later), but for doing so, we need to choose a loss function ℓ t (x) at
+each round t ∈ [T ].                                          P t−1
+     We could simply choose ℓ t (x) = f (x), but then i=1 ℓi (x) = (t − 1) f (x) and hence finding x t following
+Equation (3) is as hard as solving the original convex optimization problem in Equation (4). Instead, we choose
+ℓ t (x) = 〈g t , x〉 where g t ∈ ∂ f (x t ) is a subgradient of f at x t . Intuitively, ℓ t (x) is a linear approximation of f (x)
+at time t since by the definition of subgradient:
+
+                                                 f (x) ⩾ f (x t ) + 〈g t , x − x t 〉                                         (5)
+
+and hence, instead of minimizing f (x) directly (which is a hard problem), we minimize the linear lower bound.
+With this choice of ℓ t (x), Equation (3) becomes:
+                                                                         t−1
+                                                                                    
+                                                      η                 X
+                                      x t = arg min     ∥x − x 0 ∥22 + 〈     g i , x〉 ,                    (6)
+                                              x∈X     2                  i=1
+
+which is a simple quadratic function that is much easier to solve. After round T is completed, we simply return:
+                                                       PT
+                                                          i=1 x i
+                                                  x̄ =                                                        (7)
+                                                           T
+as an approximate solution to Equation (4). By choosing T and η appropriately, one can show that f (x̄)− f (x ∗ ) ⩽ ε
+for any given ε ∈ (0, 1). Again, we will not reproduce the analysis here, but note two important points that are
+relevant to us:
+
+      1. Choosing the regularizer ψ(x) and the proxy loss function ℓ t (x) at each round t ∈ [T ] is important for
+         efficient computation of the strategy x t at each step, as well as for obtaining a good approximate solution x̄
+         in the end.
+
+
+                                                                  9
+   2. Though the analysis of FTRL works out nicely if f (x) is convex, the algorithm also makes sense when f is
+      non-convex. In the latter case, the kind of guarantee one gets from FTRL depends on how nicely f “behaves”.
+
+In our setup of FTRL for balanced separators, we not only have to choose ψ(x) and {ℓ t (x)} t∈[T ] , but we also have
+to set up an appropriate function f , which turns out to be non-convex and very non-standard. Setting up f is the
+focus of the next section.
+
+
+3.2       Balanced Vertex Separators as A Continuous Optimization Problem
+A starting point to formulate our optimization problem is the intimate relationship between balanced separators
+and concurrent flow. Let PG be the set of all simple paths in an undirected graph G = (V, E) with n vertices and
+m edges. A concurrent flow λ : PG →  P[0, 1] assigns each simple path P ∈ PG a flow value λ(P) ∈ [0, 1] such that
+for every ordered pair (u, v) ∈ V 2 , P∈Puv λ(P) = 1/n where Puv ⊆ PG is the set of all simple paths from u to v.
+(Note that Puv = P vu since the graph is undirected). In words, a concurrent flow λ sends 1 unit of P
+                                                                                                    flow from every
+vertex to all other vertices, equally distributed. The congestion at u of the concurrent flow λ is P∈PG :u∈P λ(P),
+and the congestion of λ is the maximum congestion over all vertices of V . It is well known that:
+
+Theorem 6 (Leighton and Rao [LR99]). For every φ ∈ (0, 1), either:
+
+   1. G admits a balanced separator of size φ · n, or
+   2. G has an induced subgraph H on at least 2n/3 vertices such that H admits a concurrent flow with congestion
+      O(log n/φ).
+
+      There are two closely related interpretations of Theorem 6 that are useful for us:
+
+   1. If we can send one unit of flow from every vertex to at least 2n/3 other vertices with little congestion (large
+      φ), then any balanced separator of G must be large.
+                                                                                             OptG
+   2. Let OptG be the size of the optimal balanced separator of G and φ =                     n     ∈ (0, 1]. Then:
+
+                                                   total flow sent       n
+                                                                   ≈          ≈ Õ(1)OptG                             (8)
+                                                     congestion      log(n)/φ
+
+The optimization problem. Instead of sending flow along paths as in the concurrent flow, we take a slightly
+different perspective: sending one unit of flow from each vertex u to 3n/4 other vertices along a tree. This gives rise
+to a wide connector, a central concept in our formulation. More formally, a wide connector, denoted by C := (T, r, B),
+is a tuple consisting of: (i) a rooted tree T , which is a (not necessarily spanning) subgraph of G, (ii) the root r of
+T , and (iii) a subset B ⊆ V of exactly 3n/4 vertices3 that belongs to T . We call B the terminals of the connector C.
+     Given a wide connector C = (T, r, B), we define its load vector pC ∈ [0, 1]n as follows:
+
+                                                                  |Tv ∩ B|
+                                                       pC [v] =                     ∀v ∈ V                            (9)
+                                                                    |B|
+
+where Tv is the subtree of T rooted at v. A subtlety is that not every vertex belongs to T , and for such a vertex
+v, we set pC [v] = 0. A useful interpretation of the load vector is: if we send 1 unit of flow from the root r to all
+vertices in B, equally distributed, along the tree T , then pC [v] is the fraction of the flow going through v. Clearly,
+pC [r] = 1 and pC [v] ∈ [0, 1] for every v ∈ V .
+    Let T (G) be the set of all rooted trees that are subgraphs of G. For every vertex u ∈ V , let Cu be the set of all
+wide connectors rooted at u. Formally:
+                                                       
+                                                    V
+                           Cu = {(T, u, B) : B ∈         , T ∈ T (G) rooted at u and B ⊆ T }                       (10)
+                                                  3n/4
+  3
+      The constant 3/4 is arbitrary; any constant in (2/3, 1) works equally well.
+
+
+
+                                                                       10
+Let C = ∪u∈V Cu be the set of all wide connectors. Let µ and ι be two parameters chosen later. The optimization
+problem is formulated as follows:
+
+                                                                                                                                          !
+                              X                   X                                              X
+          max Fµ,ι (λ) :=            λ[C] −                  λ[C]λ[C ′ ] µ〈pC , pC ′ 〉 + ι                (pC [u]pC ′ [v] + pC [v]pC ′ [u])
+      λ∈[0,1]|C|
+                              C∈C             (C,C ′ )∈( )
+                                                         C                                      (u,v)∈E
+                                                         2
+                                              |                                               {z                                              } (11)
+                                                                                         congestion term
+                   X
+  subject to              λ[C] ⩽ 1      for every u ∈ V.
+                   C∈Cu
+
+   In this optimization problem:
+   1. for each connector C = (T, r, B) ∈ C rooted at some vertex r,P
+                                                                   the variable λ[C] ∈ [0, 1] denotes the amount
+      of flow rC sends to B along the tree T . Thus, the constraint C∈Cu λ[C] ⩽ 1 means that the total flow sent
+      from vertex u to all other vertices is at most 1.
+         C∈C λ[C] is the total amount of flow sent from every node of G to all other nodes via the wide connectors.
+      P
+   2.
+   3. The negative term encodes the flow congestion; it takes some effort to really see this, and we will expand on
+      this term below. The parameters µ and ι determine how much we penalize the total flow sent, depending
+      on the graph classes we are interested in. For example, for minor-free graphs, we set µ = 1 and ι = 0, while
+      for induced-minor-free graphs, we set µ = ι = 1.
+Thus, the optimization in Equation (11) is to maximize the total flow sent through G via wide connectors, while
+minimizing the congestion.
+
+Remark 1. λ ∈ [0, 1]|C| has an exponential number of dimensions, and it is unclear how to solve the optimization
+problem in Equation (11) in polynomial time; at least, the optimization problem is non-convex.
+
+   Let:                                                                  X
+                               Hµ,ι (pC , pC ′ ) = µ〈pC , pC ′ 〉 + ι             (pC [u]pC ′ [v] + pC [v]pC ′ [u])                              (12)
+                                                                       (u,v)∈E
+
+   be the bilinear form of the interaction term. Then Equation (11) can be shortened to:
+                                            X           X
+                           max Fµ,ι (λ) :=     λ[C]−          λ[C]λ[C ′ ]Hµ,ι (pC , pC ′ )
+                               λ∈[0,1]|C|
+                                                             C∈C        (C,C ′ )∈( 2 )
+                                                                                  C
+
+                                                                        X                                                                       (13)
+                                                         subject to            λ[C] ⩽ 1            for every u ∈ V.
+                                                                        C∈Cu
+
+    This shorter form is useful for much of our analysis, by exploiting the fact that Hµ,ι (pC , pC ′ ) is a bilinear form.
+In the next subsection, we describe how to approximately solve the optimization problem in Equation (11) using
+the FTRL framework laid out in Section 3.1.
+
+On the congestion term. The congestion term in Equation (11) is motivated by the probabilistic perspective
+of wide connectors and the load vectors, inspired by the argument in [BKL+ 26]. For a fixed wide connector
+C = (T, r, B), if we pick a random vertex b ∈ B, then pC [v] in Equation (9) is exactly the probability that
+v ∈ T [r, b]. Consider the following process to sample two paths in G, for a feasible λ with at least two positive
+entries: sample two distinct wide connectors C ̸= C ′ with probability proportional to λ[C]λ[C ′ ], and then sample
+a random root-to-terminal path from each of them, namely P from C and P ′ from C ′ . Then:
+
+   1. the probability that P and P ′ share a vertex is at most:
+
+                                         v∈V (λ[C]pC [v])(λ[C ]pC ′ [v])    (C,C ′ )∈( 2 ) λ[C]λ[C ]〈pC , pC ′ 〉
+                                                               ′                                    ′
+                     P                 P                                   P
+                        (C,C ′ )∈( 2 )
+                                  C                                                   C
+
+                                                                         =
+                                        (C,C ′ )∈( ) λ[C]λ[C ]                     (C,C ′ )∈( ) λ[C]λ[C ]
+                                      P                                       P
+                                                  C         ′                                C         ′
+                                                     2                                                         2
+
+
+
+
+                                                                         11
+      Thus, the term (C,C ′ )∈(C) λ[C]λ[C ′ ]µ〈pC , pC ′ 〉 in Equation (11) captures the collision probability of two
+                       P
+                                 2
+      random paths. In Kh -minor-free graphs, the collision probability of random paths is closely related to the
+      size of the clique minor [BKL+ 26]. Thus, by penalizing the optimization problem in Equation (11) with this
+      collision probability, we indirectly encode the structure of Kh -minor-free graphs.
+   2. the probability that P and P ′ are connected by an edge (u, v) ∈ E, namely that either u ∈ P and v ∈ P ′ or
+      v ∈ P and u ∈ P ′ , is at most:
+
+                                           (u,v)∈E ((λ[C]pC [u])(λ[C ]pC ′ [v]) + (λ[C]pC [v])(λ[C ]pC ′ [u]))
+                                                                               ′                        ′
+                     P                  P
+                         (C,C ′ )∈( 2 )
+                                   C
+
+
+
+                                                                 (C,C ′ )∈( 2 ) λ[C]λ[C ]
+                                                             P
+                                                                           C           ′
+                                                                                                               (14)
+                             (C,C ′ )∈( 2 ) λ[C]λ[C ]         (u,v)∈E (pC [u]pC ′ [v] + pC [v]pC ′ [u])
+                                                      ′
+                          P                              P
+                                        C
+
+                     =
+                                                       (C,C ′ )∈( ) λ[C]λ[C ]
+                                                     P
+                                                                  C               ′
+                                                           2
+
+
+
+      Thus, the term (u,v)∈E (pC [u]pC ′ [v] + pC [v]pC ′ [u]) in Equation (11) captures the probability that two
+                         P
+
+      random paths are connected by an edge. This probability is closely related to the size of an induced minor
+      of G [KL24].
+
+
+3.3    FTRL using Low-Diameter Clusters
+Our goal is to solve:
+                                                                 X
+                             max Fµ,ι (λ)        subject to             λ[C] ⩽ 1          for every u ∈ V
+                           λ∈[0,1]|C|
+                                                                 C∈Cu
+
+
+where Fµ,ι (λ) is defined in Equation (11). Following the FTRL framework, in each round t we are going to pick:
+
+                                                                          t−1
+                                                                          X
+                                              λ t ∈ arg max{ψ(λ) +              ℓi (λ)}
+                                                    λ∈[0,1]|C|            i=1
+
+and a loss ℓ t (λ) which is the proxy for Fµ,ι (λ). However, doing so here is particularly non-trivial since the dimension
+of λ is |C|, which is exponential. To get around this issue, we need to simplify Fµ,ι (λ).
+
+Simplifying the problem. First, in every step, we choose λ t that has only one non-zero entry; all other entries
+are 0. This means at step t, we will find only one wide connector C t such that λ t [C t ] ̸= 0, while λ t [C] = 0 for
+every C ∈ C \ {C t }. Second, we are going to set λ t [C t ] = 1 for every t ∈ [T ]. That means in every round we
+will send 1 unit of flow along the tree of C t from the root. Third, to find C t at step t, we restrict the set C in
+the definition of Fµ,ι (λ) to C t = {C1 , . . . , C t } where C1 , . . . , C t−1 are the wide connectors obtained in the previous
+steps 1, 2, . . . , t − 1. All of the wide connectors are known except C t . To simplify the notation, we denote the load
+vector pCt of the wide connector C t by p t for t ∈ [T ]. With these simplifications, the problem (at step t), which is
+arg maxλ∈[0,1]|C| Fµ,ι (λ), becomes:
+
+
+
+
+                                                                 12
+                                                                                                             
+                                  X                            X
+                arg max                  λ[C] −                             λ[C]λ[C ′ ]Hµ,ι (pC , pC ′ )
+                    C t ∈C        C∈C t                    (C,C ′ )∈( 2t )
+                                                                      C
+
+                                                                             
+                                           X
+              = arg max  t −                              Hµ,ι (pi , p j )             (since λ[Ci ] = 1 ∀1 ⩽ i ⩽ t)
+                    C t ∈C
+                                      {i, j}∈( 2 )
+                                                     [t]
+
+                                                                     
+                                    X
+              = arg min                            Hµ,ι (pi , p j )          (dropping constant t)
+                    C t ∈C
+                              {i, j}∈(          )
+                                          [t]
+                                           2
+
+                                                                                                                                                     (15)
+                                                                                                                    
+                                    X                                      X
+              = arg min                            µ〈pi , p j 〉 + ι                (pi [u]p j [v] + pi [v]p j [u])         (by Equation (12))
+                    C t ∈C                                                (u,v)∈E
+                              {i, j}∈(          )
+                                          [t]
+                                           2
+                                                                                                                         !
+                          Xt−1                X                                 X
+              = arg min µ〈     pi , p t 〉 + ι                                           (pi [u]p t [v] + pi [v]p t [u])
+                    C t ∈C          i=1                         1⩽i⩽t−1 (u,v)∈E
+                                                                                                          !
+                                                            X                                                                           t−1
+                                                                                                                                        X
+              = arg min µ〈q t , p t 〉 + ι                            (q t [u]p t [v] + q t [v]p t [u])            (by defining q t :=         pi )
+                    C t ∈C                                 (u,v)∈E                                                                      i=1
+
+              := arg min Gµ,ι (p t )
+                     C t ∈C
+
+Observation 1. Function Gµ,ι (p t ) defined in Equation (15) is a linear function in p t , and the gradient:
+                                                                         X
+                                     ∇ p t Gµ,ι (p t )[v] = µq t [v] + ι   q t [u]                                                                   (16)
+                                                                                                     u∈NG (v)
+
+for every v ∈ V .
+
+    Recall that p t is the load vector of the (unknown) wide connector C t , and hence the allowable values for p t
+form a (finite) discrete set of exponential size. This is the key difficulty in minimizing Gµ,ι (p t ), even though it is
+a linear function of p t . The next step, which arguably is the most innovative step, is to connect optimizing for
+Gµ,ι (p t ) with low-diameter clusters.
+
+Connection to low-diameter clusters. Note that Gµ,ι (p t ) = 〈∇ p t Gµ,ι (p t ), p t 〉 since Gµ,ι (p t ) is linear. The
+following lemma connects Gµ,ι (p t ) to the graph diameter.
+
+Lemma 1. Let w̃ ∈ R⩾0V
+                        be any non-negative vector. Let C t = (X , r, B) be a wide connector and p t be its load vector.
+Suppose that we assign every vertex v ∈ V a weight w̃[v]. Let Q be a random path of X obtained by sampling a
+vertex b ∈ B uniformly at random and returning the b-to-root path X [r, b]. Then the expected weight of the path
+is:
+                                               E[w̃(Q)] = 〈w̃, p t 〉                                               (17)
+As a result, 〈w̃, p t 〉 ⩽ D where D is the vertex-weighted radius of X centered at r.
+
+Proof: By definition of the load vector, Pr[v ∈ X [r, b]] = p t [v]. Thus:
+                                                 X
+                                    E[w̃(Q)] =         Pr[v ∈ Q] w̃[v] = 〈w̃, p t 〉
+                                                                             v∈V (X )
+
+as vertices u not in X have p t [u] = 0.                                                                                                               □
+
+
+                                                                                         13
+    By Lemma 1, if we assign each vertex v in the tree of the wide connector C t a weight ∇ pt Gµ,ι (p t )[v], then
+Gµ,ι (p t ), which is 〈∇ p t Gµ,ι (p t ), p t 〉, is the expected weight of a random path in the tree. Thus, to minimize Gµ,ι (p t ),
+a natural idea is to: (i) assign every vertex v of G a weight ∇ pt Gµ,ι (p t )[v], (ii) find a shortest path tree T of G w.r.t.
+the weight function ∇ p t Gµ,ι (p t ), and (iii) cut off the tree at a small radius in such a way that at least 3n/4 vertices
+are still in the tree. (If the tree has small radius, then a random path to the root would have small expected weight,
+and hence small Gµ,ι (p t ).) A small radius in (iii) might not exist, and this is where Theorem 7 below comes into
+play. It gives either a cluster of more than 3n/4 vertices with small diameter, or a small balanced separator in G.
+In the latter case, we simply stop the algorithm and return the separator.
+                                                                     P                 (1)
+    For vertex weights w and a path P, let w(P) := v∈P w(v). Let Kh be the graph obtained from Kh by
+                                                                                 (1)
+subdividing every edge once. Every Kh -minor-free graph excludes Kh as an induced minor, and so does every
+H-induced-minor-free graph with h = |V (H)|.
+                                                                                                                (1)
+Theorem 7. Let h ⩾ 2, and let G = (V, E) be a graph
+                                                 P with n vertices and m edges that excludes Kh as an induced
+minor. Let w : V → Z⩾1 be vertex weights, W := v∈V w(v), and 0 < D ⩽ n. There is a randomized algorithm
+CUTORCLUSTER(G, h, w, D) that returns one of the following:
+
+   1. a cluster: a set K ⊆ V with |K| > 3n/4 such that G[K] has vertex-weight diameter at most D: every two
+      vertices of K are joined by a path P in G[K] with w(P) ⩽ D, or
+   2. a balanced separator: a set S ⊆ V with |S| = O(W log(hW /n)/D) such that every connected component of
+      G − S has at most 3n/4 vertices.
+
+Its expected running time is O(h5 (TSSSP (n + 1, m + n, 2W ) + m + n)), where TSSSP (N , M , L) is the time to compute
+a shortest-path tree from a single source in a graph with at most N vertices, at most M edges, and integer edge
+lengths with maximum distance at most L.
+
+     We prove Theorem 7 in Section 6, building on a structural result of [DRSW27]. We note that while Theorem 7
+is formalized for induced-minor-free graphs, it applies equally well to minor-free graphs, and we actually use it to
+prove our separator result for minor-free graphs.
+     In our implementation, instead of assigning the weight exactly ∇ pt Gµ,ι (p t )[v] to every vertex v, we will assign
+this weight scaled by a diameter parameter D > 0; it is 4D to be precise. (And we also have to take into account
+the regularization following the FTRL framework.) Concretely, we assign a weight:
+
+                                               n deg(v)
+                                w t [v] = (1 +          ) + 4D∇ pt Gµ,ι (p t )[v]
+                                                  2m
+                                                                                                                              (18)
+                                                                                              !
+                                               n deg(v)                          X
+                                        = (1 +          ) + 4D µq t [v] + ι            q t [u] ,
+                                                  2m                           u∈N (v) G
+
+
+for every v ∈ V . The first term is the regularization: it is the gradient of the linear regularizer
+
+                                              1 X                    n deg(v)
+                                                           X                 
+                                 ψ(λ) := −           λ[C]        1+             pC [v] ,                                      (19)
+                                             4D C∈C        v∈V
+                                                                        2m
+
+so for the indicator vector λ t of C t , maximizing ψ(λ t ) plus the objective in Equation (15) is the same as minimizing
+                                                              n deg(v)
+〈w t , p t 〉. Its role is to make w t [v] ⩾ 1 with v∈V (1 + 2m ) = 2n, which the bounds on ∥w t ∥1 use. In convex
+                                                  P
+
+optimization using gradient descent, D corresponds to the learning rate; in our discrete setting, it is the diameter.
+Now we have everything we need for the FTRL algorithm.
+
+The algorithm. Let us briefly recap the discussion up to this point. At each step t of the FTRL framework, we
+find a wide connector C t ∈ C that minimizes Equation (15). To do so, we assign every vertex v ∈ V a weight w t [v]
+in Equation (18). We then apply CUTORCLUSTER from Theorem 7 to G w.r.t. the vertex weight function ⌈w t ⌉
+with diameter parameter D. Here ⌈w t ⌉ is the component-wise ceiling of w t ; that is, ⌈w t ⌉[v] = ⌈w t [v]⌉ for every
+
+
+                                                                14
+v ∈ V . If it gives a balanced separator (no connected component contains more than 3n/4 vertices), we return it.
+Otherwise, it gives a cluster K of more than 3n/4 vertices, and we form a wide connector C t that contains the
+shortest path tree (with vertex weight ⌈w t ⌉) of G[K]. The pseudocode is given in Algorithm 2 below.
+
+Algorithm 2 CLUSTER-FTRL(G, h, T, D, µ, ι)
+                                   (1)
+Input: h such that G excludes Kh as an induced minor, T = number of FTRL rounds, D = diameter parameter,
+{µ, ι} = parameters in the unified optimization problem in Equation (11).
+Output: either a balanced separator, or a set of wide connectors {C t } t∈[T ]T , each with λ[C t ] = 1.
+ 1: q1 ← 0
+ 2: for t ← 1 to T do                                              !
+                       n deg(v)                       X
+ 3:     w t [v] ← (1 +          ) + 4D µq t [v] + ι         q t [u] for every v ∈ V
+                          2m                        u∈N (v)
+                                                        G
+ 4:     run CUTORCLUSTER(G, h, ⌈w t ⌉, D)                                                                ▷ Theorem 7
+ 5:     if it returns a balanced separator S t then
+ 6:          return S t                                                                   ▷ S t is a balanced separator
+ 7:     K ← the returned cluster
+ 8:     r t ← a vertex in K that is not a root of any existing connector                 ▷ we will send 1 flow from r t
+ 9:     X t ← vertex-weighted shortest-path tree of G[K] w.r.t. ⌈w t ⌉ rooted at r t .
+10:     B t ← an arbitrary set of 3n/4 vertices of K \ {r t }.
+11:     C t ← (X t , r t , B t ), and p t ← the load vector of C t                               ▷ the wide connector
+12:     q t+1 ← q t + p t
+13: return C T := {C1 , C2 , . . . , C T }
+
+
+    We use ⌈w t ⌉ as the weights rather than w t for efficient shortest-path computation in linear time (for a fixed h).
+If we are willing to tolerate a factor of log n in the running time, then we can work with w t (though the proof is
+not simpler in any way).
+    The following lemma gives the lower bound on the optimal value of the optimization problem in Equation (11)
+after T rounds of CLUSTER-FTRL.
+
+Lemma 2 (Cluster-FTRL Progress). Suppose that Algorithm 2 outputs C T after T rounds. Let λ̄ be a vector such
+that, for every wide connector C ∈ C:          ¨
+                                                 0 if C ̸∈ C T
+                                       λ̄[C] =                                                           (20)
+                                                 1 otherwise
+
+Then λ̄ is a feasible solution of the optimization problem in Equation (11) with value:
+
+                                                    Fµ,ι (λ̄) ⩾ 3T /4                                              (21)
+
+Proof: We note that connectors in C T are pairwise distinct since they have different roots due to line 8 in
+Algorithm 2. Recall in Equation (12)
+                                                              X
+                        Hµ,ι (pC , pC ′ ) = µ〈pC , pC ′ 〉 + ι   (pC [u]pC ′ [v] + pC [v]pC ′ [u]).
+                                                            (u,v)∈E
+
+
+
+
+                                                             15
+Observe that Hµ,ι (pC , pC ′ ) is bilinear w.r.t. the variables pC and pC ′ . We write:
+                                      X               X
+                        Fµ,ι (λ̄) =      λ̄[C] −            λ̄[C]λ̄[C ′ ]Hµ,ι (pC , pC ′ )
+                                      C∈C               (C,C ′ )∈( 2 )
+                                                                    C
+
+                                                   X
+                                   =T−                        Hµ,ι (pC , pC ′ )
+                                                       C
+                                            (C,C ′ )∈( 2T )
+                                            T X
+                                            X t−1
+                                   =T−                  Hµ,ι (pi , p t )                                                                  (22)
+                                             t=1 i=1
+                                            T
+                                            X            Xt−1
+                                   =T−             Hµ,ι (     pi , p t )          (since Hµ,ι is bilinear)
+                                             t=1            i=1
+                                            T
+                                            X
+                                   =T−             Hµ,ι (q t , p t )         (by definition of q t in Algorithm 2)
+                                             t=1
+
+Next, we show Equation (23) below, which together with Equation (22), implies Fµ,ι (λ̄) ⩾ T − T /4 = 3T /4 as
+desired.
+
+                                                                  Hµ,ι (q t , p t ) ⩽ 1/4                                                 (23)
+To see this, observe that by applying Lemma 1 to p t and ⌈w t ⌉, we get 〈⌈w t ⌉, p t 〉 ⩽ D, giving:
+
+                                                           〈w t , p t 〉 ⩽ 〈⌈w t ⌉, p t 〉 ⩽ D
+
+By definition of w t in line 3 of Algorithm 2, we have w t [v] ⩾ 4D(µq t [v] + ι                          u∈NG (v) q t [u]), and hence:
+                                                                                                       P
+
+
+                                                                                                        
+                                                                   X
+                   D ⩾ 〈w t , p t 〉 ⩾ 4D µ〈q t , p t 〉 + ι                (q t [u]p t [v] + q t [v]p t [u]) = 4DHµ,ι (q t , p t )
+                                                                   uv∈E
+
+giving Equation (23).                                                                                                                       □
+
+
+4     Balanced Separators for Minor-Free Graphs
+In this section, G is a Kh -minor-free graph for an integer h ⩾ 3. We apply the FTRL algorithm (Algorithm 2) with
+                                       p of FTRL rounds is T = c · h for a sufficiently large constant c chosen later.
+                                                                    2
+the following parameters. The number
+We set the diameter parameter D = n/T in Algorithm 2.
+    Our goal here is to show by contradiction that the FTRL algorithm in Algorithm 2 will not run all T rounds.
+That is, it will return a balanced separator in line 6. By Lemma 2, after T rounds, we have found a feasible
+solution with value at least 3T /4 = 3ch2 /4. The following lemma bounds the value of the optimization problem
+in Equation (11) by O(h2 ). Thus, as long as we choose c sufficiently large, the algorithm must terminate before
+round T .
+
+Lemma 3. Let λ be any feasible solution of the optimization problem in Equation (11) with µ = 1 and ι = 0. If G
+is Kh -minor-free, then:
+                                                F1,0 (λ) = O(h2 )                                         (24)
+
+     We delay the proof of Lemma 3 to Section 4.1. Instead, we will continue with the analysis of the FTRL algorithm
+for minor-free graphs, specifically bounding the size of the output separator. To this end, we bound the ℓ1 -norm of
+wt .
+
+Lemma 4. In every round ∥w t ∥1 ⩽ 6n.
+
+
+                                                                             16
+Proof: Applying Lemma 1 to p t and ⌈w t ⌉, we get 〈⌈w t ⌉, p t 〉 ⩽ D, giving:
+
+                                                 〈w t , p t 〉 ⩽ 〈⌈w t ⌉, p t 〉 ⩽ D
+
+Since w t [v] ⩾ 1 for every v ∈ V by the definition, we have:
+
+                                                     ∥p t ∥1 ⩽ 〈w t , p t 〉 ⩽ D                                (25)
+
+and hence by the definition of q t :
+                                                        t−1
+                                                        X
+                                         ∥q t ∥1 = ∥          pi ∥1 ⩽ (t − 1)D ⩽ T D
+                                                        i=1
+
+Now we can bound ∥w t ∥1 . By the definition and the fact that µ = 1, ι = 0, we get:
+                                              P
+                                            n v deg(v)
+                              ∥w t ∥1 = n +              + 4D∥q t ∥1
+                                                 2m
+                                                                   Æ
+                                      ⩽ n + n + 4D(T D) = 2n + 4( n/T )2 T ⩽ 6n
+
+as claimed.                                                                                                      □
+
+Theorem 2. Let G be Kh -minor-free with n vertices and m edges. There
+                                                                     is a randomized algorithm that returns a
+                                        p
+3/4-balanced separator of size O(h log h n) in expected O h7 (m + n) time.
+
+Proof: By Lemma 3 and Lemma 2, by choosing c (in the definition of T ) sufficiently large, the FTRL algorithm
+(Algorithm               P before T rounds. Therefore, CUTORCLUSTER(G, h, ⌈w t ⌉, D) returns a separator S. Let
+           2) will terminate
+W = v∈V ⌈w t ⌉[v] ⩽ n + v∈V w t [v] ⩽ 7n by Lemma 4. By Theorem 7, we have
+     P
+
+
+                                               W log(hW /n)
+                                                           
+                                       |S| = O
+                                                      D
+                                                                                                               (26)
+                                                        Æ     
+                                          = O 7n log(7h) T /n
+                                                     p
+                                          = O(h log h n)    (since T = O(h2 ))
+
+as claimed. For the running time, we note that the vertex weights are integers of total weight at most W ⩽ 7n.
+Thus, a single-source shortest path tree can be computed in time O(n + m + W ) = O(n
+                                                                                    + m) by Dial’s algorithm in
+Theorem 5. Then by Theorem 7, the total expected running time is O T · h5 (m + n) = O(h7 (m + n)).            □
+
+
+4.1    Proof of Lemma 3
+We use a known collision probability bound that follows from a variant of an argument by Korhonen and Lokshtanov
+for induced-minor-free graphs [KL24], later modified by Le [Le26] for minor-free graphs, and further generalized
+by Kolbe and Spalding-Jamieson [KS26a] for a slightly more general task. We specifically use an intermediate
+form of the construction in the proof by Kolbe and Spalding-Jamieson.
+
+Proposition 2 (adapted from [KS26a, proof of Proposition 3.2]). Let G be a Kh -minor-free graph, where h ⩾ 3,
+and let π be a probability distribution on V (G). Sample u, v independently from π, then sample a simple u–v path
+P from any fixed distribution for that ordered pair. If u = v, take P = {u}. For an independent sample P ′ resulting
+from the same process,
+                                                                       c0
+                                            Pr[V (P) ∩ V (P ′ ) ̸= ∅] ⩾ 2 ,
+                                                                       h
+where c0 > 0 is an absolute constant.
+
+
+
+
+                                                                17
+Proof: The random-path argument in [KS26a, proof of Proposition 3.2] (see also [Le26, Section 4]) produces a
+Kh -minor if
+                                                                              2
+                                                                   1     1
+                                                                
+                                                      ′
+                                    Pr[V (P) ∩ V (P ) ̸= ∅] ⩽        +           .
+                                                                  50h 2500h2
+Since G is Kh -minor-free, it follows that
+                                                                         2
+                                                              1      1             1
+                                                           
+                               Pr[V (P) ∩ V (P ′ ) ̸= ∅] >       +     2
+                                                                            ⩾        .
+                                                             50h 2500h        2500h2
+Thus the claim holds with c0 = 1/2500.                                                                                        □
+    This is all we will need to prove Lemma 3.
+Proof of Lemma 3. The case λ = 0 is immediate, so assume λ ̸= 0. Write C = (TC , rC , BC ) for each connector.
+Sample two connectors C1 , C2 independently with probabilities λ[C]/∥λ∥1 , and then sample z uniformly from
+BC1 ∩ BC2 . Let Q i be the rCi –z path in TCi , for i = 1, 2. Concatenate Q 1 and Q 2 , erasing cycles, to get a path P with
+independent, identically distributed endpoints, where P = {rC1 } if rC1 = rC2 .
+    Fix C1 , C2 and i ∈ {1, 2}. By the definition of pCi [v], exactly |BCi |· pCi [v] terminals in BCi have a root-to-terminal
+path containing v. Restricting to terminals in BC1 ∩ BC2 cannot increase this count. Since Q i = TCi [rCi , z] and z is
+uniform in that intersection, counting the possible values of z gives
+                           Pr[v ∈ V (Q i ) | C1 , C2 ] = Pr[v ∈ V (TCi [rCi , z]) | C1 , C2 ]
+                                                           ∗
+                                                           z ∈ BC1 ∩ BC2 : v ∈ V (TCi [rCi , z ∗ ])
+                                                       =
+                                                                        |BC1 ∩ BC2 |
+                                                           |BCi | · pCi [v]        3n/4          3
+                                                       ⩽                       ⩽        pCi [v] = pCi [v].
+                                                             |BC1 ∩ BC2 |           n/2          2
+   Repeat the construction independently, with connectors C1′ , C2′ and paths Q′1 , Q′2 , P ′ . Fix i, j ∈ {1, 2} and
+condition on all four connectors. The two terminal choices are independent, since the constructions use independent
+random choices. For Ci ̸= C j′ , a union bound gives
+
+                                  Pr[V (Q i ) ∩ V (Q′j ) ̸= ∅ | C1 , C2 , C1′ , C2′ ]
+                                       X
+                                    ⩽       Pr[v ∈ V (Q i ), v ∈ V (Q′j ) | C1 , C2 , C1′ , C2′ ]
+                                         v
+                                         X
+                                     =       Pr[v ∈ V (Q i ) | C1 , C2 ] Pr[v ∈ V (Q′j ) | C1′ , C2′ ]
+                                         v
+                                       9X
+                                     ⩽     pCi [v]pC j′ [v].
+                                       4 v
+
+For Ci = C j′ , both paths contain the same root, so this same intersection probability is 1. The connectors C1 , C2 , C1′ , C2′
+are independent samples from the distribution λ[C]/∥λ∥1 . Hence, by using expectation over all four connector
+choices, we get                                                                                               
+                          Pr[V (Q i ) ∩ V (Q′j ) ̸= ∅] = E Pr[V (Q i ) ∩ V (Q′j ) ̸= ∅ | C1 , C2 , C1′ , C2′ ]
+                                                         X λ[C]2 X λ[C]λ[D] 9
+                                                       ⩽           +                       〈pC , p D 〉.
+                                                          C
+                                                             ∥λ∥21     C̸= D
+                                                                                ∥λ∥21 4
+    Another union bound gives
+                                                         X 2
+                                                         2 X
+                          Pr[V (P) ∩ V (P ′ ) ̸= ∅] ⩽              Pr[V (Q i ) ∩ V (Q′j ) ̸= ∅]
+                                                         i=1 j=1
+
+                                                                 C λ[C]       +9    C̸= D λ[C]λ[D]〈pC , p D 〉
+                                                                          2
+                                                             P                     P
+                                                         4
+                                                     ⩽                                                        .
+                                                                                    ∥λ∥21
+
+                                                                   18
+   To apply Proposition 2, observe that the endpoints of P are rC1 , rC2 . In particular, they are independently chosen
+using the distribution
+                                                        X λ[C]
+                                               π(v) =                .
+                                                       C: r =v
+                                                               ∥λ∥1
+                                                                        C
+
+         ′
+Thus P, P satisfy the hypotheses of Proposition 2, giving
+                                                   c0
+                                                      ⩽ Pr[V (P) ∩ V (P ′ ) ̸= ∅].
+                                                   h2
+
+Using the definition of F1,0 and λ[C]2 ⩽ λ[C], the lower and upper bounds therefore yield
+
+                                          C λ[C]       + 18(∥λ∥1 − F1,0 (λ))             22∥λ∥1 − 18F1,0 (λ)
+                                                   2
+                                      P
+                            c0    4
+                                ⩽                                                    ⩽                         .
+                            h 2                         ∥λ∥21                                   ∥λ∥21
+
+Rearranging yields
+                                                                                          2
+                                                                  11        c0 ∥λ∥1
+                                                   F1,0 (λ) ⩽        ∥λ∥1 −         .
+                                                                   9         18h2
+The right-hand side is a concave quadratic in ∥λ∥1 , maximized at
+
+                                                                            11h2
+                                                             ∥λ∥1 =              .
+                                                                             c0
+
+Substituting this value gives
+                                                                    121h2
+                                                       F1,0 (λ) ⩽         = O(h2 ).                                  □
+                                                                     18c0
+
+5    Balanced Separators for Induced-Minor-Free Graphs
+In this section, G is H-induced-minor-free for some fixed graph H. We set µ = 1, ι = 1 in the optimization problem
+Equation (11). We apply   p the FTRL Algorithm 2 with T = c(|V (H)| + |E(H)|) for a sufficiently large constant c
+chosen later, and D = n/ mT . Similar to the minor-free case, we will show that the FTRL algorithm will terminate
+before T rounds, by upper bounding the value of the optimal solution.
+
+Lemma 5. Let λ be any feasible solution of the optimization problem in Equation (11) with µ = ι = 1. If G is
+H-induced-minor-free, then:
+                                       F1,1 (λ) = O(|V (H)| + |E(H)|)                                  (27)
+
+    We delay the proof of Lemma 5 to Section 5.1. Now we bound the ℓ1 -norm of w t .
+
+Lemma 6. In every round ∥w t ∥1 ⩽ 14n.
+
+Proof: We only need to tweak the proof of Lemma 4 slightly. Observe that:
+
+                                                                〈w t , p t 〉 ⩽ D
+                          n deg(v)
+And since w t [v] ⩾ 1 +      2m , the above inequality gives:
+
+                                                                   ∥p t ∥1 ⩽ D
+                                                         X n deg(v)p [v]
+                                                                    t
+                                                                           ⩽D
+                                                         v∈V
+                                                                2m
+
+
+
+
+                                                                      19
+              P t−1
+Since q t =     i=1 pi , it holds that:
+
+                                                        ∥q t ∥1 ⩽ (t − 1)D ⩽ T D
+                                                       X n deg(v)q [v]                                             (28)
+                                                                      t
+                                                                           ⩽ TD
+                                                       v∈V
+                                                                  2m
+
+Now we observe by the definition of w t that:
+                                          P
+                                        n v deg(v)                    X X
+                         ∥w t ∥1 = n +               + 4D∥q t ∥1 + 4D              q t [u]
+                                            2m                        v∈V u∈NG (v)
+                                                          X
+                                 ⩽ n + n + 4D∥q t ∥1 + 4D     deg(v)q t [v]
+                                                                       v∈V
+                                                                       2m                                          (29)
+                                          ⩽ 2n + 4D(T D) + 4DT D                (by Equation (28))
+                                                                        n
+                                                       p              p      2m
+                                          = 2n + 4T (n/ mT )2 + 4T (n/ mT )2
+                                                                              n
+                                          ⩽ 2n + 4n + 8n = 14n
+
+as claimed.                                                                                                           □
+
+Theorem 3. Let G be H-induced-minor-free with n vertices
+                                                      p     and m edges. There is a randomized algorithm   that
+returns a 3/4-balanced separator of size O(log |V (H)| m(|V (H)| + |E(H)|)) in expected O |V (H)|7 (m + n) time.
+
+Proof: By Lemma 5 and Lemma 2, by choosing c sufficiently large, the FTRL algorithm (Algorithm 2)       Pwill terminate
+before T rounds.    Therefore, C UT O R C LUSTER (G, |V (H)|, ⌈w t ⌉, D) returns a separator S. Let W =  v∈V ⌈w t ⌉[v] ⩽
+n + v∈V w t [v]. By Lemma 6, W ⩽ 15n. It is well known that if G excludes H as an induced minor, then G
+    P
+           (1)
+excludes K|V (H)| as an induced minor. By Theorem 7, we have
+
+                                    W log(hW /n)
+                                                  
+                      |S| = O
+                                         D
+                                               p                                                                  (30)
+                         = O 15n log(15|V (H)|) mT /n
+                                        Æ
+                         = O(log |V (H)| m(|V (H)| + |E(H)|))                (since T = O(|V (H)| + |E(H)|))
+
+as claimed. For the running time, we note that the vertex weights are integers of total weight at most W ⩽ 15n. Thus,
+a single-source shortest path tree can be computed in time O(n+m+W ) = O(n+m) by         Dial’s algorithm (Theorem 5)
+and hence by Theorem 7, the total expected running time is O T · |V (H)|5 (m + n) = O(|V (H)|7 (m + n)).            □
+
+
+5.1    Proof of Lemma 5
+Similarly to the proof of Lemma 3, we will make use of a known collision probability bound. In this case,
+the bound follows directly from an argument of Korhonen and Lokshtanov, rather than a later variant of their
+construction [KL24].
+
+Proposition 1 (adapted from [KL24, proofs of Lemmas 4.2–4.4]). Let H be a nonempty graph and G an H-
+induced-minor-free graph. Sample u, v independently from a probability distribution π on V (G), then sample a
+simple u–v path P from any fixed distribution for that ordered pair. If u = v, take P = {u}. For an independent
+copy P ′ , we have
+                                                                                                 c1
+                        Pr[P and P ′ share a vertex or are joined by an edge] ⩾                           ,
+                                                                                         |V (H)| + |E(H)|
+where c1 > 0 is an absolute constant.
+
+
+                                                                  20
+Proof: The random-path argument in [KL24, proofs of Lemmas 4.2–4.4] produces an induced minor model of H if
+                                                                                                      c1
+                     Pr[P and P ′ share a vertex or are joined by an edge] ⩽                                   ,
+                                                                                              |V (H)| + |E(H)|
+for some absolute constant c1 > 0. Once this probability bound is given, their local-lemma argument only needs
+independent vertex images and independent conditional path choices, so it applies to the endpoint distribution π.
+Since G is H-induced-minor-free, it follows that
+                                                                                                      c1
+                     Pr[P and P ′ share a vertex or are joined by an edge] >                                   .
+                                                                                              |V (H)| + |E(H)|          □
+
+Proof of Lemma 5. The proof will be similar to that of Lemma 3. The case λ = 0 is immediate, so assume λ ̸= 0.
+Construct P, P ′ and their root paths Q 1 , Q 2 , Q′1 , Q′2 exactly as in the proof of Lemma 3. The terminal-counting
+argument in that proof gives, for i, j ∈ {1, 2} and every vertex v,
+                                                     3                                                    3
+                     Pr[v ∈ V (Q i ) | C1 , C2 ] ⩽     pC [v],          Pr[v ∈ V (Q′j ) | C1′ , C2′ ] ⩽     pC ′ [v].
+                                                     2 i                                                  2 j
+   Fix i, j ∈ {1, 2} and condition on all four connectors. The unprimed and primed terminal choices remain
+independent. For any vertices u, v, it follows that
+                                    Pr[u ∈ V (Q i ), v ∈ V (Q′j ) | C1 , C2 , C1′ , C2′ ]
+                                       = Pr[u ∈ V (Q i ) | C1 , C2 ] Pr[v ∈ V (Q′j ) | C1′ , C2′ ]
+                                           9
+                                       ⩽     pC [u]pC j′ [v].
+                                           4 i
+If Ci ̸= C j′ , a union bound over shared vertices and both orientations of each joining edge therefore bounds the
+conditional probability that Q i , Q′j share a vertex or are joined by an edge by
+                                                                                            !
+                      9 X                        X                                          9
+                            pCi [v]pC j′ [v] +         pCi [u]pC j′ [v] + pCi [v]pC j′ [u] = H1,1 (pCi , pC j′ ),
+                      4   v                    uv∈E(G)
+                                                                                              4
+
+where the equality is the definition of H1,1 in Eq. (12). If Ci = C j′ , both paths contain the same root, so the
+conditional probability is 1. Averaging over all four connector choices gives
+                               Pr[Q i and Q′j share a vertex or are joined by an edge]
+                                    X λ[C]2 9 X λ[C]λ[D]
+                                 ⩽              +                  H1,1 (pC , p D ).
+                                      C
+                                         ∥λ∥21    4 C̸= D ∥λ∥21
+
+Erasing cycles only removes vertices, so any shared vertex or joining edge between P, P ′ also occurs for at least one
+of the four pairs (Q i , Q′j ). A union bound over these pairs yields
+
+                                                                   4 C λ[C]2 + 9 C̸= D λ[C]λ[D]H1,1 (pC , p D )
+                                                                    P           P
+                  ′
+      Pr[P and P share a vertex or are joined by an edge] ⩽                                                     .
+                                                                                   ∥λ∥21
+   The endpoints of P are rC1 , rC2 , independently sampled from
+                                                                  X λ[C]
+                                                      π(v) =                  .
+                                                                 C: r =v
+                                                                         ∥λ∥1
+                                                                    C
+
+
+We apply Proposition 1 to P, P and get the corresponding lower bound c1 /(|V (H)| + |E(H)|). Using Eq. (11) and
+                                ′
+
+λ[C]2 ⩽ λ[C], we obtain
+                                     4 C λ[C]2 + 18(∥λ∥1 − F1,1 (λ))    22∥λ∥1 − 18F1,1 (λ)
+                                       P
+                          c1
+                                   ⩽                                 ⩽                       .
+                  |V (H)| + |E(H)|                 ∥λ∥21                        ∥λ∥21
+
+                                                                  21
+Rearranging gives
+                                                    11               c1 ∥λ∥21
+                                       F1,1 (λ) ⩽      ∥λ∥1 −                      .
+                                                     9        18(|V (H)| + |E(H)|)
+The right-hand side is a concave quadratic in ∥λ∥1 , maximized at
+                                                         11(|V (H)| + |E(H)|)
+                                                ∥λ∥1 =                        .
+                                                                  c1
+Substituting this value gives
+                                             121
+                                F1,1 (λ) ⩽        (|V (H)| + |E(H)|) = O (|V (H)| + |E(H)|) .                        □
+                                             18c1
+
+
+6     Computing a Cluster or a Balanced Separator
+In this section, we prove Theorem 7, restated below.
+                                                                                                          (1)
+Theorem 7. Let h ⩾ 2, and let G = (V, E) be a graph
+                                                 P with n vertices and m edges that excludes Kh as an induced
+minor. Let w : V → Z⩾1 be vertex weights, W := v∈V w(v), and 0 < D ⩽ n. There is a randomized algorithm
+CUTORCLUSTER(G, h, w, D) that returns one of the following:
+    1. a cluster: a set K ⊆ V with |K| > 3n/4 such that G[K] has vertex-weight diameter at most D: every two
+       vertices of K are joined by a path P in G[K] with w(P) ⩽ D, or
+    2. a balanced separator: a set S ⊆ V with |S| = O(W log(hW /n)/D) such that every connected component of
+       G − S has at most 3n/4 vertices.
+Its expected running time is O(h5 (TSSSP (n + 1, m + n, 2W ) + m + n)), where TSSSP (N , M , L) is the time to compute
+a shortest-path tree from a single source in a graph with at most N vertices, at most M edges, and integer edge
+lengths with maximum distance at most L.
+    For X ⊆ V , let w(X ) := v∈X w(v). Following [DRSW27], the vertex weight function w induces an edge
+                             P
+                                                                                   w(u)+w(v)
+length function ℓ : E → R⩾0 where for each edge e = (u, v), we set ℓ(e) =              2     . The graph distance (for
+vertex-weighted graphs) in this section is the distance w.r.t. the length function ℓ, unless explicitly noted otherwise.
+Thus, a path P from u to v has length ℓ(P) = w(P) − (w(u) + w(v))/2. For a vertex-weighted subgraph H of G,
+X ⊆ V (H) and r ⩾ 0, let BH (X , r) := {v ∈ V (H) : dH (X , v) ⩽ r}.
+    We will need two results for this theorem. The first result is the following lemma, which is an efficient
+implementation of [DRSW27, Theorem 3.4], whose proof will be delayed to Section 6.1.
+                                                         (1)
+Lemma 7. Let h ⩾ 2, and let G be a connected Kh -induced-minor-free graph with n vertices, m edges and edge
+lengths in (0, 1]. Distances are w.r.t. these edge lengths. Let b := n/(8h2 ). There is a randomized algorithm,
+denoted by BALLORPAIR(G, h), that returns one of the following:
+    1. a vertex x with |BG (x, 11)| > b,
+    2. a pair (A, B) of vertex-disjoint subsets of vertices, each of size at least b and dG (A, B) > 1.
+It makes O(h3 ) shortest-path computations (from sets of sources) and an additional O(h3 (m + n)) time, in
+expectation.
+    Intuitively, Lemma 7 says that either we get a low-diameter cluster containing many vertices, or we have two
+large sets A and B that are sufficiently far apart. In the former case, we get a cluster as stated in Theorem 7. In
+the latter case, we do not immediately get the separator. W.l.o.g., we assume that |BG (A, 1/2)| ⩽ |BG (B, 1/2)| and
+we call A the smaller side of the pair (A, B). Then we need one more step: grow the smaller side to find a larger
+subset R ⊇ A whose boundary, denoted by ∂ R, is small. Here ∂ R contains all the vertices in R that have at least one
+neighbor outside R. The following lemma formalizes this step and follows from a simple region-growing argument
+of Leighton and Rao [LR99].
+
+
+                                                               22
+(a)                                                              (b)
+                                                                                       I v has width w(v) and center d(X , v)
+
+                                                                    x
+                    Rr            q
+                                                                    a
+       r                 a            b                             c                                                         Rr
+                x                                                                                                                   Λ′ (r) = 3 intervals
+                                          d                         b
+                                                                                                                                    contain r
+                                                                    q
+                              c                  e
+                                                                    d
+                                                                    e
+                                                                                                                             d(X , v)
+                                                                             0       δ/2           r      3δ/2       2δ
+    R r = {x, a, c, b, q},    ∂ R r = {b, c},        ′
+                                                 Λ (r) = 3                        part of I v left of r; the total is Λ(r)
+
+Figure 1. Illustrating the region growing algorithm in the proof of Lemma 8, with X = {x}, δ = 4 and r = 4. (a) Each vertex v is a disc of
+diameter proportional to w(v); the boundary vertices of R r have a thick orange outline. (b) The intervals I v ; the filled parts sum to Λ(r).
+
+
+
+Lemma 8. Let δ ⩾ 1 be a parameter and let G = (V, E) be a vertex-weighted graph with n vertices, m edges and
+integer vertex weights w(v) ∈ [1, δ]. Let X ⊆ V be nonempty. There is a set R with X ⊆ R ⊆ BG (X , 2δ) such that
+              w(V )
+|∂ R| ⩽ δ1 ln w(X ) · w(R). Furthermore, if {dG (X , v)} v∈V is given, then R can be found in O(m + n + δ) time, and in
+this case we denote the algorithm by GROW(G, X , δ, {dG (X , v)} v∈V ).
+
+Proof: For each vertex v, represent it by an interval I v = [dG (X , v) − w(v)/2, dG (X , v) + w(v)/2], which is centered
+                                                                                            w(u)+w(v)
+at dG (X , v) and has width w(v). Then for any edge e = (u, v), I v ∩ Iu ̸= ∅ since ℓ(e) =      2     . Let r ∈ [δ/2, 3δ/2]
+be a parameter. Let Λ(r) be the total length of the parts of the intervals to the left of r; see Figure 1. Formally:
+                                X
+                         Λ(r) =    max{min{r, dG (X , v) + w(v)/2} − (dG (X , v) − w(v)/2), 0}                         (31)
+                                              v∈V
+
+Let R r be the set of vertices whose intervals start before r. We observe that:
+
+   1. Λ′ (r) is the number of intervals containing r when r is not the endpoint of an interval. (And there are only
+      finitely many such points, whose total measure is 0 in [δ/2, 3δ/2].)
+   2. Every vertex u ∈ R r such that Iu ends before r only has neighbors inside R r . Thus, every u ∈ ∂ R r must have
+      r ∈ Iu , which implies |∂ R r | ⩽ Λ′ (r).
+   3. Λ(r) ⩽ w(R r ).
+
+      Finally, we observe that:
+                         Z 3δ/2
+                                      Λ′ (r)                                                             w(V )
+                                             d r = ln(Λ(3δ/2)) − ln(Λ(δ/2)) ⩽ ln(w(V )) − ln(w(X )) = ln       .
+                             δ/2
+                                      Λ(r)                                                               w(X )
+
+                                                                                       w(V )
+Thus, there exists r ∈ [δ/2, 3δ/2] such that Λ′ (r) ⩽ Λ(r) δ1 ln w(X ) , giving:
+
+                                                                           1 w(V )  1 w(V )
+                                                |∂ R r | ⩽ Λ′ (r) ⩽ Λ(r)    ln     ⩽ ln     w(R r )                                                   (32)
+                                                                           δ w(X )  δ w(X )
+
+as claimed. To find such r, we simply sweep over endpoints in [δ/2, 3δ/2] sorted in increasing order, using bucket
+sort. The running time is O(n + m + δ).                                                                         □
+
+
+
+
+                                                                             23
+Algorithm 3 CUTORCLUSTER(G, h, w, D)
+ 1: δ := D/25
+ 2: S ← {v ∈ V : w(v) > δ/4}
+ 3: H ← largest connected component of G \ S
+ 4: while |V (H)| > 3n/4 do
+ 5:    (x, A, B) ← BALLORPAIR(H, h) with edge lengths divided by δ.     ▷ if x = NULL, then A is the smaller side
+ 6:    if x ̸= NULL then
+ 7:        if |BH (x, 12δ)| > 3n/4 then
+ 8:            return BH (x, 12δ)                                                                ▷ return a cluster
+ 9:        X ← BH (x, 11δ)
+10:    else                                                                                   ▷ it returns two sets
+11:        X ←A                                                 ▷ |BH (A, δ/2)| ⩽ |BH (B, δ/2)| and dH (A, B) > δ
+12:    compute {dH (X , v)} v∈V
+13:    R ← GROW(H, X , δ/4, {dH (X , v)} v∈V )                                 ▷ apply the algorithm in Lemma 8
+14:    S ← S ∪ ∂H (R)
+15:    H ← largest connected component of H \ ∂H (R)        ▷ also is the largest connected component of G \ S
+16: return S                                                                                          ▷ return a cut
+
+    Now we are ready to prove Theorem 7. We write ∂H R to denote the boundary of R in a graph H.
+
+Proof of Theorem 7. Algorithm 3 implements CUTORCLUSTER(G, h, w, D). We now describe the intuition of the
+algorithm. Let δ = D/25. First, we include all vertices of weight at least δ/4 in a set S, our intended balanced
+separator. This ensures that all edges have length at most δ/4. The algorithm is iterative, starting from the largest
+connected component H of G \ S. If at any point of the algorithm H contains at most 3n/4 vertices, then we know
+that S is balanced.
+   In each iteration, we apply BALLORPAIR(H, h) (in Lemma 7) with edge lengths divided by δ, so that every edge
+has length in (0, 1]. By Lemma 7, we either get:
+   1. a vertex x such that (in the unscaled edge lengths), BH (x, 11δ) contains more than |V (H)|/(8h2 ) vertices.
+      Then we check if BH (x, 12δ) contains more than 3n/4 vertices, then we return BH (x, 12δ), which is a cluster
+      satisfying item 1 of Theorem 7 since the diameter of G[BH (x, 12δ)] is at most 2(12δ) + 2(δ/4) < 25δ = D.
+      Otherwise, we have found a set X = BH (x, 11δ); we clarify the role of X below. We note that:
+
+                                              |BH (X , δ/2)| ⩽ |BH (x, 12δ)| ⩽ 3n/4                                    (33)
+
+   2. a pair (A, B) where A is the smaller side, i.e., |BH (A, δ/2)| ⩽ |BH (B, δ/2)|. In this case, we take X = A. Since
+      dH (A, B) > δ, the sets BH (A, δ/2) and BH (B, δ/2) are disjoint, and since A is the smaller side, |BH (X , δ/2)| =
+      |BH (A, δ/2)| ⩽ |V (H)|/2.
+    In both cases, X has the following properties: (i) X contains at least |V (H)|/(8h2 ) vertices, and (ii) |BH (X , δ/2)| ⩽
+3n/4. This means if we grow X by a radius at most δ/2 to get a set R ⊆ BH (X , δ/2) by applying Lemma 8 with
+parameter δ/4 (line 13 in Algorithm 3), it is guaranteed that if the largest connected component C of H \ ∂H (R)
+has size more than 3n/4, then C ∩ R = ∅. Thus, by adding ∂H (R) to S, in the next iteration we continue with the
+(largest) connected component of H \ ∂H (R) that is disjoint from R. Since w(X ) ⩾ |X | ⩾ |V (H)|/(8h2 ) > 3n/(32h2 ),
+by Lemma 8, each step we add to S at most:
+
+                                       4    W              4w(R) 32h2 W
+                                         ln         w(R) =      ln      .                                              (34)
+                                       δ 3n/(32h2 )          δ     3n
+Over the course of the algorithm, the total number of vertices added to S in line 14 is:
+                                         X 4w(R)         32h2 W   4W    32h2 W
+                                                    ln          ⩽    ln                                                (35)
+                                          R
+                                                δ          3n      δ      3n
+
+
+                                                            24
+   Since in line 2, we add at most 4W /δ vertices to S, the total size of S is:
+
+                                         4W 4W     32h2 W
+                                 |S| ⩽      +   ln        = O(W log(hW /n)/D).
+                                          δ   δ      3n
+    Now we bound the running time of each iteration. By Lemma 7, each BALLORPAIR(H, h) requires O(h3 ) shortest
+path computations in expectation. Note that in Algorithm 3, we scale edge lengths by δ to match the statement of
+Lemma 7, but we will run the single-source shortest path on unscaled lengths. Also note that since each edge
+                               w(u)+w(v)
+e = (u, v) has length ℓ(e) =       2     , which could be fractional, by scaling the edge length by a factor of 2, all
+the edge lengths are integers. Since the total vertex weight is at most W , the maximum distance is at most 2W .
+Hence, the total running time of this procedure is O(h3 (TSSSP (n + 1, m + n, 2W ) + m + n)).
+    To compute {dH (X , v)} v∈V , we can reduce to single-source shortest path by adding a dummy vertex x and
+connecting x to every vertex in X with the same edge weight, say 1. The running time is O(TSSSP (n + 1, m +
+n, 2W )). Finally, computing R takes O(n + m + W ) time by Lemma 8. Thus, the maximum time per iteration is
+O(h3 (TSSSP (n + 1, m + n, 2W ) + m + n)).
+    We note that since |X | ⩾ |V (H)|/(8h2 ) > 3n/(32h2 ), each iteration eliminates more than 3n/(32h2 ) vertices
+from H. Thus, the total number of iterations is at most O(h2 ), and hence the total running time is O(h5 (TSSSP (n +
+1, m + n, 2W ) + m + n)), as claimed.                                                                               □
+
+
+6.1    Proof of Lemma 7
+Since G is fixed throughout this subsection, we simplify notation by setting d := dG and B := BG . Recall that
+b = n/(8h2 ) and that edge lengths are in (0, 1].
+
+Lemma 9. Let Y = { y1 , . . . , yk } be an (ordered) set of k vertices such that |B(Y, 4)| > b. Then there is a randomized
+algorithm, denoted by FINDPREFIX(Y ), that returns either (i) a vertex x ∈ V such that |B(x, 11)| > b or (ii) an
+index t ∈ [k] such that:
+                                               b < |B({ y1 , . . . , y t }, 4)| ⩽ 3b .
+The algorithm makes O(h2 ) single-source shortest-path computations and spends O(h2 (m + n)) additional time, in
+expectation.
+
+Proof: For notational convenience, we also allow the index t = 0. For every t ∈ [0, k], let Yt = { y1 , . . . , y t }
+be the prefix of Y with t elements; Yk = Y and Y0 = ∅. Note that B(Y0 , 4) = ∅. Algorithm 4 implements
+FINDPREFIX(Y ); see Figure 2. The idea is to sample a vertex x ∈ V and check if |B(x, 11)| > b. If so, we have
+found x as in the lemma and return it. Otherwise, let t be the smallest index in [k] such that d(x, y t ) ⩽ 4. (If no
+such t exists, then Algorithm 4 would set t = 0, and the algorithm will try sampling x again since in this case
+|B(Yt , 4)| = |B(Y0 , 4)| = 0.) In the next iteration, the algorithm will continue checking if Yt satisfies the condition
+of the lemma, and if so, return it.
+
+Algorithm 4 FINDPREFIX(Y := { y1 , . . . , yk })
+ 1: t ← k
+ 2: while |B(Yt , 4)| ⩽ b or |B(Yt , 4)| > 3b do
+ 3:     sample x ∈ V uniformly at random
+ 4:     if |B(x, 11)| > b then
+ 5:         return x
+ 6:     t ← the smallest index in [k] such that d(x, y t ) ⩽ 4, or t ← 0 if there is none
+ 7: return t
+
+
+    Now we analyze Algorithm 4. Let i ∈ [0, k − 1] be the largest index such that |B(Yi , 4)| ⩽ b. Let j ∈ [1, k] be
+the smallest index such that |B(Y j , 4)| > 2b. If |B(Y, 4)| ⩽ 3b, the algorithm returns t = k immediately, so assume
+|B(Y, 4)| > 3b. Then i ̸= k, j exists, and i < j.
+
+
+                                                           25
+(a)                                                                                     (b)
+                                                                                         |B(Ys , 4)|
+                                                      B( y t , 4)
+
+B(Yt−1 , 4)                                                                              3b
+                            y1        yt
+
+                                 Yt                                                      2b
+                                                                                                                                       |B(Y j , 4) \
+                                                  x                                                                                   B(Yi , 4)| > b
+                                                                                          b
+                                                         B(Yt , 4) \ B(Yt−1 , 4)
+                                                                                                                                  s
+                                                                                                       i               j      k
+       d(x, y t ) ⩽ 4,   B(Yt , 4) \ B(Yt−1 , 4) ⊆ B( y t , 4) ⊆ B(x, 11)
+
+Figure 2. FindPrefix (Lemma 9). (a) A prefix Yt = { y1 , . . . , y t } of the depth-first search order and the ball B(Yt , 4). A sampled vertex
+x ∈ B(Y j , 4) \ B(Yi , 4) is within distance 4 of some y t with i < t ⩽ j , and B( y t , 4) ⊆ B(x, 11), so if |B(x, 11)| ⩽ b then |B(Yt , 4)| ⩽
+|B(Yt−1 , 4)| + b ⩽ 3b. (b) The size of B(Ys , 4) as a function of s: i is the largest index with at most b vertices and j the smallest index with
+more than 2b, so the band between them contains more than b vertices, and a uniform sample lands in it with probability at least 1/(8h2 ).
+
+
+
+   Observe that |B(Y j , 4) \ B(Yi , 4)| > b = n/(8h2 ). Then with probability at least 1/(8h2 ), we sample x ∈
+B(Y j , 4) \ B(Yi , 4) in line 3. In this case, d(x, Y ) ⩽ 4 and hence t in line 6 exists. Furthermore, i < t ⩽ j since
+d(x, Yi ) > 4 by the definition of x. Thus, by the maximality of i, |B(Yt , 4)| > b.
+   It remains to show that |B(Yt , 4)| ⩽ 3b under the assumption that |B(x, 11)| ⩽ b (otherwise the algorithm
+correctly returns x). By the minimality of j, |B(Yt−1 , 4)| ⩽ 2b. Observe that since B( y t , 4) ⊆ B(x, 11) and
+|B(x, 11)| ⩽ b, it holds that |B( y t , 4)| ⩽ b. Thus:
+
+                                            |B(Yt , 4)| ⩽ |B(Yt−1 , 4)| + |B( y t , 4)| ⩽ 2b + b = 3b
+
+as claimed.
+    The running time follows from the fact that we have O(h2 ) iterations in expectation since, as noted above, we
+(successfully) sample x ∈ B(Y j , 4) \ B(Yi , 4) in line 3 with probability at least 1/(8h2 ). In each iteration, we only
+need two shortest path computations: one from x and another to compute B(Yt , 4) (by adding a dummy vertex
+and connecting it to every vertex of Yt ).                                                                             □
+                                                                                                                                                   (1)
+    Now we give the algorithm claimed in Lemma 7. Algorithm 5 tries to build an induced minor model of Kh ,
+and if it fails to do so, it will either output a vertex x or a pair (A, B) as in Lemma 7. The algorithm has two major
+steps.
+
+Step 1.       It finds a set of h sets X 1 , . . . , X h (see Figure 3) such that:
+
+                              d(X i , X j ) > 3       (i ̸= j),         b < |B(X i , 4)| ⩽ 3b,         |V \ B(X i , 5)| ⩽ b                      (36)
+                                                                                                           (1)
+Each set corresponds to a vertex of Kh (but not a subdivision vertex of Kh ). The idea is to find one set at a
+time: at iteration i ∈ [h], we find a subset X i in G \ B(F, 3) where F = X 1 ∪ . . . ∪ X i−1 . This is to guarantee that
+d(X i , X j ) > 3 (i ̸= j). There are two cases.
+    • Case 1. If every connected component of G\B(F, 3) has size at most b, then add the vertices of each connected
+      component K of G \ B(F, 3) outside B(F, 4) to U, one at a time until |U| > b. (Our analysis below shows that
+      U exists.) Then we return (U, V \ (B(F, 4) ∪ U)) as the pair. The reason that d(U, V \ (B(F, 4) ∪ U)) > 1 is
+      because every path of length at most 1 that starts outside B(F, 4) stays outside B(F, 3).
+    • Case 2. The largest connected component Y of G \ B(F, 3) has more than b vertices. Then we form a set
+      { y1 , . . . , yk } of its vertices ordered by DFS so that every prefix induces a connected subgraph of Y . Then we
+      apply Lemma 9 to find either (i) a vertex x such that |B(x, 11)| > b or (ii) a prefix X i = { y1 , . . . , y t } such that
+      b < |B(X i , 4)| ⩽ 3b. In the former case, we return x as it satisfies Lemma 7. In the latter case, we have found
+
+
+                                                                                   26
+Algorithm 5 BALLORPAIR(G, h)
+ 1: b := n/(8h2 )
+ 2: for i = 1, . . . , h do                                                                                        ▷ Step 1
+ 3:     F ← X 1 ∪ · · · ∪ X i−1
+ 4:     Y ← largest connected component of G \ B(F, 3)
+ 5:     if |V (Y )| ⩽ b then                                                                              ▷ Case 1, Step 1
+ 6:           U ←∅
+ 7:           for each component K of G \ B(F, 3) do
+ 8:                 U ← U ∪ (V (K) \ B(F, 4))
+ 9:                 if |U| > b then return (U, V \ (B(F, 4) ∪ U))
+10:     y1 , . . . , yk ← a depth-first search order of Y with k = |V (Y )|                               ▷ Case 2, Step 1
+11:     (x, t) ← FINDPREFIX({ y1 , . . . , yk })                                                            ▷ In Lemma 9
+12:     if x ̸= NULL then return x
+13:     X i := { y1 , . . . , y t }
+14:     if |V \ B(X i , 5)| > b then
+15:           return (B(X i , 4), V \ B(X i , 5))                                                          ▷ End of Step 1
+16: C ← {v ∈ V : 4 < d(v, X i ) ⩽ 5 for every i ∈ [h]}                                                            ▷ Step 2
+17: for every pair 1 ⩽ i < j ⩽ h do
+18:     ci j := any vertex of C
+19:     if |B(ci j , 11)| > b then
+20:           return ci j
+21:     C ← C \ B(ci j , 11)
+22:     Pi j ← the vertices of shortest paths from ci j to X i and to X j , except their last vertices     ▷ End of Step 2
+23: return the induced minor model with branch sets X 1 , . . . , X h and Pi j for i < j
+
+
+
+      a set X i that satisfies the second condition of Equation (36). The only missing condition is |V \ B(X i , 5)| ⩽ b,
+      and it is guaranteed by line 14. Specifically, if |V \ B(X i , 5)| > b, then we can return (B(X i , 4), V \ B(X i , 5))
+      as the pair in Lemma 7 since the two sets are at distance greater than 1, and each of size at least b.
+
+
+                                                                                                                  (1)
+Step 2. This step finds a set {ci j }1⩽i< j⩽h (see Figure 4) corresponding to the subdivision vertices of Kh in the
+induced minor model, as well as a vertex subset Pi j of the two shortest paths from ci j to X i and X j (without their
+last vertices in X i and X j ). Each ci j belongs to the set C = {v ∈ V : 4 < d(v, X i ) ⩽ 5 for every i ∈ [h]} and hence:
+
+                                           4 < d(ci j , X ℓ ) ⩽ 5 for every ℓ ∈ [h]                                     (37)
+                                            (1)
+  To get an induced minor model of Kh , we want {Pi j }1⩽i< j⩽h to be non-adjacent. We enforce this indirectly by
+making sure that:
+                                     d(ci j , cĩ j̃ ) > 11 for {i, j} ̸= {ĩ, j̃}.                          (38)
+Specifically, every time we take a new vertex ci j from C, we update C ← C \ B(ci j , 11). If |B(ci j , 11)| > b, then
+we return ci j as the vertex in Lemma 7; otherwise, we can show that C ̸= ∅ after the update, and hence we can
+continue the next iterations.
+                      (1)
+   As long as G is Kh -induced-minor-free, we will never reach the last line of Algorithm 5 and hence the algorithm
+always either returns a vertex x or a pair (A, B) as required by Lemma 7.
+
+Proof of Lemma 7. First, observe that Equation (36) is satisfied for {X 1 , . . . , X h } (if the algorithm does not
+terminate early): d(X i , X k ) > 3 since X i is in G \ B(F, 3), b < |B(X i , 4)| ⩽ 3b by Lemma 9, and |V \ B(X i , 5)| ⩽ b
+due to line 14.
+    We have argued in Case 1 that d(U, V \ (B(F, 4) ∪ U)) > 1. To show that this pair satisfies Lemma 7, it remains
+to show that each set has size at least b. By construction, b < |U| ⩽ 2b since every connected component of
+
+
+                                                             27
+(a)                                                  (b)                                                (c)
+                                                                                                                               B(F, 4)
+                      Y : more than b vertices
+                                                                                   B(X i , 5)
+      B(F, 3)                                                                                                  B(F, 3)
+                             yt
+    X1           y1                                                                                           X1                         U
+                                                        B(X i , 4)
+   F = X1 ∪ X2                                                                                                F = X1 ∪ X2
+                                                              Xi
+    X2                                                                                                        X2                         V \ (B(F, 4) ∪ U)
+                                                                                       V \ B(X i , 5)
+                 at most b vertices                                                    > b vertices
+
+         X i ⊆ G \ B(F, 3), so d(X i , F ) > 3                       b < |B(X i , 4)| ⩽ 3b                                     each ⩽ b, so b < |U| ⩽ 2b
+
+Figure 3. Step 1 of BallOrPair (Algorithm 5); all edges have length 1. (a) Case 2: F = X 1 ∪ X 2 is the union of the branch sets found so far, the
+largest component Y of G \ B(F, 3) has more than b vertices, and X i = { y1 , . . . , y t } is a prefix of a depth-first search order of Y . (b) The check
+in line 14: if more than b vertices (hollow) lie outside B(X i , 5), the pair (B(X i , 4), V \ B(X i , 5)) is returned in line 15; the annulus between the
+two balls has width 1, so the two sets are at distance more than 1. (c) Case 1: every component of G \ B(F, 3) has at most b vertices; their
+parts outside B(F, 4) are collected into U (filled) until |U| > b, and the pair (U, V \ (B(F, 4) ∪ U)) is returned in line 9.
+
+
+
+G \ B(F, 3) has at most b vertices. Since |V \ B(F, 4)| ⩾ n − h(3b) > 3b by (36), more than b vertices of V \ B(F, 4)
+are not in U. Thus, the pair returned in line 9 is correct. If the algorithm returns a pair (B(X i , 4), V \ B(X i , 5)) in
+line 15, we have argued in Case 2 that the two sets are at distance greater than 1, and each of size at least b.
+    If the algorithm returns ci j in line 19, then it is correct as |B(ci j , 11)| > b. Thus, for correctness, we only need
+                                                                                                                         (1)
+to argue that if no ci j is returned, Step 2 would output the induced minor model of Kh (which would contradict
+           (1)
+that G is Kh -induced-minor-free).
+                                                      h
+                                                        
+    First, we show that the algorithm runs exactly 2 iterations in Step 2 by showing that C is never empty. We
+note that B(X i , 5) contains at least n − b vertices and since |B(X i , 4)| ⩽ 3b, B(X i , 5) \ B(X i , 4) misses at most
+b + 3b = 4b vertices of V . Thus, over h sets, |C| ⩾ n − h(4b) ⩾ 3n/4. In each iteration, we remove at most b
+                        h
+vertices from C, over 2 iterations, we remove:
+                                                                  
+                                                             h      h n
+                                                                b=        < n/16
+                                                             2      2 8h2
+
+vertices from C. This means C will never be empty.
+                                                                                            (1)
+    It remains to show that {X i }1⩽i⩽h ∪ {Pi j }1⩽i< j⩽h form an induced minor model of Kh in G. Recall that the
+edge lengths are in (0, 1]. For every 1 ⩽ i < j ⩽ h, ℓ ∈ [h] \ {i, j} and every neighbor u of X ℓ in G:
+
+
+                                                 d(ci j , u) ⩾ d(ci j , X ℓ ) − d(u, X ℓ ) > 4 − 1 = 3
+                                                 d(u, X i ) ⩾ d(X ℓ , X i ) − 1 > 3 − 1 = 2
+                                                 d(u, X j ) ⩾ d(X ℓ , X j ) − 1 > 3 − 1 = 2
+
+This means Pi j cannot contain u since d(ci j , X i ), d(ci j , X j ) ⩽ 5 by Equation (37). Thus, Pi j is disjoint from X i and
+X j , has neighbors in both, and is not adjacent to any other branch sets.
+      Distinct sets Pi j ⊆ B(ci j , 5) and by Equation (38) and the triangle inequality, Pi j and Pĩ j̃ are at distance more
+                                                                                                                                                   (1)
+than 1 and hence they are non-adjacent. Thus, {X i }1⩽i⩽h ∪ {Pi j }1⩽i< j⩽h form an induced minor model of Kh in G,
+as claimed.
+    By Lemma 9, finding each X i takes O(h2 ) shortest-path computations in expectation. Step 2 also requires
+only O(h2 ) shortest-path computations: one per ci j . Thus, the overall number of shortest-path computations is
+O(h3 ).                                                                                                          □
+
+
+
+
+                                                                              28
+(a)                                                         X3                                                                 (b)
+
+
+
+                                                                                                                                        X3
+                                                                 c34
+                                             > 11
+                            c13                                                             c23
+                                                                       X4
+                                                                                                                                             X4
+
+
+
+                                   c14                                               c24                                     X1                    X2
+                                                               >4                                                                        (1)
+       X1                                                                                                         X2                    K4
+
+                                                         c12
+                                                                                  ⩽5
+
+                                                                                   (1)
+Figure 4. Step 2 of BallOrPair and the resulting induced minor model of Kh , drawn for h = 4. (a) The branch sets X 1 , . . . , X 4 (black) are
+connected and pairwise at distance more than 3. Each center ci j (orange) is at distance in (4, 5] from every X ℓ , and the centers are pairwise
+at distance more than 11. The set Pi j (orange) consists of ci j and the shortest paths from ci j to X i and to X j without their last vertices, so it is
+                                                                                                                                  (1)
+adjacent to X i and X j and to no other branch set. (b) Contracting each X i to a vertex and each Pi j to a vertex gives K4 .
+
+
+
+References
+[ABPT25] Pierre Aboulker, Édouard Bonnet, Timothé Picavet, and Nicolas Trotignon. Induced disjoint paths
+         without an induced minor. In 52nd International Colloquium on Automata, Languages, and Programming
+         (ICALP 2025), volume 334 of Leibniz International Proceedings in Informatics (LIPIcs), pages 4:1–4:14.
+         Schloss Dagstuhl – Leibniz-Zentrum für Informatik, 2025. doi:10.4230/LIPIcs.ICALP.2025.4.
+
+[AHR08]         Jacob Abernethy, Elad Hazan, and Alexander Rakhlin. Competing in the dark: An efficient algorithm
+                for bandit linear optimization. In Proceedings of the 21st Annual Conference on Learning Theory (COLT),
+                pages 263–273, 2008.
+
+[AK16]          Sanjeev Arora and Satyen Kale. A combinatorial, primal-dual approach to semidefinite programs. J.
+                ACM, 63(2), May 2016. doi:10.1145/2837020.
+
+[AST90]         Noga Alon, Paul Seymour, and Robin Thomas. A separator theorem for nonplanar graphs. Journal
+                of the American Mathematical Society, 3(4):801–808, 1990. Announced at STOC ’90. doi:10.1090/
+                s0894-0347-1990-1065053-0.
+
+[BKL+ 26]       Édouard Bonnet, Tuukka Korhonen, Hung Le, Jason Li, and Tomáš Masařík. Separator theorem for
+                minor-free graphs in linear time. In Proceedings of the 58th Annual ACM Symposium on Theory of
+                Computing, pages 61–71, 2026.
+
+[BLR10]         Punyashloka Biswal, James R. Lee, and Satish Rao. Eigenvalue bounds, spectral partitioning, and
+                metrical deformations via flows. J. ACM, 57(3), 2010. Announced at FOCS ’08. doi:10.1145/
+                1706591.1706593.
+
+[CF25]          Jonathan Conroy and Arnold Filtser. How to protect yourself from threatening skeletons: Optimal
+                padded decompositions for minor-free graphs. In Proceedings of the 57th Annual ACM Symposium on
+                Theory of Computing, STOC ’25, pages 2281–2292, 2025. doi:10.1145/3717823.3718252.
+
+[CLS26]         Jonathan Conroy, Hung Le, and Jack Spalding-Jamieson. kh -minor-free graphs have balanced separa-
+                                p
+                tors of size o(h n), 2026. URL: https://arxiv.org/abs/2611.00663, arXiv:2611.00663.
+
+
+
+                                                                            29
+[Dia69]     Robert B. Dial. Algorithm 360: Shortest-path forest with topological ordering [H]. Communications of
+            the ACM, 12(11):632–633, 1969. doi:10.1145/363269.363610.
+
+[DN16]      Zdeněk Dvořák and Sergey Norin. Strongly sublinear separators and polynomial expansion. SIAM
+            Journal on Discrete Mathematics, 30(2):1095–1101, 2016. doi:10.1137/15M1017569.
+
+[DRSW27] James Davies, Paweł Rz ˛ ażewski, Jack Spalding-Jamieson, and Bartosz Walczak. Revisiting separators
+         in string graphs, region intersection graphs, and induced-minor-free graphs. In Proceedings of the 2027
+         Annual ACM-SIAM Symposium on Discrete Algorithms (SODA), 2027. URL: https://arxiv.org/abs/
+         2610.23792.
+
+[ENRS99] Guy Even, Joseph Naor, Satish Rao, and Baruch Schieber. Fast approximate graph partitioning
+         algorithms. SIAM Journal on Computing, 28(6):2187–2214, 1999.
+
+[ER18]      Louis Esperet and Jean-Florent Raymond. Polynomial expansion and sublinear separators. European
+            Journal of Combinatorics, 69:49–53, 2018. doi:10.1016/j.ejc.2017.09.003.
+
+[FP10]      Jacob Fox and János Pach. A separator theorem for string graphs and its applications. Combinatorics,
+            Probability and Computing, 19(3):371–390, 2010.
+
+[GHT84]     John R Gilbert, Joan P Hutchinson, and Robert Endre Tarjan. A separator theorem for graphs of
+            bounded genus. Journal of Algorithms, 5(3):391–407, 1984. doi:10.1016/0196-6774(84)90019-1.
+
+[KL24]      Tuukka Korhonen and Daniel Lokshtanov. Induced-minor-free graphs: Separator theorem, subex-
+            ponential algorithms, and improved hardness of recognition. In Proceedings of the 2024 Annual
+            ACM-SIAM Symposium on Discrete Algorithms, SODA ’24, pages 5249–5275, 2024. doi:10.1137/1.
+            9781611977912.188.
+
+[KLPT11]    Jonathan A Kelner, James R Lee, Gregory N Price, and Shang-Hua Teng. Metric uniformization and
+            spectral bounds for graphs. Geometric and Functional Analysis, 21(5):1117–1143, 2011.
+
+[KR10]     Ken-ichi Kawarabayashi and Bruce Reed. A separator theorem in minor-closed classes. In Proceedings
+           of the 51st Annual Symposium on Foundations of Computer Science, FOCS ’10, pages 153–162. IEEE,
+           2010. doi:10.1109/FOCS.2010.22.
+
+[KS26a]     Benedikt Kolbe and Jack Spalding-Jamieson. On eigenvalue bounds for bounded genus graphs and
+            minor-free graphs, 2026. URL: https://arxiv.org/abs/2608.27179, arXiv:2608.27179.
+
+[KS26b]     Vladimir Kolmogorov and Jack Spalding-Jamieson. A fast approximation algorithm for the minimum
+            balanced vertex separator in a graph, 2026. URL: https://arxiv.org/abs/2603.15782, arXiv:
+            2603.15782.
+
+[Le26]     Hung Le. A separator for minor-free graphs beyond the flow barrier. arXiv preprint arXiv:2605.05494,
+           2026.
+
+[Lee17]     James R. Lee. Separators in Region Intersection Graphs. In Christos H. Papadimitriou, editor, 8th
+            Innovations in Theoretical Computer Science Conference (ITCS 2017), volume 67 of Leibniz International
+            Proceedings in Informatics (LIPIcs), pages 1:1–1:8, Dagstuhl, Germany, 2017. Schloss Dagstuhl – Leibniz-
+            Zentrum für Informatik. URL: https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.
+            ITCS.2017.1, doi:10.4230/LIPIcs.ITCS.2017.1.
+
+[LR99]      Tom Leighton and Satish Rao. Multicommodity max-flow min-cut theorems and their use in designing
+            approximation algorithms. Journal of the ACM (JACM), 46(6):787–832, 1999.
+
+[LT79]      Richard J. Lipton and Robert Endre Tarjan. A separator theorem for planar graphs. SIAM Journal on
+            Applied Mathematics, 36(2):177–189, 1979. doi:10.1137/0136016.
+
+
+
+                                                        30
+[LT80]     Richard J. Lipton and Robert Endre Tarjan. Applications of a planar separator theorem. SIAM Journal
+           on Computing, 9(3):615–627, 1980. Announced at FOCS ’77. doi:10.1137/0209046.
+
+[LTW24]    Lap Chi Lau, Kam Chuen Tung, and Robert Wang. Fast algorithms for directed graph partitioning
+           using flows and reweighted eigenvalues. In Proceedings of the 2024 Annual ACM-SIAM Symposium on
+           Discrete Algorithms (SODA), pages 591–624. SIAM, 2024.
+
+[Mat14]    Jiří Matoušek. Near-optimal separators in string graphs. Combinatorics, Probability and Computing,
+           23(1):135–139, 2014.
+
+[NOdM12] Jaroslav Nešetřil and Patrice Ossona de Mendez. Sparsity: Graphs, Structures, and Algorithms,
+         volume 28 of Algorithms and Combinatorics. Springer, Berlin, Heidelberg, 2012. doi:10.1007/
+         978-3-642-27875-4.
+
+[Ora26]    Francesco Orabona. Online learning: A modern introduction using convex optimization, 2026. URL:
+           https://arxiv.org/abs/1912.13213, arXiv:1912.13213.
+
+[PRS94]   Serge Plotkin, Satish Rao, and Warren D. Smith. Shallow excluded minors and improved graph
+          decompositions. In Proceedings of the 5th Annual ACM-SIAM Symposium on Discrete Algorithms, SODA
+          ’94, pages 462–470, 1994.
+
+[RW09]     Bruce Reed and David R. Wood. A linear-time algorithm to find a separator in a graph excluding a
+           minor. ACM Transactions on Algorithms, 5(4):1–16, 2009. doi:10.1145/1597036.1597043.
+
+[Spa25]    Jack Spalding-Jamieson. Reweighted spectral partitioning works: Bounds for special graph classes.
+           arXiv preprint arXiv:2506.01228, 2025. URL: https://arxiv.org/abs/2506.01228.
+
+[Tre19]   Luca Trevisan. Notes for lecture 12. Lecture notes for 40391: Optimization, Bocconi University,
+          October 2019. October 29, 2019. URL: https://lucatrevisan.github.io/40391/lecture12.pdf.
+
+[Wul11]    Christian Wulff-Nilsen. Separator theorems for minor-free and shallow minor-free graphs with
+           applications. In Proceedings of the 52nd Annual Symposium on Foundations of Computer Science,
+           FOCS ’11, pages 37–46. IEEE, 2011. doi:10.1109/focs.2011.15.
+
+
+
+
+                                                     31
+

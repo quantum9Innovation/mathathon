@@ -1,0 +1,354 @@
+EXACT MODULAR RECOVERY WITH A DETERMINISTIC QUADRATIC RANK CERTIFICATE
+Independent algorithm audit; November 15, 2026
+
+Written only in the authorized rsbm-exact-algorithm directory.
+Read the even-block RSBM baseline and deterministic-reductions notes.
+This is a specialization of classical exact black-box linear algebra,
+not a new planted-eigenvector identity or a new nonsingularity theorem.
+
+OUTCOME
+-------
+The rank-certification difficulty has a simple solution. Use a SHIFTED
+scalar Krylov sequence, starting with Qv rather than v. If exact
+Berlekamp--Massey on 2k terms returns linear complexity k for a k-by-k
+matrix Q, Q is CERTAINLY nonsingular. Indeed the whole sequence lives
+on the invariant space im(Q), whose dimension is rank(Q), so its
+linear complexity cannot exceed rank(Q). Computing the sequence and
+its exact shortest recurrence costs O(k) sparse matvecs plus O(k^2)
+field operations. No cubic elimination, global matrix-polynomial
+identity test, or probabilistic verification of the rank is needed.
+
+Random diagonal preconditioning makes this certificate available with
+constant probability for every nonsingular sparse matrix over a field
+of polynomial size. The appropriate primary theorem has NO generic
+leading-principal-minor hypothesis and NO characteristic restriction.
+
+For every promised integer input M=A-lambda I of corank one with
+kernel spanned by an all-nonzero sign vector, this gives a Las Vegas
+algorithm using expected soft-O(n^2) BIT operations at fixed degree.
+Every returned sign vector AND the claimed rational rank have a
+fully deterministic soft-O(n^2)-bit verifier.
+
+For arbitrary inputs, use a bounded number of trials and allow FAIL.
+This gives a total one-sided recovery algorithm with soft-O(n^2)
+expected bitwork on EVERY graph and high-probability recovery when
+the qualitative RSBM simplicity theorem applies. If instead a full
+exact answer on exceptional high-nullity graphs is required, a dense
+exact fallback is possible, but the existing qualitative o(1) graph
+failure rate does not by itself preserve an unconditional expected
+soft-O(n^2) runtime for that fallback algorithm.
+
+1. INPUT, THE PRINCIPAL MINOR, AND NORMALIZATION
+------------------------------------------------
+Let n denote the TOTAL matrix order, not one RSBM block size. Let
+
+  M=A-lambda I in Z^{n x n},
+
+where A is a simple graph adjacency matrix of maximum degree d and
+lambda is a known integer. In the RSBM, d=d1+d2 and lambda=d1-d2.
+Fix d and lambda for the soft-O(n^2) bit statement. Symmetry is used
+only to guarantee that the chosen principal minor is nonsingular
+under the promise; the modular Krylov procedure works for arbitrary
+square matrices.
+
+Promise:
+
+  rank_Q M=n-1,    ker_Q M=span_Q{sigma},
+  sigma in {+1,-1}^n.
+
+Normalize sigma_n=1; this fixes the unavoidable global sign. Delete
+the last coordinate, put k=n-1, and write
+
+  M = [ H   a ],       h=-a.
+      [ a^T c ]
+
+Every principal (n-1)-minor is nonzero over Q. One proof is that the
+adjugate of a symmetric corank-one matrix is c0 sigma sigma^T with
+c0 != 0; each diagonal cofactor is c0 sigma_i^2=c0. Thus H is
+nonsingular. The unique rational solution of Hx=h is exactly
+(sigma_1,...,sigma_k), with no large denominators to reconstruct.
+
+For a prime p not dividing det(H), reduce modulo p, solve Hx=h,
+read residues +1 and -1 as integer signs, append sigma_n=1, and
+verify M sigma=0 OVER THE INTEGERS. If balance is part of the target,
+verify sum sigma_i=0 too. One successful modular nonsingularity
+certificate proves rank_Q M>=n-1; the verified integer kernel vector
+proves rank_Q M<=n-1. Together they certify the exact rank and the
+unique sign line. Verification of signs alone would not certify rank.
+
+2. THE SHIFTED-SEQUENCE RANK CERTIFICATE: FULL PROOF
+----------------------------------------------------
+Let Q be any k-by-k matrix over a field F and u,v in F^k. Form
+
+  s_j = u^T Q^{j+1} v,     j=0,...,2k-1.                 (1)
+
+Run the exact Berlekamp--Massey algorithm to determine the MINIMUM
+linear recurrence order L of this finite sequence. An order ell
+means coefficients c1,...,c_ell with
+
+  s_j+c1 s_{j-1}+...+c_ell s_{j-ell}=0
+  for every ell<=j<=2k-1.
+
+Leading/trailing zero coefficients must be handled using the actual
+shortest-register LENGTH L returned by Berlekamp--Massey. Merely
+printing a padded degree-k polynomial is not a certificate.
+
+CERTIFICATE LEMMA. If L=k, then rank_F Q=k, deterministically.
+
+Proof. W=im(Q) is invariant under Q. Set r=dim W=rank Q and w=Qv.
+Then w belongs to W, and the characteristic polynomial of Q|_W has
+degree r and annihilates Q|_W by Cayley--Hamilton. Applying u^T to
+that identity and all its powers gives a recurrence of order at most
+r for the ENTIRE infinite sequence u^T Q^j w, j>=0. Its first 2k
+terms consequently have a recurrence of order at most r. Exact
+minimality of Berlekamp--Massey gives L<=r. Hence L=k forces r=k.
+QED.
+
+This argument is sound on every input, including singular matrices,
+unlucky primes, bad random diagonals, zero test vectors, and high
+rational nullity. Randomness affects availability, never validity.
+
+A short noninteractive certificate for the original matrix consists
+of (p,D,u,v,sigma), with p prime, D nonsingular diagonal, and
+Q=D(H mod p). A deterministic checker:
+
+  * checks that p lies in the prescribed Theta(n^2) interval, checks
+    primality, residue encodings, and nonzero diagonal entries of D;
+  * recomputes (1) with exact modular matvecs;
+  * runs exact Berlekamp--Massey and requires L=k;
+  * checks sigma in {+1,-1}^n, sigma_n=1, M sigma=0 over Z,
+    and balance when requested.
+
+Since D is invertible, the rank lemma proves H invertible modulo p.
+Thus the checker proves rational rank n-1, not just some modular
+kernel witness. The certificate has O(n log p) bits, and the checker
+uses O(k(nnz(H)+k)) field operations and O(n) field storage.
+
+3. WHY RANDOM DIAGONALS AND PROJECTIONS SUCCEED
+-----------------------------------------------
+PRIMARY INPUT (precise scope; actually inspected):
+Li Chen, Wayne Eberly, Erich Kaltofen, B. David Saunders,
+William J. Turner, and Gilles Villard,
+  Efficient matrix preconditioners for black box linear algebra,
+  Linear Algebra and its Applications 343--344 (2002), 119--146.
+  https://kaltofen.math.ncsu.edu/bibliography/02/CEKSTV02.pdf
+Theorem 4.2, journal p.130 / PDF p.12, states: for ANY matrix over
+ANY field and diagonal entries independently uniform in a finite
+set S, diagonal left multiplication is cyclic up to nilpotent blocks
+with probability at least 1-k(k-1)/(2|S|). For nonsingular H and
+S=F_p^*, there is no nilpotent part and Q=DH is cyclic. There is NO
+leading-minor assumption, symmetry assumption, or restriction p>k.
+The characteristic restriction in their Theorem 4.3 concerns an
+additional squarefree conclusion, which we do not need.
+
+Thus, conditional on det(H) != 0 modulo p,
+
+  P_D[Q not cyclic] <= k(k-1)/(2(p-1)).                  (2)
+
+Here cyclic means its matrix minimal polynomial has degree k.
+For cyclic Q, the Krylov determinant
+
+  det[v,Qv,...,Q^{k-1}v]
+
+is a nonzero polynomial of total degree k in v. Its transpose analogue
+in u is also nonzero. Schwartz--Zippel gives failure at most 2k/p for
+independent uniform u,v in F_p^k. If both Krylov matrices are full
+rank, Q invertible makes w=Qv cyclic too; the k-by-k Hankel matrix
+
+  (s_{i+j})_{i,j=0}^{k-1}
+  = [u^T;u^TQ;...;u^TQ^{k-1}] [w,Qw,...,Q^{k-1}w]
+
+is nonsingular. No recurrence of order below k can hold on its first
+2k terms, because that would make its columns dependent. Since a
+k-dimensional recurrence always exists, Berlekamp--Massey returns
+L=k. Consequently
+
+  P[L<k | H invertible mod p]
+  <= k(k-1)/(2(p-1)) + 2k/p.                             (3)
+
+This proves a concrete constant trial success probability whenever
+p is a sufficiently large constant times n^2. No assertion that a
+fixed small prime works for a random RSBM is being used.
+
+4. RECOVERING THE MODULAR SOLUTION FROM THE SAME RECURRENCE
+-----------------------------------------------------------
+Suppose the rank certificate succeeds, L=k. The monic recurrence
+polynomial f(t)=f0+f1 t+...+f_k t^k, f_k=1, recovered from (1) is
+then the characteristic polynomial of Q; in particular f0 != 0.
+One may check f0 != 0 as an implementation consistency guard.
+
+Here is a proof that this is exact, not a probabilistic minpoly guess.
+The shortest INFINITE scalar recurrence has degree at most k, so a
+finite-prefix shortest degree k forces its infinite degree to be k.
+Both the controllability and observability Krylov spaces must have
+full dimension k: otherwise restriction to the reachable subspace or
+quotient by the unobservable invariant subspace would give a scalar
+recurrence of degree below k. Their leading k-by-k Hankel matrix is
+therefore nonsingular. Its k equations determine a monic degree-k
+recurrence uniquely, so the Berlekamp--Massey polynomial agrees with
+the infinite recurrence. That recurrence is the degree-k minimal
+polynomial of Q and hence its characteristic polynomial.
+
+Set y=D h. Cayley--Hamilton gives
+
+  Q^{-1}y = -f0^{-1}(f1 y+f2 Qy+...+f_k Q^{k-1}y).        (4)
+
+Evaluate the right side by Horner's rule in k-1 further sparse
+matvecs, obtaining x. Check Hx=h modulo p. Check every x_i is either
+1 or p-1, convert to integer signs, append 1, and verify M sigma=0
+exactly. The integer verification remains mandatory even though the
+promise would already imply the answer on good inputs. This ensures
+one-sided soundness on arbitrary inputs as well.
+
+For reference, recurrence-based sparse finite-field solving is
+classical Wiedemann linear algebra:
+Douglas H. Wiedemann, Solving sparse linear equations over finite
+fields, IEEE Transactions on Information Theory 32(1) (1986), 54--62.
+https://doi.org/10.1109/TIT.1986.1057137
+Primary paper PDF:
+https://www.enseignement.polytechnique.fr/profs/informatique/Francois.Morain/Master1/Crypto/projects/Wiedemann86.pdf
+The polynomial inverse formula and quadratic Berlekamp--Massey cost
+are already in that paper. No novelty claim is made for (4).
+
+5. DETERMINANT SIZE AND GOOD-PRIME PROBABILITY
+----------------------------------------------
+Put R^2=d+lambda^2. Each row of H has Euclidean norm at most R.
+Under the promise, the nonzero integer T=det H satisfies
+
+  1<=|T|<=R^k=(d+lambda^2)^{k/2},
+  B:=log|T| <= (k/2) log(d+lambda^2).                     (5)
+
+Let Q0=C n^2, and sample a prime p uniformly from [Q0,2Q0]. Here C
+may be a sufficiently large constant depending on the fixed d and
+lambda. For large enough n, the interval contains at least
+Q0/(3 log Q0) primes (any usual quantitative prime-density bound, or
+just its asymptotic consequence, suffices). At most B/log Q0 of these
+primes divide T: the product of distinct dividing primes is at most
+|T|. Hence
+
+  P_p[p divides det H] <= 3B/Q0
+       <= 3k log(d+lambda^2)/(2 C n^2).                 (6)
+
+Combining (3) and (6), one trial succeeds with probability at least
+
+  1 - 3B/Q0 - k(k-1)/(2(Q0-1)) - 2k/Q0.                (7)
+
+For fixed degree and sufficiently large C this is at least 3/4 for
+all sufficiently large n. The finitely many smaller sizes may use
+exact elimination without altering the fixed-degree asymptotic bound.
+All primes have O(log n) bits. There is no need to reconstruct an
+O(n)-bit determinant or to use a prime larger than that determinant.
+
+Primes dividing 2d2 in the RSBM cause a forced modular quotient-mode
+collision and are automatically bad when H is the chosen cofactor.
+The large-prime construction eventually avoids those fixed divisors
+anyway. One can exclude them explicitly; this changes no bound.
+
+6. PRIME GENERATION IS CHARGED
+-------------------------------
+One must not silently sieve up to n^4 and call that near quadratic.
+The p=Theta(n^2) choice above makes several simple options legitimate.
+
+Option A, low memory and elementary: draw uniform integers from the
+specified interval and retain exactly those that are prime, using
+DETERMINISTIC trial division up to sqrt(2Q0)=O_{d,lambda}(n).
+Each candidate costs soft-O(n) bit operations; prime density gives
+O(log n) expected candidates. Rejection sampling yields exactly the
+uniform distribution on interval primes. Thus prime generation costs
+expected soft-O(n) bit operations and logarithmic working memory,
+well below the main quadratic work. A deterministic polynomial-log
+primality test could be used instead, but is unnecessary here.
+
+Option B: sieve through 2Q0=O_{d,lambda}(n^2), store the interval
+prime list, and select uniformly. Ordinary sieve bookkeeping costs
+soft-O(n^2) bit operations and O(n^2) bits. This is ALSO within the
+time target, although its space is larger than the Krylov algorithm.
+No primality oracle is free in either description.
+
+For a fixed explicit outer trial budget, prime generation by rejection
+still terminates almost surely and has the stated expected cost on
+every input; it is independent of graph simplicity. If a strict
+worst-case budget is preferred, cap candidate draws at O(log^2 n)
+and return FAIL on exhaustion, at polynomially small extra failure
+probability. Do not declare an untested pseudoprime to be a field.
+
+7. BIT COMPLEXITY, STORAGE, AND TERMINATION GUARANTEES
+------------------------------------------------------
+For one trial:
+
+  * exactly 2k Q-matvecs form the shifted sequence;
+  * Berlekamp--Massey costs O(k^2) field operations;
+  * at most k-1 additional Q-matvecs evaluate (4);
+  * diagonal scaling, inner products, and updates cost O(k^2);
+  * modular residual and integer sign checks are linear at fixed d;
+  * prime generation is charged as above.
+
+More generally the field cost is O(k nnz(H)+k^2). For fixed d and
+lambda, nnz(H)=O(n), p has O(log n) bits, and each field operation,
+including inversions by the Euclidean algorithm, costs polylog(n)
+bit operations. Thus each trial costs soft-O(n^2) bits and O(n)
+field elements of working storage, besides the sparse input and
+short output certificate. All costs are independent of any analytic
+eigenvalue separation or numerical condition number.
+
+PROMISE LAS VEGAS VERSION: repeat with fresh p,D,u,v until the rank
+certificate and exact sign check succeed. By (7), every promised
+input has a constant expected number of trials, so expected bitwork
+is soft-O(n^2). The output is always certified correct. On a matrix
+of rational nullity at least two, this loop can NEVER succeed and
+must not be advertised as an all-input terminating algorithm.
+
+TOTAL ONE-SIDED VERSION: run t=ceil(c log n) independent trials and
+return FAIL if none succeeds. On EVERY graph it has soft-O(n^2)
+expected bitwork (the logarithmic number of trials is suppressed)
+and every non-FAIL answer is certified. On every promised input its
+failure probability is at most (1/4)^t. If the RSBM baseline proves
+the promise with probability 1-q_n, q_n=o(1), the overall recovery
+probability is at least
+
+  1-q_n-(1/4)^t = 1-o(1).
+
+This conclusion needs no quantitative q_n rate and has a valid total
+algorithm. It must be phrased as a possibly-FAIL exact recovery
+algorithm, not a Las Vegas rank-decider on all exceptional graphs.
+
+TOTAL FULL-ANSWER FALLBACK VERSION: after t trials, run an exact
+fraction-free nullspace/rank computation, with polynomial bit cost
+F(n), on every remaining input. It is always correct and terminating.
+On promised inputs, choose t large enough that F(n)(1/4)^t is at
+most n^2, obtaining conditional expected soft-O(n^2) work. But over
+an RSBM ensemble with only qualitative q_n=o(1), its unconditional
+expected work can include q_n F(n). This need not be soft-O(n^2).
+A quantitative graph failure bound, a faster exceptional-input
+algorithm, or permission to return FAIL is necessary to remove that
+limitation. An analytic eigengap is not necessary.
+
+8. WHAT CAN HONESTLY BE CLAIMED FOR THE EXISTING RSBM BASELINE
+--------------------------------------------------------------
+For d1>=3, even block size, and the precise independent uniform
+simple regular-block model of the baseline, the derived qualitative
+simplicity theorem plus the TOTAL ONE-SIDED algorithm gives certified
+exact recovery, up to global exchange, with probability 1-o(1), using
+soft-O(n^2) expected bit operations at fixed degree. A returned
+answer includes a deterministic soft-O(n^2) rank and kernel verifier.
+The random prime is allowed to grow because the ALGORITHMIC
+Hadamard argument (5)--(6), not a uniform-in-p RSBM mixing theorem,
+controls its badness on each fixed good integer instance.
+
+This does not resolve odd block sizes for even d1, the exact (2,1)
+real-kernel question, or novelty/priority of regular-block recovery.
+The algebraic ingredients are classical. The useful audit improvement
+is that a claimed near-quadratic recovery algorithm need not leave
+rank verification cubic or silently assume a small fixed prime works.
+
+INDEPENDENT FINITE-FIELD SANITY CHECK
+-------------------------------------
+An ephemeral JavaScript check implemented modular Gaussian rank,
+shifted-sequence Berlekamp--Massey, and the polynomial inverse over
+F_101 for 2,000 matrices of orders 1 through 10. Half the draws were
+forced singular by a duplicate row (or zero in order one). It found
+963 full-complexity certificates and 1,011 singular rejections, with
+zero false rank certificates and zero inverse-polynomial residual
+failures. This checks implementation conventions and polynomial
+orientation on small examples; the proofs above, not these samples,
+establish the asymptotic and all-input soundness statements.

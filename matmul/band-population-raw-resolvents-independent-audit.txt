@@ -1,0 +1,171 @@
+INDEPENDENT AUDIT: INTRINSIC-BAND RAW RESOLVENT COMPOSITION
+========================================================
+
+2026-11-15 UTC. Reviewer bounded_algorithm, independently of coordinator
+root. Result: PASS as a composition of the reviewed components.
+
+Final reviewed source:
+  band-population-raw-resolvents.txt
+  SHA256 9970d1aa7697f853df4f3396b0f3dc75ce5fc1ccfe79a397a74939c10f41732f
+
+Verified component hashes:
+  certified-buffered-coarse-split.txt
+    095f67929ec82c003dedb9ffaa46637ce449ba84d52861add0e7d84ef638ddee
+  near-real-shared-coupling-series.txt
+    913f2e86b3b27bb4c0e9882c7ad29845e2bca6e2d2d553ce3d5bedb40243628a
+  raw-factor-fresh-search.txt
+    61c5fa973bc32cd6151d64f5ba3078f096bcf8c94a135f5df1b7fcc14f6494a8
+
+The initial combined source was checked in full. One minor confidence
+wording repair was requested and applied: use the explicit attempt cap
+ceil(log_2(4/delta)), implemented by doubling/comparisons, rather than
+an unclipped O(log(1/delta)). The final source above includes this cap.
+No mathematical repair to the core composition was needed.
+
+1. RAW COARSE COORDINATES AND RANK DEFICIENCY
+--------------------------------------------
+
+On the stated embedding event, the two PSD Gram inequalities imply
+that X and L0 have the same right nullspace and hence the same row
+space. Thus X=X L0^dagger L0 and
+
+  X J X^T=(X L0^dagger)(L0 J L0^T)(X L0^dagger)^T.
+
+Since L0 has full row rank, congruence by L0^dagger gives
+(1-eta)I<=Z^TZ<=1+eta. These identities hold without full column
+rank of X or nonsingularity of the initial K. Only the sketched Gram
+is explicitly formed, with the charged ~O(I_X+m^omega) preparation.
+
+For Hermitian K, an orthonormal basis V of range(K) gives
+K=V(V^*KV)V^*. Its compression V^*KV is invertible, and replacing
+Z by ZV preserves S and the metric inequalities. An ordinary exact
+rank-revealing small-core factorization supplies this basis; no true
+Gram or generic exact spectral basis is obtained for free.
+
+If the coarse K is zero, S is zero on the embedding event, so returning
+-h_j is exact there. Off the event it is a permitted arbitrary answer.
+All support operations still have finite dimension-bounded costs.
+
+The later complex unitary coarse coordinate changes preserve S with
+adjoints and preserve T=I+D by unitary compression/conjugation. The
+shared-series component explicitly allows those coordinates. Their
+physical actions use the original raw factor and small coefficient maps.
+
+2. THE INDEFINITE POSITIVE-BAND COMPARISON
+----------------------------------------
+
+Let H=T^(1/2)KT^(1/2). The nonzero spectrum of S equals that of H:
+Z=U T^(1/2) with U^*U=I, so S=U H U^*, plus zero eigenvalues on
+the orthogonal complement. This is used only for analysis.
+
+For every s>0 the metric inequalities give
+
+ K-s/(1-eta) I <= K-sT^-1 <= K-s/(1+eta) I.
+
+H-sI is congruent to K-sT^-1. Monotonicity of positive inertia under
+these Loewner comparisons proves that the corresponding ordered
+POSITIVE eigenvalues satisfy
+
+ (1-eta)lambda_j^+(K)<=lambda_j^+(H)
+                           <=(1+eta)lambda_j^+(K).
+
+Congruence guarantees the same number of positive eigenvalues, so
+every positive index is legitimate. K need not be PSD, and neither K
+nor T is assumed to commute with the other.
+
+With eta=1/8, each coarse eigenvalue in [t/3,3t] maps by its index to
+a distinct physical eigenvalue in [7t/24,27t/8], strictly inside
+[t/4,4t]. Thus the coarse buffered-band count is <=the supplied
+intrinsic cap kappa. Indexing handles multiplicities, and the strict
+outer enlargement handles all closed-interval endpoint cases.
+
+3. ACCEPTED SPLIT, FAILURE PROBABILITY, AND OPERATION GUARDS
+----------------------------------------------------------
+
+The certified-split component was read and its output hypotheses
+matched directly. Every accepted output supplies the spectral condition
+on B_QQ, offblock norm <=1e-5<1/16, and k bounded by the coarse
+[t/3,3t] population. Its tests and weighted correction act only on
+explicit coarse matrices. They make no true-T query. The supplied-exact-
+split assumption is therefore removed using a charged procedure.
+
+The accepted-output guarantee is deterministic for every explicit
+Hermitian K. Each independent attempt succeeds with probability >1/2
+uniformly in K. This remains true conditional on any random coarse
+sketch result. At most ceil(log_2(4/delta)) attempts therefore have
+exhaustion probability <=delta/4. The component's guarded per-attempt
+budget and capped sample/rounding routines make the setup work bounded
+on failed trajectories as well. Its numerical-EVD theorem and primitive
+implementation remain imported, independently reviewed component inputs.
+
+The algorithm tests k>kappa BEFORE the k physical band-column queries.
+This abort is impossible on the embedding event, by Section 2 above.
+On bad embedding outcomes it prevents an oversized true-data block.
+The accepted split may have required a large explicit-core computation
+before the abort; that cost fits the already charged setup term.
+
+Every later inverse checks singularity and aborts if needed. The
+embedding event plus an accepted split guarantees the shared-series
+Schur inverses exist, so those guards do not reject a correctness event.
+Off that event the algorithm still runs only the fixed L,J_s iterations,
+with dimensions bounded by q+kappa*J_s, or aborts. No recovery branch
+or inaccurate adaptive iteration escapes the budget.
+
+Embedding failure <=delta/4 and split exhaustion <=delta/4 have total
+probability <=delta/2 by a union bound; independence between those
+events is unnecessary. Every remaining action is deterministic exact
+arithmetic on a successful preparation. The component's simultaneous
+per-column bounds therefore imply the stated probability >=1-delta.
+
+4. FULL COST, NORMALIZED ACTIONS, AND THE EXPONENT INSTANCE
+---------------------------------------------------------
+
+The shared-series theorem applies exactly: B=tK^-1, its certified
+safe complement and offblock satisfy that theorem's assumptions, and
+delta_s=epsilon/(100mu^2) leaves its proved physical error slack.
+Its target is w_j(S-w_jI)^-1h_j, matching the combined statement's
+normalization and signs. A separate factor w_j is not lost.
+
+All true band queries, q RHS actions, kJ_s coefficient columns and
+final physical lifts fit width q+kJ_s<=R_cap. All coefficients and RHS
+columns used at a block step are available together. This is not
+retroactive batching of later adaptive queries. The source's shared
+Schur coefficient preparation and Q reconstruction supply the terms
+mkappa^2 J_s, qkappa^2 J_s, mkappa qJ_s and qkappa^omega without a
+hidden qmkappa^2 term. The cap is applied to the actual computed k,
+so these upper bounds hold on bad sketch outcomes too.
+
+Input scanning and output qN entries fit the displayed raw/input
+terms. Support transforms, certified EVD, coarse inverses, Frobenius
+preparations and confidence amplification are included in the first
+term, with the declared feasible-exponent slack. The statement does
+not strengthen a floating-point or bit-complexity guarantee. In
+particular it hides no precision proportional to ||S||/t.
+
+For N=m^(9/8), omega=9/4, polynomial mu and epsilon^-1, and
+q,kappa<=~sqrt(m), R_cap is also <=~sqrt(m). Hence the raw term is
+~m^(17/8)*m^(1/8)=~m^(9/4); the postprocessing terms are at most
+~m^2, ~m^(3/2), ~m^2 and ~m^(13/8), respectively. The setup has
+the same m^(9/4+o(1)) upper. This reproduces N^(2+o(1)) for the
+resolver-output task under the stated intrinsic population promise.
+
+For the swap dilation of arbitrary A,B, its positive eigenvalues are
+precisely the nonzero singular values of AB. The intrinsic cap thus
+has the stated product interpretation. This spectral identity neither
+forms AB nor supplies a sharp filter, unknown threshold, or final
+rank-one LRA output.
+
+5. VERDICT AND LIMIT
+--------------------
+
+PASS: the combined source is an actual raw-input near-real resolver
+with a supplied intrinsic band-population cap, not a theorem that
+assumes an uncharged eigenbasis. The all-outcomes work claim is
+supported by the explicit attempt, dimension and inversion guards.
+
+The intrinsic band can still contain Theta(m) eigenvalues, and the
+theorem's useful thin regime is not automatic for arbitrary factors.
+The source correctly leaves that case and the full original LRA goal
+open, and makes no new-LRA-frontier inference from a class classical
+block Krylov may already exploit. It is appropriately labeled a
+composition of reviewed mechanisms; historical priority is not certified.

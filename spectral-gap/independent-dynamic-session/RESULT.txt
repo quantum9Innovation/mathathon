@@ -1,0 +1,107 @@
+CONSTRUCTIVE RESULT: CHARGED RELATIVE FRACTIONAL GRAPH UPDATE
+November 15, 2026
+
+Main source: charged-relative-graph-update.tex (compiled PDF alongside).
+
+For a connected unit-mass weighted graph L and one positive edge edit
+L'=L+d bb^T with leverage tau=d b^T L^dagger b, fixed 0<alpha<1,
+there is an explicit randomized exact-real factor X such that, with
+probability >=1-delta,
+
+  -eps/8 L^alpha <= (L'^alpha-L^alpha)-X X^T <= 3eps/4 L^alpha.
+
+Thus the output is a PSD correction with two-sided relative error eps.
+The construction does not assert XX^T <= the true correction.
+
+With B=alpha log(1+tau), on the same success event the constructed
+width r satisfies
+
+  r < B/log(1+eps/4) when r>0.
+
+For any fixed rho in (0,1), error allocations instead give error eps
+and r < B/log(1+(1-rho)eps), arbitrarily close to the sharp count.
+
+Charged expected construction cost is ~O_alpha(m+n). Hidden factors
+are logarithmic only in n,1+tau,1/eps,1/delta (and 1/rho for the
+near-sharp variant); no graph spectral gap, condition number, or edge
+weight ratio appears. Normalize d=1 arithmetically, then rescale the
+final factor by d^(alpha/2). General fixed alpha charges scalar power
+evaluation as in the repository model. Alpha=1/2 uses dyadic roots.
+
+Explicit accounting, with Lcal=1+log(2+n(1+tau)/eps):
+
+  q=O_alpha(Lcal^2) raw columns;
+  N=O_alpha(Lcal^2) Gram quadrature nodes;
+  expected O(q+1) feasible grounded electrical-flow calls;
+  expected O(qN+q+1) ordinary SDD potential calls;
+  O(N n q^2 + q^4 Lcal + n q r) additional arithmetic.
+
+The q^4 term conservatively includes scanning maximum Jacobi pivots;
+there is no uncharged exact matrix eigensolver. Polynomial a priori
+moment guards bound work even on exceptional primitive outputs.
+An optional certified primal-dual Las Vegas resistance estimate obtains
+the required constant-factor leverage bound in expected nearlylinear work.
+The primitive counts include that estimate's expected constant retries
+and precede confidence amplification. Supplied leverage bounds require
+exactly q raw flow targets; confidence adds logarithmic repetitions.
+
+Proof mechanism:
+
+1. Dipole maximum principle: ||L^dagger sqrt(d)b||^2 <= n tau^2/d.
+   Together with spectral Holder, this cuts the RELATIVE integral at
+   scales polynomial in n,tau,eps after normalizing d. This differs
+   essentially from the existing absolute-error quadrature argument.
+2. Clip an energy-approximate unshifted dipole potential into its two
+   endpoint voltages. This keeps the dipole linear objective, decreases
+   graph energy, and bounds its Euclidean norm without a graph gap.
+3. For each shift t, solve the grounded electrical-flow problem for that
+   clipped potential as demand. Return divergence of ORIGINAL-edge flow,
+   not approximate vertex potentials. Exact feasibility gives two errors:
+   ||e||_(L^dagger)^2 <= flow excess and ||e||^2 <= t flow excess.
+   Spectral interpolation supplies the missing relative factor accuracy.
+4. Compute H=Z^T L^-alpha Z using scalar/bilinear resolvent quadrature.
+   Stored flow energies certify its low-tail inverse-energy moment.
+   Ordinary SDD energy solves suffice for the small Gram, with no
+   fractional vector action or Gaussian fractional covariance oracle.
+5. Approximately diagonalize H by Jacobi rotations with absolute residual
+   control. A threshold projection compresses the raw factor Z; Weyl and
+   the exact determinant budget give the near-sharp rank bound.
+
+The required feasible electrical-flow primitive is established in
+Kelner--Orecchia--Sidford--Allen Zhu, arXiv:1301.6628, Definition 2.4,
+Theorems 3.2/4.1 (or 7.4). Primary source inspected:
+https://math.mit.edu/~kelner/publications/ASimpleCombinatorialAlgorithmforSolvingSDDSystemsinNearly-LinearTime.pdf
+
+Independent session checks:
+
+- constructive-flow-lemma.tex/.pdf: clipping, feasible-flow construction,
+  extraction cost, graph counterexample to naive potential solves;
+- balanced-gram-compression.tex/.pdf: charged Gram quadrature and cutoff;
+- barriers-feasible-flow-audit.txt: independent algebra/source audit;
+- charged-check.py/.json: 9 dense diagnostics of relative quadrature,
+  injected feasible flow errors, raw Gram moments, compression and rank;
+- constructive-flow-checks.json: 76 flow/clipping interpolation cases;
+- barriers-checks.py/.json: 100 random checks plus high-precision oracle
+  barrier asymptotics;
+- balanced-gram-check.py/.json: Gram quadrature with inexact energy solves.
+
+Numerical diagnostics use dense reference solves. They validate formulas,
+not measured KOSZ running time. The algorithmic work bound uses the cited
+theorem. No nearlylinear KOSZ implementation is supplied in this session.
+
+Limits:
+
+- exact-real arithmetic theorem; no finite-word stability theorem;
+- unit vertex masses, connected baseline, single positive edge edit;
+- per-edit expected nearlylinear recomputation, no sublinear dynamic claim;
+- correction construction needs neither the base dense L^alpha nor a base
+  fractional inverse. Applying the resulting preconditioner inverse DOES
+  additionally need a base L^-alpha action; its setup and application
+  costs are explicitly charged separately in the manuscript;
+- historical priority remains provisional;
+- the conditional Nystrom comparator and the restricted noisy shifted
+  oracle barrier are retained as companions, not substituted for this
+  explicit-graph construction or an explicit-graph impossibility theorem.
+
+All created files are under spectral-gap/independent-dynamic-session/.
+Root files were not edited. No persistent goal was created.

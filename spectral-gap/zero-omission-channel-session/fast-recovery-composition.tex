@@ -1,0 +1,208 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Prob}{\mathbb P}
+\newcommand{\Fp}{\mathbb F_p}
+\newcommand{\one}{\mathbf1}
+\newcommand{\rank}{\operatorname{rank}}
+\title{Expected nearly quadratic blind recovery\\from the zero-omission channel moment theorem}
+\author{Source-bound composition note}
+\date{November 15, 2026}
+\begin{document}
+\maketitle
+\begin{abstract}
+We compose the bounded raw moments in the accompanying channel theorem with the independently certified full finite-field kernel primitive and the strict-upper one-hot entropy gap. This gives unconditional expected nearly quadratic bit work for blind recovery of the finest bounded-class planted frame, including mixed degrees and forced zero omission weights. We reconstruct the one-hot gap and support closure, and explicitly charge nonsymmetric right-kernel computation, integer verification, complete enumeration, and exceptional graphs. The sparse kernel primitive is an identified existing input. No new primitive or historical priority is claimed.
+\end{abstract}
+
+\section{Statement and exact inputs}
+Fix supplied constants $K,D$. The unknown nonnegative integer frame $Q=(d_{ij})$ has $k\le K$ types, connected off-diagonal support with the one-type case allowed, and total degrees $d_i\le D$. Positive class sizes obey $n_id_{ij}=n_jd_{ji}$ and internal parity. Independently sample uniform simple internal regular factors and cross biregular factors, omitting absent factors. Write $n=\sum_i n_i$, $\alpha_i=n_i/n$, $A$ for adjacency, and $J$ for the planted indicator, so $AJ=JQ$ over the integers. Assume
+\begin{equation}\label{eq:q}
+ q_{ij}=q_{ji},\qquad0\le q_{ij}<1/2,\qquad
+ \sum_jd_{ij}q_{ij}=1.
+\end{equation}
+Weights are required only on present factors. Put $c=\min_{d_{ij}>0}(1-2q_{ij})>0$; necessarily $3\le d_i\le D$. The algorithm receives only $A,K,D$.
+
+\begin{theorem}\label{thm:recovery}
+For this fixed model there is an algorithm that, on every input graph of maximum degree at most $D$, almost surely completes the list of all integer one-hot intertwiners with at most $K$ nonempty classes. It returns an accepted partition with maximum class count when the list is nonempty, and otherwise reports that the list is empty. Its unconditional expected bit work is $\widetilde O_{K,D}(n^2)$ under the planted graph law. Its expected working storage is $\widetilde O_{K,D}(n)$ bits; candidates may be streamed or only the current best retained.
+
+With probability $1-o(1)$ every such equitable partition is a compatible coarsening of $J$, and the algorithm returns $J,k,Q$ up to class names. Constants and eventual thresholds can be made uniform over the finite family of qualifying connected frames at fixed $K,D$.
+\end{theorem}
+
+The model-level input is Theorem~1 and Corollary~1 of the accompanying \path{channel-moments.tex}. For any fixed odd prime, every fixed vector dimension, and every fixed target $R$,
+\begin{equation}\label{eq:moment}
+ \sup_n\E_{\rm simple}p^{h_R(A)}<\infty,\qquad
+ h_R(A)=\dim_{\Fp}\ker(I_r\otimes A-R^{\mathsf T}\otimes I_n).
+\end{equation}
+It is unconditional and imposes the certificate on the true frame, not the candidate $R$. Use the one fixed odd prime $p=3$ throughout.
+
+The algorithmic input is Theorem~1 in
+\begin{center}\small
+\path{spectral-gap/partitioning-dynamic-session/rsbm-full-kernel/}\\
+\path{certified-full-kernel.tex},
+\end{center}
+Its SHA256 is
+\begin{quote}\small\ttfamily
+bb6ec1086a2d46f4a1d0b66c69aadc2d\\
+120b07157ba8e95f3c08ffb187843473.
+\end{quote}
+For every sparse symmetric matrix of order $m$, with $w$ nonzeros and corank $h$, this always-correct Las Vegas primitive returns a complete base-field kernel with a deterministic rank certificate in expected
+\[
+ \widetilde O_p(m(w+m)(h+1))
+\]
+bit work and $\widetilde O_p(m(h+1)+w)$ workspace. The theorem is per input, including singular exceptional matrices. Its proof, extension-field construction, recurrence certificate, descent, and retry accounting are existing dependencies. The nonsymmetric reduction below is also recorded in \path{intertwiner-extension.txt}, with SHA256
+\begin{quote}\small\ttfamily
+cb893b0def524ba101a4419adf922f0dec\\
+60ad3156348c8e91d600887e743df9,
+\end{quote}
+and its source audit \path{regular-frame-fast-algorithm-root-audit.txt}, with SHA256
+\begin{quote}\small\ttfamily
+127b233ee065d4ab158f251f57a33ea77\\
+1ac101a3fc2e1637fc7e09273bd8c09.
+\end{quote}
+
+The structural input is reconstructed next. Its source is the zero-weight addendum at
+\begin{center}\small
+\path{spectral-gap/partitioning-frontier-session/nonregular-fibers/}\\
+\path{strict-q-recovery/zero-omission-addendum.tex},
+\end{center}
+Its SHA256 is
+\begin{quote}\small\ttfamily
+2db029a9d3058122f939ccec2d190172c\\
+439d70ab0d4f72579f19bfbc49adc8d.
+\end{quote}
+The frozen positive source supplies exact factorial counting and mixed-degree support details; no positive lower bound on $q$ will be used here.
+
+\section{One-hot entropy gap including zero weights}
+Let $R$ be any nonnegative integer candidate with $r\le K$ and row sums at most $D$. A legal one-hot star at old type $i$ has root label $X$ and neighbor labels $Z_s$, satisfying
+\[
+ \sum_se_{Z_s}=R_{X,*}
+\]
+over the integers. For feasible star laws $P_i$ with root laws $\rho_i$ and pooled pair laws $\nu_{ij}$, let
+\[
+ \Phi=\sum_i\alpha_iH(P_i)-\sum_{i\le j}w_{ij}H(\nu_{ij}),\quad
+ w_{ij}=\alpha_id_{ij}\ (i<j),\quad w_{ii}=\alpha_id_{ii}/2.
+\]
+Symmetrize repeated-target slots, preserving roots, pooled pairs and legality, and increasing $\Phi$. For the resulting laws, lossless omission and the row budgets give the same exact identity as in the moment proof:
+\begin{equation}\label{eq:entropy}
+ L:=-\Phi=\sum_{i\le j}w_{ij}(1-2q_{ij})I_{ij}
+ +\sum_i\alpha_i\sum_tq_{it}J_{it}\ge0.
+\end{equation}
+Here $J_{it}$ is retained-neighbor conditional total correlation and $I_{ij}$ is pair mutual information.
+
+Let $\kappa_{it}$ be the divergence of the actual root and retained-neighbor law from the product of their marginal laws. By the entropy chain rule,
+\[
+ \kappa_{it}=J_{it}+\sum_{s\ne t}I(X;Z_s),\qquad
+ A_q:=\sum_i\alpha_i\sum_tq_{it}\kappa_{it}
+ =\sum_i\alpha_i\sum_tq_{it}J_{it}
+ +2\sum_{i\le j}w_{ij}(1-q_{ij})I_{ij}\le\frac2cL.
+\]
+This identity and inequality include internal factors and zero omission weights. No reciprocal of an omission weight appears.
+
+Put $\mu_{is}=\E e_{Z_s}$, $V_{is}=1-\|\mu_{is}\|_2^2$, and $S_i=\sum_sV_{is}$. Under the independent reference law for retained data define
+\[
+ f_{it}=\left\|R_{X,*}-\sum_{s\ne t}e_{Z_s}-\mu_{it}\right\|_2^2,
+ \qquad B_i=\E\left\|R_{X,*}-\sum_s\mu_{is}\right\|_2^2\ge0.
+\]
+Its actual expectation is $V_{it}$ by integer legality; the independent expectation is $S_i-V_{it}+B_i$. Both vectors inside the difference have nonnegative entries and total mass $d_i$, including under the reference, so $0\le f_{it}\le2D^2$. Pinsker's inequality and the range bound imply
+\[
+ |\Delta_{it}|\le\sqrt2D^2\sqrt{\kappa_{it}},\qquad
+ \Delta_{it}=S_i-2V_{it}+B_i.
+\]
+Average using the omission weights themselves:
+\[
+ \sum_tq_{it}\Delta_{it}=S_i-2\sum_tq_{it}V_{it}+B_i\ge cS_i.
+\]
+Weighted Cauchy--Schwarz has total weight $\sum_i\alpha_i\sum_tq_{it}=1$, and therefore
+\[
+ c\sum_i\alpha_iS_i\le\sqrt2D^2\sqrt{A_q}\le2D^2\sqrt{L/c}.
+\]
+Reversibility and $d_j\ge3$ give
+\[
+ \sum_i\alpha_iS_i
+ =\sum_j\alpha_jd_j(1-\|\rho_j\|_2^2)
+ \ge3\delta,\qquad
+ \delta=\sum_j\alpha_j(1-\max_a\rho_j(a)).
+\]
+Combining and squaring proves
+\begin{equation}\label{eq:gap}
+ \Phi\le-\gamma\delta^2,\qquad\gamma=\frac{9c^3}{4D^4}.
+\end{equation}
+The initial symmetrization proves it for all original star laws as well. This holds on boundary laws and permits unused candidate labels.
+
+For empirical one-hot stars, $\delta$ is the normalized row distance to a nearest old-type point map $JT$, with $T$ one-hot and not necessarily onto. The exact configuration type count has only polynomially many profiles and polynomial factorial remainder at fixed $K,D$. Equation~\eqref{eq:gap} and direct bounded-cost simplicity conditioning give, for each fixed $\eta>0$,
+\begin{equation}\label{eq:macro}
+ \E_{\rm simple}\#\{Y:AY=YR\text{ over }\mathbb Z,\ Y\text{ one-hot},\ \delta(Y)\ge\eta\}
+ \le C(n+1)^B e^{-\gamma\eta^2n}.
+\end{equation}
+The exponent $B$ is fixed and its precise value is unnecessary here. Every root assignment is counted once by the star multinomial. Taking a finite union over candidates retains this bound with a larger constant.
+
+\section{Small-support exclusion and exact closure}
+Connectedness and balance imply $\alpha_i\ge\rho:=1/(KD^{K-1})$, by following a type path of length at most $K-1$. Thus all present stub pools have size at least $\rho n$. A nonempty support $S$ is bad if no outside vertex has exactly one incidence from $S$. With $s=|S|$, $t$ outside vertices, $a$ internal edges and $b$ boundary edges,
+\[
+ 2a+b\ge d_{\min}s,\qquad b\ge2t,\qquad
+ E=a+b\le Ds,\qquad E-s-t\ge(d_{\min}-2)s/2.
+\]
+This certificate contains \emph{all} edges incident to $S$. It is a support certificate for the ordinary equation $AV=VR$ and does not concern inactive quotient maps of heterogeneous phase restrictions.
+
+Prescribing its $E$ pairs costs at most $(2/(\rho n))^E$ for $s\le\rho n/(4D)$. Choosing support and outside vertices, outside stubs and pairings costs at most
+\[
+ \frac{n^{s+t}}{s!t!}\,2^{Dt}(2Ds)^E.
+\]
+As in the moment certificate enumeration, absorb fixed factors using $t\le Ds/2$, $E\le Ds$, and sum $s^t/t!\le e^s$. The expected witness count is at most
+\[
+ C_0^s(s/n)^{(d_{\min}-2)s/2}.
+\]
+Choose fixed $\eta>0$ so successive terms are geometric and also $(D+1)\eta<\rho$. In the simple model singleton supports cannot be bad. Sum from $s=2$ and condition on simplicity at bounded cost to obtain
+\begin{equation}\label{eq:support}
+ \Prob_{\rm simple}(\exists\text{ bad }S:\ 1\le|S|\le\eta n)
+ =O(n^{-(d_{\min}-2)}).
+\end{equation}
+On the complementary graph event, no nonzero row-sparse solution $AV=VR$ of support at most $\eta n$ exists, over any field or any width: an outside vertex with one support neighbor has a nonzero row in $AV$ and zero row in $VR$.
+
+Intersect that event with the finite-candidate event excluding \eqref{eq:macro}. Every accepted $Y$ differs from some point map $JT$ on fewer than $\eta n$ rows. Changed vertices and their neighbors occupy fewer than $(D+1)\eta n<n_i$ vertices, so each old type contains a clean vertex. Its exact integer equation gives $(QT)_i=(TR)_i$. Thus $QT=TR$ and $V=Y-JT$ solves $AV=VR$ over $\mathbb Q$, with small row support. Equation~\eqref{eq:support} forces $V=0$. Every accepted equitable partition is therefore a compatible coarsening. Failure is bounded by
+\[
+ O(n^{-(d_{\min}-2)})+C(n+1)^B e^{-\gamma\eta^2n}=o(1).
+\]
+No positive mass assumption on candidate classes or spectral gap is needed.
+
+\section{Certified right kernels and unconditional work}
+Enumerate all $r\le K$ and all nonnegative integer $r$-by-$r$ candidates $R$ with row sums at most $D$. There are finitely many, at most $\sum_{r=1}^K(D+1)^{r^2}$. Do not require feasibility, symmetry, or connectedness of a candidate. Use column vectorization:
+\[
+ \operatorname{vec}(AY-YR)=K_R\operatorname{vec}(Y),\qquad
+ K_R=I_r\otimes A-R^{\mathsf T}\otimes I_n.
+\]
+Its order is $m=rn=O(n)$ and it has $w=O(n)$ nonzeros. Both $K_R$ and its transpose have $O(n)$-cost sparse products. The transpose on $R$ is essential; no division by a cell size is used.
+
+For $h=h_R(A)$ apply the symmetric primitive to
+\[
+ S_R=\begin{pmatrix}0&K_R\\K_R^{\mathsf T}&0\end{pmatrix}.
+\]
+Since $S_R(u,v)=(K_Rv,K_R^{\mathsf T}u)$,
+\[
+ \ker S_R=\ker K_R^{\mathsf T}\oplus\ker K_R,\qquad
+ \rank S_R=2\rank K_R,\qquad \dim\ker S_R=2h.
+\]
+The primitive computes a full basis in conditional expected $\widetilde O(n^2(h+1))$ bit work. Project that basis to its bottom $m$ coordinates, select independent columns and normalize on pivot rows. The bottom projections span the complete \emph{right} kernel of $K_R$ because every $(0,v)$ with $K_Rv=0$ belongs to the full doubled kernel. Projection and normalization cost $O(mh^2+h^3)\le O(m^2(h+1))$, already within the bound. Base-field descent is supplied by the primitive's unique pivot-normalized basis. The unused left kernel is never enumerated.
+
+The certificate can retain only the primitive's field definition, preconditioner and probes, its shifted recurrence length $\ell$, and the right basis $C$ with pivot rows $C_{J,:}=I_h$. Deterministic regeneration of the true shortest recurrence length gives $\ell\le\rank S_R=2\rank K_R$. Require $\ell=2(m-h)$ and check $K_RC=0$, $C_{J,:}=I_h$. Then
+\[
+ m-h=\ell/2\le\rank K_R\le m-h,
+\]
+certifying completeness. This is integer dimension arithmetic and includes zero and full rank. The per-input certificate verification costs $\widetilde O(n^2)$ bit work, and no dense rank fallback is needed.
+
+Enumerate only the $p^h$ right-kernel vectors. Maintain the current vector with a base-$p$ odometer or Gray update; across the whole run the digit changes number $O_p(p^h)$. Generating the vectors therefore costs $O_p(np^h)$ field operations. Reshape each candidate and require exactly one residue $1$ and all others $0$ per row, all classes nonempty, and the original integer equation $AY=YR$. The bounded-degree integer checks and class counters cost $\widetilde O_{K,D}(n)$ per vector. Every genuine integer one-hot candidate reduces to this kernel, so the list is complete on every input. Integer verification rejects all modular artifacts. A fresh multiplication by the full basis at every state, or enumeration of the doubled kernel, is not used.
+
+For each fixed $A,R$, the complete conditional expected work is consequently
+\begin{equation}\label{eq:work}
+ \widetilde O_{K,D}(n^2(h_R+1)+np^{h_R}),
+\end{equation}
+including retries, certificates, projection, descent and checks. Its working storage is $\widetilde O(n(h_R+1))$; the list may be streamed. By \eqref{eq:moment} and $h_R+1\le p^{h_R}$, taking expectation gives $\widetilde O(n^2)$ work and $\widetilde O(n)$ expected storage. All rare graph inputs are charged. No structural good event is conditioned on when taking this expectation. The finite candidate union preserves these bounds without independence assumptions, and expected total output is $O(n)$ bits at fixed parameters.
+
+After completing every candidate enumeration, output a partition of maximum class count. The true $(k,Q,J)$ is always present. On the structural event every accepted $Y=JT$ with nonempty classes corresponds to an onto map and has $r\le k$. A maximum has $r=k$, hence $T$ is a permutation. This recovers $J,k,Q$ up to names and proves Theorem~\ref{thm:recovery}. An unfinished enumeration is never treated as a maximum certificate.
+
+For uniformity, at fixed $K,D$ the connected reversible integer frames form a finite set and each fixes its positive proportions. Choose one certificate for each qualifying frame. Their finitely many positive $c$ values have a positive minimum; their moment constants, support constants and eventual simplicity thresholds have finite extrema. The algorithm does not need these certificates or constants. This composition includes forced zero factors and uses the moment theorem for the same odd prime as the certified kernel primitive. Neither a scalar moment, a binary-only moment, a high-probability real-kernel claim nor qualitative contiguity would supply \eqref{eq:moment}.
+\end{document}

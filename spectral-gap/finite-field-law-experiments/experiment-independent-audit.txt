@@ -1,0 +1,328 @@
+INDEPENDENT AUDIT: EXACT K4-LIFT FINITE-FIELD CORANK EXPERIMENT
+November 15, 2026
+
+VERDICT
+-------
+PASS for the original experiment's generator, exact rank calculation,
+old-kernel subtraction, raw-data bookkeeping, reference probabilities,
+and reported descriptive statistics. No rank or sampler discrepancy
+was found. The lambda=2 discrepancy from the proposed reference is
+large and real at the studied finite sizes; it must be foregrounded,
+not described as general agreement. It is not by itself an asymptotic
+counterexample because no convergence rate is available.
+
+One reproducibility issue was found in the separately generated follow-up
+REPORT: it initially printed the original study seed. The author corrected
+that new report without reranking, and this audit checked the corrected
+header. The issue is RESOLVED. The follow-up is now explicitly labeled
+posthoc exploratory, with its actual seed 2026111501409.
+
+This audit does not independently certify the separate scalar-moment
+proof, distributional determinacy, or an asymptotic law from these data.
+
+AUDIT ACTIONS AND ARTIFACTS
+-----------------------------
+Inspected:
+  k4_corank_experiment.py
+  results.json, samples.csv, histograms.csv, REPORT.txt, run.log
+  observed-vs-symmetric-law.png
+  followup_and_twins.py and its corrected report/header
+  main-twin-summary.json
+Read the supplied scalar-moment note only for its stated boundaries.
+
+New independent check script:
+  independent_rank_statistics_check.py
+New structured audit results:
+  independent-rank-and-statistics-checks.json
+
+The independent script imported ONLY the new experiment module. It did
+not import old kernel/recovery code or run an old regression suite.
+It did NOT rerun the full sampler. At the root's explicit request it
+replayed exactly two prefix graphs for each original N, eight graphs
+in total, and checked both shifts with a separate pure-Python RREF.
+It also used 100 NEW small matrices to check elimination invariants.
+All writes are confined to this experiment directory.
+
+The audit used the EXACT study environment for prefix replay:
+  Python 3.14.8, NumPy 2.5.3
+  /nix/store/1427kf578lbwwzsvnr95kxpj9klwzk03-python3-3.14.8-env/bin/python
+
+Original script SHA256:
+  467bc6fa431d3f037376cb129db505ec1e9469bcb2d133aa5b9765316814a09b
+Original results.json SHA256:
+  33f90e554eeef26bb098cb94d3509b5d2da9c68754ee0f2d52d9c2feef150beb
+The script, results, raw CSV, histogram CSV, and original REPORT had
+identical before/after hashes during the independent checks.
+
+1. EXACT INTEGER NUMPY ELIMINATION: CORRECT
+--------------------------------------------
+rank_mod_numpy copies the input into int64 and reduces it modulo p.
+It searches for a nonzero pivot in rows rank onward, swaps full rows,
+normalizes the pivot, and eliminates only below it. Updating only the
+suffix starting at the current column is valid: every earlier pivot
+column is already zero in all remaining rows, and every earlier skipped
+column was zero on that remaining subspace and stays zero under these
+row combinations. A row swap among remaining rows preserves those
+zeros. No missing update to a previous column can affect rank.
+
+The factors are explicitly copied before broadcasting, and active rows
+exclude the pivot row, so the vectorized update has no aliasing error.
+For the actual p=3 experiment, reduced entries and inverses are in
+{0,1,2}. Products are at most four and subtractions lie between -4
+and 2 before the next remainder. Thus int64 overflow is impossible,
+regardless of graph size. The study never calls floating rank, SVD,
+an eigensolver, or an approximate linear solver.
+
+The independent reference uses pure-Python integer RREF, normalizes
+ENTIRE rows, and eliminates ALL other rows, so it does not duplicate
+the NumPy tail-update implementation. Results:
+
+  * 16 shifted rank comparisons on eight exactly replayed prefix graphs
+    (two per N=12,13,30,31): every NumPy rank matched pure Python and
+    the corresponding original CSV record.
+  * 100 additional new matrices over F3/F5, including rectangular shapes,
+    zero matrices, row swaps, leading zero columns, duplicate rows,
+    and negative input entries: every rank matched.
+
+No full sampler rerun or independent reranking of all 7200 graphs was
+performed. The algebraic invariant argument above, not those samples
+alone, justifies the elimination procedure.
+
+2. UNIFORM RANDOM LIFT MODEL: CORRECT AND UNCONDITIONED
+--------------------------------------------------------
+For each of K4's six undirected base edges, sample_k4_lift draws a
+uniform permutation of the N vertices, independently using a fresh
+permutation draw from its per-N random stream. It places that perfect
+matching and its transpose. Distinct base edges join distinct pairs
+of fibers, and one permutation has no repeated image, so there are
+no parallel edges or loops. Every vertex has exactly one neighbor in
+each of the other three fibers, hence degree three.
+
+There is NO conditioning on connectivity, twin absence, rank, or
+corank. Disconnected lifts are legitimate draws from the stated
+uniform independent-matching model and must remain in the study.
+The prefix replay confirmed symmetry, zero diagonal, and degree three.
+
+The main groups use SeedSequence.spawn child streams. Interleaving
+50-draw batches does not change any per-N stream. The independent
+pilot is excluded from all histograms; targets [3000,3000,600,600]
+were fixed before the main samples. Main sampling does not stop or
+change its target in response to an observed discrepancy. Targets
+can depend on an independent runtime pilot without biasing these
+fresh main-sample marginal frequencies.
+
+3. SHIFTS AND OLD CORANKS: CORRECT, EVEN WHEN 3 DIVIDES N
+--------------------------------------------------------
+For the four-vertex quotient R=J_4-I_4 over F3,
+
+  dim ker R = 1,
+  dim ker(R-2I) = dim ker J_4 = 3.
+
+Indeed 4=1 modulo 3, so R has scalar 0 on constants and scalar -1=2
+on the three-dimensional sum-zero subspace. The study also checks
+these dimensions by brute kernel enumeration.
+
+The lifted old vectors are fiber constant, and their embedding is
+injective because each fiber is nonempty. This needs NO division by
+N and remains valid when 3 divides the degree and the fiber size.
+Thus subtracting t=1 for lambda=0 and t=3 for lambda=2 is correct.
+Since sampled adjacency diagonals are zero, setting the second
+shift's diagonal to -2 is exactly A-2I, not a different update.
+The recorded excesses are D0-1 and D2-3, and every raw row satisfies
+those identities with nonnegative excess.
+
+4. REFERENCE LAW AND RAW-DATA STATISTICS: CORRECT
+--------------------------------------------------
+The reference used is
+
+  pi_k=C/product_{j=1}^k(3^j-1),
+  C=0.6390045766374778... .
+
+The independent audit recomputed the normalization with 80-digit
+Decimal arithmetic, using a longer series than the study. It agrees
+with the stored C and probabilities. The omitted numerical tail is
+negligible at reported precision. Its p-power first moment is two.
+The odd Euler-product check in the study is consistent with this.
+This validates the numerical REFERENCE, not the missing distributional
+implication from the separately supplied scalar moments.
+
+The independent audit read all 7200 raw graph records and checked:
+
+  * unique sample IDs 1 through the planned count within every N;
+  * raw nullity/excess identities;
+  * every histogram count and sample total;
+  * all plug-in binomial standard errors;
+  * every 95% Wilson endpoint;
+  * reference expected counts, reference binomial standard deviations,
+    and standardized differences;
+  * empirical total variation from the full reference tail;
+  * sample means and sample standard errors of 3^excess;
+  * all between-N excess-zero contrasts and their standard errors.
+
+All checks passed. The table of standardized residuals is descriptive;
+it is not a calibrated familywise test. In particular extremely rare
+reference bins have tiny expected counts, so their enormous z_ref
+values must NOT be read as Gaussian 'millions of sigma' p-values.
+The large discrepancy is already evident in well-populated low bins
+and does not depend on that invalid rare-bin interpretation.
+
+5. PAIRING, INTERVALS, AND COMPARISON CAUTIONS
+----------------------------------------------
+Within one fixed N and one shift, the marginal bin count is binomial
+under independent lift draws, so the reported marginal standard
+error and Wilson interval are appropriate. Different bins are
+multinomially related, and lambda=0 and lambda=2 use the SAME graph.
+They are not two independent graph samples. A direct within-graph
+contrast between shifts would require the paired covariance; the
+report does not incorrectly compute such an independent-shift test.
+The between-N contrasts use different streams, so combining their
+standard errors by a sum of variances is correct.
+
+Wilson intervals are pointwise, nominal 95% intervals, not simultaneous
+bands across all N, shifts, and bins. A zero-count plug-in standard
+error is zero; the nonzero Wilson upper endpoint correctly displays
+remaining uncertainty. Moment means can be dominated by a few large
+excesses; their sample SE is not a guarantee of a Gaussian confidence
+interval or of uniform integrability in an asymptotic theorem.
+
+The empirical TV distance has sampling fluctuation and positive
+finite-sample noise even if the true law equals the reference. A
+small observed TV is not proof of exact finite-N agreement.
+The original divisibility contrasts compare N with N+1, so they are
+not an isolated test of N modulo three; in the original design,
+divisibility is also confounded with parity (12/30 even versus 13/31
+odd) and with graph size. The report correctly avoids a causal or
+asymptotic conclusion from these contrasts.
+
+6. FIGURE: POOLED TAIL AND UNCERTAINTY DISPLAY ARE CORRECT
+----------------------------------------------------------
+The PNG was visually inspected and its plotting code read. It plots
+bins 0,1,2,3, and >=4. Both the reference tail and observed tail are
+summed over all k>=4; the final point is NOT merely bin 4. The tables
+retain the individual higher bins. Nonzero points have the pointwise
+Wilson bars. A zero count is shown at its upper Wilson endpoint with
+a downward marker, rather than as a spurious zero on a log axis.
+The labels state that both shifts use each graph and the experiment
+is finite size. No asymptotic proof or fitted convergence rate is
+claimed by the plot.
+
+7. SCIENTIFIC FINDING: LARGE LAMBDA=2 FINITE-SIZE DISCREPANCY
+-----------------------------------------------------------
+The original lambda=2 excess-zero frequencies versus reference
+pi_0=0.6390045766 are:
+
+  N=12:  0.316000, 95% Wilson [0.299608,0.332863], TV=0.323005
+  N=13:  0.318000, 95% Wilson [0.301577,0.334888], TV=0.321005
+  N=30:  0.506667, 95% Wilson [0.466748,0.546501], TV=0.132338
+  N=31:  0.518333, 95% Wilson [0.478363,0.558070], TV=0.120671
+
+The corresponding observed means of 3^excess are approximately
+14.148, 13.966, 3.577, and 3.033, versus reference two. These are
+not small discrepancies explained by marginal sampling noise. The
+lambda=0 histograms are much closer (TV approximately .0147,.0244,
+.0027,.0140), although individual pointwise differences and rare bins
+still cannot establish exact agreement or a theorem.
+
+The discrepancy is a valid finding about finite N. Since the proposed
+moment theorem supplies no rate and distributional determinacy remains
+separate, these observations alone neither prove nor refute the
+asymptotic reference law. The posthoc larger-N follow-up must remain
+separate from the prespecified original study. Its corrected report
+now explicitly states that status. This audit has not independently
+reranked its additional large-N samples.
+
+8. AN EXACT FINITE-SIZE MECHANISM: ADJACENT TRUE TWINS
+------------------------------------------------------
+There is a concrete lambda=2-specific local mechanism. If adjacent
+vertices u,v have identical closed neighborhoods, then
+
+  A(e_u-e_v)=-(e_u-e_v),
+
+so over F3 this is an exact eigenvector at lambda=2. For N>1 it is
+not fiber constant and is independent of the lifted old base-kernel
+subspace; the event therefore forces positive excess at lambda=2.
+
+For any one of the 6N matching edges, condition on its endpoints.
+Their remaining neighbors lie in the two other old fibers. In each
+such fiber, the two relevant independent matching images coincide
+with probability 1/N. The two coincidences use disjoint base-edge
+matchings. Thus the endpoint pair is a true adjacent twin with
+probability exactly 1/N^2. By linearity,
+
+  E[number of true-adjacent-twin edges] = 6/N.
+
+This tends to zero, so it is compatible with an asymptotic law and
+provides no positive limiting-TV counterexample. It predicts a
+substantial lambda=2-specific finite-size obstruction at N=12 or 30.
+It is NOT a proof that twins account for the entire observed corank
+bias or that the full convergence error is O(1/N).
+
+The author's replay-only twin diagnostics are consistent with this:
+mean twin counts near 6/N, and every recorded twin graph has positive
+lambda=2 excess. The conditional excess-zero frequencies among
+no-twin graphs are about .499,.480,.633,.617 for N=12,13,30,31.
+There is still substantial small-N bias at 12/13. Conditioning on
+no twins changes the graph law, so this posthoc conditional histogram
+is a diagnostic, not a replacement unconditioned experiment or proof
+of a conditional universality theorem. Independent replay of all 7200
+matchings was performed by the author, not by this audit.
+
+9. FOUND ISSUE AND RESOLUTION; REMAINING BOUNDARIES
+----------------------------------------------------
+The first follow-up REPORT was generated by the original report helper,
+whose global SEED still contained the original study seed. That made
+the follow-up text header incorrect even though its JSON contained
+the correct new seed. This audit flagged the mismatch. The author
+set the follow-up report seed correctly and added the explicit
+posthoc-exploratory prefix, without reranking any graph. The corrected
+followup/REPORT.txt now begins:
+
+  EXPLORATORY FOLLOW-UP: selected after the original finite-N discrepancy.
+  Fixed study seed: 2026111501409.
+
+The mismatch is resolved. No correction to original-study ranks,
+histograms, or statistics was needed. No asymptotic counterexample,
+convergence-rate estimate, moment determinacy result, or historical
+priority claim is certified by this finite experiment audit.
+
+10. FINAL FOLLOW-UP/CONDITIONAL/INFLUENCE CHECKS: PASS
+-----------------------------------------------------
+After the original audit, the complete FINDINGS.txt, diagnostics.json,
+conditional-no-twins-histograms.csv, and zero-bin-and-twins.png were
+inspected. A separate NEW read-only statistical checker,
+
+  independent_diagnostics_check.py
+
+joined all 8600 original-plus-follow-up raw rows to the 7200 original
+twin diagnostic rows. It recomputed all eight conditional histograms,
+conditional sample sizes, binomial SEs and Wilson endpoints, twin
+counts/means/SEs, and BOTH shifts' maximum/top-one-percent moment
+influence statistics. Every calculation agreed with diagnostics.json
+and the conditional CSV. This checker made ZERO graph-generation or
+rank calls. Its results are in independent-diagnostics-checks.json.
+
+In particular, for N=13 and lambda=2 the largest observed excess is
+8, its single weight is 6561, its contribution to the sample mean is
+6561/3000=2.187, and its share of the observed total weight is 15.66%.
+The top 1% of observations account for 46.40% of that observed moment.
+For N=100 the mean is 2.08 with sample SE about .10139; the no-twin
+zero-bin frequency is 177/280=.6321428571. These figures are correct
+and are accompanied by appropriate finite-sample/rare-tail caveats.
+
+The follow-up has exactly 400,400,300,300 samples at N=60,61,99,100.
+Together with the original 7200 it gives 8600 graph draws and 17200
+main shifted ranks. The stated 28.170 seconds is the sum of main
+rank-sampling times, explicitly excluding pilots and plotting.
+The seed-header fix and exploratory prefix remain correct.
+
+The combined figure distinguishes unconditional from posthoc no-twin
+frequencies and explicitly notes that the two right-panel series are
+dependent. The residual no-twin discrepancy at N=12/13 is retained;
+no claim that twins explain the full small-N bias is made. The broad
+reduction of the discrepancy across size ranges is descriptive, not
+a fitted convergence rate or a claim of strict samplewise monotonicity.
+
+Finally, Markov's bound P(any true-adjacent twins)<=E[number]=6/N
+is correct. It reinforces that this explicit local obstruction vanishes
+in probability; it does not control the entire finite-size corank-law
+error. No further rank runs were needed for these final checks.

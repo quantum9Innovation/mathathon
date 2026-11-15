@@ -1,0 +1,682 @@
+EXACT SMALL-EXPONENT CONSTANTS FOR FRACTIONAL MATRIX MAPS
+========================================================
+2026-11-14/15. Owner: sharp_holder_breakthrough. Other working files untouched.
+
+STATUS / MAIN CANDIDATE
+-----------------------
+For fixed 0<alpha<1 and beta=1-alpha, define
+
+ H^+_(s,alpha)=sup Tr|B^alpha-A^alpha|^s / Tr|B-A|^(alpha*s),
+
+over all finite dimensions and positive semidefinite A,B. The derivation
+below gives the exact candidate theorem
+
+       lim_(s down to 0) s^2 H^+_(s,alpha)
+                  = 1 / [2*pi^2*alpha*(1-alpha)].                 (E)
+
+This supersedes the previous order-only lower argument. The upper
+mechanism is a tapered, positive, logarithmic sinc quadrature. The lower
+mechanism is a weighted Cauchy factorization, similarity, reversed
+Araki--Lieb--Thirring inequality, and compression Jensen inequality.
+All ingredients are classical. UPDATE: the fresh exact_limit_referee has
+independently rederived and PASSED the PSD theorem, both whole-line
+factor-four theorems, rectangular polar and absolute maps, and the sharp
+worst-case compression coefficients. See
+docs/exact-holder-limit-independent-audit.txt, especially items 9--14.
+A primary-source priority audit remains necessary. No novelty or
+seminal-status claim is made in this working record.
+
+SECTION 6 UPDATE: A subsequent central symmetric rank-one construction
+now gives a matching whole-line lower constant. For BOTH |x|^alpha and
+sgn(x)|x|^alpha, Section 6 derives the exact candidate coefficient
+
+       lim_(s down to 0) s^2 H^f_(s,alpha)
+                  = 2 / [pi^2*alpha*(1-alpha)] = FOUR*(E).
+
+The same coefficient holds for the homogeneous non-selfadjoint polar
+Mazur map by its exact dilation equality, and for rectangular absolute-
+value powers by Section 7's sharper node-rank count. These extensions
+are newer than the root's independent PASS check of the PSD lower and
+have since PASSED the fresh independent audit cited above. No equality
+of PSD and whole-line coefficients is asserted; their exact ratio in the
+proved leading coefficients is four.
+
+1. EXACT RANK-ONE REDUCTION
+--------------------------
+For 0<s<=1, the full PSD constant is exactly
+
+ R_(s,alpha)=sup Tr[((H+vv*)^alpha-H^alpha)^s], H>=0, ||v||=1,
+
+with the supremum over finite dimensions. One direction is immediate.
+For the other, spectrally decompose E=B-A=E_+-E_- and telescope the two
+increasing PSD paths
+
+          A -> A+E_+=B+E_- <- B.
+
+Split each E_+ and E_- into its positive orthogonal rank-one summands.
+Homogeneity bounds an increment of magnitude t by R*t^(alpha*s).
+The exact Schatten s-power triangle inequality gives the denominator
+Tr|E|^(alpha*s), with no factor from the number of increments.
+
+Thus it suffices to prove (E) for normalized positive rank-one updates.
+Their correction Delta is positive and has ||Delta||<=1: indeed vv*<=I,
+H+vv*<=H+I, and operator monotonicity gives
+
+  0<=Delta<=(H+I)^alpha-H^alpha<=I.
+
+2. TAPERED ANALYTIC QUADRATURE LEMMA
+----------------------------------
+The Gaussian-window implementation below is the independently derived
+simplification supplied by nongalactic_wildcard; it replaces this file's
+first super-Gaussian construction.
+
+Let F(z) take values in a Banach space, be analytic on |Im z|<d0, and
+for each fixed d<d0 satisfy
+
+ ||F(x+i eta)|| <= M_d exp[-g(x)], |eta|<=d,
+ g(x)=a*(-x)_+ + b*x_+,      a,b>0.                           (Q1)
+
+Suppose every real F(x) has rank at most r when the values are operators.
+Then, for every fixed d<d0 and large T, a finite REAL-node quadrature Q_T
+satisfies
+
+ || integral_R F(x)dx - Q_T || <= M_d exp(-T),
+
+ number of nodes <= [T^2/(4*pi*d)]*(1/a+1/b)+O(T^(7/4)).       (Q2)
+
+The implicit constant may depend on a,b,d, but is uniform over all F
+obeying (Q1) with the same M_d. All quadrature weights are positive, so
+positive real F gives a positive quadrature. The rank of Q_T is at most
+r times the number of nodes.
+
+2.1 Entire Gaussian windows
+
+Put ell=T^(3/4), kappa=max(a,b), I_j=[j*ell,(j+1)*ell], j in Z, and
+
+ phi_j(z)=(1/sqrt(pi))*integral_(I_j) exp[-(z-u)^2]du.
+
+The phi_j are entire, nonnegative on R, and sum_(j in Z) phi_j(z)=1 on
+any fixed horizontal strip (by Gaussian integration and analytic
+continuation). Moreover
+
+ |phi_j(x+i eta)| <= exp(d^2)*phi_j(x), |eta|<=d.
+
+Writing m_j=min_(u in I_j)g(u), the Lipschitz bound
+|g(x)-g(u)|<=kappa*|x-u| and the shifted Gaussian integral imply
+
+ integral_R exp[-g(x)] phi_j(x)dx
+ <= (1/sqrt(pi))*integral_(I_j) exp[-g(u)]du
+                       *integral_R exp[-r^2+kappa*|r|]dr
+ <= 2*exp(kappa^2/4)*ell*exp(-m_j).                         (Q3)
+
+Consequently the sum of the two boundary L1 norms of F phi_j is at most
+4*M_d*exp(d^2+kappa^2/4)*ell*exp(-m_j).
+
+Retain just intervals I_j meeting
+
+        [-(T+ell)/a, (T+ell)/b].
+
+There are J=O(T/ell) retained intervals, whose union U is an interval
+containing the displayed one. By the same convolution estimate, the
+partition remainder satisfies
+
+ ||integral F(x)[1-sum_(retained j)phi_j(x)]dx||
+ <=2*M_d*exp(kappa^2/4)*integral_(R minus U) exp[-g(u)]du
+ <=2*M_d*exp(kappa^2/4)*(1/a+1/b)*exp[-T-ell].               (Q4)
+
+2.2 Windowwise sinc quadrature and truncation
+
+For each retained j put
+
+ Q_j=max(ell, T-m_j+3*ell),       h_j=2*pi*d/Q_j.
+
+Apply the standard strip trapezoid bound separately to F phi_j. From
+(Q3) and m_j+Q_j>=T+3*ell, its error is at most
+
+         C_(a,b,d)*M_d*ell*exp[-T-3*ell].
+
+Summing over retained j gives C*M_d*T*exp[-T-3*ell].
+
+Truncate each real lattice to nodes in I_j+[-2*sqrt(T),2*sqrt(T)]. For
+x outside I_j,
+
+ phi_j(x)<=ell/sqrt(pi)*exp[-dist(x,I_j)^2].
+
+Since h_j<=2*pi*d/ell, the omitted discrete Gaussian tail, including
+its factor h_j, is at most
+
+ C*M_d*ell*(h_j+T^(-1/2))*exp(-4*T).
+
+Its sum over j is polynomially bounded times exp(-4*T). Combining this
+with (Q4) proves the approximation error in (Q2) for sufficiently large
+T. Every retained summand is h_j*phi_j(k*h_j)*F(k*h_j), with a positive
+scalar weight.
+
+2.3 Sharp leading node count
+
+Window j needs at most (ell+4*sqrt(T))/h_j+2 nodes. Also
+
+ Q_j <= (T-m_j)_+ + 3*ell.
+
+The leading Riemann sum has error O(T*ell):
+
+ sum_(retained j) ell*(T-m_j)_+
+    =integral_R (T-g(x))_+ dx+O(T*ell)
+    =(T^2/2)*(1/a+1/b)+O(T*ell).
+
+The 3*ell contribution is O(T*ell). The expanded-window overhead is
+O(sqrt(T)*J*(T+ell))=O(T^(5/2)/ell). With ell=T^(3/4), all errors are
+O(T^(7/4))=o(T^2). This proves (Q2) with its sharp coefficient.
+
+3. PSD UPPER CONSTANT
+--------------------
+Write c_alpha=sin(pi*alpha)/pi and beta=1-alpha. For Delta=(H+vv*)^alpha
+-H^alpha, ||v||=1, the usual resolvent integral gives
+
+ Delta=integral_R F(y)dy,
+ F(y)=c_alpha*t^(alpha+1)*[(H+t)^(-1)-(H+vv*+t)^(-1)], t=exp(y).
+
+For real y, F(y) is positive and rank one. For every d<pi, it is analytic
+on |Im y|<pi and satisfies
+
+ ||F(x+i eta)|| <= C_(alpha,d)
+             min(exp(alpha*x), exp(-beta*x)), |eta|<=d.       (U1)
+
+Indeed for x0>=0 and |arg t|<=d<pi,
+|x0+t|>=cos(d/2)*(x0+|t|). This bounds t times each resolvent by a
+d-dependent constant; the resolvent identity gives the alternative
+constant/|t| bound because ||vv*||=1. Multiplying by t^alpha proves U1.
+
+Apply (Q2) with a=alpha, b=beta and r=1. If N_Delta(lambda) denotes the
+number of eigenvalues exceeding lambda, then uniformly in dimension,
+H and v,
+
+ limsup_(T->infinity) N_Delta(exp(-T))/T^2
+                         <=1/(4*pi*d*alpha*beta).
+
+The multiplicative U1 constant only shifts T by O_(alpha,d)(1). Letting
+d increase to pi gives the uniform bound
+
+ limsup_(T->infinity) sup_(H,v) N_Delta(exp(-T))/T^2
+                         <=1/(4*pi^2*alpha*beta).           (U2)
+
+Since ||Delta||<=1, layer cake gives
+
+ Tr Delta^s=s*integral_0^infinity exp(-s*T) N_Delta(exp(-T))dT.
+
+The uniform form of U2, and integral_0^infinity exp(-s*T)T^2dT=2/s^3,
+prove
+
+ limsup_(s->0) s^2 R_(s,alpha) <=1/(2*pi^2*alpha*beta).       (U3)
+
+4. LOWER VIA WEIGHTED CAUCHY FACTORIZATION
+---------------------------------------
+Choose 0<epsilon<1 and delta>0, and let
+
+ rho(x)=c0*exp(epsilon*x), x<=0;
+ rho(x)=c0*exp(-delta*x),  x>=0;
+ c0=(1/epsilon+1/delta)^(-1).
+
+This is a probability density for log-spectrum x. Formally on L2(R),
+H is multiplication by exp(x), v=sqrt(rho), and
+
+ m(t)=<v,(H+t)^(-1)v>=integral rho(x)/(exp(x)+t)dx.
+
+The rigorous finite-interval/finite-matrix passage is in Section 4.3.
+Woodbury factors the correction as Delta=T T*, where T:L2(dy)->L2(dx)
+has kernel
+
+ T(x,y)=sqrt(c_alpha)*sqrt(rho(x))*exp((alpha+1)y/2)
+                    /[(exp(x)+exp(y))*sqrt(1+m(exp(y)))].
+
+Put
+
+ C(x-y)=1/[2*cosh((x-y)/2)],
+ a(x)=sqrt(c_alpha)*sqrt(rho(x))*exp(-x/2),
+ b(x)=exp(alpha*x/2)/sqrt(1+m(exp(x))),
+ q(x)=[a(x)b(x)]^2
+     =c_alpha*rho(x)*exp(-beta*x)/(1+m(exp(x))).
+
+Then T=M_a C M_b. With Fourier convention
+hat C(xi)=integral C(x)exp(-i*xi*x)dx, one has exactly
+
+                    hat C(xi)=pi*sech(pi*xi).                (L1)
+
+4.1 A general lower bound for this nonsymmetric factor
+
+Let I be a finite interval, P_I its multiplication projection, and
+C_I=P_I C P_I on L2(I). Compress both variables of T to I, obtaining
+T_I=M_a C_I M_b. Since a,b are positive and bounded above/below on I,
+
+ T_I is similar to S_I=M_sqrt(ab) C_I M_sqrt(ab)
+
+by multiplication with sqrt(a/b). S_I is positive. The standard
+eigenvalue/singular-value inequality for compact operators gives, for
+p>0,
+
+       Tr|T_I|^p >= Tr S_I^p.
+
+For 0<p<=1, reversed Araki--Lieb--Thirring gives
+
+ Tr S_I^p >= Tr [M_(ab)^p C_I^p].
+
+Compression Jensen for the operator-concave function t^p gives
+
+       C_I^p >= P_I C^p P_I.
+
+The Fourier multiplier C^p has diagonal kernel
+(1/(2*pi))*integral [pi*sech(pi*xi)]^p dxi. Taking p=2s (s<=1/2)
+therefore yields
+
+ Tr Delta^s >= (1/(2*pi))
+       * integral_I q(x)^s dx
+       * integral_R [pi*sech(pi*xi)]^(2s) dxi.                (L2)
+
+For a globally defined compact factor T, the double compression lowers
+each SINGULAR VALUE: s_j(P_I T P_I)<=s_j(T). One must NOT assert the
+generally false Loewner inequality TT*>=(P_I T P_I)(P_I T P_I)*. The
+preferred bounded-interval proof in Section 4.3 instead establishes its
+direct Loewner comparison Delta_R>=T_R T_R* from the positive integral,
+before applying the similarity argument.
+
+4.2 Evaluation of the two factors
+
+At t down to zero, substitution r=exp(x) in m(t) gives
+
+ m(t) ~ c0*[pi/sin(pi*epsilon)]*t^(epsilon-1).
+
+At infinity m(t)<=1/t ->0. Hence
+
+ q(x) ~ [sin(pi*alpha)*sin(pi*epsilon)/pi^2]*exp(alpha*x)
+                                      as x->-infinity,
+ q(x) ~ c_alpha*c0*exp[-(beta+delta)*x]
+                                      as x->+infinity.
+
+Elementary exponential-tail integration gives
+
+ lim_(s->0) s*integral_R q(x)^s dx
+                      =1/alpha + 1/(beta+delta).
+
+Also, exactly,
+
+ integral_R [pi*sech(pi*xi)]^(2s) dxi
+       =pi^(2s-1)*sqrt(pi)*Gamma(s)/Gamma(s+1/2),
+
+so s times this integral tends to 1/pi. Consequently (L2) gives
+
+ liminf_(s->0) s^2 R_(s,alpha)
+             >=(1/(2*pi^2))*[1/alpha+1/(beta+delta)].         (L3)
+
+Let delta decrease to zero. The right side increases to
+1/[2*pi^2*alpha*beta], matching U3 and proving (E), subject to audit.
+
+4.3 Passage using only finite matrices
+
+The clean restriction below was independently suggested by root. No
+theorem for general unbounded-operator functional calculus is needed.
+Fix I_R=[-R,R]. On L2(I_R), let H_R=exp(x) and v_R=sqrt(rho(x)), WITHOUT
+renormalizing. Then t_R=||v_R||^2<=1 and the Woodbury denominator uses
+
+ m_R(t)=integral_(I_R) rho(x)/(exp(x)+t)dx <=m(t).
+
+Therefore the true positive correction Delta_R dominates the integral
+factor obtained by replacing m_R by the larger GLOBAL m. Restricting
+also the log-integration variable y to I_R shows
+
+ Delta_R >= T_R T_R*,
+ T_R=M_a C_(I_R) M_b,
+
+where a,b,q are exactly the global functions in Sections 4--4.2. The
+similarity/ALT/Jensen argument thus gives
+
+ Tr Delta_R^s >= (J_s/(2*pi))*integral_(I_R) q(x)^s dx.
+
+For fixed R, approximate exp(x) uniformly by positive step functions
+with finitely many values, keeping E_R=v_R v_R* fixed. Since H_R is
+bounded and bounded below, the resulting corrections converge in
+operator norm by the fractional resolvent integral (or norm-continuity
+of bounded positive functional calculus). Each step-function correction
+acts only in the finite-dimensional span of the vectors
+1_(step interval)*v_R, and is therefore exactly a finite-matrix rank-one
+example. On the orthogonal complement the correction is zero.
+
+For each such finite matrix, its input rank-one norm is t_R<=1, so
+
+ R_(s,alpha) >= Tr Delta_(R,n)^s / t_R^(alpha*s)
+             >= Tr Delta_(R,n)^s.
+
+Fixed singular-value partial sums converge under norm convergence.
+Fatou over these partial sums therefore gives
+
+ R_(s,alpha) >= Tr Delta_R^s
+             >= (J_s/(2*pi))*integral_(I_R) q(x)^s dx.
+
+Let R increase to infinity. Monotone convergence of the last ordinary
+scalar integral proves the finite-matrix form of L2 used in L3. This
+avoids renormalization and any infinite-dimensional Holder theorem.
+
+5. LITERATURE / INDEPENDENT-AUDIT TASKS
+-------------------------------------
+Primary references inspected during this derivation:
+
+* H. Araki, On an inequality of Lieb and Thirring, Letters in Mathematical
+  Physics 19 (1990), 167--170, DOI 10.1007/BF01045887.
+  https://link.springer.com/article/10.1007/BF01045887
+  The publisher's abstract explicitly states the trace inequality for
+  positive self-adjoint Hilbert-space operators. Substitution of reciprocal
+  exponent gives the reversed range used here. The complete article was
+  not accessible from that publisher endpoint.
+* K. M. R. Audenaert, On the Araki--Lieb--Thirring inequality,
+  arXiv:math/0701129v2, Theorem 1, p.1, explicitly records the reversed
+  0<=r<=1 direction. https://arxiv.org/pdf/math/0701129
+* F. Hansen and G. K. Pedersen, Jensen's Operator Inequality,
+  Bulletin London Math. Soc. 35 (2003), 553--564; arXiv:math/0204049.
+  Theorem 2.1(iv) / displayed pinching statement on p.3 and Corollary 2.3
+  cover compression on arbitrary Hilbert spaces. Use f=-t^p to obtain
+  C_I^p>=P_I C^p P_I. https://arxiv.org/pdf/math/0204049
+* L. N. Trefethen and J. A. C. Weideman, The Exponentially Convergent
+  Trapezoidal Rule, SIAM Review 56 (2014), 385--458, Theorem 5.1.
+  https://people.maths.ox.ac.uk/trefethen/publication/PDF/2014_149.pdf
+
+Compact eigenvalue/singular-value p-sum domination is Weyl's classical
+multiplicative singular-value inequality, followed by convexity of
+exp(p*x), p>0. One can derive the compact version by taking finite
+invariant eigenvector subspaces and then increasing their dimension.
+The transform L1 and beta/gamma integrals are direct scalar calculations.
+All are established ingredients, not novelty claims.
+
+The exact asymptotic E must be compared against known weighted Hankel/
+Cauchy asymptotics and rational approximation, especially tapered poles.
+The lower proof does not assume any such asymptotic theorem; it directly
+obtains the sharp phase-space coefficient from ALT and a rank-one factor.
+The upper proof is a uniform operator-valued quadrature theorem, rather
+than a scalar fixed-interval rational approximation assertion.
+
+Independent checking should concentrate on the ALT direction, compression
+Jensen direction, uniformity of the quadrature o(T^2), and the finite-
+matrix lower passage. All four have been checked internally here, but
+this is not a substitute for a separate mathematical audit.
+
+6. EXACT WHOLE-LINE CONSTANT: CENTRAL SYMMETRIC RANK-ONE UPDATE
+-------------------------------------------------------------
+NEW DERIVATION, independently PASSED in exact-holder-limit-independent-
+audit.txt items 9--13. The PSD exact coefficient is
+multiplied by FOUR for each whole-line Hermitian map:
+
+ f_even(x)=|x|^alpha,      f_odd(x)=sgn(x)|x|^alpha.
+
+If H^f_(s,alpha) is the optimal Schatten POWER ratio for either map over
+all finite Hermitian pairs, the candidate exact theorem is
+
+      lim_(s down to 0) s^2 H^f_(s,alpha)
+                       =2/[pi^2*alpha*(1-alpha)].             (W)
+
+By the exact 2-by-2 self-adjoint dilation, the same leading coefficient
+holds for the non-selfadjoint homogeneous polar Mazur map U|X|^alpha.
+Section 7 separately derives the same coefficient for X->|X|^alpha.
+
+6.1 Rank-one reduction and matching upper
+
+The finite signed spectral telescope shows, for 0<s<=1,
+
+ H^f_(s,alpha)=sup Tr|f(H+vv*)-f(H)|^s, H=H*, ||v||=1.
+
+A negative rank-one increment is obtained by reversing the endpoints;
+positive scaling uses the degree-alpha homogeneity of both functions.
+Unlike the PSD case, every Hermitian intermediate endpoint is permitted.
+
+The already audited imaginary-resolvent integral has a log-strip of
+width d0=pi/2, real-node rank at most two, and the envelope
+min(exp(alpha*x),exp(-beta*x)). Apply Section 2 with r=2 and d<pi/2.
+This gives uniformly
+
+ limsup_(T->infinity) N_|Delta|(exp(-T))/T^2
+                              <=1/[pi^2*alpha*beta].
+
+The integral envelope also gives a dimension-free operator-norm bound
+C_alpha. Rescaling by that fixed bound, layer cake therefore yields
+
+ limsup_(s->0) s^2 H^f_(s,alpha)<=2/[pi^2*alpha*beta].        (W1)
+
+6.2 A central update with a positive scalar denominator
+
+Fix delta>0 and take the positive-log-spectrum probability density
+
+ rho(x)=c0*exp(x),       x<=0;
+ rho(x)=c0*exp(-delta*x), x>=0;
+ c0=(1+1/delta)^(-1).
+
+Let D be multiplication by exp(x) on L2(R), w=sqrt(rho), and formally
+set on L2(R) plus L2(R)
+
+ H=diag(D,-D),    v=(w,w)/sqrt(2),    E=vv*,
+ A=H-E/2,        B=H+E/2.
+
+Then B-A=E has norm one. The rigorous finite-interval transfer below
+again avoids any unbounded functional-calculus assumption.
+
+Let P swap the two summands. Since PHP=-H and PEP=E, one has PAP=-B.
+Under the fixed Hadamard unitary which diagonalizes P,
+
+ H -> [0 D; D 0],      v -> (w,0),      E -> [ww* 0; 0 0].
+
+For R_H(z)=(H-z)^(-1) and m(z)=v*R_H(z)v, the exact central Woodbury
+identity is
+
+ R_B(z)-R_A(z)=-R_H(z) E R_H(z)/[1-m(z)^2/4].                (W2)
+
+Indeed the two rank-one resolvent denominators are 1+m/2 and 1-m/2;
+subtracting their +/-E/2 formulas gives W2. At z=it,
+
+ m(it)=i*M(t),
+ M(t)=t*integral_R rho(x)/(exp(2*x)+t^2)dx >=0,
+ omega(t)=1/[1+M(t)^2/4] >0.                               (W3)
+
+Thus the same REAL POSITIVE weight omega occurs for both poles +/-it.
+This is the reason to center the endpoints at H rather than use H,H+E.
+
+Put R(t)=(D^2+t^2)^(-1) and
+
+ c_o=2*cos(pi*alpha/2)/pi,
+ c_e=2*sin(pi*alpha/2)/pi.
+
+6.3 Odd map: two exact positive channels
+
+In the P-eigenbasis, direct substitution in the odd fractional-power
+resolvent integral gives exactly
+
+ f_odd(B)-f_odd(A)=diag(S_+,-S_-),
+
+ S_+=c_o*integral_0^infinity t^(alpha+2)*omega(t)
+                         R(t) w w* R(t)dt,
+ S_-=c_o*integral_0^infinity t^alpha*omega(t)
+                         D R(t) w w* R(t) D dt.             (W4)
+
+For verification, in that basis
+
+ R_H(it)=[it R(t), D R(t); D R(t), it R(t)],
+
+and the real part of R_H(it) E R_H(it) is
+
+ diag(-t^2 R(t)ww*R(t), D R(t)ww*R(t)D).
+
+The odd integral multiplies this by -c_o*t^alpha*omega(t), proving W4.
+Both S_+ and S_- are positive.
+
+Now use the convolution
+
+ C_1(x-y)=1/[2*cosh(x-y)],
+ hat C_1(xi)=(pi/2)*sech(pi*xi/2).                          (W5)
+
+After t=exp(y), the two positive operators factor as T_+ T_+* and
+T_- T_-*, with
+
+ T_+=M_(sqrt(c_o)*sqrt(rho)*exp(-x))
+                         C_1 M_(exp((alpha+1)*x/2)*sqrt(omega(exp(x)))),
+ T_-=M_(sqrt(c_o)*sqrt(rho))
+                         C_1 M_(exp((alpha-1)*x/2)*sqrt(omega(exp(x)))).
+
+The product of the two multiplier weights has the SAME square in both
+channels:
+
+       q_o(x)=c_o*rho(x)*exp(-beta*x)*omega(exp(x)).          (W6)
+
+Each channel therefore admits exactly the similarity/ALT/compression
+Jensen lower estimate from Section 4, with C replaced by C_1.
+
+6.4 Even map: a second similarity gives the same two channels' coefficient
+
+For the even map, the same resolvent computation gives exactly
+
+ f_even(B)-f_even(A)=[0 O; O* 0],
+ O=c_e*integral_0^infinity t^(alpha+1)*omega(t)
+                                  R(t)ww*R(t)D dt.         (W7)
+
+Hence every singular value of O appears TWICE in the full correction.
+After logarithmic substitution,
+
+ O=c_e*M_(sqrt(rho)*exp(-x)) C_1
+                   M_(exp(alpha*x)*omega(exp(x))) C_1 M_sqrt(rho).
+
+On a fixed finite interval I, O is similar (by multiplication exp(-x/2))
+to the positive operator
+
+ S=c_e*M_(sqrt(rho)*exp(-x/2)) C_1
+                   M_(exp(alpha*x)*omega(exp(x))) C_1
+                   M_(sqrt(rho)*exp(-x/2))
+   =U U*,
+
+ U=sqrt(c_e)*M_(sqrt(rho)*exp(-x/2))
+                                  C_1 M_(exp(alpha*x/2)*sqrt(omega(exp(x)))).
+
+Thus Weyl's singular-value/eigenvalue inequality gives
+
+                  Tr|O|^s>=Tr S^s=Tr|U|^(2s).
+
+Apply the Section 4 similarity/ALT/Jensen argument once more to U. Its
+multiplier product has square
+
+       q_e(x)=c_e*rho(x)*exp(-beta*x)*omega(exp(x)).          (W8)
+
+Therefore Tr|O|^s has the same leading lower coefficient as EACH odd
+channel. The factor two from the off-diagonal full correction supplies
+the same final coefficient as the two channels in W4.
+
+6.5 Tail constants and exact lower coefficient
+
+For the selected rho, substitution a=exp(x) gives
+
+ M(t)=c0*t*integral_0^1 1/(a^2+t^2)da
+               +c0*t*integral_1^infinity a^(-delta-1)/(a^2+t^2)da.
+
+The first term is c0*arctan(1/t), while the second tends to zero as
+t decreases to zero. Hence
+
+ M(t)->c0*pi/2 as t->0,       M(t)<=1/t->0 as t->infinity.
+
+Consequently omega has a strictly positive finite limit at each end,
+and, for either q_o or q_e,
+
+ q(x)~constant*exp(alpha*x)          as x->-infinity,
+ q(x)~constant*exp[-(beta+delta)*x]  as x->+infinity.
+
+Thus
+
+ lim_(s->0) s*integral q(x)^s dx=1/alpha+1/(beta+delta).
+
+For the narrower Cauchy kernel W5,
+
+ J_(1,s)=integral [(pi/2)*sech(pi*xi/2)]^(2s) dxi
+       =(pi/2)^(2s)*(2/pi)*sqrt(pi)*Gamma(s)/Gamma(s+1/2),
+
+so lim s*J_(1,s)=2/pi. A SINGLE positive channel, or the singular-value
+sum of O, consequently has lower coefficient
+
+       (1/pi^2)*[1/alpha+1/(beta+delta)].
+
+Both whole-line maps have TWO such contributions, so
+
+ liminf_(s->0) s^2 H^f_(s,alpha)
+       >=(2/pi^2)*[1/alpha+1/(beta+delta)].                  (W9)
+
+Let delta decrease to zero. W9 matches W1 exactly and proves W.
+
+6.6 Finite-matrix passage and restriction monotonicity
+
+Fix I=[-R,R] and restrict rho without renormalizing, as in Section 4.3.
+Use symmetric H_I=diag(D_I,-D_I) and v_I=(w_I,w_I)/sqrt(2), so the
+rank-one input E_I has norm t_I=integral_I rho<=1. Its central denominator
+uses M_I(t)<=M(t); therefore omega_I(t)>=omega(t) pointwise.
+
+For the odd map, both positive channels in W4 dominate the factors
+using the GLOBAL omega and log-integration variable y restricted to I.
+Their multiplier products are the global q_o on I, so the lower
+similarity/ALT/Jensen estimates are unchanged.
+
+For the even map, first apply the bounded similarity exp(-x/2) on I to
+its actual O_I, obtaining the positive S_I with actual omega_I. Then
+replace omega_I by smaller global omega and restrict y to I. These
+operations lower S_I in Loewner order. The remaining factor U_I has
+product q_e on I and admits the second similarity/ALT/Jensen bound.
+This justifies both uses of positivity in Section 6.4.
+
+Finally approximate D_I=exp(x) by finite step functions, keeping w_I
+fixed, just as in Section 4.3. The full endpoints A_I,B_I are bounded
+self-adjoint and their functional calculi converge in operator norm:
+continuous functions on a bounded common real spectral interval can
+be uniformly approximated by polynomials. Each correction is supported
+on the two finite cell-vector spans and is a genuine finite-matrix
+example. Its denominator is t_I^(alpha*s)<=1, so the optimal full
+constant dominates its output power sum. Fatou of fixed singular-value
+partial sums, then monotone convergence of integral_I q^s, prove W9
+using ONLY finite-matrix examples.
+
+7. RECTANGULAR ABSOLUTE-VALUE POWERS: NO DILATION LOSS
+-----------------------------------------------------
+The same exact leading coefficient as (W) also holds for the map
+
+             X -> |X|^alpha=(X*X)^(alpha/2)
+
+on arbitrary finite rectangular matrices. The analogous assertion for
+X->|X*|^alpha follows by taking adjoints. This strengthens the naive
+factor-two upper bound from retaining just one block of the full even
+dilation inequality.
+
+Indeed first suppose E=X-Y has rank one and ||E||=1. The even functional
+calculus of the self-adjoint dilation gives the operator-valued integral
+for |X|^alpha-|Y|^alpha with log-integrand
+
+ F(y)=c_e*t^alpha*D_t,      t=exp(y),
+ D_t=X*X*(X*X+t^2)^(-1)-Y*Y*(Y*Y+t^2)^(-1).
+
+The already audited even-dilation resolvent bounds imply
+
+ ||F(x+i eta)||<=C_(alpha,d)*min(exp(alpha*x),exp(-beta*x)),
+                  |eta|<=d<pi/2.
+
+However its real-node rank is only TWO, independently of the rank-four
+bound for the entire dilation node:
+
+ rank(D_t)<=rank(X*X-Y*Y)<=2,
+
+because
+
+ X*X-Y*Y=X*(X-Y)+(X*-Y*)Y=X*E+E*Y.
+
+Thus Section 2 gives exactly the whole-line upper W1 for rank-one
+rectangular updates. Telescope an arbitrary rectangular difference by
+its finite SVD rank-one expansion; degree-alpha homogeneity and the
+Schatten s-power triangle inequality give precisely Tr|E|^(alpha*s)
+as the denominator, with no number-of-increments loss.
+
+Hermitian matrices and the central rank-one examples of Section 6 are
+a subclass of the rectangular domain. Therefore W9 supplies the matching
+lower bound, and the exact coefficient is
+
+                   2/[pi^2*alpha*(1-alpha)].
+
+This conclusion does not assert equality of the fixed-s best constants
+between the rectangular absolute-value map and the Hermitian even map;
+only their exact s->0 leading coefficients have been identified. For
+the polar Mazur map, the fixed-s equality with the Hermitian odd map
+follows from the exact self-adjoint dilation cancellation already audited.

@@ -19,6 +19,17 @@ structure OrthogonalRange (Y : Matrix (Fin m) (Fin w) ℝ) where
   spans : Y = basis*coefficients
   dimension_eq_rank : dimension = Y.rank
 
+def OrthogonalRange.replaceBasis {Y : Matrix (Fin m) (Fin w) ℝ} (out : OrthogonalRange Y)
+    (Q : Matrix (Fin m) (Fin out.dimension) ℝ) (hQ : Q = out.basis) : OrthogonalRange Y where
+  dimension := out.dimension
+  dimension_le_rows := out.dimension_le_rows
+  dimension_le_cols := out.dimension_le_cols
+  basis := Q
+  coefficients := out.coefficients
+  orthogonal := by rw [hQ]; exact out.orthogonal
+  spans := by rw [hQ]; exact out.spans
+  dimension_eq_rank := out.dimension_eq_rank
+
 def rangeFromPSDGramOfEq (Y : Matrix (Fin m) (Fin w) ℝ)
     {D : Core w} (p : PSDGramPair D) (hD : D = Yᵀ*Y) : OrthogonalRange Y := by
   have hGram : p.factor*p.factorᵀ = Yᵀ*Y := p.gram.trans hD

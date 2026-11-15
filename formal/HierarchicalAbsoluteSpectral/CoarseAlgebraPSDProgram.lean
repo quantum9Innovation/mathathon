@@ -73,10 +73,10 @@ def psdSingleProgram (D : Core 1) (hD : D.PosSemidef) : ArithmeticProgram (PSDGr
 
 theorem psdSingleProgram_admissible (D : Core 1) (hD : D.PosSemidef) :
     (psdSingleProgram D hD).admissible := by
-  simp only [psdSingleProgram, admissible]
-  split_ifs
-  · trivial
-  · simp only [admissible_bind, choleskySingleProgram_admissible, admissible_pure, and_self]
+  by_cases hz : D 0 0 ≤ 0
+  · simp only [psdSingleProgram, admissible, dif_pos hz]
+  · simp only [psdSingleProgram, admissible, dif_neg hz, admissible_bind,
+      choleskySingleProgram_admissible, admissible_pure, and_self]
 
 theorem psdSingleProgram_work (D : Core 1) (hD : D.PosSemidef) :
     (psdSingleProgram D hD).work ≤ 3 := by

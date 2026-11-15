@@ -57,8 +57,8 @@ theorem leading_diagonal_lift {r k : ℕ} (hr : r ≤ k) (d : Fin k → ℝ) :
   funext i
   by_cases hi : i.val < r <;> simp [leadingMask, hi]
 
-theorem spectral_filter_split {r k : ℕ} (hr : r ≤ k) (Q : Core k)
-    (f : Fin k → ℝ) (Ω : Matrix (Fin k) (Fin r) ℝ) :
+theorem spectral_filter_split {r k b : ℕ} (hr : r ≤ k) (Q : Core k)
+    (f : Fin k → ℝ) (Ω : Matrix (Fin k) (Fin b) ℝ) :
     Q*Matrix.diagonal f*Ω =
       (Q*columnEmbedding (leadingEmbedding hr))*
           (Matrix.diagonal (fun j => f (leadingEmbedding hr j))*

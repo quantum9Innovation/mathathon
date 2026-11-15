@@ -134,5 +134,44 @@ theorem gaussian_chebyshev_strong_filter {k r : ℕ}
     (strongGaussianDegree k U β α hk hU hβ hβ1 hα hα1)
     (strongGaussianDegree_stops k U β α hk hU hβ hβ1 hα hα1) hdlo hdhi hdtail G hG) (by finiteness)
 
+/-- A measurable success event with the pointwise guarantee. This form is
+available even without choosing a measurable orthonormal basis of each
+random range. -/
+theorem gaussian_chebyshev_strong_filter_good_event {k r : ℕ}
+    (T S Sinv : Core k) (hT : T.toEuclideanLin.IsSymmetric) (hr : r ≤ k)
+    (hSinv : Sinv*S = 1) (a U β α : ℝ)
+    (hk : 1 ≤ k) (ha : 0 < a) (hInv : ‖Sinv‖ ≤ 1/a)
+    (hcond : ‖S‖/a ≤ U) (hU : 1 ≤ U) (hβ : 0 < β) (hβ1 : β ≤ 1)
+    (hα : 0 < α) (hα1 : α ≤ 1)
+    (hdlo : ∀ i, 0 ≤ strongEigenvalues T hT i)
+    (hdhi : ∀ i, strongEigenvalues T hT i ≤ 2)
+    (hdtail : ∀ i, r ≤ i.val → strongEigenvalues T hT i ≤ 1+α) :
+    ∃ E : Set (Fin r → Fin k → ℝ), MeasurableSet E ∧
+      (gaussianColumns k r).real E ≥ 1-β ∧
+        ∀ G ∈ E, G ∈ strongGaussianSuccess T S α
+          (strongGaussianDegree k U β α hk hU hβ hβ1 hα hα1) := by
+  let Q := strongSpectralQ T hT
+  let J := Q*columnEmbedding (leadingEmbedding hr)
+  let A := Jᵀ*Sᵀ
+  have hQ : Qᵀ*Q = 1 := strongSpectralQ_gram T hT
+  have hJ : Jᵀ*J = 1 := by
+    calc
+      _ = (columnEmbedding (leadingEmbedding hr))ᵀ*(Qᵀ*Q)*columnEmbedding (leadingEmbedding hr) := by
+        simp only [J, Matrix.transpose_mul, Matrix.mul_assoc]
+      _ = 1 := by rw [hQ, Matrix.mul_one]; exact columnEmbedding_gram _
+  have hA : ∀ u : Fin r → ℝ, (∑ i, (u i)^2) = 1 → a^2 ≤ ∑ j, (∑ i, A i j*u i)^2 :=
+    gaussian_head_covariance_lower J S Sinv hJ hSinv a ha hInv
+  have hbad := gaussianCaptureBad_probability A (Function.Embedding.refl (Fin r)) a β hk hr hr ha hβ hβ1 hA
+  refine ⟨(gaussianCaptureBad A (Function.Embedding.refl (Fin r)) a β)ᶜ,
+    (gaussianCaptureBad_measurable _ _ _ _).compl, ?_, ?_⟩
+  · rw [measureReal_compl (gaussianCaptureBad_measurable _ _ _ _), probReal_univ]
+    linarith
+  · intro G hG
+    exact strongGaussianSuccess_of_not_bad
+      T Q S Sinv (strongEigenvalues T hT) hr hQ (strongSpectralQ_coGram T hT)
+      (strongSpectralQ_diagonalizes T hT) hSinv a U β α hk ha hInv hcond hU hβ hβ1 hα
+      (strongGaussianDegree k U β α hk hU hβ hβ1 hα hα1)
+      (strongGaussianDegree_stops k U β α hk hU hβ hβ1 hα hα1) hdlo hdhi hdtail G hG
+
 end
 end HierarchicalAbsoluteSpectral

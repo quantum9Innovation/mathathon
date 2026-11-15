@@ -83,5 +83,41 @@ theorem gaussian_chebyshev_physical_strong_certificate {n k r : ℕ}
   rw [heq]
   exact hp
 
+/-- The same physical guarantee on an explicitly measurable event of
+probability at least 1-beta. No measurable selection of range bases is
+assumed or required. -/
+theorem gaussian_chebyshev_physical_good_event {n k r : ℕ}
+    (Z : Matrix (Fin n) (Fin k) ℝ) (R₀ S K : Core k)
+    (hR₀ : IsUnit R₀.det) (hS : IsUnit S.det) (hK : Kᵀ = K)
+    (hT : (filteredOperator (R₀ᵀ*K*R₀) S).toEuclideanLin.IsSymmetric) (hr : r ≤ k)
+    (a U β α : ℝ) (hk : 1 ≤ k) (ha : 0 < a) (hInv : ‖S⁻¹‖ ≤ 1/a)
+    (hcond : ‖S‖/a ≤ U) (hU : 1 ≤ U) (hβ : 0 < β) (hβ1 : β ≤ 1)
+    (hα : 0 < α) (hα1 : α ≤ 1)
+    (hdlo : ∀ i, 0 ≤ strongEigenvalues (filteredOperator (R₀ᵀ*K*R₀) S) hT i)
+    (hdhi : ∀ i, strongEigenvalues (filteredOperator (R₀ᵀ*K*R₀) S) hT i ≤ 2)
+    (hdtail : ∀ i, r ≤ i.val →
+      strongEigenvalues (filteredOperator (R₀ᵀ*K*R₀) S) hT i ≤ 1+α) :
+    ∃ E : Set (Fin r → Fin k → ℝ), MeasurableSet E ∧
+      (gaussianColumns k r).real E ≥ 1-β ∧
+        ∀ G ∈ E, G ∈ physicalStrongSuccess Z (R₀*S) K
+          (carriedPhysicalOutput Z R₀ S K α
+            (strongGaussianDegree k U β α hk hU hβ hβ1 hα hα1)) α := by
+  let T := filteredOperator (R₀ᵀ*K*R₀) S
+  let v := strongGaussianDegree k U β α hk hU hβ hβ1 hα hα1
+  obtain ⟨E,hEm,hEp,hE⟩ := gaussian_chebyshev_strong_filter_good_event T S S⁻¹ hT hr
+    (Matrix.nonsing_inv_mul S hS) a U β α hk ha hInv hcond hU hβ hβ1 hα hα1 hdlo hdhi hdtail
+  have hR : IsUnit (R₀*S).det := by rw [Matrix.det_mul]; exact hR₀.mul hS
+  have hTdef : T = 1-normalizedPencil (R₀*S) K := by
+    simp only [T, filteredOperator, normalizedPencil, Matrix.transpose_mul, Matrix.mul_assoc]
+  refine ⟨E,hEm,hEp,?_⟩
+  intro G hG
+  have hp := physicalStrongSuccess_of_core Z (R₀*S) K T S α hα.le v hR hK hTdef G (hE G hG)
+  have heq : carriedPhysicalOutput (r := r) Z R₀ S K α v =
+      (fun G : Fin r → Fin k → ℝ => Z*(((R₀*S)⁻¹)ᵀ*strongGaussianOutput T S α v G)) := by
+    funext G
+    exact carriedPhysicalOutput_eq_lift Z R₀ S K hS α v G
+  rw [heq]
+  exact hp
+
 end
 end HierarchicalAbsoluteSpectral

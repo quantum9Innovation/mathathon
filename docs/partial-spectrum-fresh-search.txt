@@ -1,0 +1,350 @@
+PARTIAL-SPECTRUM FRESH SEARCH
+2026-11-14. Dedicated worker note; other workers' files are unchanged.
+
+STATUS
+
+The original arbitrary-AB rank-r relative spectral target remains open.
+This note proves a concrete generalization of the raw signed resolver,
+then composes it with the other workers' bounded filter and positive
+normalization. The resulting solver handles an ARBITRARY supplied
+symmetric core J, INCLUDING SINGULAR J. It needs no J inverse, sign
+split, exact eigenbasis, or negative-PSD-base factorization. Its output
+error is relative to the POSITIVE part, independent of the negative
+spectral scale:
+
+  S=X J X^T, q=n_+(S),
+  C>=0, rank(C)<=q, ||C-S_+||<=eps||S_+||,
+  conventional ~O(input_size*(q+1)+m^3),
+  fast         ~O(input_size*(q+1)^(omega-2)+m^omega).
+
+The input is tall X(N,m), N>=m, plus explicit symmetric J(m,m).
+Here input_size=Nm+m^2. All suppressed accuracy/confidence dependencies
+are logarithmic. The algorithm learns q from its supported coarse core;
+it need not be supplied. Expansion of the N-by-N answer costs an
+additional O(N^2 q), or the appropriate fast rectangular product.
+When q=0 the algorithm returns zero after preprocessing.
+
+This is an exact-real-arithmetic theorem, not a floating-point stability
+claim. It combines the raw worker's contraction/Frobenius mechanism with
+the inertia worker's bounded filter and normalization. No invention of
+Woodbury, rational filters, Graeffe bounds, or rational low-rank updates
+is claimed, and a global novelty claim is not established. The new
+algebra here removes the involution/nonsingularity restriction on J.
+The original real-threshold bridge is not supplied by this extension.
+
+
+1. COARSE SUPPORT, INCLUDING RANK DEFICIENCY
+
+Put G=X^T X. Use a sparse constant-distortion OSE, with logarithmic
+confidence overhead, to construct Y=Pi X in ~O(Nm) arithmetic and
+L(k,m), full row rank, with
+
+  G0=Y^T Y=L^T L,
+  (1-eta)G0 <= G <= (1+eta)G0, eta=1/4.                 (1)
+
+The small Gram, support factorization, and all core maps cost ~m^omega,
+or ~m^3 conventionally. The true G is NOT formed. The sparse embedding
+can use standard OSNAP parameters, not an optimal-constant 2026 result:
+Nelson--Nguyen, OSNAP, https://arxiv.org/abs/1211.1002 .
+
+On (1), X=ZL for Z=X L^dagger, with
+
+  (1-eta)I <= Z^T Z <= (1+eta)I.                        (2)
+
+Z is an analytical factor, carried as an implicit map; it is never
+applied to all k columns unless the cost permits that width. Set
+
+  K=L J L^T,       S=Z K Z^T.                           (3)
+
+K is symmetric even when J is singular. Because Z has full column rank,
+n_+(S)=n_+(K). Thus exact small-core inertia supplies the output width q.
+
+There is a useful all-outcomes rank cap. Always row(L)=row(Pi X) is a
+subspace of row(X). Hence K is a congruence compression of the form J
+restricted to row(X), whose positive index equals n_+(XJX^T). Therefore
+
+  qhat=n_+(K) <= n_+(S)                                 (4)
+
+even on a failed embedding outcome. Runtime dimensions can use qhat;
+on the successful event qhat=q. If k=0 or qhat=0, return zero. A failed
+embedding may invalidate the approximation but cannot inflate this width.
+
+
+2. SIGNED IMAGINARY SOLVES WITH GENERAL, POSSIBLY SINGULAR J
+
+For any nonreal z, I-zJG is invertible: its nonzero eigenvalues are
+those of the Hermitian G^(1/2) J G^(1/2), and are therefore real.
+Define
+
+  A_z=I-zJG,       A0_z=I-zJG0,       b=J X^T h.
+
+Woodbury, with no J inverse, gives
+
+  (I-zS)^-1 h = h+zX w_*,  w_*=A_z^-1 b,               (5)
+  A0_z^-1=I+z J L^T (I-zK)^-1 L.                       (6)
+
+The rank deficiency of J causes no division by zero in these formulas.
+Since K is symmetric, I-zK is invertible for every nonreal z.
+
+Let E=G-G0. The Loewner bound gives an analytical symmetric D with
+
+  E=L^T D L,       ||D||<=eta.                          (7)
+
+Use fixed-step preconditioned Richardson, starting from w_0=0:
+
+  w_(l+1)=w_l+A0_z^-1(b-A_z w_l).                       (8)
+
+Writing e_l=w_l-w_*, the coarse physical error obeys the EXACT identity
+
+  L e_(l+1)=z K(I-zK)^-1 D L e_l.                      (9)
+
+Indeed e_(l+1)=z A0_z^-1 J L^T D L e_l, and
+
+  L A0_z^-1 J L^T
+    =K+zK(I-zK)^-1K=K(I-zK)^-1.                        (10)
+
+For purely imaginary z, ||zK(I-zK)^-1||<=1, independently of every
+eigenvalue magnitude and condition number of J, K, G, or S. Thus
+
+  ||X e_l|| <= sqrt((1+eta)/(1-eta))*eta^l ||Xw_*||.
+
+Also ||zXw_*||=||[(I-zS)^-1-I]h||<=||h||. Consequently the actual
+physical resolvent approximation h+zXw_l has error at most
+
+  sqrt((1+eta)/(1-eta))*eta^l ||h||.                    (11)
+
+This is the same scale-free physical bound as for an involution core,
+now proved without J^2=I or det(J)!=0. Off-axis sectors also work with
+contraction eta*|z|/|Im z|, exactly as in the raw worker's theorem.
+
+
+3. ONE SMALL PREPARATION, ALL SHIFTS AND THIN RIGHT-HAND SIDES
+
+Compute one exact Frobenius form K=P C P^-1, including P and P^-1.
+The primary NPV theorem supplies this in ~O(k^omega):
+Neiger--Pernet--Villard, Computing Krylov iterates in the time of matrix
+multiplication, ISSAC 2024, Corollary 5.2,
+https://arxiv.org/html/2402.07345v2#S5.SS1 .
+
+For a block R=[r_j] and distinct supplied shifts z_j, formula (6) uses
+
+  a_j=L r_j, d_j=P^-1 a_j,
+  f_j=(I-z_j C)^-1 d_j,
+  A0_zj^-1 r_j=r_j+z_j J L^T P f_j.                    (12)
+
+A companion-block shifted solve takes O(block_size) arithmetic by the
+explicit recurrence in raw-factor-fresh-search.txt Section 5. All other
+maps in (12), including multiplication by dense J, are thin small-core
+products. For b right-hand-side columns, 1<=b<=m, their cost is
+O(m^2 b^(omega-2)), versus O(Nm b^(omega-2)) for one raw G action.
+Both are ordinary O(m^2 b) and O(Nm b) when omega=3.
+
+Initial X^T H, multiplication by J, and final XW fit the same bound.
+Thus b supplied imaginary-shifted solves to per-column error nu||h_j||
+cost
+
+  ~O(input_size*b^(omega-2)*log(1/nu)+m^omega).         (13)
+
+There is no per-shift dense inverse or per-shift m^omega setup. With
+several poles, process the same b-column RHS separately at each pole,
+reusing (12); a polylogarithmic number of poles adds only that factor.
+A spectral block-action bound requires per-column accuracy nu/sqrt(b),
+which changes only logarithms. All shifts/RHS may depend on the coarse
+sketch; the same Loewner event controls them.
+
+
+4. POSITIVE SCALE FROM THE EXPLICIT COARSE CORE
+
+This is the inertia worker's Graeffe normalization, recorded here to make
+the general-core algorithm complete. Let a=lambda_max(K)>0. Choose a
+power of two d>=log_2 k, d=O(log k), and form K^d by O(loglog k)
+small-core squarings. The nonzero eigenvalue magnitudes mu_j decrease;
+the elementary coefficients e_j of K^d satisfy
+
+  mu_j^d/j <= e_j/e_(j-1) <= (k-j+1)mu_j^d.
+
+Obtain e_j by a small-core characteristic polynomial. Thus
+
+  a_j=(e_j/e_(j-1))^(1/d) in [mu_j/2,2mu_j].           (14)
+
+Only repeated positive square roots are needed. The ratios a_j decrease
+by Newton log-concavity. Binary-search the first index j* at which
+n_+(K-a_j I/4)>0. If mu_l=a, then j*<=l, and
+
+  a/2 <= a_(j*) <4a.                                  (15)
+
+With g_lo=1-eta, g_hi=1+eta, let v=4g_hi*a_(j*). Then (2) gives
+
+  2||S_+|| <= v <=16(g_hi/g_lo)||S_+|| <64||S_+||.      (16)
+
+The O(log k) inertia calls, characteristic polynomial, and squarings
+cost ~m^omega or ~m^3. Zero coefficients after the nonzero support are
+omitted. There is no loop depending on ||K_-||/||K_+||.
+
+
+5. WHOLE-LINE BOUNDED FILTER AND POSITIVE-PART INVERSION
+
+Normalize T=S/v and use f(x)=x_+/(1+x^2). Its positive support has
+dimension q, ||f(T)||<=2/5, and
+
+  |x|/(1+x^2)=(2/pi)int_0^infty
+                         x^2/[(x^2+t^2)(1+x^2)]dt.   (17)
+
+The inertia worker's logarithmic trapezoid construction gives a proper
+rational r with r(0)=0, imaginary poles only, and
+
+  sup_(x real)|r(x)-f(x)|<=nu/2,
+  degree O(log^2(1/nu)).                               (18)
+
+For completeness, t=exp(y) turns the integrand into
+|x|/[2(1+x^2)]*sech(y-log|x|), of amplitude <=1/4. Tails outside
+[c nu,C/nu] contribute O(nu); Poisson summation gives exponentially
+small trapezoid alias error at spacing O(1/log(1/nu)). Algebraic nodes
+t_j=2^((j+1/2)/Q), Q a power of two of order log(1/nu), use only
+positive square roots and scalar products. The fixed scalar weight
+log(2)/pi can be approximated by geometric/arctangent series at
+logarithmic cost if it is not admitted as an input-independent constant.
+
+Partial fractions use
+
+ x^2/[(x^2+t^2)(1+x^2)]
+   =[1/(1+x^2)-1/(1+x^2/t^2)]/(1-t^2),                 (19)
+
+and each reciprocal quadratic is the average of two imaginary
+resolvents. Half-shifted nodes avoid t=1. The partial-fraction coefficient
+mass is polynomial in 1/nu (in fact the near-1 harmonic sum is much
+smaller); there is no exponential residue penalty. Formula (13) therefore
+applies r(T) to b columns to operator-action accuracy nu with only
+logarithmic extra Richardson precision.
+
+Cancel the zero-at-zero identity terms algebraically before accumulation.
+The actual finite linear map F0 then has range in range(X), annihilates
+ker(X^T), and satisfies ||F0-f(T)||<=nu on the good coarse event. It need
+not be exactly symmetric; only its second compressed action is symmetrized.
+
+
+6. TWO FILTER PASSES, RANK q OUTPUT, ALL EXTRACTION COSTS
+
+For 0<qhat<k, draw Omega(N,qhat+1), independent of the sketch. On the
+good event qhat=q. A crude Gaussian inverse/norm bound gives, with
+failure at most delta/3,
+
+  ||Omega||*||(U_+^T Omega)^dagger|| <= B,
+  B=(100N(m+1)/delta)^3.                               (20)
+
+Here U_+ spans the true positive subspace. Choose
+
+  nu=eps/[2000(B+1)].                                  (21)
+
+First form Y=F0 Omega and an exact orthonormal basis Q of range(Y).
+Since f(T) has rank q,
+
+  ||(I-QQ^T)f(T)||<=nu B.                              (22)
+
+Apply the SAME filter again to Q. Set R=sym(Q^T F0 Q), approximate its
+bounded symmetric spectral decomposition, clip to [0,2/5], and retain at
+most qhat eigenvalues. The resulting PSD core Rhat has rank <=qhat and
+differs from Q^T f(T)Q by O(nu). Hence
+
+  Fhat=Q Rhat Q^T,
+  ||Fhat-f(T)||<=2nu B+5nu.                            (23)
+
+The scalar inverse on [0,2/5] is
+
+  psi(z)=[1-sqrt(1-4z^2)]/(2z), psi(0)=0.
+
+It has positive Catalan power coefficients. Telescoping powers proves
+the OPERATOR Lipschitz bound ||psi(A)-psi(B)||<=(25/12)||A-B|| for
+PSD A,B with norm <=2/5. Since psi(f(x))=x on [0,1/2], output
+
+  C=v Q psi(Rhat)Q^T.                                 (24)
+
+Equations (16), (21), and (23) give ||C-S_+||<=eps||S_+||, with
+rank(C)<=q. Crucially there is no Q^T S Q action after rangefinding;
+the uncontrolled large negative spectral scale never multiplies the
+range error. A PSD factor of (24) uses only the retained small core.
+
+If qhat=k, K is positive definite and S is PSD on its support: compute
+an exact small Cholesky factor K=H H^T and lift ZH=X(L^dagger H),
+using k-column products. This returns S exactly on the good event and
+fits the qhat-sensitive bound. It avoids a gratuitous k+1-column branch.
+
+For b<=m, fast rank-revealing QR/Gram-Cholesky on an N-by-b block and
+its compressed products cost O(N b^(omega-1)+b^omega), absorbed by
+O(Nm b^(omega-2)+m^omega). Conventional QR costs O(Nb^2), absorbed
+by input_size*b+m^3. The bounded small symmetric spectral truncation
+costs ~b^omega with standard fast Hermitian-core linear algebra, or
+~b^3 with maximum-pivot Jacobi; the latter uses only field operations
+and square roots. A primary source for the fast bounded Hermitian-core
+step is Sobczyk, Deterministic Complexity Analysis of Hermitian
+Eigenproblems, ICALP 2025, https://arxiv.org/abs/2410.21550 : its
+Real-RAM diagonalization bound is O(b^omega log b+b^2 polylog(b/nu)).
+The input to that step is only the explicitly formed, bounded small R,
+so it hides neither a raw Gram nor the negative/positive spectral ratio.
+The same arithmetic bounds cover (24)'s thin lift.
+
+All iteration counts are capped in advance by dimension, eps, delta.
+For a uniform failed-outcome cap, reject and return zero if the compressed
+R has Frobenius norm >2sqrt(qhat+1); this cannot occur on the good event
+at the chosen tolerance. The bounded-core eigensolver's absolute stopping
+budget then depends only on dimension and nu, not a failed sketch's
+possibly huge numerical output. Exact algebraic rank/QR routines have
+dimension-only operation bounds. Combined with (4), runtime width never
+exceeds the true positive index, on all outcomes.
+
+Storage can reuse one N-by-(qhat+1) filtered block and thin coefficient
+buffers, plus raw input and ~m^2 core data. The Frobenius normal-form
+routine's temporary storage is conservatively charged at its arithmetic
+bound; no sharper in-place space claim is made.
+
+
+7. WHY THIS DOES NOT BRIDGE A NONZERO THRESHOLD
+
+The new J generality is substantive but limited. For the product dilation
+S=[0 AB;(AB)^T 0], its positive index is normally m, so Section 6 costs
+the full-width baseline. Replacing S by S-tI does not preserve a known
+m-dimensional supported core: a raw identity augmentation has physical
+dimension N and many latent sign directions, while a support-coordinate
+core contains the UNKNOWN true Gram/inverse mass. General singular J
+alone supplies neither that core nor a cheap real-threshold inverse.
+
+Likewise, knowing that an implicitly represented threshold has at most
+r positive eigenvalues is not the same as supplying a tall-factor signed
+representation of it with the small core already computable. This note
+does not replace one promise by the other.
+
+
+8. PARTIAL-ALGEBRA CHECK: SHORT KRYLOV IS NOT ELIMINATED BY SCALAR AD
+
+One useful distinction survives the audit. Let
+F(G)=[v,Gv,...,G^(d-1)v] with one fixed seed. For an arbitrary scalar
+linear functional of these outputs, its derivative with respect to G is
+a sum whose right factors all belong to K_d(G,v). Thus its unsymmetrized
+gradient has rank <=d; restricting G to symmetric inputs gives rank <=2d.
+The derivative with respect to a raw Gram factor X is consequently also
+thin. In contrast, traces/determinants used in the earlier exact-scalar
+shortcuts can have a full-rank G-gradient and recover the whole Gram.
+
+This is an elementary chain-rule calculation, not a lower bound or an
+algorithm. It explains why the exact full-statistic AD reductions do not
+dispose of the short, one-seed raw-factor Krylov target. A Newton/Hensel
+inverse-series scheme still needs inverse action on NEW residual directions
+to double precision; knowing the inverse series on one seed does not
+supply it. No input-plus-core construction of that partial sequence was
+obtained here.
+
+The current concrete result is therefore the general/singular-core signed
+positive-part solver, together with an honest unchanged original gate.
+
+
+9. NUMERICAL SANITY CHECK OF THE NEW GENERAL-CORE IDENTITY
+
+A direct JavaScript complex-arithmetic check used 135 cases, m=3,5,8,
+both full-rank and rank-deficient X, and dense singular cores
+J=R diag(0,3,-2,3,-2,...)R^T. X had a support Gram within 0.1 of
+the chosen coarse Gram. Imaginary shifts varied by a factor 10000.
+After six Richardson steps, the maximum error divided by the uniform
+bound (11) was 0.011671. The maximum normalized discrepancy in the
+exact recurrence (9) was 9.1e-15. This checks noncommuting placement
+and singular-core handling numerically; the proof is (5)--(11), not the
+finite diagnostic. No finite-word guarantee follows from these cases.

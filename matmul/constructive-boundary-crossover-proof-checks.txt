@@ -1,0 +1,145 @@
+CONSTRUCTIVE JOINT GRAPH BOUNDARY LAW: VERIFICATION RECORD
+=========================================================
+
+Deliverable and exact scope
+--------------------------
+Full constructive proof:
+  constructive-boundary-crossover-graph-algorithm.txt
+Current source SHA256:
+  0c1576ef995db539f1bf836dba7679a40810487674fb4ae575245a02aaf41a25
+The independent review used source e0e31a4d...; the only publication
+change is the opening review-status sentence and two record references.
+
+The input consists of two graph conductance Laplacians with the same
+positive diagonal masses and one existing edge conductance increased.
+In symmetric mass-normalized coordinates E=B-A=ww^T, ||w||=1. Supply
+0<h<=1 with promise B<=(1+h)I. For fixed 0<alpha<1 the algorithm
+returns general thin factors for D=B^alpha-A^alpha with operator error
+at most epsilon, probability at least 1-delta, and expected
+  ~O_alpha(M+N)
+arithmetic INCLUDING all returned factor entries. Suppressed factors
+are logarithmic in N,1/epsilon,1/delta; no mass ratio, spectral gap,
+endpoint condition number or log(1/h) is suppressed.
+
+With l=log(1/epsilon), b=log(1/h), the width is uniformly at most
+  Phi_alpha(l,b)+O_alpha((l+1)^(15/8)),
+where beta=1-alpha and
+  Phi_alpha(s,b)=0,                         s<=alpha*b;
+                (s-alpha*b)^2/(4*pi^2*alpha*beta), alpha*b<=s<=b;
+                (s^2/alpha-b^2)/(4*pi^2),   s>=b.
+Consequently h=epsilon^tau gives the sharp leading coefficient
+C_alpha(tau) proved in fractional-boundary-crossover.txt. The matching
+strict-count lower already holds on connected paths with arbitrary
+positive masses. This certifies optimal leading width, not optimal runtime.
+
+If epsilon<=1/2 and h^alpha<=epsilon/2, a second branch returns an
+actual PSD rank-one correction with the same expected work. It applies
+eventually for fixed tau>1/alpha. No exact width-one algorithm at the
+transition equality tau=1/alpha follows from its error budget.
+
+Exact arithmetic uses field operations, comparisons, scalar square roots
+and randomness, with fixed alpha supplied as a constant. Scalar series
+charge all node exponentials and fixed constants. This no-power-oracle
+claim concerns the NORMALIZED input ||E||=1; it does not silently supply
+an arbitrary physical scale ||E||^alpha. General returned factors need
+not be symmetric. Dense expansion is an additional cost. No finite-word
+stability, bit complexity or deterministic runtime cap is asserted.
+
+Independent source review
+-------------------------
+Author: bounded_algorithm agent. Root separately reconstructed every
+section, then the matrix_frontier agent independently read the whole
+source and wrote constructive-boundary-crossover-independent-audit.txt.
+Result: PASS at source
+  e0e31a4d0341f639b0aa45cd761a4eb68d426098d6ac4744961322c79266010d.
+These are internal independent checks, not formal or external review.
+
+The proof builds an exact orthonormal basis for the first p Krylov
+directions, p the least dyadic with p^8>=S, S=l+O_alpha(1). Exact
+dependence is harmless, and no dense projector is formed. The three-line
+projected resolvent envelope has explicit prefactor C_alpha*4^p*cos(d/2)^-3.
+Gaussian convolution adds logarithmic amplitude O(p^2), absorbed by
+S^(3/4) buffers while d approaches pi. Three-piece area integration and
+uniform rectangle errors give q<=Phi_alpha(S,b)+O(S^(15/8)). Projected
+nodes have rank one; the projection order does not multiply their rank.
+
+Clipped h localization takes O_alpha(S) comparisons and halvings even
+for arbitrarily tiny h. In the clipped case both the actual and working
+phase areas vanish. Thus log(1/h) is not a hidden work factor. Positive
+Gaussian weights are implemented by integrating polynomial squares.
+One wording repair separated the fixed exp(-16(S+1)) clipping tail
+from the independently tunable Taylor remainder. Uniform real normalized
+sample and derivative bounds make that fixed clipping accuracy ample.
+
+Two shifted SDD solves give each approximate projected node. Their
+total error uses logarithmic precision O_alpha(S), with exact transport
+between mass-normalized and inner graph energy norms. Median energy-
+distance amplification and union bounds charge arbitrary confidence.
+
+An ordinary R=2 auxiliary correction D_tilde is constructed separately.
+If P=VV^T and Q=I-P, the factors
+  [V,Q D_tilde V] [D_tilde^T V,V]^T
+equal D_tilde-Q D_tilde Q. Their width is at most 2p and their error
+relative to D-QDQ is at most 2||D_tilde-D||. Applying the auxiliary
+factors to V costs only thin products. This restoration is valid for
+nonsymmetric approximations and never expands a dense N-by-N matrix.
+
+For the terminal branch, tr(D)<=1 and w^TDw>=1-h^alpha>=3/4.
+An auxiliary approximation at epsilon/128 gives y_hat=D_tilde w and
+d_hat=w^T y_hat>1/2. The PSD rank-one output y_hat*y_hat^T/d_hat
+differs from the exact Schur correction by less than 7epsilon/128;
+the classical h^alpha tail leaves ample error budget. A nonpositive
+denominator on the failure event triggers a zero-output guard.
+
+Reviewed dependency hashes
+--------------------------
+  fractional-boundary-crossover.txt
+    5ccc045499c62133172039dcb611a9f41636ad052fc5bebd5f924754acf542e5
+  bounded-spectrum-graph-algorithm.txt
+    090a29b528983acb3917803ee5cd8731ddff7c2112fe229e6c6434bbcd3fe311
+  sharp-matrix-function-updates.tex
+    334b439ea2dd72c09e8d6024582e74862590c6cf192e5d48a9e7a43f1f63b3e6
+  sharp-graph-fractional-updates.txt
+    aa3118bf9fd820befbdf93c89728617f06e50c4ee8074919c648d7a8ff1b6e37
+  graph-fractional-solver-audit.txt
+    084c44c823885f961cedfe746870c84e39bf749e720737bb0016b0f98d1a5b8b
+
+Reproducible diagnostics
+------------------------
+  scripts/check_joint_boundary_graph_algorithm.py
+    fd78b2652297f01e47b9084d53bc6edacd370099ab66d825742cbb0bfb9c4aab
+  constructive-boundary-crossover-graph-checks.txt
+    fc3e91ce30384643ecf4b754b28bfeb11bffc17e1ac07d7ef1da893dc928c5b1
+  joint-boundary-graph-algebra-independent-audit.txt
+    b0cf1c3b572a14ea7ffe016087d67fc380266ddb11ccdf3144279d651239a547
+
+Root wrote the diagnostic, and boundary_crossover independently reviewed
+and reran it. NumPy 2.5.3, seed 2026111512; all assertions PASS:
+  16 genuine common-mass positive graph update pairs,
+  144 rank-2p restoration checks,
+  32 finite terminal rank-one checks.
+Largest factor identity error: 1.739e-15.
+Largest auxiliary uniform-grid error: 3.891e-9.
+Largest restoration error / (3*auxiliary_error): 0.339718.
+Largest terminal error / epsilon: 0.014197.
+The initial test noise slightly exceeded a claimed terminal premise in
+two cases; review reduced it and inserted an explicit premise assertion.
+The repaired script was rerun successfully by both author and reviewer.
+
+The full-source reviewer also independently checked 54 restoration and
+18 terminal cases. The retained script is the reproducible diagnostic.
+It uses an ordinary dense grid and removes the known graph kernel only
+for finite numerical convenience. It does not implement optimized Gaussian
+nodes or the sparse backend, and does not numerically prove their width
+or runtime. Those claims rest on the complete analytic proof and reviewed
+component theorems. Exact arithmetic may be ill-conditioned in finite words.
+
+Priority and remaining objective
+--------------------------------
+Scalar rational approximation, Gaussian localization, graph solvers,
+polynomial/Krylov projection and Schur complements are established tools.
+The classical nuclear tail and cutoff are credited in the priority audit.
+The present result constructs the reviewed joint count law with uniform
+h accounting, rank-2p restoration and a terminal algorithm. Internal
+proof review does not establish historical priority or a general matrix
+multiplication breakthrough. The arbitrary-factor target remains ACTIVE.

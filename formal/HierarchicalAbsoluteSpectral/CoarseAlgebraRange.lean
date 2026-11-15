@@ -19,15 +19,16 @@ structure OrthogonalRange (Y : Matrix (Fin m) (Fin w) ℝ) where
   spans : Y = basis*coefficients
   dimension_eq_rank : dimension = Y.rank
 
-def rangeFromPSDGram (Y : Matrix (Fin m) (Fin w) ℝ)
-    (p : PSDGramPair (Yᵀ*Y)) : OrthogonalRange Y := by
+def rangeFromPSDGramOfEq (Y : Matrix (Fin m) (Fin w) ℝ)
+    {D : Core w} (p : PSDGramPair D) (hD : D = Yᵀ*Y) : OrthogonalRange Y := by
+  have hGram : p.factor*p.factorᵀ = Yᵀ*Y := p.gram.trans hD
   let Q := Y*p.leftInverseᵀ
   have horth : Qᵀ*Q = 1 := by
     calc
       _ = p.leftInverse*(Yᵀ*Y)*p.leftInverseᵀ := by
         simp only [Q, Matrix.transpose_mul, Matrix.transpose_transpose, Matrix.mul_assoc]
       _ = p.leftInverse*(p.factor*p.factorᵀ)*p.leftInverseᵀ :=
-        congrArg (fun A => p.leftInverse*A*p.leftInverseᵀ) p.gram.symm
+        congrArg (fun A => p.leftInverse*A*p.leftInverseᵀ) hGram.symm
       _ = (p.leftInverse*p.factor)*(p.leftInverse*p.factor)ᵀ := by
         simp only [Matrix.transpose_mul, Matrix.mul_assoc]
       _ = 1 := by rw [p.left_inverse]; simp
@@ -35,7 +36,7 @@ def rangeFromPSDGram (Y : Matrix (Fin m) (Fin w) ℝ)
     calc
       _ = p.leftInverse*(Yᵀ*Y) := by
         simp only [Q, Matrix.transpose_mul, Matrix.transpose_transpose, Matrix.mul_assoc]
-      _ = p.leftInverse*(p.factor*p.factorᵀ) := congrArg (p.leftInverse*·) p.gram.symm
+      _ = p.leftInverse*(p.factor*p.factorᵀ) := congrArg (p.leftInverse*·) hGram.symm
       _ = p.factorᵀ := by rw [← Matrix.mul_assoc, p.left_inverse]; simp
   have hYQ : Yᵀ*Q = p.factor := by
     simpa only [Matrix.transpose_mul, Matrix.transpose_transpose] using congrArg Matrix.transpose hQY
@@ -45,7 +46,7 @@ def rangeFromPSDGram (Y : Matrix (Fin m) (Fin w) ℝ)
         simp only [Matrix.transpose_sub, Matrix.transpose_mul, Matrix.transpose_transpose,
           Matrix.sub_mul, Matrix.mul_sub, Matrix.mul_assoc]
         module
-      _ = 0 := by rw [hYQ, hQY, horth, Matrix.mul_one, p.gram]; module
+      _ = 0 := by rw [hYQ, hQY, horth, Matrix.mul_one, hGram]; module
   have hzero : Y-Q*p.factorᵀ = 0 := by
     apply (Matrix.conjTranspose_mul_self_eq_zero).mp
     simpa only [Matrix.conjTranspose_eq_transpose_of_trivial] using hsq
@@ -64,6 +65,9 @@ def rangeFromPSDGram (Y : Matrix (Fin m) (Fin w) ℝ)
   · rw [← hdim]
     simpa only [Fintype.card_fin] using Matrix.rank_le_card_height Q
   · simpa only [Fintype.card_fin] using p.dimension_le
+
+def rangeFromPSDGram (Y : Matrix (Fin m) (Fin w) ℝ)
+    (p : PSDGramPair (Yᵀ*Y)) : OrthogonalRange Y := rangeFromPSDGramOfEq Y p rfl
 
 end
 end HierarchicalAbsoluteSpectral

@@ -8,7 +8,7 @@ noncomputable section
 open Matrix
 variable {m n : Type} [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
 
-def psdBlockPairOfEq {A T : Matrix m m ℝ} (p : PSDGramPair A)
+def psdBlockPairOfEq {A : Matrix m m ℝ} (p : PSDGramPair A)
     (B : Matrix m n ℝ) (C : Matrix n n ℝ)
     (hD : (Matrix.fromBlocks A B Bᵀ C).PosSemidef)
     {S : Matrix n n ℝ} (q : PSDGramPair S) (hS : S = psdSchur p B C) :

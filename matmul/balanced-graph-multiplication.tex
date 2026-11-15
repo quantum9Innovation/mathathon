@@ -141,10 +141,12 @@ Let $T=W-I$. The identities above give $T\mathbf1=0$, $T_{ii}=0$, and
 Permutation symmetry and the zero row sums determine all covariances of
 off-diagonal entries. Write
 \begin{equation}\label{eq:coefficients}
+ \begin{gathered}
  v=\frac cm,\quad u=-\frac v{m-2},\quad
- w=\frac{2v}{(m-2)(m-3)},\qquad
+ w=\frac{2v}{(m-2)(m-3)},\\
  a=v-2u+2w,\quad b=v-2u+w,\quad
  \kappa=2(v-4u+3w).
+ \end{gathered}
 \end{equation}
 The covariance is $v$ for equal unordered coordinate pairs, $u$ for
 pairs sharing one vertex, and $w$ for disjoint pairs. Indeed,
@@ -294,10 +296,12 @@ In detail, substituting $t=513z^2$ bounds the integrated tail by
 \]
 The other $h^2$ term is $\mathcal R\Prob\{\norm X>\mathcal R\}$.
 A union bound yields truncation probability at most
-$dDe^{-2h}\le\delta/4$. Finally, after dilation,
+$dDe^{-2h}\le\delta/4$. Finally, write
+$\widehat X=\DD(X)$ and $\widehat Y=\DD(Y)$. Then
 \[
- \E[(Y-\E Y)^2]=\E Y^2-(\E Y)^2
- \preceq\E Y^2\preceq\E X^2\preceq VI.
+ \E[(\widehat Y-\E\widehat Y)^2]
+ =\E\widehat Y^2-(\E\widehat Y)^2
+ \preceq\E\widehat Y^2\preceq\E\widehat X^2\preceq VI.
 \]
 The norm bound follows from $\norm Y\le\mathcal R$ and
 $\norm{B_*}\le\varepsilon/4\le\mathcal R$.
@@ -348,7 +352,34 @@ an elementary check; the implicit test~\eqref{eq:implicit} is preferable
 when selecting concrete parameters.
 
 \section{Complete factors, padding, and arithmetic}\label{sec:cost}
-The projection representation~\eqref{eq:projection} gives
+The one-partition construction in Corollary~\ref{cor:quadratic} can be
+implemented by the following pseudocode. The variables $a_*$ and $b_*$
+here are scalar factor coefficients, separate from the covariance
+coefficients $a,b$ above. Bucket means are taken over all $s$ buckets.
+\begin{quote}\small
+\begin{verbatim}
+Input A, B, a stable-rank bound r, epsilon, delta
+s = ceil(1 + 3*(r*r + 2*r)/(epsilon*epsilon*delta))
+If s >= m, return the exact product A B
+M = s*ceil(m/s)
+Pad A and B with zero columns and rows to inner dimension M
+Draw a uniform permutation and split it into s equal buckets
+For each bucket j, sum its A columns into U[:,j]
+For each bucket j, sum its B rows into V[j,:]
+q = M/s, rho = (q-1)/(M-1)
+a_star = 1/sqrt(1-rho), b_star = 1/sqrt(q)
+X[:,j] = a_star*U[:,j] + (b_star-a_star)*mean_columns(U)
+Y[j,:] = a_star*V[j,:] + (b_star-a_star)*mean_rows(V)
+Return C = X Y, forming every entry by ordinary multiplication
+\end{verbatim}
+\end{quote}
+The repeated mean in each displayed assignment is computed once.
+These formulas apply $F=\sqrt\gamma\Pi_s+q^{-1/2}J_s$ to the bucketed
+inputs: $X=(AH^T)F$, $Y=F(HB)$. Thus their product is exactly $AWB$,
+without materializing a dense sketch. Permutation generation costs
+$O(M)$ and zero padding can be represented implicitly.
+
+For multiple colors, the projection representation~\eqref{eq:projection} gives
 \[
  \overline W=J+\frac\lambda d\sum_cP_{H_c}.
 \]

@@ -9,6 +9,22 @@ and practical theoretical algorithms with manageable constants and standard
 operations. The results below establish narrower theorems and algorithms;
 the requested general breakthrough remains open.
 
+The [balanced graph multiplication paper](matmul/balanced-graph-multiplication.pdf)
+([source](matmul/balanced-graph-multiplication.tex)) now proves spectral
+concentration for the permutation sketch. It gives ordinary **O(N^2)**
+total arithmetic for fixed stable ranks, accuracy, and confidence, including
+every output entry, with error epsilon*||A||*||B||. Its high-confidence
+variant has width ~O(r/epsilon^2) using unsigned balanced bucket sums and
+deterministic mean correction. The [verification record](matmul/balanced-graph-multiplication-proof-checks.txt)
+covers the actual-source independent audit and reproducible checks.
+Classical methods already achieve comparable or stronger row/error bounds.
+
+The [bounded-spectrum refinement](matmul/bounded-spectrum-fractional-counts.txt)
+proves exact leading fractional compression coefficients r/(4*pi^2*alpha)
+for endpoint/update norm ratio R>1, and (r-1)/(4*pi^2*alpha) at R=1.
+Its [independent review](matmul/bounded-spectrum-fractional-independent-audit.txt)
+also checks the finite rank discontinuity and connected-path transfer.
+
 The [graph connection manuscript](matmul/graph-fractional-updates.pdf)
 ([source](matmul/graph-fractional-updates.tex)) constructs corrections to
 fractional graph Laplacians after k edge changes in expected
@@ -26,12 +42,13 @@ The [spectral-gap corollary](matmul/expander-polynomial-updates.txt) gives
 width O(k log(1/epsilon)) and ordinary sparse construction on expanders,
 including a uniform random-regular-host guarantee for bounded additions.
 The imported [spectral-gap project](spectral-gap/README.md) is now available.
-Its sharp permutation moments have not yet yielded an improved multiplication
-sketch, as recorded in the [cross-project assessment](matmul/matrix-graph-bridge-state.txt).
+The [cross-project assessment](matmul/matrix-graph-bridge-state.txt) records
+the concentration proof and the remaining stronger multiplication target.
 An [unbiased balanced permutation sketch](matmul/balanced-permutation-amm.txt)
 now has exact covariance formulas and a complete reduction of its trace
-moments to that project's mixed-cell bounds. The improved concentration
-bound remains open.
+moments to that project's mixed-cell bounds. The new concentration proof
+uses the exact covariance and classical permutation Bernstein inequalities;
+sharper use of the higher mixed moments remains open.
 
 A [working paper on exact fractional matrix constants](matmul/sharp-fractional-holder.pdf)
 ([source](matmul/sharp-fractional-holder.tex)) derives the exact leading
@@ -60,6 +77,15 @@ The [verification record](matmul/positive-rational-proof-checks.txt) covers
 the actual source, all endpoint cases, arithmetic scope, and explicit SDP
 representations. No later resolution was found in a bounded search;
 priority and external verification remain open.
+
+The quantum section derives small PSD-block representations and two-sided
+optimization certificates. A reproducible
+[interval certificate](matmul/quantum-product-certificate.py) proves that an
+ideal 25-pole construction uses 50 lower or 51 upper blocks of order 2N,
+with bracket width below 5e-7 times the Petz chi-squared divergence.
+The [independent quantum audit](matmul/quantum-small-block-independent-audit.txt)
+separates this guarantee from numerical coefficient preparation and SDP
+solver runtime. The small-block principle has classical antecedents.
 
 The [square-root-update construction](matmul/nongalactic-wildcard-search.txt)
 gives conventional arithmetic cost ~O(Nmr+m^3) for a factor of a correction

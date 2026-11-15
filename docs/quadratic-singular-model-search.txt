@@ -1,0 +1,272 @@
+QUADRATIC SINGULAR-MODEL SEARCH
+2026-11-14. Owned research note; no externally edited graph-* or formal/ file
+is modified. The original arbitrary-factor gate remains OPEN.
+
+0. GATE AND RESULT OF THIS SEARCH
+
+The fixed gate is n=p=N=m^(9/8), r=1, theta=1/m, arbitrary fixed real
+A(N,m), B(m,N), no factor-energy/conditioning/gap promise, error
+  ||AB-C|| <= (1+1/m) sigma_2(AB)
+with probability >=1-delta, and explicit rank-one C at total
+m^(9/4+o(1))=N^(2+o(1)) arithmetic cost. No solution is claimed here.
+
+Read before this search: research-direction.typ, current research-state.txt,
+raw-factor-fresh-search.txt, partial-spectrum-fresh-search.txt, the exact
+q-state Lemma 6.1 in fractional-channel-classification.tex, and the raw
+inverse/update construction in sharp-matrix-function-updates.tex.
+
+Two precise new tests explain why the q-state existence result does not
+currently remove the sharp-filter precision cost:
+
+ (i) ALL normalized rational features with poles in a fixed cone about the
+     imaginary axis have geometrically decaying singular values when the
+     spectrum lies in a fixed narrow interval about the nonzero cutoff.
+     Their q-by-q Gram is exponentially ill conditioned, independently of
+     the pole selection. This includes conjugates and repeated poles.
+
+ (ii) There are two POSITIVE probability measures on O(sqrt(m)) states,
+      matching Theta(sqrt(m)) moments, whose normalized cone-resolvent
+      values AND BOTH feature Grams differ by exp(-Theta(sqrt(m))). One
+      measure has no eigenvalue above 1; the other has a single state at
+      1+2/m with mass Theta(1/m), and a common state at 1. Thus positivity,
+      Herglotz consistency, small model dimension, and natural head mass
+      do not imply stable recovery of the spectral edge.
+
+These are obstructions to a robust inference step from approximate
+off-axis data, NOT lower bounds for all raw-factor algorithms, randomized
+starting vectors, or exact arithmetic with specially correlated errors.
+The construction can be read with no oracle terminology at all: it is a
+quantitative discontinuity example for positive rational interpolation.
+
+1. AN EXACT CONSTRUCTIVE MODEL IN THE CONJUGATION-CLOSED CASE
+
+Let S be real symmetric, h real, and let z_1,...,z_q be nonreal poles
+closed under conjugation. Put U_j=(S-z_j I)^(-1)h and let V=range(U).
+This subspace is closed under complex conjugation and has a real
+orthonormal basis Q. Set
+  T=Q^T S Q,             h'=Q^T h,             c_j=Q^T U_j.
+Projecting (S-z_j I)U_j=h gives
+  (T-z_j I)c_j=h'.
+Consequently U'_j=(T-z_j I)^(-1)h'=c_j, and Q is an isometry from the
+model feature span to the physical feature span. Its Gram equals U^*U.
+Since the pole set contains its conjugates, the second feature Gram is
+also matched. The scalar h^T(S-z_j I)^(-1)h equals h'^T U'_j, and
+||h'||<=||h||. Woodbury therefore preserves every q-pole rank-one-update
+quadrature's singular values exactly, as in the audited Gaussian lemma.
+
+This is ordinary rational Ritz compression, not a new algorithmic claim.
+It clarifies that for these pole sets no integration against mu/w is
+needed once the EXACT feature vectors are supplied. One exact thin
+S-action and feature/core products construct T. In the raw product model
+with q columns these operations fit
+  ~O(I q^(omega-2)+N q^(omega-1)+q^omega+m^omega),
+besides the cost of obtaining exact U. The N q^(omega-1) term is below
+I q^(omega-2) when q<=m. Exact U is precisely the unavailable primitive;
+substituting absolute-accurate U requires a perturbation theorem through
+the feature Gram. The next result shows its worst-case conditioning.
+
+2. UNIFORM FEATURE-COLLAPSE THEOREM FOR ARBITRARY CONE POLES
+
+Fix c in (0,1]. Write admissible normalized raw resolvents as
+  F_z(S)=(I-zS)^(-1),       |Im z| >= c |z|.
+The usual imaginary axis has c=1. Define center-normalized features
+  H_z(S)=(1-z)(I-zS)^(-1).
+This is only a known scalar column scaling. If the spectrum of S lies in
+  J_c=[1-c/4,1+c/4],
+then every feature column H_z(S)h has norm between (4/5)||h|| and
+(4/3)||h||. These columns are therefore already comparably normalized.
+
+THEOREM. For any q admissible z_j, any h, and any 0<=L<=q-2,
+  sigma_(L+2)([H_(z_j)(S)h]_(j=1)^q)
+       <= (4/3) sqrt(q) 4^(-L-1) ||h||.                 (2.1)
+In particular, if the q features are independent,
+  kappa_2(U) >= c_abs 4^q/sqrt(q),
+  kappa_2(U^*U) >= c_abs 16^q/q.                        (2.2)
+If they are dependent their least singular value is zero instead.
+
+PROOF. Let a_z=z/(1-z). The cone condition gives |a_z|<=1/c.
+Indeed, on every ray whose angle from the real axis is >=arcsin(c),
+the minimum of |1-z|/|z| is >=c. For t in J_c, |a_z(t-1)|<=1/4, so
+  H_z(t)=sum_(k=0)^L a_z^k(t-1)^k + E_(z,L)(t),
+  |E_(z,L)(t)| <= (4/3)4^(-L-1).
+All polynomial feature columns belong to span{h,(S-I)h,...,(S-I)^L h},
+whose dimension is <=L+1. The Frobenius norm of the feature-block
+remainder is bounded by the right side of (2.1). The min-max singular
+value inequality proves (2.1). Taking L=q-2 and using any one column's
+norm >=(4/5)||h|| proves (2.2), after changing an absolute constant.
+The column norm bounds follow from 3/4<=|1-a_z(t-1)|<=5/4. QED.
+
+This proof is uniform in the number and magnitudes of the poles and
+does not assume equally spaced nodes. Repeated poles and conjugates do
+not help. A pole chosen adaptively but still in the same cone satisfies
+the same estimates. Adding normalized scalar samples or either feature
+Gram does not restore directions removed by this near low-rank property.
+
+For q=Theta(sqrt(m)), robust Gram whitening against unrestricted absolute
+feature errors therefore has an exp(Theta(sqrt(m))) condition scale.
+The claim is about a uniform perturbation bound; it does not assert that
+every particular approximation error realizes the worst direction.
+
+3. EXPLICIT POSITIVE MEASURES WITH AN EXPONENTIALLY HIDDEN NATURAL HEAD
+
+The following construction uses only classical orthogonal polynomials
+and supplies a self-contained positivity proof.
+
+Fix c in (0,1], a=c/4, and m sufficiently large. Let nu be uniform
+probability on [1-a,1]. In x=2(t-1+a)/a-1 coordinates it is uniform
+probability on [-1,1]. Write P_k for the usual Legendre polynomial with
+P_k(1)=1. Its orthonormal polynomials for this probability measure are
+  p_k(x)=sqrt(2k+1) P_k(x),
+and its degree-d reproducing kernel is
+  K_d(x,y)=sum_(k=0)^d p_k(x)p_k(y).
+Choose d=floor(b sqrt(m)) for any fixed b>0 and the exterior point
+  t_* =1+2/m,                 x_*=1+4/(a m).
+
+There is a positive (d+1)-node rule mu_1 for nu, exact through degree
+2d, with t_* as a node and all other nodes in (1-a,1). Its t_*-weight is
+  alpha=1/K_d(x_*,x_*).                                    (3.1)
+There is also an ordinary (d+1)-node positive Gaussian rule mu_0 for nu,
+exact through degree 2d+1, with every node in (1-a,1). Thus mu_0 and
+mu_1 are positive probability measures matching moments through 2d.
+
+CONSTRUCTION AND POSITIVITY. In x coordinates use the d+1 zeros of
+  (x-x_*)K_d(x,x_*)
+as nodes. The exterior zero is x_*. Christoffel--Darboux expresses this
+polynomial, up to a nonzero scalar, as
+  p_(d+1)(x)-[p_(d+1)(x_*)/p_d(x_*)]p_d(x).
+Interlacing implies that its other d zeros lie strictly inside (-1,1).
+One direct way to see the endpoint assertion is that p_(d+1)/p_d is
+strictly increasing between its poles, has one root in each internal
+interlacing interval, and has its final root x_*>1; the remaining
+leftmost root stays between -1 and the leftmost zero of p_d because the
+prescribed ratio is positive whereas p_(d+1)(-1)/p_d(-1) is negative.
+
+For every polynomial r of degree <=d-1, the reproducing identity gives
+  int (x-x_*)K_d(x,x_*)r(x) dnu(x)=0.
+Divide a degree-2d polynomial by this nodal polynomial; its quotient
+has degree <=d-1, and interpolation integrates the remainder. Therefore
+the interpolatory rule is exact through degree 2d. If ell_i is a nodal
+Lagrange polynomial, degree d, its weight is int ell_i^2 dnu>0 by this
+exactness. For the exterior node
+  ell_*(x)=K_d(x,x_*)/K_d(x_*,x_*),
+and the reproducing identity gives (3.1). This proves all needed claims.
+
+HEAD MASS. Put eta=arcosh(x_*). The elementary Legendre bounds
+  1<=P_k(x_*)<=exp(k eta),             x_*>1,
+give
+  (d+1)^2 <=K_d(x_*,x_*)<=(d+1)^2 exp(2d eta).
+For example, the upper bound follows from the integral representation
+  P_k(cosh eta)=(1/pi)int_0^pi(cosh eta+sinh eta cos u)^k du;
+the lower bound follows from P_k being increasing above 1, or its
+positive power series about 1. Since eta<=sqrt(2(x_*-1)), d eta is
+bounded by a constant depending only on c,b. Hence
+  exp(-2d eta)/(d+1)^2 <= alpha <=1/(d+1)^2,
+  alpha=Theta_(c,b)(1/m).                                  (3.2)
+
+Finally append a common atom at t=1:
+  muhat_i=(mu_i+delta_1)/2,             i=0,1.               (3.3)
+These are positive probabilities on d+2 states. Their moments still
+match through 2d. The first has no state above 1. The second has exactly
+one state above 1, at 1+2/m, of mass alpha/2=Theta(1/m), and its next
+largest state is 1. Repeated states at 1 can ensure sigma_2=1 for the
+first as well. Zero-mass padding makes both m-dimensional without
+changing any observed data. Equivalently, duplicate positive-mass states
+and split weights if one wants a nonzero seed in each padded coordinate.
+
+The natural random-seed-scale mass in (3.2) is a magnitude comparison.
+This is not a claim that the constructed spectral weights have the
+distribution generated by a Gaussian seed for a fixed operator.
+
+4. SIMULTANEOUS RESOLVENT AND BOTH-GRAM INDISTINGUISHABILITY
+
+Take m large enough that 2/m<=c/4; all supports in Section 3 lie in J_c.
+For H_z(t)=(1-z)/(1-zt), its Taylor coefficient at t=1 is a_z^k.
+Moment matching through D=2d and the remainder estimate in Section 2
+give, uniformly over EVERY admissible cone pole,
+  |int H_z d(muhat_1-muhat_0)| <=(8/3)4^(-D-1).            (4.1)
+
+For either normalized feature Gram the integrands are
+  overline(H_(z_i)(t)) H_(z_j)(t),
+or the same expression with the two conjugations interchanged. On the
+real support this has a Taylor series whose kth coefficient has modulus
+at most (k+1)c^(-k). Consequently its degree-D Taylor tail on J_c is
+  <=sum_(k>D)(k+1)4^(-k)
+  <=2(D+2)4^(-D-1).
+Both measure integrals of the polynomial part coincide, so every entry
+of BOTH Gram differences is bounded by
+  4(D+2)4^(-D-1).                                         (4.2)
+These formulas permit all pole configurations, exact conjugates, and
+repeated Gram factors; they do not divide by differences between poles.
+For Q observed columns, operator norm of the Gram difference is at most
+Q times the entrywise bound (4.2). For Q polynomial in m this is still
+exp(-Theta(sqrt(m))). Known scalar rescalings recover the unnormalized
+resolvent conventions; the statements use comparable feature norms.
+
+Both sets of data come from actual positive measures and are therefore
+exactly Herglotz/Pick-consistent. Thus requiring exact positivity of a
+candidate completion or exact feasibility of all these Gram inequalities
+does not repair the instability. A data-driven or adaptive pole choice
+that stays in this cone is covered by the same uniform estimates.
+
+5. THE SAME PHYSICAL START VECTOR AND VECTOR-ACTION VERSION
+
+Matching moments through 2d identifies the Gram inner products of the
+two sets {h_i,S_i h_i,...,S_i^d h_i}. Their moment Gram is positive
+definite. Apply their common orthonormal polynomials and identify the
+resulting bases. After this orthogonal identification both models act
+on one common Euclidean space with the same h, and
+  S_0^k h=S_1^k h,                 0<=k<=d.
+Append common zero-weight states if dimensions need to agree. The same
+Taylor polynomials therefore give
+  ||H_z(S_1)h-H_z(S_0)h|| <=(8/3)4^(-d-1)||h||,           (5.1)
+uniformly in every cone pole z. This is stronger than scalar-value
+indistinguishability: a whole batch of physical resolvent actions can be
+exponentially close after one common physical identification.
+
+Again, the construction is not a lower bound against an algorithm that
+also reads the different raw matrices. It shows why no general robust
+positive model reconstruction from these approximate actions can promise
+theta-scale accuracy of the largest state without using further input
+information or exponentially accurate source data.
+
+6. COST CONSEQUENCE AND ITS PRECISE LIMIT
+
+Suppose a proposed bridge obtains q=Theta(sqrt(m)) far-cone features using
+the audited raw Richardson construction and then promises a spectral-edge
+accurate positive finite model uniformly under its certified absolute
+action errors. Sections 3--5 force source accuracy exp(-Theta(sqrt(m)))
+for such a robust promise. Positivity alone cannot replace that budget
+by m^(-O(1)). The known source arithmetic is
+  ~O(I q^(omega-2) log(q/eps)+m^omega).
+At I=Theta(Nm)=Theta(m^(17/8)), omega=9/4, q=Theta(sqrt(m)),
+the raw block factor before its precision logarithm is m^(9/4).
+The forced sqrt(m) precision logarithm raises this bound to m^(11/4),
+before the smaller explicit N^2=m^(9/4) output cost. Conventional
+arithmetic has the analogous additional sqrt(m) iteration factor.
+
+This is a failure of the stated robust black-box bridge, not an arithmetic
+lower bound. Exact arithmetic may exploit structure of a correlated
+approximation error, new raw-factor passes, or nonlinear identities that
+never reconstruct a stable spectral-edge model. The existence-only
+Gaussian theorem itself remains correct and useful for the fractional
+correction singular-spectrum results already proved.
+
+7. WHAT WOULD ACTUALLY BYPASS THIS TEST
+
+Any successful next bridge needs an additional theorem beyond positive
+moment existence. Concrete alternatives are:
+  * poles that approach the nonzero real cutoff, together with an actually
+    costed raw solver whose contraction is not eta*|z|/|Im z|;
+  * a common backward-operator/relative-subspace theorem using the special
+    source errors, rather than their certified absolute norms;
+  * exact or relatively accurate short raw Krylov information computed
+    within input-plus-small-core time;
+  * a direct raw-factor certificate that rules out the positive hidden-head
+    completion without resolving all far-axis moments to exponential error.
+
+An existence theorem for q states, a PSD Gram projection, a nonlinear
+Herglotz interpolant, or an absolute residual check alone is insufficient.
+No new total-time LRA guarantee, priority claim, numerical-stability result,
+or general matrix-multiplication exponent follows from this note.
+
+Status: the original theta=1/m arbitrary-factor product gate is OPEN.

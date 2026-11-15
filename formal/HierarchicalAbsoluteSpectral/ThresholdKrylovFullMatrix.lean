@@ -54,18 +54,18 @@ theorem krylovFullMatrixProgram_work (kernels : ∀ a b c : ℕ, ArithmeticKerne
 
 def gaussianKrylovFullMatrixProgram (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     (T : Core k) (hT : T.IsHermitian) (actions : ∀ b, MatrixAction T b)
-    (q : ℕ) (S : Core k) (G : Fin r → Fin k → ℝ) :
+    (q : ℕ) (S : Core k) (source : MatrixAction Sᵀ r) (G : Fin r → Fin k → ℝ) :
     ArithmeticProgram {M : Core k // M = krylovRitzFixedMatrix kernels T q (Sᵀ*columnsMatrix G)} := do
-  let Ω ← ((kernels k k r).program Sᵀ (columnsMatrix G)).certify
+  let Ω ← (source.program (columnsMatrix G)).certify
   let M ← krylovFullMatrixProgram kernels T hT actions q Ω.val
-  .pure ⟨M.val,by rw [M.property,Ω.property,ArithmeticKernel.program_eval]⟩
+  .pure ⟨M.val,by rw [M.property,Ω.property,source.correct]⟩
 
 theorem gaussianKrylovFullMatrixProgram_admissible (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     (T : Core k) (hT : T.IsHermitian) (actions : ∀ b, MatrixAction T b)
-    (q : ℕ) (S : Core k) (G : Fin r → Fin k → ℝ) :
-    (gaussianKrylovFullMatrixProgram kernels T hT actions q S G).admissible := by
+    (q : ℕ) (S : Core k) (source : MatrixAction Sᵀ r) (G : Fin r → Fin k → ℝ) :
+    (gaussianKrylovFullMatrixProgram kernels T hT actions q S source G).admissible := by
   simp only [gaussianKrylovFullMatrixProgram,admissible_bind,certify_admissible,
-    ArithmeticKernel.program_admissible,krylovFullMatrixProgram_admissible,admissible_pure,and_self]
+    source.valid,krylovFullMatrixProgram_admissible,admissible_pure,and_self]
 
 end
 end HierarchicalAbsoluteSpectral

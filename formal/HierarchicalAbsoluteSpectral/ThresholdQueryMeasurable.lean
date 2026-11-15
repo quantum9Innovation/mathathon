@@ -42,6 +42,19 @@ theorem gaussianRitzObservable_eq_computed (kernels : ∀ a b c : ℕ, Arithmeti
       computedKrylovRitzValue kernels T hT actions q S G j :=
   (computedKrylovRitzValue_eq_fixed kernels T hT actions q S G j).symm
 
+theorem computedKrylovRitzValue_nonneg (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
+    (T : Core k) (hT : T.IsHermitian) (actions : ∀ b, MatrixAction T b)
+    (q : ℕ) (S : Core k) (G : Fin r → Fin k → ℝ) (j : Fin k) :
+    0 ≤ computedKrylovRitzValue kernels T hT actions q S G j := by
+  let data := (krylovQueryDataProgram kernels T hT actions q (Sᵀ*columnsMatrix G)).eval
+  have hh : 0 ≤ data.ritzValue j := by
+    unfold KrylovQueryData.ritzValue
+    split_ifs
+    · exact orderedEigenvalue_nonneg data.compression data.compression_posSemidef _
+    · exact le_rfl
+  rw [data.ritzValue_eq hT j] at hh
+  exact hh
+
 def ritzFailureSet (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     (q : ℕ) (j : Fin k) (ε : ℝ) :
     Set (({T : Core k // T.IsHermitian} × Core k) × (Fin r → Fin k → ℝ)) :=
@@ -76,6 +89,66 @@ theorem ritzFailureSet_fiber_probability
       (1-ε)*(orderedEigenvalue T hT.isHermitian j)^2 := by
     simpa only [ritzFailureSet,Set.mem_setOf_eq,gaussianRitzObservable_eq_computed kernels T hT.isHermitian actions] using hG
   exact (not_lt_of_ge hh) hbad
+
+theorem ritzFailureSet_fiber_probability_all
+    (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
+    (T : Core k) (hT : T.PosSemidef) (actions : ∀ b, MatrixAction T b)
+    (S Sinv : Core k) (hSinv : Sinv*S = 1) (j : Fin k)
+    (a b U β ε : ℝ) (ha : 0 < a) (hInv : ‖Sinv‖ ≤ 1/a)
+    (hS : ‖S‖ ≤ b) (hba : b/a ≤ U) (hU : 1 ≤ U)
+    (hβ : 0 < β) (hβ' : β ≤ 1) (hε : 0 < ε) (hε' : ε ≤ 1) (q : ℕ)
+    (hstop : 10*gaussianCaptureRadius k U β/ε ≤ strongFilterDenominator (ε/100) q) :
+    (gaussianColumns k (j.val+1)).real {G |
+      ((⟨T,hT.isHermitian⟩,S),G) ∈ ritzFailureSet kernels q j ε} ≤ β := by
+  by_cases hpos : 0 < orderedEigenvalue T hT.isHermitian j
+  · exact ritzFailureSet_fiber_probability kernels T hT actions S Sinv hSinv j hpos
+      a b U β ε ha hInv hS hba hU hβ hβ' hε hε' q hstop
+  · have hz : orderedEigenvalue T hT.isHermitian j=0 :=
+      le_antisymm (le_of_not_gt hpos) (orderedEigenvalue_nonneg T hT j)
+    have hempty : {G : Fin (j.val+1) → Fin k → ℝ |
+        ((⟨T,hT.isHermitian⟩,S),G) ∈ ritzFailureSet kernels q j ε}=∅ := by
+      apply Set.eq_empty_iff_forall_notMem.mpr
+      intro G hG
+      have hnonneg := computedKrylovRitzValue_nonneg kernels T hT.isHermitian actions q S G j
+      have hbad : computedKrylovRitzValue kernels T hT.isHermitian actions q S G j < 0 := by
+        simpa only [ritzFailureSet,Set.mem_setOf_eq,
+          gaussianRitzObservable_eq_computed kernels T hT.isHermitian actions,hz,
+          zero_pow (by norm_num : (2:ℕ)≠0),mul_zero] using hG
+      exact (not_lt_of_ge hnonneg) hbad
+    rw [hempty]
+    simpa only [measureReal_empty] using hβ.le
+
+def ritzRepeatedFailureSet (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
+    (q : ℕ) (j : Fin k) (ε : ℝ) (N : ℕ) :
+    Set (({T : Core k // T.IsHermitian} × Core k) × (Fin N → Fin r → Fin k → ℝ)) :=
+  {x | ∀ i, (x.1,x.2 i) ∈ ritzFailureSet kernels q j ε}
+
+theorem ritzRepeatedFailureSet_measurable (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
+    (q : ℕ) (j : Fin k) (ε : ℝ) (N : ℕ) :
+    MeasurableSet (ritzRepeatedFailureSet (r:=r) kernels q j ε N) := by
+  simp only [ritzRepeatedFailureSet,Set.setOf_forall]
+  apply MeasurableSet.iInter
+  intro i
+  exact (ritzFailureSet_measurable kernels q j ε).preimage
+    (measurable_fst.prodMk ((measurable_pi_apply i).comp measurable_snd))
+
+theorem ritzRepeatedFailureSet_fiber_probability
+    (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
+    (T : Core k) (hT : T.PosSemidef) (actions : ∀ b, MatrixAction T b)
+    (S Sinv : Core k) (hSinv : Sinv*S = 1) (j : Fin k)
+    (a b U β ε : ℝ) (ha : 0 < a) (hInv : ‖Sinv‖ ≤ 1/a)
+    (hS : ‖S‖ ≤ b) (hba : b/a ≤ U) (hU : 1 ≤ U)
+    (hβ : 0 < β) (hβ' : β ≤ 1) (hε : 0 < ε) (hε' : ε ≤ 1) (q : ℕ)
+    (hstop : 10*gaussianCaptureRadius k U β/ε ≤ strongFilterDenominator (ε/100) q) (N : ℕ) :
+    (repeatedGaussianColumns k (j.val+1) N).real {G |
+      ((⟨T,hT.isHermitian⟩,S),G) ∈ ritzRepeatedFailureSet kernels q j ε N} ≤ β^N := by
+  let bad : Set (Fin (j.val+1) → Fin k → ℝ) :=
+    {G | ((⟨T,hT.isHermitian⟩,S),G) ∈ ritzFailureSet kernels q j ε}
+  have hbad := ritzFailureSet_fiber_probability_all kernels T hT actions S Sinv hSinv j
+    a b U β ε ha hInv hS hba hU hβ hβ' hε hε' q hstop
+  have hm : MeasurableSet bad := (ritzFailureSet_measurable kernels q j ε).preimage
+    (measurable_const.prodMk measurable_id)
+  exact independent_trials_failure_le k (j.val+1) N bad β hβ.le hbad
 
 end
 end HierarchicalAbsoluteSpectral

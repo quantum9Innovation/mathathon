@@ -1,0 +1,354 @@
+FRACTIONAL GRAPH UPDATES: SOLVER TRANSFER AND PRIORITY AUDIT
+=========================================================
+
+Scope: a mathematical synthesis of the existing fractional matrix-update
+quadrature with nearly-linear graph Laplacian solvers. This note proves
+the sparse two-endpoint implementation, including signed edge changes,
+without treating an approximate linear solver as a symmetric linear map.
+It does not certify novelty, finite-word stability, or the general matrix
+multiplication goal. Sources were inspected on November 14--15, 2026.
+
+1. INPUT AND PRECISE GUARANTEE
+=============================
+Let L and L' be weighted undirected graph Laplacians on the same N vertices.
+The endpoint edge weights are nonnegative. Either endpoint may be
+disconnected. Merge parallel edges and duplicate changes first, and let
+k>=1 count the distinct unordered edges whose weights change by d_e!=0.
+Both additions and deletions are allowed. Let M count edges in the UNION
+of the two endpoints, and put E=L'-L. For fixed 0<alpha<1, beta=1-alpha,
+the algorithm constructs factors P,Q with
+
+  ||P Q^T - (L'^alpha-L^alpha)|| <= epsilon ||E||^alpha
+
+with probability >=1-delta, in EXPECTED arithmetic work
+
+  ~O_alpha((M+N) k),
+
+and width O_alpha(k log^2(2k/epsilon)). Suppressed logarithms include
+N,k,1/epsilon,1/delta. The main P Q^T output need not be exactly symmetric.
+An exactly symmetric signed factor has at most twice that width and the
+same expected arithmetic order. Dense expansion costs an additional
+O(N^2 k log^2(2k/epsilon)). No base function L^alpha is supplied or
+computed: the deliverable is its CORRECTION. Producing L'^alpha itself
+requires a base representation or an additional initial computation.
+
+Here k is an edge-count bound, not necessarily rank(E). For example, many
+changes on a small vertex set can give rank(E)<<k. No sharp lower bound
+for this unweighted-vertex-mass graph class is established in this note.
+
+Costs use exact real arithmetic and scalar square roots. Alpha=1/2
+uses only these operations together with comparisons and discrete
+randomness; general fixed alpha needs scalar-power evaluation charged
+as in sharp-matrix-function-updates.tex. This is not a bit-complexity or
+finite-precision result. Expected work and success probability are
+different assertions; the source solver does not, by its theorem alone,
+give a deterministic runtime cap on the complete algorithm.
+
+2. INTRINSIC SPARSE NORMALIZATION DESPITE CANCELLATION
+===================================================
+For e={u,v}, write b_e=e_u-e_v, choose either orientation, and set
+
+  U_e=sqrt(|d_e|) b_e,  J=diag(sign d_e),  E=U J U^T.
+
+Let c_v=sum_{e incident to v} d_e. The actual perturbation's squared
+Frobenius norm is computable directly from sparse changes:
+
+  a^2:=||E||_F^2 = sum_v c_v^2 + 2 sum_e d_e^2.
+
+This identity includes cancellation between signed diagonal changes.
+After duplicate edges are merged, every changed off-diagonal entry has
+only one d_e; thus a>0 whenever k>0. Put
+
+  b:=||U||_F^2=2 sum_e |d_e|.
+
+Cauchy--Schwarz and the off-diagonal contribution give
+
+  b <=2 sqrt(k) sqrt(sum_e d_e^2) <=sqrt(2k) a.
+
+Also rank(E)<=k, hence
+
+  ||E|| <= a <=sqrt(k)||E||.
+
+Only O(N+k) sparse arithmetic is needed once distinct changes are sorted
+or indexed; ordinary deterministic sorting adds O(k log k). No dense
+QR, Gram product, eigenvalue computation, or cancellation ratio enters.
+
+3. EXACT TWO-ENDPOINT RESOLVENT FACTORIZATION
+===========================================
+For every t>0 define
+
+  R_t=(L+tI)^-1, R'_t=(L'+tI)^-1,
+  V_t=R_t U, W_t=R'_t U.
+
+The resolvent identity gives
+
+  D_t:=R_t-R'_t=R_t E R'_t=V_t J W_t^T.                 (1)
+
+Although its displayed factors differ, D_t is symmetric. Both endpoints
+being PSD gives
+
+  ||R_t||,||R'_t|| <=1/t,
+  ||D_t|| <= min(1/t, ||E||/t^2) <= min(1/t,a/t^2).    (2)
+
+The first term follows from -I/t <=R_t-R'_t<=I/t, not from subtracting
+two independent upper norm bounds. The update's sign and endpoint
+nullspaces are irrelevant. In particular an edge deletion that creates
+a new connected component is allowed.
+
+The PSD functional calculus representation gives the convergent norm
+integral
+
+  L'^alpha-L^alpha = c_alpha int_0^infty t^alpha D_t dt,
+  c_alpha=sin(pi alpha)/pi>0.                          (3)
+
+The integrand behaves as t^(alpha-1) at zero and t^(alpha-2) at infinity
+by (2), so no positive lower eigenvalue or spectral norm of L is used.
+
+4. ACTUAL COLUMN SOLVES AND A NODE ERROR BOUND
+============================================
+For a symmetric positive definite A=L+tI, an energy-relative solver on
+right-hand side u returns vhat with
+
+  ||vhat-A^-1u||_A <=eta ||A^-1u||_A.
+
+Since A>=tI and u^T A^-1 u<=||u||^2/t,
+
+  ||vhat-A^-1u||_2 <=eta ||u||/t.                      (4)
+
+Apply the guarantee separately to every column of U at BOTH endpoints.
+No shared randomness, common inverse operator, symmetry, or linearity of
+the numerical solver is required. On the event that all calls succeed,
+
+  ||Vhat-V|| <=||Vhat-V||_F <=eta sqrt(b)/t,
+  ||What-W|| <=eta sqrt(b)/t,
+  ||V||,||W|| <=sqrt(b)/t.
+
+Let Dhat=Vhat J What^T. Because ||J||=1, for eta<=1,
+
+  ||Dhat-D|| <=(2eta+eta^2)b/t^2 <=3eta b/t^2.         (5)
+
+Indeed expand (V+dV)J(W+dW)^T. This is the entire solve perturbation
+argument. There is no Woodbury core inverse, no near-singular small
+matrix, and no computation of U^T R U. Hence no O(Nk^2+k^3) core setup
+or signed-factor transformation is hidden in the main construction.
+
+5. QUADRATURE AND ACCURACY BUDGET
+===============================
+Normalize t=a exp(y). Define
+
+  F(y)=c_alpha (a exp(y))^(alpha+1) D_(a exp(y)).
+
+For any fixed d<pi this is analytic in |Im y|<d. If t=re^(i theta)
+with |theta|<=d, then |lambda+t|>=c_d(lambda+r), lambda>=0,
+where c_d>0 depends only on d. Resolvent bounds and their difference
+identity therefore give the uniform complex-strip envelope
+
+  ||F(y)|| <=C_(alpha,d) a^alpha
+       min(exp(alpha Re y),exp(-beta Re y)).            (6)
+
+This analyticity and envelope are the same hypotheses used in the
+existing fractional-update quadrature. A logarithmic trapezoid with
+spacing h=Theta_alpha(1/log(1/rho)), retaining nodes between
+
+  t_min/a=Theta_alpha(rho^(1/alpha)),
+  t_max/a=Theta_alpha(rho^(-1/beta)),
+
+has q=O_alpha(log^2(1/rho)) nodes and exact-resolvent quadrature error
+at most C_alpha rho a^alpha. For completeness: the analytic-strip
+trapezoid error is bounded by the integrals on the two boundary lines,
+divided by exp(2pi d/h)-1; (6) bounds those integrals by C a^alpha.
+The two retained-grid tails are geometric series and are bounded by
+C a^alpha exp(alpha y_min) and C a^alpha exp(-beta y_max).
+Choose h and the two integer cutoffs with constant budget slack.
+
+For the same positive physical weights w_j=c_alpha h t_j^(alpha+1),
+(5) bounds the solve contribution by
+
+  sum_j w_j ||Dhat_j-D_j||
+   <=3c_alpha eta b h sum_j t_j^(alpha-1)
+   <=C_alpha eta (b/a) a^alpha rho^(-beta/alpha).
+
+The last inequality is another geometric-series estimate. Taking
+
+  eta <=c_alpha' rho^(1/alpha)/sqrt(2k)                 (7)
+
+makes this at most C_alpha rho a^alpha, by Section 2. In particular
+
+  log(1/eta)=O_alpha(log(2k/epsilon))
+
+after choosing rho=epsilon/[C_alpha''(k+1)]. Since
+a^alpha<=k^(alpha/2)||E||^alpha and
+k^(alpha/2)/(k+1)<=1, all quadrature and solve error budgets can be
+chosen to sum to epsilon||E||^alpha.
+
+Actual node/weight realization uses the constructive scalar procedures
+of sharp-matrix-function-updates.tex. Alternatively for alpha=1/2,
+choose h=log(2)/H for a power-of-two integer H of order log(1/rho).
+Then t_j=a*2^(j/H) and t_j^(alpha+1) need only repeated positive square
+roots, multiplication and division. Approximate fixed constants
+log(2),1/pi by convergent scalar series to the budgeted accuracy.
+All scalar work is polynomial in log(1/rho), not in a spectral ratio.
+
+The optimized Gaussian rule in the existing sharp-update paper can
+replace the uniform grid. Its node locations satisfy |log(t_j/a)|=O(L)
+and coefficient mass poly(L), L=log(1/rho). Equation (5) then requires
+only eta=exp(-O_alpha(L))/sqrt(2k). Thus the optimized node leading
+coefficient transfers, but a claim of SHARP graph-specific compression
+requires a graph-specific lower bound; the arbitrary-PSD lower theorem
+alone does not supply one.
+
+6. OUTPUT FACTORS AND COMPLETE COST
+==================================
+Concatenate the q blocks
+
+  P_j=sqrt(w_j) Vhat_j J, Q_j=sqrt(w_j) What_j.
+
+Then P Q^T=sum_j w_j Dhat_j, width at most kq, and forming every factor
+entry costs O(Nkq). The operator error bound applies although this
+approximation is not exactly symmetric. If exact symmetry is required,
+replace each node by its symmetric part. The identity
+
+  (V J W^T+W J V^T)/2
+   =[V+W,V-W] diag(J/4,-J/4) [V+W,V-W]^T               (8)
+
+gives an explicit real signed factor at width 2kq, in O(Nkq) arithmetic.
+Symmetrization cannot increase error to the symmetric target because
+|| (Z+Z^T)/2 ||<=||Z||. This symmetric approximation is generally signed;
+it is not asserted to be the Laplacian of a graph or a PSD correction.
+
+There are 2kq positive-definite SDD solves, each with tolerance (7).
+The sparsity of either shifted endpoint is O(M+N). Therefore standard
+nearly-linear solvers give expected total
+
+  ~O_alpha((M+N) k q log(1/eta))
+   =~O_alpha((M+N)k),
+
+including factor materialization and sparse normalization. Dense output
+adds O(N^2 kq), with O(N^2) storage if kept. For fixed k and inverse-
+polynomial epsilon, the full dense CORRECTION takes ~O_alpha(N^2).
+This does not compute arbitrary matrix products in quadratic time.
+
+7. COMMON VERTEX MASS EXTENSION AND ITS EXTRA PARAMETER
+=====================================================
+For a common positive diagonal mass matrix H, one may instead consider
+A=H^-1/2 L H^-1/2 and A'=H^-1/2 L' H^-1/2. Shifted actions are
+implemented by
+
+  (A+tI)^-1=H^1/2 (L+tH)^-1 H^1/2.
+
+The inner matrix is SDD, and the energy error transports isometrically
+under this change of coordinates. Replace U_e by
+sqrt(|d_e|)H^-1/2 b_e, and compute a=||A'-A||_F sparsely. Then all
+preceding formulas hold with b=||U||_F^2. Define
+
+  chi=max(1,b/a).
+
+Use eta<=c_alpha rho^(1/alpha)/chi. The work acquires logarithmic
+dependence on chi. It is WRONG to use b/a<=sqrt(2k) for arbitrary
+signed mass-weighted changes: diagonal cancellations and extreme masses
+can violate that bound. For changes of one sign, b=|tr(A'-A)|<=sqrt(k)a,
+so the extra mass-dependent parameter disappears. A different mass at
+each endpoint, as in degree-normalizing each updated graph separately,
+is not covered by this common-mass argument.
+
+8. PRIMARY SOLVER SOURCE AND CONFIDENCE SCOPE
+===========================================
+Ioannis Koutis, Gary L. Miller, Richard Peng,
+"A nearly-m log n time solver for SDD linear systems," FOCS 2011.
+Primary complete PDF inspected:
+https://arxiv.org/pdf/1102.4842
+
+Theorem 4.6 (page 11 in the PDF) states relative energy-norm solution
+accuracy in expected ~O(m log n log(1/eta)) time. Lemma 4.3 (page 9)
+explicitly covers A=L_G+D for nonnegative diagonal D; hence L+tI and
+L+tH are in scope. Lemma 4.5 (page 10) gives a good BuildChain(G,p)
+with probability >=1-p; its proof on page 11 records logarithmic
+dependence on 1/p. However, an earlier sampling theorem in that PDF
+restricts its failure parameter to Omega(1/n). For a fully explicit
+arbitrary-delta statement, it is enough to use constant-failure solvers
+and the following elementary amplification, rather than extrapolate
+that intermediate theorem's parameter range.
+
+For one right-hand side run an independent constant-success solver
+s=O(log(2kq/delta)) times, with requested energy accuracy eta/3.
+Choose s odd. For each candidate compute its median A-energy distance
+to all candidates, including itself; select a candidate minimizing
+this median. If a strict majority of candidates satisfy the requested
+guarantee, each good candidate has median distance at most 2r,
+r=(eta/3)||A^-1u||_A. The selected candidate therefore lies within
+distance 2r of a strict majority. That set intersects the good majority,
+so its distance to the exact answer is at most 3r=eta||A^-1u||_A.
+An ordinary binomial tail makes the majority event hold with failure
+<=delta/(2kq). All distances are computable: their squares are
+(x_i-x_j)^T A(x_i-x_j), using sparse A multiplication and comparisons.
+Pairwise distance work is O((M+N)s^2) per column, which is absorbed
+by the displayed soft-O bound. This is still expected arithmetic
+because the source solver has expected work. For the mass extension,
+perform the energy-distance selection in the equivalent L+tH system.
+A union bound now proves all solve accuracies simultaneously.
+
+One can reuse a good chain for several right-hand sides and the
+diagonal shifts permitted by Lemma 4.3, but reuse is unnecessary for
+the displayed asymptotic work.
+
+The EXPECTED qualifier in the stated work follows the published
+Theorem 4.6. Merely union-bounding successful solve events does not
+upgrade an expected runtime bound to a deterministic cap. A separately
+proved high-probability runtime cap, or explicitly charged truncation,
+would be needed for that stronger statement. The current theorem does
+not claim it. No dependence on ||L||/||E||, lambda_2(L), or endpoint
+weight ratio appears in the exact-arithmetic energy-error transfer.
+
+9. BOUNDED PRIORITY COMPARISON
+=============================
+Beckermann, Kressner, Schweitzer, "Low-rank updates of matrix functions"
+(2018), primary arXiv record and author-hosted complete PDF:
+https://arxiv.org/abs/1707.03045
+https://sma.epfl.ch/~anchpcommon/publications/rank_one.pdf
+Their general task is already f(A+D)-f(A), with small-rank D, via
+tensorized Krylov spaces; graph centrality/communicability applications
+are explicit. Thus low-rank graph-function updating itself is classical.
+
+Beckermann, Cortinovis, Kressner, Schweitzer, "Low-rank updates of matrix
+functions II: Rational Krylov methods" (2021):
+https://arxiv.org/abs/2008.11501
+Already supplies rational-update exactness and error mechanisms.
+The resolvent product identity (1) is classical and is not a novelty
+claim. The cancellation-normalized graph implementation and its
+uniform graph-solver cost are the specific deductions being checked.
+
+Benzi, Simunec, "Rational Krylov methods for fractional diffusion
+problems on graphs" (2021):
+https://arxiv.org/abs/2012.08389
+https://link.springer.com/article/10.1007/s10543-021-00881-0
+Treats fractional graph diffusion and rational shifted solves, including
+handling the zero eigenvalue by shifts or projections. Its target is
+f(L)b rather than an intrinsically normalized full low-rank correction
+under signed edge changes. This difference narrows the comparison; it
+does not establish that our synthesis is globally new.
+
+The 2023 Charalambides--Hero graph-AMM connection is also antecedent:
+https://arxiv.org/abs/2304.08581
+It treats randomized matrix multiplication for graph sparsification;
+the present deduction concerns edge-update corrections to fractional
+powers. "Combining matrix multiplication and spectral graphs" alone
+cannot be used as a novelty claim.
+
+Queries included combinations of "fractional graph Laplacian",
+"low-rank updates", "SDD", "edge updates", and "fractional power".
+No primary theorem with the exact combined signed-update, intrinsic
+epsilon||E||^alpha, condition-independent graph construction guarantee
+was located. This is a bounded search, not an exhaustive priority
+certificate. Routine-composition priority risk remains substantial.
+
+10. AUDIT CONCLUSION
+====================
+The two-endpoint proof avoids assumptions about linear/symmetric
+approximate inverse maps, rank-k small-core conditioning, endpoint
+connectivity, supplied base fractional powers, and represented-factor
+cancellation. Its graph-specific cancellation bound is essential to
+uniform polylogarithmic precision. The theorem gives a concrete
+near-linear thin correction and near-quadratic full correction for
+fixed update size. General AMM, external novelty, numerical stability,
+and sharp compression lower bounds restricted to ordinary graphs
+remain separate questions.

@@ -1,0 +1,432 @@
+SHARP-RANK SQUARE-ROOT CORRECTIONS: CONSTRUCTIVE REALIZATION
+===========================================================
+2026-11-15. Owner: sqrt_update_sota. Internal proof, awaiting audit.
+No independent novelty or finite-word stability claim is made.
+
+Presentation repairs to sqrt-update-extensions.txt were applied first:
+log(2r/eps), log(2/rho), least integer dyadic tail cutoff, and search
+ALL remaining diagonals before the zero-diagonal off-diagonal pivot.
+Revised SHA256 of that file:
+  a318e6e2a7bfd991969aa8e68a73bfca9c47c3af6c6f1fd6c829c4c67fff8f36
+
+Gaussian lemma source inspected: sharp-fractional-holder.tex,
+SHA256 at inspection:
+  ac434fd440778eff42842ab8e9f8b05696b9af2d61bbd318da0cb3b47d3fd5f4
+The shared rank-preserving core identity was independently derived by
+the fresh_quadratic_bridge agent. That worker owns Hermitian/rectangular
+extensions; this file treats PSD endpoints and their principal roots.
+
+VERDICT OF THIS DERIVATION
+---------------------------
+The sharp positive Gaussian-window quadrature CAN be implemented with
+ordinary exact arithmetic, comparisons, positive scalar square roots,
+and discrete randomness. No erf, exponential, eigenvalue, matrix-root,
+or shifted-solve oracle is necessary. Scalar preparation/evaluation costs
+O(L^3) arithmetic with the construction below. The shifted backend uses
+O(L) fixed raw iterations per node. There is no representation-rank
+factor two: every computed signed node is factored at width <=rank(E).
+
+Consequently, subject to the already audited sharp minimax rank lower
+bound, this gives a leading-minimax-rank optimal algorithm with the same
+~O(Nmr+m^3) conventional arithmetic count as the unsharp construction.
+The quantitative operation theorem is a new candidate statement here;
+its priority and importance still require the earlier literature audit.
+Classical rational compression and randomized preconditioning remain
+essential antecedents.
+
+1. THE ALGORITHM THEOREM TO AUDIT
+---------------------------------
+Given X in R^(N x m), U in R^(N x r), 1<=r<=m<=N, a symmetric
+involution J of order r, eps,delta in (0,1), set
+
+  A=XX^T, E=U J U^T, B=A+E,
+
+and promise B>=0. An explicit randomized exact-arithmetic algorithm
+returns signed factors F=Z_+Z_+^T-Z_-Z_-^T with
+
+  ||F-[B^(1/2)-A^(1/2)]||_2 <= eps ||E||_2^(1/2)
+
+with probability >=1-delta. Its conventional operation count is
+
+  ~O(Nmr+m^3),
+
+with only dimension, accuracy and failure logarithms hidden. For each
+fixed r, as eps decreases to zero, the total returned width is at most
+
+  [r/pi^2+o_r(1)] log^2(1/eps).                       (T1)
+
+The statement is uniform in dimensions, base and update spectra, factor
+conditioning and cancellation, and the PSD endpoint's nullspaces.
+Explicit dense expansion adds O(N^2 times the returned width).
+
+For E>=0 the algorithm can return a single PSD factor, and for E<=0
+its negative. Thus positive updates and promised downdates retain their
+PSD form without doubling the coefficient. The lower bound for rank-r
+positive updates alone already supplies the matching worst-case lower
+coefficient r/pi^2. This is a LEADING RANK optimality statement, not
+running-time optimality or a finite-eps best-rank claim.
+
+2. INTRINSIC SMALL CORE, WITH NO FACTOR DUPLICATION
+-------------------------------------------------
+Compute exact thin rank-revealing QR U=Q R, Q^TQ=I_k, k<=r, and form
+
+  C=R J R^T, c=||C||_F.
+
+This costs O(Nr^2+r^3). If c=0, return zero. Otherwise
+
+  E=Q C Q^T, ||E||<=c<=sqrt(k)||E||.                 (C1)
+
+For a positive shift t>0 define
+
+  R_A=(A+tI)^(-1), R_B=(B+tI)^(-1),
+  V=R_A Q, M=Q^T R_A Q,
+  H=(I+M C)^(-1), K=C H.
+
+The determinant lemma gives invertibility of I+MC because both shifted
+endpoints are SPD. Direct Woodbury algebra gives
+
+  H=I-Q^T R_B Q C,
+  ||H||<=1+c/t=:mu,
+  K=C(I+MC)^(-1)=(I+CM)^(-1)C=K^T,
+  D_t=R_A-R_B=V K V^T.                              (C2)
+
+C may be singular. No C inverse, sign decomposition, eigenvalue or
+matrix-square-root calculation is used. In particular rank(K)=rank(C),
+which is exactly rank(E), not twice that rank.
+
+3. AN EXPLICIT SECTOR CONSTANT AS THE STRIP WIDENS
+-------------------------------------------------
+Normalize the logarithmic integrand as
+
+  F(z)=[c exp(3z/2)/pi]
+             [(A+c exp(z)I)^(-1)-(B+c exp(z)I)^(-1)].
+
+Then
+
+  B^(1/2)-A^(1/2)=sqrt(c) integral_R F(x) dx.
+
+For |Im z|<=d<pi put q_d=cos(d/2). The sector bound
+|lambda+t|>=q_d(lambda+|t|) gives
+
+  ||F(x+i theta)||
+    <=pi^(-1) min(2q_d^(-1)exp(x/2),
+                   q_d^(-2)exp(-x/2))
+    <=[2/(pi q_d^2)] exp(-|x|/2).                   (E1)
+
+There is no base-spectrum factor. At real x the stronger bound
+||R_A-R_B||<=min(1/t,c/t^2) gives ||F(x)||<=1.
+
+We will choose d=p-L^(-1/4), where p is a certified positive lower
+approximation to pi, 3<p<=pi. Thus pi-d>=L^(-1/4). For L>=1,
+sin((pi-d)/2)>=(pi-d)/pi, and hence the envelope constant can be
+chosen explicitly as
+
+  M_d<=2pi sqrt(L)<8sqrt(L).                         (E2)
+
+This polynomial bound is what permits d to tend to pi within an
+actual operation theorem. Merely fixing d first and taking a second
+asymptotic limit would not suffice for this implementation claim.
+
+4. ACTUAL PARAMETER CHOICES AND THE IDEAL GAUSSIAN RULE
+------------------------------------------------------
+Let rho=eps/(2^10 k^(1/4)), where the quarter root uses two scalar
+square roots. Let n be the LEAST integer with 2^(-n)<=rho. Compute
+certified rational bounds for log(2) and pi of width <=2^(-256n),
+using the atanh(1/3) series and the Machin arctangent identity. Take
+lambda_+>=log(2) from its interval and p<=pi from its interval, and set
+
+  L=n lambda_+, d=p-L^(-1/4),
+  ell=L^(3/4)+32, b=2sqrt(L)+16.                    (G1)
+
+All of these are arithmetic/square-root expressions in computed
+constants. The scalar series need O(n) operations. They ensure
+L>=n log(2), L=log(1/rho)+O(1), p>3, d>2, and p=pi+o(1).
+The fixed buffers 32 and 16 allow the following bounds already for
+L>=1; they change no leading count coefficient.
+
+Use intervals I_j=[j ell,(j+1)ell] and the ideal analytic windows
+
+  phi_j(z)=pi^(-1/2) integral_(I_j) exp(-(z-u)^2)du.
+
+Retain exactly the integer j for which I_j meets
+[-2(L+ell),2(L+ell)]. Write m_j=min_(I_j)|x|/2 and define
+
+  Q_j=max(ell,L-m_j+3ell), h_j=2p d/Q_j.
+
+Retain each lattice point x=nu h_j belonging to I_j+[-b,b], with
+ideal coefficient a_(j,nu)=h_j phi_j(x)>0. Repeated nodes may be kept
+separately. Since p<=pi,
+
+  2pi d/h_j >=Q_j.
+
+Thus the Gaussian lemma's trapezoid proof applies with these exact
+computed step sizes; no perturbation of a hidden ideal lattice is needed.
+
+Here are explicit uniform error checks. With J_0 retained windows,
+
+  J_0 ell<=4L+6ell<=202L,
+  h_j<=2pi^2/ell<1,
+  C_0=2M_d exp(d^2+1/16)<=2^20 sqrt(L).
+
+The omitted-window error is at most
+128sqrt(L)exp(-L-ell). The sum of infinite trapezoid errors is at most
+4C_0 J_0 ell exp(-L-3ell). Both are <=exp(-L)/64 by (G1).
+For each discarded lattice tail, b-h_j>=2sqrt(L)+15 and
+(b-h_j)^2>=2L+128. Monotone Gaussian-tail comparison therefore
+bounds the sum over all discarded tails by
+808L exp(-2L-128)<=exp(-L)/64. Consequently the ideal finite rule has
+
+  ||integral F-sum a_(j,nu) F(x_(j,nu))||
+        <=exp(-L)/8.                               (G2)
+
+The sample count obeys
+
+  q<=sum_j [(ell+2b)Q_j/(2p d)+2]
+    <=L^2/(p d)+O(L^(7/4))
+     =L^2/pi^2+O(L^(7/4)).                          (G3)
+
+For completeness, the triangular-density integral is
+integral_R (L-|x|/2)_+ dx=2L^2. Its interval upper Riemann sum loses
+O(L ell+ell^2); the +3ell density overhead has the same order.
+Enlarging windows loses O(L^2 b/ell)=O(L^(7/4)). The p,d denominators
+are bounded below by constants, and pi-d=O(L^(-1/4)); all errors in
+(G3) therefore have an absolute constant. A coarse bound valid for
+every L>=1 is q<=2^13(L+1)^2.
+
+The total coefficient mass is bounded by
+
+  sum a_(j,nu)<=4J_0 ell<=808L.                       (G4)
+
+One way to see this is to integrate the shifted Gaussian lattice sum:
+for h<=1, h sum_n exp(-(nh-u)^2)<=sqrt(pi)+2h<4, uniformly in u.
+
+5. POSITIVE GAUSSIAN WEIGHTS WITHOUT erf OR exp
+----------------------------------------------
+We now replace each ideal scalar phi_j(x) by an explicit nonnegative
+number with sufficiently small ABSOLUTE error. No relative accuracy
+is required for exponentially tiny window weights.
+
+Set R_0=4sqrt(L+1) and D=ceil(64(L+1)). Use the clipped interval
+
+  W=[j ell-x,(j+1)ell-x] intersect [-R_0,R_0].
+
+If W is empty, return phi_hat=0 and drop that node if desired.
+Otherwise form the scalar polynomial
+
+  P_D(w)=sum_(h=0)^D (-1/2)^h w^(2h)/h!,
+  phi_hat=p^(-1/2) integral_W P_D(w)^2 dw.            (W1)
+
+This number is strictly positive for a nonempty interval with positive
+length, and nonnegative in every case. The integral is evaluated as a
+polynomial primitive, using field operations and one scalar square root
+for p. There is no integration primitive in the algorithm.
+
+For |w|<=R_0, z=w^2/2<=8(L+1). The real negative-exponential Taylor
+remainder satisfies
+
+  |P_D(w)-exp(-w^2/2)|
+     <=z^(D+1)/(D+1)! <=(e/8)^(D+1)<=2^(-D).
+
+Therefore |P_D^2-exp(-w^2)|<=3*2^(-D). The discarded continuous
+Gaussian tails have mass <=exp(-16(L+1)), up to an absolute factor.
+The certified p approximation contributes a still smaller error.
+In particular one may use the uniform bound
+
+  |phi_hat-phi_j(x)|<=3exp(-16(L+1)).                (W2)
+
+The constant can be enlarged harmlessly; using 8 instead of 3 changes
+none of the budgets below. With a_hat=h_j phi_hat, q<=2^13(L+1)^2,
+h_j<1 and ||F(x)||<=1, the total weight-approximation error is at
+most exp(-L)/16. Also sum a_hat<=2^10(L+1).
+
+The polynomial coefficients are common to EVERY node. Precompute the
+coefficients of P_D^2 by ordinary convolution in O(D^2), and of its
+odd primitive in O(D). Each interval evaluation uses Horner evaluation
+at its two endpoints, O(D) operations. With D=O(L), all weights cost
+
+  O(D^2+qD)=O(L^3).                                 (W3)
+
+The clipping is useful: direct Taylor expansion over the whole window
+would still cost a polynomial in L, but would need degree O(L^(3/2)).
+Clipping loses only the explicitly budgeted tiny Gaussian tail.
+
+6. POSITIVE EXPONENTIAL NODES BY TAYLOR AND SQUARING
+---------------------------------------------------
+Every retained log-node satisfies
+
+  |x|<=B_0:=2L+3ell+b=O(L+1).
+
+Choose M_0 a power of two, least with M_0>=8(B_0+1), and
+N_0=ceil(64(L+1)). Compute
+
+  P=sum_(h=0)^(N_0) (x/M_0)^h/h!,
+  e_hat=P^(M_0), t_hat=c e_hat.                     (X1)
+
+Here |x/M_0|<=1/8. Taylor's remainder gives P>0 and relative error
+at most 2^(-2N_0), after weakening its actual bound. Repeated squaring
+implements the integer power with O(log(M_0)) operations. Since
+M_0=O(L+1), the resulting node is positive and satisfies
+
+  |log(t_hat/c)-x|<=exp(-32(L+1)).                   (X2)
+
+The logarithm in (X2) is analysis only; it is not evaluated. The scalar
+node calculation costs O(L) per node, hence O(L^3) in total. Neither
+the work nor its accuracy depends on the magnitude of the input c.
+
+To justify the operator error from (X2), on the real line D_t=R_A-R_B
+satisfies D_t'=-R_A D_t-D_t R_B, and ||D_t||<=min(1/t,c/t^2).
+It follows that the normalized logarithmic integrand obeys
+
+  ||F'(x)||<=4, x real.                             (X3)
+
+Thus perturbing all nodes contributes at most
+4 sum(a_hat)exp(-32(L+1))<=exp(-L)/16. The physical coefficient 1/pi
+is replaced by 1/p; its certified tiny error contributes another
+exp(-L)/16. All actual weights
+
+  w_hat=a_hat t_hat sqrt(t_hat)/p
+
+are nonnegative and use only permitted scalar operations.
+
+7. RAW SOLVES, CORE PERTURBATION, AND A FIXED LINEAR ITERATION BUDGET
+------------------------------------------------------------------
+Draw one constant-distortion OSE of X and use the same common even-
+Neumann raw inverse polynomial as in the audited algorithm. On its
+single event of probability >=1-delta, simultaneously for every t>0,
+
+  Rhat=R_A+E_R, 0<=E_R<=eta I/t,
+  ||Rhat||<=(1+eta)/t.
+
+At each actual t_hat, compute
+
+  Vhat=Rhat Q, Mhat=Q^T Vhat,
+  Hhat=(I+Mhat C)^(-1), Khat=C Hhat.
+
+Khat is EXACTLY symmetric. This algebraic property is retained by the
+common fixed inverse polynomial, not inferred from an arbitrary
+RHS-dependent iterative solver. If eta(c/t)(1+c/t)<=1/2, then
+
+  ||Hhat||<=2mu,
+  ||Khat||<=2c mu,
+  ||Khat-K||<=2eta c^2 mu^2/t,
+  ||Vhat Khat Vhat^T-V K V^T||
+      <=6eta c mu/t^2+2eta c^2 mu^2/t^3,             (P1)
+
+where mu=1+c/t. The inverse-difference identity proves these estimates:
+||Mhat-M||<=eta/t, perturb I+MC by (Mhat-M)C, and use (C2).
+Expansion in the two V factors gives the last inequality.
+
+Let B_1=B_0+1. Every actual scaled node s=t_hat/c has
+exp(-B_1)<=s<=exp(B_1). Choose the even iteration count ell_inv to
+be the LEAST even integer >=16(B_0+L+10), and set eta=4^(-ell_inv).
+Then ell_inv=O(L+1), the invertibility condition holds at all nodes,
+and (P1), after multiplication by t^(3/2), gives
+
+  total weighted solve error
+    <=C eta sqrt(c)(L+1)exp(4B_1)
+    <=sqrt(c)exp(-L)/16.                            (P2)
+
+For the first inequality expand mu=1+1/s: the scaled powers range
+from s^(-1/2) through s^(-7/2), and use sum(a_hat)<=2^10(L+1).
+The chosen constant 16 leaves ample room for the universal C; one can
+take C=2^14 after absorbing the 1/p normalization. This is a fixed
+budget before any solves, with no kappa or downdate-margin dependence.
+
+8. EXACT WIDTH-r NODE FACTORIZATION, INCLUDING SINGULAR C
+---------------------------------------------------------
+Each Khat=C(I+Mhat C)^(-1) has rank exactly rank(C), because its
+right factor is invertible. It is symmetric even when C is singular.
+Perform exact symmetric congruence elimination on Khat, always
+searching all remaining diagonal entries for a nonzero pivot FIRST.
+Only if all vanish, choose a nonzero off-diagonal a_ij and replace
+e_i by e_i+e_j, producing diagonal 2a_ij. If the entire remaining
+matrix is zero, stop and omit that zero block.
+
+This produces, in O(k^3) field operations and scalar square roots,
+
+  Khat=L_n Sigma_n L_n^T,
+
+with Sigma_n diagonal +/-1 and at most rank(C)<=r columns in L_n.
+There is no eigenvalue calculation or inverse of C. Return node factors
+
+  Z_n=sqrt(w_hat_n) Vhat_n L_n
+
+with their signatures, and concatenate. The represented matrix is
+EXACTLY the actually computed quadrature sum, and its TOTAL width is
+at most rank(E)*q<=r*q, not 2r*q.
+
+If C>=0, then Khat>=0 on the good event, because Mhat>=0 and the
+identity C(I+Mhat C)^(-1)=C^(1/2)(I+C^(1/2)Mhat C^(1/2))^(-1)C^(1/2)
+is valid analytically, including singular C. A PSD Cholesky with zero
+pivots supplies the node factor. If C<=0 and B>=0, the perturbation
+bound and the shifted downdate identity likewise ensure Khat<=0;
+factor its negative. Generic signed C uses the congruence above.
+
+9. TOTAL ERROR, MINIMAX LEADING WIDTH, COST AND FAILURE
+-----------------------------------------------------
+Combining (G2), (W2), (X2)--(X3), the 1/p normalization and (P2)
+gives total error <=sqrt(c)exp(-L), after a harmless enlargement of
+the universal constants already covered by 2^10 in rho. Since
+
+  exp(-L)<=2^(-n)<=rho,
+  sqrt(c)<=k^(1/4)||E||^(1/2),
+
+this is at most eps||E||^(1/2). Also
+
+  L=log(1/eps)+O(log(2r)),
+  returned width <=r[L^2/pi^2+O(L^(7/4))].            (R2)
+
+For each fixed r this is (T1). The constants in (R2) do not depend
+on dimension, spectra, factor conditioning, cancellation or delta.
+The already audited sharp worst-case lower theorem for rank-r
+positive updates has exactly the same leading coefficient, so no
+algorithm returning uniformly accurate corrections can asymptotically
+reduce the leading worst-case output width in this input class.
+
+Full work before the nodes: O(Nr^2+r^3) for the intrinsic core,
+~O(Nm+m^3) for the OSE/sketched Gram, O(Nmr) for reusable X^TQ.
+Each node costs O(m^3+ell_inv Nmr+Nr^2+r^3). All scalar work is
+O(L^3), with conventional polynomial multiplication. Thus a more
+explicit accuracy-dependent count is
+
+  ~O(Nm+m^3)+O(Nr^2+r^3)
+       +O(Nmr L^3+m^3 L^2+L^3),
+
+which is ~O(Nmr+m^3) when only the stated logarithms are suppressed.
+No fast matrix multiplication is used. Factors occupy O(NrL^2)
+physical output storage, in addition to the raw input and sketched
+core storage. Scalar coefficient storage is O(L^2), or smaller with
+streaming; it is also logarithmic overhead.
+
+All node choices and scalar bounds are deterministic and certified.
+The only failure allowance is the single OSE event. Every loop is
+capped in advance. The sketched preconditioner G0+tI is always SPD;
+if a later core inverse or a required PSD Cholesky test fails, return
+zero. Such a test cannot fail on the OSE event by (P1). On signed
+cores, zero congruence residuals are legitimate rank loss, not failure.
+This gives an operation cap on every random outcome as well as the
+probability guarantee. No endpoint PSD verification is required.
+
+10. WHAT THIS DOES AND DOES NOT ESTABLISH
+----------------------------------------
+This connects the sharp matrix compression coefficient to an actual
+factor-returning algorithm from raw rectangular inputs. Neither an
+abstract rank existence theorem nor an assumed shifted-solve oracle
+would establish that connection by itself. The positive polynomial
+window approximation and intrinsic singular-core factorization above
+close those constructive gaps without changing the leading rank.
+
+The Gaussian/tapered quadrature idea, rational-function updates,
+Woodbury algebra, and randomized preconditioning all have substantial
+prior art, recorded in sqrt-update-sota-audit.txt. This file is not a
+certificate that the combined sharp-rank raw algorithm is new. Its
+value, if confirmed and unpublished, is the precise synthesis theorem
+and its sharp output guarantee. Practical speed is not inferred from
+an asymptotic leading-rank constant; no hardware comparison is made.
+
+The scalar polynomial primitive may have severe coefficient
+cancellation in floating point. Exact arithmetic was essential to the
+present model, and no finite-word stability theorem follows. The
+square-root model has all scalar primitives explicitly charged;
+arbitrary non-dyadic fractional powers still need the separate scalar-
+power qualification already recorded in sqrt-update-extensions.txt.

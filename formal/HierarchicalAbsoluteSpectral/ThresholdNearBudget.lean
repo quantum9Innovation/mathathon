@@ -35,7 +35,8 @@ theorem near_threshold_literal_upper
     apply (div_le_div_iff₀ (by norm_num : (0:ℝ)<1000000) (by positivity : 0<100*κ)).mpr
     nlinarith
   have hβ := near_beta_bounds κ α hκ hκ' hα hαsmall
-  have hx0 : 0 ≤ x := by dsimp [x]; positivity
+  have hβp : 0 < β := hβ.1
+  have hx0 : 0 ≤ x := mul_nonneg (mul_nonneg (by linarith : 0≤2*C) hβp.le) hh.le
   have hxX : x ≤ X := by
     have hm := mul_le_mul_of_nonneg_right
       (mul_le_mul_of_nonneg_left hβ.2 (by positivity : 0≤2*C)) hh.le
@@ -48,10 +49,12 @@ theorem near_threshold_literal_upper
     hκ hκ' (by linarith) hh.le hα hαsmall hdom hinvariant hD j hnear
   change ((1-x)/(1+x))*t ≤ _ at hl
   have htarget := orderedEigenvalue_nonneg (Rbᵀ*Q*Rb)
-    (by simpa only [Matrix.conjTranspose_eq_transpose_of_trivial] using hQ.mul_mul_conjTranspose_same Rbᵀ) j
+    (by simpa only [Matrix.conjTranspose_eq_transpose_of_trivial,Matrix.transpose_transpose] using hQ.mul_mul_conjTranspose_same Rbᵀ) j
   have ht' : t ≤ ((1+x)/(1-x))*
       orderedEigenvalue (Rbᵀ*Q*Rb) (normalized_isHermitian Rb Q hQ.isHermitian.eq) j := by
+    rw [div_mul_eq_mul_div]
     apply (le_div_iff₀ (by linarith : 0<1-x)).mpr
+    rw [div_mul_eq_mul_div] at hl
     have hh' := (div_le_iff₀ (by linarith : 0<1+x)).mp hl
     nlinarith only [hh']
   have hratio : (1+x)/(1-x) ≤ (1+X)/(1-X) := by

@@ -7,13 +7,14 @@ Nonzero determinant polynomials are detected on the countable rational grid;
 no measurable choice of a rank-dependent basis is needed. -/
 namespace HierarchicalAbsoluteSpectral
 set_option autoImplicit false
+set_option maxHeartbeats 500000
 noncomputable section
 open Matrix MeasureTheory Set
 open scoped Matrix.Norms.L2Operator
 variable {n : ℕ}
-local instance matrixMeasurableSpace (a b : ℕ) :
+local instance jointMatrixMeasurableSpace (a b : ℕ) :
     MeasurableSpace (Matrix (Fin a) (Fin b) ℝ) := matrixBorelSpace a b
-local instance matrixBorelInstance (a b : ℕ) : BorelSpace (Matrix (Fin a) (Fin b) ℝ) := ⟨rfl⟩
+local instance jointMatrixBorelInstance (a b : ℕ) : BorelSpace (Matrix (Fin a) (Fin b) ℝ) := ⟨rfl⟩
 
 def ambientMinorValue (D : Core n) (j : ℕ) (hj : j≤n) (g : Fin (n*n) → ℝ) : ℝ :=
   (leadingPrincipal ((gaussianSquareMatrix n g)ᵀ*D*gaussianSquareMatrix n g) j hj).det
@@ -30,6 +31,12 @@ theorem ambientMinorValue_continuous (j : ℕ) (hj : j≤n) :
 def ambientMinorActive (D : Core n) (j : ℕ) (hj : j≤n) : Prop :=
   ∃ q : Fin (n*n) → ℚ, ambientMinorValue D j hj (fun i => (q i:ℝ))≠0
 
+theorem ambientMinorValue_eval (D : Core n) (j : ℕ) (hj : j≤n) (g : Fin (n*n) → ℝ) :
+    ambientMinorValue D j hj g=
+      MvPolynomial.eval (fun x : Fin n × Fin n => g (finProdFinEquiv x))
+        (congruenceMinorPolynomial D j hj) := by
+  exact (congruenceMinorPolynomial_eval D (gaussianSquareMatrix n g) j hj).symm
+
 theorem ambientMinorActive_iff (D : Core n) (j : ℕ) (hj : j≤n) :
     ambientMinorActive D j hj ↔ congruenceMinorPolynomial D j hj≠0 := by
   constructor
@@ -42,12 +49,21 @@ theorem ambientMinorActive_iff (D : Core n) (j : ℕ) (hj : j≤n) :
       (congruenceMinorPolynomial D j hj) hp
     obtain ⟨g,hg⟩ := hg.exists
     have hvalue : ambientMinorValue D j hj g≠0 := by
-      rwa [congruenceMinorPolynomial_eval D (gaussianSquareMatrix n g) j hj] at hg
+      rwa [ambientMinorValue_eval]
+    unfold ambientMinorActive
     by_contra! hnone
-    have hdense : DenseRange (fun q : Fin (n*n) → ℚ => fun i => (q i:ℝ)) :=
-      DenseRange.piMap (fun _ => Rat.denseRange_cast)
-    have hc : Continuous (fun g => ambientMinorValue D j hj g) :=
-      (ambientMinorValue_continuous j hj).comp (continuous_const.prodMk continuous_id)
+    have hdense : DenseRange (fun q : Fin (n*n) → ℚ => fun i => (q i:ℝ)) := by
+      change DenseRange (Pi.map (fun _ : Fin (n*n) => ((↑) : ℚ → ℝ)))
+      exact DenseRange.piMap (fun _ : Fin (n*n) =>
+        (Rat.denseRange_cast : DenseRange ((↑) : ℚ → ℝ)))
+    have hm : Continuous (fun g : Fin (n*n) → ℝ =>
+        fun x : Fin n × Fin n => g (finProdFinEquiv x)) := by
+      apply continuous_pi
+      intro x
+      exact continuous_apply (finProdFinEquiv x)
+    have hc : Continuous (fun g : Fin (n*n) → ℝ => ambientMinorValue D j hj g) := by
+      simp only [ambientMinorValue_eval]
+      exact (MvPolynomial.continuous_eval (congruenceMinorPolynomial D j hj)).comp hm
     have he : (fun g => ambientMinorValue D j hj g)=(fun _ => (0:ℝ)) :=
       hdense.equalizer hc continuous_const (funext hnone)
     exact hvalue (congrFun he g)
@@ -58,19 +74,27 @@ def jointInertiaGood (D : Core n) (g : Fin (n*n) → ℝ) : Prop :=
 
 theorem jointInertiaGood_measurable :
     MeasurableSet {z : Core n × (Fin (n*n) → ℝ) | jointInertiaGood z.1 z.2} := by
-  apply measurableSet_all
+  unfold jointInertiaGood
+  simp only [Set.setOf_forall]
+  apply MeasurableSet.iInter
   intro j
   have ha : MeasurableSet {z : Core n × (Fin (n*n) → ℝ) |
       ambientMinorActive z.1 j.val (by omega)} := by
-    apply measurableSet_exists
+    change MeasurableSet {z : Core n × (Fin (n*n) → ℝ) |
+      ∃ q : Fin (n*n) → ℚ, ambientMinorValue z.1 j.val (by omega) (fun i => (q i:ℝ))≠0}
+    rw [Set.setOf_exists]
+    apply MeasurableSet.iUnion
     intro q
-    have hc := (ambientMinorValue_continuous j.val (by omega)).comp
-      (continuous_fst.prodMk (continuous_const (b := fun i => (q i:ℝ))))
-    exact (isOpen_ne hc continuous_const).measurableSet
+    have hm : Continuous (fun z : Core n × (Fin (n*n) → ℝ) =>
+        (z.1,(fun i => (q i:ℝ)))) := continuous_fst.prodMk continuous_const
+    have hc := (ambientMinorValue_continuous (n := n) j.val (by omega)).comp hm
+    exact (isOpen_ne_fun hc continuous_const).measurableSet
   have hb : MeasurableSet {z : Core n × (Fin (n*n) → ℝ) |
       ambientMinorValue z.1 j.val (by omega) z.2≠0} :=
-    (isOpen_ne (ambientMinorValue_continuous j.val (by omega)) continuous_const).measurableSet
-  simpa only [imp_iff_not_or] using ha.compl.union hb
+    (isOpen_ne_fun (ambientMinorValue_continuous (n := n) j.val (by omega)) continuous_const).measurableSet
+  convert ha.compl.union hb using 1
+  ext z
+  simp only [Set.mem_union,Set.mem_compl_iff,Set.mem_setOf_eq,imp_iff_not_or]
 
 theorem jointInertiaGood_polynomial_event (D : Core n) (g : Fin (n*n) → ℝ)
     (hg : jointInertiaGood D g) :
@@ -79,7 +103,7 @@ theorem jointInertiaGood_polynomial_event (D : Core n) (g : Fin (n*n) → ℝ)
         (congruenceMinorPolynomial D j hj)≠0 := by
   intro j hj hp
   have h := hg ⟨j,by omega⟩ ((ambientMinorActive_iff D j hj).mpr hp)
-  rwa [congruenceMinorPolynomial_eval D (gaussianSquareMatrix n g) j hj]
+  rwa [ambientMinorValue_eval] at h
 
 theorem jointInertiaGood_ae (D : Core n) :
     ∀ᵐ g ∂gaussianVector (n*n), jointInertiaGood D g := by
@@ -92,7 +116,7 @@ theorem jointInertiaGood_ae (D : Core n) :
       (congruenceMinorPolynomial D j.val (by omega)) hp
     filter_upwards [hg] with g hg
     intro _
-    rwa [congruenceMinorPolynomial_eval D (gaussianSquareMatrix n g) j.val (by omega)] at hg
+    rwa [ambientMinorValue_eval]
 
 end
 end HierarchicalAbsoluteSpectral

@@ -9,9 +9,9 @@ noncomputable section
 open Matrix WithLp MeasureTheory
 open scoped MatrixOrder Matrix.Norms.L2Operator
 variable {k r : ℕ}
-local instance jointMatrixMeasurableSpace (a b : ℕ) :
+local instance jointRitzMatrixMeasurableSpace (a b : ℕ) :
     MeasurableSpace (Matrix (Fin a) (Fin b) ℝ) := matrixBorelSpace a b
-local instance jointMatrixBorelInstance (a b : ℕ) : BorelSpace (Matrix (Fin a) (Fin b) ℝ) := ⟨rfl⟩
+local instance jointRitzMatrixBorelInstance (a b : ℕ) : BorelSpace (Matrix (Fin a) (Fin b) ℝ) := ⟨rfl⟩
 attribute [local irreducible] krylovSpanProjector krylovRitzFixedMatrix
 
 theorem orderedEigenvalue_measurable_comp {X : Type*} [MeasurableSpace X]

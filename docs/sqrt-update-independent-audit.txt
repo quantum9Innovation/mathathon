@@ -1,0 +1,403 @@
+INDEPENDENT AUDIT OF THE RAW SQUARE-ROOT UPDATE ALGORITHM
+======================================================
+Auditor: /root/factor_four_independent_referee.
+Date: 2026-11-15 UTC.
+
+Actual sources audited:
+  docs/nongalactic-wildcard-search.txt, Sections 1--6,
+  full-file SHA256
+  dc04f7d722780f493ba306d0f9f2245f4e8230d6020a2bdb22e10a5aef312013.
+
+  docs/sqrt-update-extensions.txt, Sections 1--11,
+  SHA256
+  fca46ea82e26e531e33224cc49e7a70629dc1dc81a102d55f2fc80c5f6ef6898.
+
+  docs/sqrt-update-sota-audit.txt, comparison background,
+  SHA256
+  7d99258b32c3894480c2e70bba226f15fec562c150700877fbd522fc68e00f82.
+
+VERDICT
+-------
+PASS in the exact randomized arithmetic model: the positive-update,
+promised PSD downdate, and intrinsic signed-update theorems. The final
+signed guarantee is genuinely normalized by ||B-A||^(1/2), despite
+arbitrary cancellation in the supplied signed factors. No spectral
+condition number, gap, downdate-margin, factor-condition, or base/update
+scale ratio enters the arithmetic bound.
+
+Both the direct signed-core construction and the two-PSD-call reduction
+are valid. The latter gives the simplest route to the strongest theorem.
+The alternative exact downdate covariance refactorization also passes.
+
+No hidden norm, eigenvalue, base-root, pseudoinverse, or shifted-solve
+oracle is required. Arithmetic, comparisons, scalar square roots, and
+standard discrete random sampling suffice. The existing sparse-OSE
+citation has the claimed logarithmic failure dependence. A dense SRHT
+alternative is recorded below as well.
+
+No substantive mathematical repair is needed. For a completely literal
+statement, use log(2r/eps) rather than log(r/eps), and select the smallest
+integer tail cutoff satisfying the displayed inequality. The source's
+O(log^2) and Theta(rho^2) conventions have these harmless choices. The
+direct indefinite alternative also needs the precise pivot-search
+convention described in Section 7 below; the preferred PSD proof does
+not use that alternative.
+
+NOT AUDITED/NOT CLAIMED: finite-word stability, input bit complexity,
+hardware performance, global priority, optimal running time, or a
+seminal new mechanism. The main theorem remains a fully costed synthesis
+of established tools. The exact-Gram comparison below is a proved
+baseline, not a lower bound on prior methods or a certificate of SOTA.
+
+1. MINIMAL EXACT-REAL THEOREM SUPPORTED BY THE PROOF
+--------------------------------------------------
+Let X be real N-by-m and U real N-by-r, 1<=r<=m<=N. Let J be an
+explicit real symmetric involution of order r. Set
+
+  A=XX^T, E=U J U^T, B=A+E,
+
+and promise B>=0. For eps,delta in (0,1), an algorithm returns factors
+Z_+,Z_- of total width
+
+  K=O(r log^2(2r/eps))
+
+such that, with probability at least 1-delta,
+
+  ||Z_+Z_+^T-Z_-Z_-^T - [B^(1/2)-A^(1/2)]||_2
+       <= eps ||E||_2^(1/2).
+
+It uses conventional exact arithmetic, comparisons, positive scalar
+square roots, and discrete randomness in
+
+  ~O(Nmr+m^3)
+
+operations; only dimension, accuracy, and failure logarithms are hidden.
+The operation cap can hold on every random outcome. On a failed pivot
+test it returns zero; all necessary tests pass on the OSE event. The
+promise is not verified as part of the theorem.
+
+If E=UU^T, a single PSD factor Z suffices with error eps||U||_2.
+If E=-UU^T and B>=0, a single PSD factor approximates A^(1/2)-B^(1/2).
+Neither endpoint needs to be invertible. The principal root of A is
+not an input. Explicit N-by-N output costs an additional O(N^2 K).
+
+2. QUADRATURE AND ITS ACTUAL SCALAR PRIMITIVES
+---------------------------------------------
+For PSD endpoints the difference-of-resolvents Stieltjes formula for
+the square-root correction is valid, and its integrand has rank <=r.
+For a>=||E||>0, the logarithmic integrand at t=a exp(y) has norm
+
+  <=C_d sqrt(a) min(exp(Re(y)/2),exp(-Re(y)/2))
+
+uniformly on any fixed strip |Im(y)|<=d<pi. The two bounds come from
+separate resolvents and their difference identity; both remain valid
+at singular endpoints and without a bound on ||A||/a.
+
+The analytic trapezoid estimate applies in operator norm: scalarize
+against arbitrary unit left/right vectors, use the same uniform bound,
+then take the supremum. There is no entrywise dimension loss. Both the
+infinite discretization error and the finite geometric tails are
+O(rho sqrt(a)) with q=O(log^2(2/rho)) nodes.
+
+One fully specified grid is t_j=a 2^(j/L), -LK<=j<=LK, where L is a
+power of two comparable to log(2/rho), and K is the LEAST integer with
+2^(-K/2)<=rho/C_0. Then s_min=t_min/a=Theta(rho^2) and
+s_max=Theta(rho^-2). The least-cutoff convention prevents an unnecessary
+overtruncation from invalidating the later Theta notation.
+
+No input-dependent exponential/logarithm is computed: 2^(1/L) uses
+repeated scalar square roots, and the remaining nodes use multiplication
+and division. Integer loop budgets are selected by comparisons with
+successive powers of two. With a=||U||_F^2, computing a costs O(Nr).
+When a=0 the correct output is zero.
+
+The weights are
+
+  w_j=[log(2)/(pi L)] t_j sqrt(t_j)>0.
+
+The fixed coefficient log(2)/pi need not be an exact primitive. For
+example log(2)=2 sum_(k>=0)(1/3)^(2k+1)/(2k+1), and the Machin identity
+pi=16 atan(1/5)-4 atan(1/239), with the usual alternating power series,
+give certified relative O(rho) rational approximations in O(log(2/rho))
+field operations. These have positive ratio after a fixed initial number
+of terms. The weighted sum of exact node norms is O(sqrt(a)); relative
+O(rho) coefficient error therefore stays inside the error budget.
+The final sqrt(w_j) uses only one further positive scalar square root.
+
+Taking rho=eps/(C sqrt(r)) converts rho sqrt(a) into at most a fixed
+fraction of eps||U||, since sqrt(a)<=sqrt(r)||U||. This is a computable
+normalization and does not assume an operator-norm oracle.
+
+3. THE OSE, INCLUDING RANK DEFICIENCY AND FAILURE DEPENDENCE
+----------------------------------------------------------
+The only probabilistic ingredient needed for a positive/downdate call
+is a Gram proxy G0 with
+
+  (1-1/4)G0 <= G=X^T X <= (1+1/4)G0.
+
+Nelson--Nguyen, OSNAP, Theorem 9, was checked in the actual primary PDF:
+  https://arxiv.org/pdf/1211.1002
+At fixed distortion it gives O(m log^8(2m/delta)) sketch rows and
+O(log^3(2m/delta)) nonzeros per column, success at least 1-delta.
+The theorem explicitly allows arbitrary delta with logarithmic dependence;
+there is no polynomial 1/delta setup hidden here. Taking a sufficiently
+small fixed norm distortion gives the displayed reverse Gram sandwich.
+Applying the sketch costs ~O(Nm) and forming its Gram costs ~O(m^3),
+using conventional products. Listing or sampling its entries adds only
+the permitted logarithmic overhead.
+
+Rank deficiency is harmless. The embedding applies to the actual fixed
+column space of X, of dimension <=m. The Gram sandwich also identifies
+the kernels exactly on its success event. It is not necessary to construct
+an orthonormal basis or discover the rank first. The same event controls
+every subsequently chosen positive shift and every RHS.
+
+Optional dense-input implementation: pad N to N'<2N, a power of two,
+and use normalized Hadamard/sign mixing followed by row sampling. Tropp's
+parameterized Lemmas 3.3--3.4 and matrix Chernoff theorem imply that
+
+  Mbar=(sqrt(m)+sqrt(8 log(2N'/delta)))^2,
+  ell>=C Mbar log(4m/delta)
+
+rows give a sufficiently small fixed Gram distortion, with failure delta.
+If ell>N', compute the exact Gram instead; its N'm^2 cost is at most
+ell m^2=~O(m^3). Hadamard application costs O(Nm log(2N)). This is a
+direct corollary of the parameterized lemmas, not a literal restatement
+of Tropp's Theorem 3.1, which prints failure 3/k. Primary source:
+  https://arxiv.org/pdf/1011.1595
+
+Standard discrete randomness is part of the randomized arithmetic model.
+No draw from an input-dependent continuous distribution is needed. Random
+signs and finite row/hash choices can be generated with logarithmic bit
+overhead; a fixed sampling budget or capped rejection adds only a chosen
+small failure allowance. This does not entail a numerical bit-complexity
+guarantee for the subsequent real arithmetic.
+
+4. COMMON EVEN-NEUMANN POLYNOMIAL AND THE PHYSICAL INVERSE
+---------------------------------------------------------
+Write P=G0+tI, F=P^(-1/2)(G-G0)P^(-1/2). The sandwich gives ||F||<=1/4.
+For even ell,
+
+  Q_ell=P^(-1/2) sum_(j=0)^(ell-1)(-F)^j P^(-1/2),
+  Q_*=(G+tI)^(-1),
+  0<=Q_*-Q_ell<=eta Q_*, eta=4^(-ell).
+
+This follows by diagonalizing F: the residual is F^ell(I+F)^(-1),
+which is positive and bounded by eta(I+F)^(-1). The same identity also
+gives Q_ell>=0 on the success event.
+
+No matrix inverse square root is computed. To apply Q_ell to W=X^T U,
+start Y_0=0 and perform the fixed recursion
+
+  Y_(j+1)=P^(-1)[W-(G-G0)Y_j], j=0,...,ell-1.
+
+Each P solve is a Cholesky solve, each G action is X^T(XY_j), and
+G0 is stored. This is precisely the same symmetric polynomial for every
+column; RHS-dependent stopping is not being used.
+
+The exact Woodbury formula gives
+
+  R=(XX^T+tI)^(-1)=t^(-1)(I-XQ_*X^T).
+
+Therefore Rhat=t^(-1)(I-XQ_ell X^T) satisfies
+
+  0<=Rhat-R<=eta I/t.
+
+This uses XQ_*X^T<=I and is uniform on the ambient nullspace as well.
+In fact Rhat<=I/t on the good event since Q_ell>=0. The looser source
+bound (1+eta)/t also suffices. No condition number of X or positive
+smallest eigenvalue enters this argument.
+
+5. POSITIVE NODES: FACTOR AND ERROR
+-----------------------------------
+For V=RU and S=I+U^TV, Woodbury gives
+
+  D=R-(A+UU^T+tI)^(-1)=VS^(-1)V^T>=0.
+
+The approximate Vhat=Rhat U, Shat=I+U^T Vhat obey Shat>=I. Expanding
+the two V factors and using the inverse-difference identity proves
+
+  ||Dhat-D||<=3 eta a/t^2+eta a^2/t^3.
+
+The coefficient 3 follows from ||Vhat||<=2sqrt(a)/t and
+||Vhat-V||<=eta sqrt(a)/t; both inverse cores have norm at most one.
+Weighting by t^(3/2) and summing the geometric grid gives
+
+  C eta sqrt(a)[rho^-1+rho^-3].
+
+Thus eta<=c rho^4 suffices, with even ell=O(log(2/rho)). Cholesky
+Shat=C C^T and the factor sqrt(w)Vhat C^(-T) have the correct
+orientation: their product with its transpose is w Dhat exactly.
+
+6. DOWNDATES, INCLUDING EXACTLY CRITICAL ENDPOINTS
+-------------------------------------------------
+For B=A-UU^T>=0, S=I-U^T R U is SPD for every t>0. Exact algebra gives
+
+  S^(-1)=I+U^T(B+tI)^(-1)U,
+  ||S^(-1)||<=M=1+a/t,
+  D=(B+tI)^(-1)-R=VS^(-1)V^T,
+  0<=D<=I/t.
+
+This eliminates any need for a downdate-margin parameter. The perturbation
+F_c=U^T(Rhat-R)U is PSD with norm <=eta a/t. Hence
+Shat=S-F_c is SPD whenever eta(a/t)(1+a/t)<=1/2. The source's
+eta<=s_min^2/[4(1+s_min)] is a sufficient simultaneous condition.
+
+Set Y=VS^(-1/2), T=(Vhat-V)S^(-1/2) for analysis only. Then
+||Y||^2<=1/t, ||Y||<=sqrt(aM)/t, ||T||<=eta sqrt(aM)/t.
+Expanding (Y+T)(I-S^(-1/2)F_cS^(-1/2))^(-1)(Y+T)^T proves
+
+  ||Dhat-D||<=8 eta[a/t^2+a^2/t^3].
+
+The use of ||Y||^2<=1/t in the first term is valid and essential to
+this power. The same eta=c rho^4 handles both SPD and total error.
+The output uses only the small SPD Cholesky, not the analytical S^(-1/2).
+
+7. SIGNED UPDATES AND INTRINSIC CANCELLATION NORMALIZATION
+--------------------------------------------------------
+The direct signed core S=J+U^T R U is invertible and satisfies
+S^(-1)=J-JU^T(B+tI)^(-1)UJ. Its norm is <=1+a/t. The source's
+perturbation bound (S2) follows by an ordinary inverse-difference
+expansion; eta=c rho^8 suffices. Symmetric congruence elimination and
+scalar square roots give signed factors without an eigenvalue oracle.
+
+For a fully specified elimination, FIRST search all remaining diagonal
+entries and permute any nonzero one into the pivot. Only if ALL those
+diagonals vanish, use a nonzero off-diagonal a_ij and replace e_i by
+e_i+e_j, giving pivot 2a_ij!=0. The source's shorter instruction is
+otherwise ambiguous: replacing an arbitrary zero-diagonal vector by
+its sum with another does not always create a pivot; [[0,1],[1,-2]]
+is a counterexample. The stated search convention repairs that local
+implementation detail in O(r^3). Alternatively try e_i+e_j and then
+e_i+2e_j; one succeeds whenever a_ij!=0. None of this affects the
+strongest theorem, whose simpler two-PSD-call proof avoids the issue.
+
+An easier complete proof uses P_+/P_-=(I+/-J)/2 and C=A+U_+U_+^T.
+Then C>=A,B and has raw factor [X,U_+]. A positive call for C-A and
+a downdate call for C-B, subtracted in this order, give B^(1/2)-A^(1/2).
+The base width grows by at most a constant factor. If it exceeds N,
+QR of the transpose reduces the covariance factor to N columns in
+O(m^3), since then N=O(m). Two independent sketches with delta/2
+give the claimed union bound. No arbitrary indefinite solver is needed.
+
+For intrinsic error, compute exact thin QR U=QR, form C0=RJR^T and
+c=||C0||_F. These cost O(Nr^2+r^3), inside the claimed budget.
+If c=0 then E=0 exactly. Otherwise
+
+  ||E||=||C0||<=c<=sqrt(r)||E||.
+
+PSD Cholesky of cI+C0 is valid with zero pivots: a zero diagonal of
+a PSD Schur residual forces its row/column to vanish, so that column
+can be skipped. Let LL^T=cI+C0 and set
+
+  Uc=Q[L,sqrt(c)I], Jc=diag(I,-I).
+
+Then Uc Jc Uc^T=E and ||Uc||^2<=3c<=3sqrt(r)||E||. Invoke the
+signed representation-scale theorem with eps'=eps/(sqrt(3) r^(1/4)).
+It gives exactly eps||E||^(1/2). The quarter root of r uses two scalar
+square roots. The factor width at most 2r and this polynomial change
+of eps alter only constants and logarithmic budgets. In the two-call
+implementation the positive and negative column groups each have at
+most r columns, so the dimension bookkeeping is especially direct.
+
+All cancellation is performed inside the exact r-dimensional core.
+There is no factor-condition-dependent iteration count. In finite
+precision this cancellation would require a separate analysis, which
+is correctly not claimed.
+
+8. THE ALTERNATIVE EXACT DOWNDATE REFACTORIZATION
+-------------------------------------------------
+On an injective sketch of span(X), the solution sets of
+(S0 X)C=S0 U and XC=U coincide, and their kernels agree. Exact
+rank-revealing QR plus SPD solves implements the minimum-norm solution
+without a pseudoinverse oracle. Its range lies in range(X^T), and the
+PSD downdate promise forces CC^T<=I on that support.
+
+For thin QR C=Q R, PSD Cholesky L L^T=I-RR^T and
+T=I+Q(L-I)Q^T give TT^T=I-CC^T. Thus
+
+  Y=XT=X+(XQ)(L-I)Q^T
+
+satisfies YY^T=A-UU^T. The displayed low-rank products cost O(Nmr),
+not O(Nm^2); the other work is ~O(Nm+m^3). A positive-update call
+on (Y,U) proves the downdate theorem again. Failure tests and sketches
+can be budgeted sequentially with a union bound. This is a covariance
+factorization, not the principal square root, as the source correctly says.
+
+9. FULL COST, STORAGE, AND FAILURE CAP
+-------------------------------------
+For each semidefinite call:
+
+  sketch/Gram setup:                  ~Nm+~m^3,
+  reusable X^T U:                     Nmr,
+  q positive shifts:                  q m^3,
+  ell fixed raw iterations per shift: q ell Nmr,
+  core construction/normalization:    q(Nr^2+r^3).
+
+Since r<=m<=N, these give ~O(Nmr+m^3). Both q=O(log^2(2r/eps))
+and ell=O(log(2r/eps)) are fixed before the solve loops. Repeated
+cubic shifted-core factorizations are logarithmic overhead, not hidden
+rank dependence. Intrinsic normalization and a constant number of calls
+preserve the bound. All wide-base exceptions have the constant-factor
+or QR handling stated above.
+
+Every loop is capped. The sketched Gram is always PSD and P=G0+tI
+is always SPD, even if the OSE is bad. Any later forbidden Cholesky or
+zero pivot causes immediate zero output. On the embedding success
+event the proved inequalities ensure that no such test fails. Large
+intermediate values on a bad event do not change the exact-real operation
+count; their bit cost is outside the model.
+
+Storage is O(Nm+Nr polylog(2r/eps)+m^2 polylog(2m/delta)), with
+streamed shifted cores. Explicit dense expansion needs additional N^2
+storage if retained and O(N^2 K) arithmetic. The theorem returns factors.
+
+10. EXACT-GRAM COMPARISON AND PRIORITY LIMITS
+--------------------------------------------
+Forming G=X^T X exactly and applying the SAME quadrature and Woodbury
+factors gives a concrete deterministic baseline
+
+  ~O(Nm^2+m^3).
+
+The same intrinsic signed normalization costs O(Nr^2+r^3), so this
+comparison extends to the strongest signed theorem as well. The candidate
+replaces the tall Gram cost Nm^2 with Nmr. Ignoring logarithms, the ratio is
+
+  (Nm^2+m^3)/(Nmr+m^3),
+
+at most order m/r. For N=Theta(m), both are cubic; r=m also removes
+the order gain. For N=m^2,r=1, factor construction improves from
+order m^4 to order m^3. Dense output in that example still costs
+order N^2 and can dominate both constructions.
+
+This comparison proves a gain over that specified exact-Gram route.
+It does not prove dominance over all algorithms composed from prior work.
+BCKS2021 already computes general principal matrix-function corrections
+without a supplied base root; its projected square-root approximant is
+PSD in the positive-update case. SDA2023/2024 already explicitly treats
+downdates and splitting indefinite perturbations into two semidefinite
+ones. Their existence makes signed closure and no-base-root claims
+insufficient novelty arguments. Primary PDFs checked:
+  https://arxiv.org/pdf/2008.11501
+  https://arxiv.org/pdf/2201.13156
+
+The dedicated SOTA audit correctly identifies the routine-composition
+hazard and the distinction between update-relative and correction-relative
+error. This audit confirms the precise arithmetic theorem; it does not
+certify its novelty or call it a seminal advance.
+
+11. OTHER SCOPE CHECKS
+-----------------------
+The scalar-model caveat for general alpha is real. Fixed dyadic powers
+use repeated square roots; arbitrary fixed alpha needs an explicitly
+charged scalar-power evaluation or an added primitive. The pure square-
+root theorem audited here has no such missing primitive.
+
+The standard strip estimate used above was checked against Trefethen--
+Weideman, The Exponentially Convergent Trapezoidal Rule, Theorem 5.1:
+  https://people.maths.ox.ac.uk/trefethen/publication/PDF/2014_149.pdf
+Its decay and uniform strip L1 hypotheses hold for this resolvent
+integrand. The matrix operator-norm deduction is the scalarization
+argument already given above.
+
+No numerical experiment was needed to replace a proof step in this audit.

@@ -16,7 +16,7 @@ theorem hierarchyConstant_eq_defectConstant (L : ℕ) : hierarchyConstant L = de
 theorem accuracyScale_eq_hierarchyConstant (L : ℕ) :
     accuracyScale L = 1000000*(hierarchyConstant L+1) := by
   rw [hierarchyConstant_eq_defectConstant]
-  rfl
+  norm_num [accuracyScale]
 
 theorem hierarchy_literal_final_budget (L : ℕ) (h θ : ℝ)
     (hh : 0 < h) (hθ : 0 < θ) (hθh : θ ≤ h) :

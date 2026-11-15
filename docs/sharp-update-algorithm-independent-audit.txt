@@ -1,0 +1,681 @@
+INDEPENDENT AUDIT: SHARP-RANK RAW MATRIX-FUNCTION UPDATES
+======================================================
+Auditor: /root/faust_fawzi_independent_referee
+Date: 2026-11-15 UTC
+
+Actual sources read completely:
+
+  docs/sharp-rank-algorithm-search.txt (432 lines)
+  SHA256 a8f2a21cbbdd444e2d39c77745ade87826d74638e6ccdbdc9e446e353795e143
+
+  docs/fresh-quadratic-bridge.txt (456 lines at handoff)
+  SHA256 cfdfe74d5d99811af62796f9a574cae25c62aaa606b8cf23e75186cc5cde3445
+
+Supporting sources inspected:
+  docs/sqrt-update-independent-audit.txt (the preceding baseline audit),
+  docs/sharp-fractional-holder.tex (the actual Gaussian lemma/proof),
+  and the general-J raw-resolvent argument in
+  docs/partial-spectrum-fresh-search.txt.
+
+The preceding baseline positive/downdate/intrinsic signed-update audit
+and the separate sharp minimax compression lower bounds are accepted as
+inputs to this audit. The present review checks their algorithmic
+connection, not the entire earlier lower-bound and priority literature.
+
+VERDICT AND PRECISE SCOPE
+-------------------------
+PASS for the explicitly constructed sharp-rank PSD-endpoint square-root
+algorithm in sharp-rank-algorithm-search.txt. In exact randomized real
+arithmetic, with comparisons, positive scalar square roots and discrete
+randomness, it has error eps||E||^(1/2), conventional cost
+~O(Nmr+m^3), and for fixed r leading returned width
+
+  [r/pi^2+o_r(1)] log^2(1/eps).
+
+Its positive and promised negative semidefinite updates retain a single
+PSD factor (with the appropriate overall sign). The singular signed
+core formula does not double the perturbation rank.
+
+PASS for the order-optimal whole-line Hermitian and rectangular update
+algorithms in fresh-quadratic-bridge.txt, including intrinsic scaling,
+general singular symmetric raw cores, exact conjugation/parity, real
+factor extraction and the stated conventional arithmetic/output costs.
+
+PASS for the sharp leading-rank upgrade when the shared scalar
+construction is adapted to the half-strip and, for general alpha, the
+asymmetric slopes as explained in section 11 below. For alpha=1/2 this
+uses only the same ordinary scalar primitives. Fixed dyadic alpha also
+uses only arithmetic and scalar square roots, with alpha-dependent
+constants. Arbitrary fixed non-dyadic alpha retains the note's explicit
+additional scalar-power qualification; this is NOT an unqualified
+arithmetic-and-square-root-only theorem for arbitrary real alpha.
+
+No substantive mathematical repair was needed. A literal perturbation
+lemma should include nu<=1 when using ||Vhat||<=2/t; the actual selected
+iteration budgets already ensure this. Integer ceilings and lattice
+indices are implemented by bounded arithmetic/comparison searches,
+within the claimed scalar work, not taken as new real primitives.
+
+NOT CLAIMED/NOT AUDITED: finite-word stability, input bit complexity,
+hardware performance, finite-eps best rank, optimal running time, global
+novelty, an original product-LRA solution, or omega=2. The exact arithmetic
+qualification is essential for the polynomial-square window evaluation.
+
+1. INTRINSIC NORMALIZATION AND THE SINGULAR CORE
+----------------------------------------------
+Exact thin rank-revealing QR U=QR gives Q^TQ=I_k and E=QCQ^T,
+where C=RJR^T in the square-root note or C=RKR^T in the bridge.
+For c=||C||_F, orthonormality gives
+
+  ||E||=||C|| <= c <= sqrt(k)||E||.
+
+If c=0 the update is exactly zero. The computation costs
+O(Nr^2+r^3), within Nmr+m^3 because r<=m<=N. Cancellation in the
+supplied factors does not enter the error normalization or iteration
+count. No eigenvalue, sign decomposition or inverse of C is needed.
+
+For a positive shift in the PSD-endpoint case, or a nonreal shift z in
+the general Hermitian case, define V=R Q, M=Q^T RQ and
+
+  H=(I+MC)^(-1), K=C H.
+
+The determinant lemma and invertibility of both endpoint resolvents
+prove I+MC is invertible even when C is singular. Woodbury gives
+
+  H=I-Q^T R'Q C,
+  K=C(I+MC)^(-1)=(I+CM)^(-1)C,
+  R-R'=V K V^T.
+
+Thus K is symmetric (complex symmetric for a complex shift) and its
+rank is exactly rank(C). The transpose, not adjoint, is correct for a
+real symmetric matrix's complex resolvent. The endpoint resolvent bound
+gives ||H||<=1+c/t at every relevant positive/imaginary shift. This
+identity is the substantive reason that a nearly critical downdate or a
+singular signed core requires no additional condition parameter.
+
+2. PSD SQUARE-ROOT NORMALIZATION AND THE APPROACHING STRIP
+-------------------------------------------------------
+For t=c exp(z) the square-root note's normalized integrand is
+
+  F(z)=c exp(3z/2)[(A+tI)^(-1)-(B+tI)^(-1)]/pi,
+
+and the desired difference is sqrt(c) integral F. The factor c, rather
+than c^(3/2), in this normalized F is correct.
+
+For PSD endpoints and |arg t|<=d<pi,
+
+  |lambda+t| >= cos(d/2)(lambda+|t|), lambda>=0.
+
+Bounding resolvents separately and by their difference yields exactly
+E1. On the real axis both resolvents lie between zero and I/t, so their
+difference has norm at most 1/t, also for an indefinite update. The
+second bound is c/t^2. Hence ||F(x)||<=1, as used in the scalar budget.
+
+The computed p is a positive lower approximation to pi, with p>3.
+Putting d=p-L^(-1/4) gives d>2 for L>=1 and pi-d>=L^(-1/4).
+Since sin((pi-d)/2)>=(pi-d)/pi, the envelope constant satisfies
+
+  M_d<=2*pi*sqrt(L)<8*sqrt(L).
+
+Consequently the proof is uniform for the single algorithm's widening
+strip. It does not illegitimately interchange two fixed-strip limits.
+
+3. ALL EXPLICIT GAUSSIAN WINDOW BUDGETS CHECK
+--------------------------------------------
+The parameter choices rho=eps/(2^10 k^(1/4)), n least with 2^(-n)<=rho,
+L=n lambda_+, ell=L^(3/4)+32 and b=2sqrt(L)+16 use only permitted
+operations. Atanh(1/3) and Machin series compute certified rational
+log(2) and pi intervals of width 2^(-256n) with O(n) arithmetic.
+The interval errors imply L=log(1/rho)+O(1) and p=pi+o(1).
+
+For retained intervals meeting [-2(L+ell),2(L+ell)],
+
+  J_0 ell<=4L+6ell<=202L,
+  h_j<=2pi^2/ell<1,
+  C_0=2M_d exp(d^2+1/16)<=2^20 sqrt(L).
+
+The Gaussian boundary estimate is the one actually proved in the
+supporting manuscript. Since h_j=2p d/Q_j and p<=pi, its trapezoid
+exponent 2pi d/h_j is at least Q_j; replacing pi by p therefore improves
+the required error inequality instead of perturbing an ideal lattice.
+
+The omitted-window bound 128sqrt(L) exp(-L-ell) and the summed infinite
+trapezoid bound 4C_0 J_0 ell exp(-L-3ell) are each below e^(-L)/64
+already for L>=1 with the stated buffers. For discarded lattice tails,
+b-h_j>=2sqrt(L)+15, so (b-h_j)^2>=2L+128. Monotone Gaussian-tail
+comparison gives the stated 808L exp(-2L-128) bound, also below
+e^(-L)/64. Thus G2's relaxed e^(-L)/8 allowance is valid.
+
+For node counting, Q_j<= (L-m_j)_+ +3ell, and
+
+  integral (L-|x|/2)_+ dx =2L^2.
+
+The upper Riemann-sum and density overhead are O(L ell+ell^2), and
+window enlargement costs O(L^2 b/ell). With ell=L^(3/4)+32 and
+b=2sqrt(L)+16 these are O(L^(7/4)). Hence
+
+  q<=L^2/(p d)+O(L^(7/4))
+    =L^2/pi^2+O(L^(7/4)).
+
+All constants here are independent of spectra and dimensions. A simple
+coarse check for the displayed bound is b<=ell, Q_j<=100L and
+2p d>12. These give q<=5050L^2+13L, smaller than 2^13(L+1)^2.
+The Gaussian lattice sum h sum exp(-(nh-u)^2)<=sqrt(pi)+2h gives
+total ideal coefficient mass at most 4J_0 ell<=808L, proving G4.
+
+4. POSITIVE WINDOW WEIGHTS WITHOUT A FUNCTION OR INTEGRAL ORACLE
+--------------------------------------------------------------
+The clipped interval W is obtained by comparisons. On it |w|<=R_0,
+where R_0=4sqrt(L+1), so z=w^2/2<=8(L+1). For D=ceil[64(L+1)],
+Taylor's real negative-exponential remainder gives
+
+  |P_D(w)-exp(-w^2/2)|
+     <= z^(D+1)/(D+1)!
+     <= (e/8)^(D+1) <= 2^(-D).
+
+It follows that |P_D^2-exp(-w^2)|<=3*2^(-D). Integrating this bound
+over W, adding the tails beyond R_0 and the tiny p-normalization error,
+gives the stated uniform absolute window error W2 (and certainly its
+allowed relaxed constant 8). Absolute error suffices for tiny weights.
+
+The square of a real polynomial is nonnegative. Its integral over any
+positive-length W is positive because P_D is not the zero polynomial.
+Thus the actually computed coefficients are nonnegative even when the
+window is tiny. A zero-length or empty interval contributes zero and can
+be omitted. No approximation is made after this exact polynomial
+evaluation, so severe coefficient cancellation in floating point does
+not invalidate the exact-arithmetic assertion.
+
+Convolution precomputes P_D^2 in O(D^2); its primitive is an ordinary
+degree-O(D) polynomial with explicitly divided coefficients. Horner
+evaluation at the two clipped endpoints costs O(D) per node. Therefore
+all weights cost O(D^2+qD)=O(L^3) field operations. There is no erf,
+exp or integration primitive in this construction.
+
+Multiplying the absolute weight error by the coarse q bound, h_j<1
+and ||F(x)||<=1 gives an error below e^(-L)/16. The actual coefficient
+mass is at most 2^10(L+1), as used later.
+
+5. POSITIVE EXPONENTIAL NODES, DERIVATIVE AND POLE PERTURBATION
+------------------------------------------------------------
+All log nodes satisfy |x|<=B_0=2L+3ell+b=O(L+1). The least power of
+two M_0>=8(B_0+1) satisfies M_0<=16(B_0+1). Thus |x/M_0|<=1/8.
+Taylor's remainder, for N_0=ceil[64(L+1)], gives positive P and relative
+error at most 2^(-2N_0). In particular
+
+  |log(P^M_0)-x| <=2M_0*2^(-2N_0)
+                    <=exp[-32(L+1)].
+
+This logarithm is analysis only. Computing P and then its power by
+repeated squaring uses O(L) arithmetic per node, or O(L^3) overall.
+The positive physical node c*P^M_0 has an accuracy independent of the
+magnitude of c. It remains on the positive real axis exactly.
+
+For D_t=R_A-R_B, the identity D_t'=-R_A D_t-D_t R_B is valid without
+commuting A and B. Together with ||D_t||<=min(1/t,c/t^2), it gives
+||F'(x)||<=7/2<4. Therefore the logarithmic pole perturbation, weighted
+by the actual coefficient mass, contributes below e^(-L)/16 in the
+normalized problem. Replacing 1/pi by 1/p has the separately stated
+tiny error. The final physical weights a_hat*t_hat*sqrt(t_hat)/p are
+nonnegative and use only arithmetic and positive scalar square roots.
+
+6. COMMON RAW PSD INVERSES, CORE ERRORS AND FIXED ITERATION COUNT
+---------------------------------------------------------------
+The preceding baseline audit supplies the common even-Neumann inverse
+polynomial, with 0<=Rhat-R_A<=eta I/t simultaneously for all positive
+shifts on one OSE event. This is an operator, not an RHS-dependent
+stopping rule; hence Mhat=Q^T Rhat Q is exactly symmetric.
+
+Write mu=1+c/t. If eta(c/t)mu<=1/2, inverse perturbation gives
+
+  ||Hhat||<=2mu, ||Khat||<=2c mu,
+  ||Khat-K||<=2eta c^2 mu^2/t.
+
+With eta<=1, ||V||<=1/t, ||Vhat||<=2/t and ||Vhat-V||<=eta/t.
+Expanding first in one V factor, then the other, then K gives the
+coefficients 4+2 and 2, proving P1 exactly as stated.
+
+After multiplication by t^(3/2), its scaled scalar powers are
+s^(-1/2), s^(-3/2), s^(-5/2) and s^(-7/2). Since
+e^(-B_1)<=s<=e^(B_1) and sum a_hat<=2^10(L+1), C=2^14 in P2 is
+sufficient. The selected least even ell_inv>=16(B_0+L+10), with
+eta=4^(-ell_inv), ensures eta<=1, the core invertibility condition and
+the claimed error bound with a large universal margin. Its length is
+O(L+1), with no downdate-margin or spectral condition dependence.
+
+Khat=C(I+Mhat C)^(-1) is exactly symmetric and has rank rank(C),
+also when C is singular. If C>=0 it is PSD. If C<=0 and B>=0, write
+C=-D^2 analytically: I-D M D has inverse norm at most mu, so its
+small perturbation I-D Mhat D remains positive definite under the
+same condition. Hence Khat<=0. This justifies both one-sign variants
+without a doubled factorization.
+
+7. WIDTH, COST, FAILURE AND THE COMPUTATIONAL MODEL
+---------------------------------------------------
+The specified congruence elimination is valid: search all remaining
+diagonal entries first; only when all vanish use a nonzero off-diagonal
+entry a_ij and the invertible basis shear e_i to e_i+e_j, producing
+diagonal 2a_ij. Each nonzero pivot reduces rank by one. A zero residual
+can be omitted. Scaling nonzero pivots by sqrt(abs(pivot)) yields
+exactly rank(C) signed columns at each node, in O(r^3) core arithmetic.
+Multiplication by Vhat costs O(Nr^2), and no eigenvalue calculation
+is hidden.
+
+The combined quadrature, scalar, pole and solve errors are bounded by
+sqrt(c)e^(-L). Since sqrt(c)<=k^(1/4)||E||^(1/2) and e^(-L)<=rho,
+the requested intrinsic error follows. L=log(1/eps)+O(log(2r)), giving
+the claimed leading width, uniformly over dimensions and spectra.
+
+The full work is the stated
+
+  ~O(Nm+m^3)+O(Nr^2+r^3)
+    +O(Nmr L^3+m^3 L^2+L^3).
+
+The r<=m<=N inequalities absorb every m^2r, Nr^2 and r^3 term.
+All scalar setup/evaluation has been counted. Ceilings, powers of two
+and interval/lattice indices can be found by bounded comparison loops
+or binary searches; even direct bounded searches fit within O(L^3).
+No floor/log/exp real primitive is needed.
+
+All nodes and iteration counts are fixed before the solves. On a failed
+sketch, singular core inverses or failed PSD tests return zero after
+bounded work. On the good event no such test fails. G0+tI is always
+SPD, even on a bad event. Thus the operation cap applies to every
+random outcome. The one OSE event controls all shifts/RHS at once;
+there is no union bound over infinitely many poles and no extra failure
+or dimension factor in the width. Explicit N-by-N expansion costs
+O(N^2*r*q), as separately charged.
+
+8. GENERAL SIGNED RAW RESOLVENT: INDEPENDENT DERIVATION
+------------------------------------------------------
+For S=XJX^T, arbitrary real symmetric J, put G=X^TX and G0=L^TL.
+On the OSE event X=ZL with
+
+  (1-eta0)I <= Z^TZ <= (1+eta0)I, eta0=1/4,
+  G-G0=L^TDL, ||D||<=eta0.
+
+For z=1/zeta with zeta=it, the bridge's Woodbury equation, coarse
+inverse and iteration are correct even when J is singular. Multiplying
+the coefficient error by L gives exactly
+
+  L e_(ell+1)=z K0(I-zK0)^(-1)D L e_ell,
+  K0=LJL^T.
+
+K0 is real symmetric. For purely imaginary z,
+||zK0(I-zK0)^(-1)||<=1. Also the exact physical correction is
+[(I-zS)^(-1)-I]h and has norm at most ||h||. Using the two Z singular
+value bounds therefore gives the explicit physical operator estimate
+
+  ||Rhat_zeta-R_zeta||
+     <=sqrt((1+eta0)/(1-eta0))*eta0^ell/t
+     =sqrt(5/3)*eta0^ell/t.
+
+Thus C0<2 works independently of J, the base spectrum, rank deficiency
+and the physical RHS. The statement applies simultaneously to every
+column of Q and indeed every h, so there is no columnwise norm loss.
+
+Let B0_z=A0_z^(-1)J. It is complex symmetric. The implemented finite
+inverse operator has terms z^j B0_z[(G-G0)B0_z]^j. Each is the
+alternating palindrome B0_z, G-G0, ..., B0_z and is exactly symmetric
+under transpose. The outer physical resolvent formula preserves that
+symmetry. Real coefficients and the same fixed iteration count give
+Rhat_(-it)=conj(Rhat_(it)) exactly. Neither positivity nor normality
+of the approximate operator is required.
+
+The core perturbation proof in section 6 now applies in complex norm,
+with nu=sqrt(5/3)*eta0^ell<=1. This proves bridge (6)--(7), including
+the same constants and singular-C rank bound.
+
+9. WHOLE-LINE INTEGRALS, SCALAR QUALIFICATION AND ORDER-OPTIMAL COST
+------------------------------------------------------------------
+With D=R_S-R_T, Im D_(it)=t[(S^2+t^2)^(-1)-(T^2+t^2)^(-1)]. Hence
+the even-map difference is +c_e integral t^alpha Im D_(it)dt.
+The real part is S(S^2+t^2)^(-1)-T(T^2+t^2)^(-1), so the odd-map
+difference is -c_o integral t^alpha Re D_(it)dt. Both signs in (8)
+are correct. The complex branches are single-pole combinations.
+
+For analytic quadrature, real/imaginary notation on the real y-axis is
+extended by the holomorphic paired-resolvent expressions
+(D_(it)-D_(-it))/(2i) and (D_(it)+D_(-it))/2. It is not a claim that
+literal complex conjugation is holomorphic. These identities are
+already supplied by the source's rational-function derivation.
+
+At t=a exp(y), |Im(plus/minus i t)|>=a exp(Re y)cos(d) on
+|Im y|<=d<pi/2. This proves the claimed strip envelope by separate
+resolvents and their difference, with no base norm. The uniform
+trapezoid construction is therefore valid. Weighting (7) gives the
+displayed scaled powers, whose geometric sum is bounded by a fixed
+multiple of s_min^(alpha-4). Taking nu<=c_alpha*rho^(4/alpha)
+makes this O(rho*a^alpha) and ensures the inverse perturbation
+condition. Only O_alpha(log(1/rho)) raw iterations are needed.
+
+Intrinsic a<=sqrt(r)||E||, and rho=eps/[C_alpha(r+1)], convert this
+to eps||E||^alpha. At each real node, both real and imaginary parts
+share the same [Re Vhat,Im Vhat] feature block and have rank <=2r.
+Combining even/odd coefficients before factor extraction therefore
+does not increase the node rank beyond 2r for a real homogeneous map.
+
+All raw, small-core, factor extraction and setup operations have the
+claimed conventional bound; the arbitrary dense symmetric J only adds
+m^2r thin operations or m^3 setup. A fixed dyadic alpha can compute
+t^(alpha+1) by scalar square roots and powers. Dyadic tail cutoffs
+can be selected by comparisons with successive powers of 2^(-alpha),
+without an unsupported reciprocal-exponent root primitive.
+
+For arbitrary real non-dyadic alpha, the source explicitly requires
+additional charged scalar-power evaluations. The audit preserves that
+qualification. It does not infer a bit-independent arithmetic-only
+implementation of a^alpha for arbitrary alpha.
+
+10. RECTANGULAR DILATION, PARITY AND EXPLICIT OUTPUT
+----------------------------------------------------
+The dilation uses ambient dimension N+m, latent width 2m and update
+rank at most 2r. Since N>=m, all setup/thin actions remain inside the
+same ~O_alpha(Nmr+m^3) bound. The update norm is exactly ||Delta||,
+so intrinsic normalization gives the claimed error after block
+extraction, including at singular endpoints.
+
+The blockwise OSE preserves the reverse Gram sandwich and enforces
+the exact parity algebra. With Qsign the latent signature,
+
+  Qsign B0_z Qsign=-B0_(-z),
+  Qsign(G-G0)Qsign=G-G0.
+
+The degree-j alternating term acquires (-1)^(j+1), giving one overall
+minus sign after replacing z by -z. The external resolvent scaling
+then proves P Rhat_(it)P=-conj(Rhat_(it)) as stated.
+
+The physical core identity can be written
+
+  Dhat=Rhat E_d(I+Rhat E_d)^(-1)Rhat,
+
+which requires no inverse of Rhat. Invertibility of the middle matrix
+follows from the same small-core determinant lemma. Since P E_d P=-E_d,
+direct substitution gives P Dhat P=-conj(Dhat). Thus diagonal blocks
+are purely imaginary and off-diagonal blocks are real, exactly rather
+than approximately. Their complex ranks are at most rank(E_d)<=2r.
+Removing the scalar i from a purely imaginary block gives a real matrix
+with the same rank; a real off-diagonal block also has unchanged rank.
+This is why extraction costs 2r per node rather than 4r.
+
+The representation is independent of the arbitrary QR basis chosen
+for the update: the physical formula uses E_d itself. A generic
+realification may initially use 4r columns; exact thin QR and small
+rank factorization compress each extracted block to at most 2r in
+O(Nr^2+r^3) work. The polar block is rectangular and can use ordinary
+rank factorization, not a nonexistent rectangular signed Cholesky.
+
+Right absolute-power output costs O(m^2*r*q), and polar output
+O(Nm*r*q), both absorbed by ~O_alpha(Nmr+m^3). Left absolute-power
+N-by-N expansion has the stated extra O(N^2*r*q) cost. No alpha=0
+discontinuous polar-factor conclusion is valid or claimed.
+
+11. MAKING THE SHARP HALF-STRIP/GENERAL-ALPHA UPGRADE LITERAL
+-----------------------------------------------------------
+The bridge deliberately states its sharp upgrade conditional on the
+shared scalar realization. The preceding audit supplies that realization;
+the following modular parameter adaptation makes the conclusion precise.
+
+For alpha=1/2 whole-line maps, use the same computed p<=pi but set
+d=p/2-L^(-1/4), not p-L^(-1/4). The poles remain purely imaginary
+because only the proof strip changes. Its distance to pi/2 is at least
+L^(-1/4), and cos(d)>=2L^(-1/4)/pi. The normalized logarithmic
+integrands therefore have a polynomial envelope C sqrt(L). With this
+half-strip, the same Gaussian/windows, clipped polynomial squares,
+positive exp-node approximation and common raw solves apply. Enlarging
+the coarse q bound by a universal constant, if needed, does not affect
+the leading coefficient or scalar O(L^3) work. The actual integrand's
+real-axis norm and derivative have uniform constant bounds, by the same
+resolvent-difference argument, so all weight/node perturbations remain
+within the budget. A common half-strip node is factored at width 2r
+for real maps and at width r for a single complex branch.
+
+For fixed general alpha use g(x)=alpha*(-x)_++beta*x_+ and retain
+windows meeting [-(L+ell)/alpha,(L+ell)/beta]. Use the same
+Q_j=max(ell,L-min_(I_j)g+3ell), h_j=2p d/Q_j. Bounds depend on fixed
+alpha through the interval lengths and envelope constants. Fixed
+alpha-dependent buffers can replace 32 and 16, or a finite-small-L
+fallback to the already proved uniform-grid algorithm can be used.
+The Gaussian proof then gives
+
+  q <= L^2/(4p d alpha beta)+O_alpha(L^(7/4)).
+
+The retained nodes still have |x|=O_alpha(L+1). Degree-O_alpha(L)
+Taylor squares and scaled exponential polynomials therefore cost
+O_alpha(L^3) scalar arithmetic, with exponentially small absolute
+window and logarithmic node errors. The normalized integrand derivative
+is O_alpha(1), from ||D_t'||<=2||D_t||/t. Small-core errors need only
+nu=exp[-C_alpha L], hence O_alpha(L) fixed raw iterations. All scalar
+power qualifications from section 9 remain in force.
+
+At the limiting strip boundaries, q times the proved node ranks gives
+
+  PSD power:          r/(4*pi^2*alpha*beta),
+  one complex branch: r/(2*pi^2*alpha*beta),
+  real whole-line:    r/(  pi^2*alpha*beta),
+  rectangular maps:  r/(  pi^2*alpha*beta)
+
+as the leading coefficients of log^2(1/eps). Rectangular extraction
+uses its actual 2r node rank, not the generic dilation's realification
+bound. For alpha=1/2 these become r/pi^2, 2r/pi^2, 4r/pi^2 and
+4r/pi^2, respectively. Thus the conditional sharp implementation gate
+is closed in the specified exact-arithmetic/scalar-power models.
+
+12. ADDITIONAL PSD RAW BASE AND THE UNRESOLVED ORIGINAL TARGET
+-------------------------------------------------------------
+If S=XJX^T is PSD, then J restricted to row(X) is PSD, so K0=LJL^T
+is PSD on every sketch outcome because row(L) is contained in row(X).
+On the successful embedding event X=ZL and Z^TZ is bounded around I.
+Exact small PSD Cholesky K0=HH^T then gives the implicit factor
+Y=XL^dagger H=ZH and YY^T=S. The proxy H^TH has the same constant
+Gram sandwich. L^dagger and H can be computed on the small support
+with O(m^3) ordinary arithmetic/square roots; thin Y actions cost
+O(Nmr+m^2r). No N-by-m transformed factor is materialized. The
+successful-event qualification is essential for YY^T=S and is stated
+in the source.
+
+The final obstruction discussion is also accurate. Squaring a shifted
+signed raw matrix introduces JGJ-2tJ, which contains the unknown true
+Gram. A supported-coordinate mass inverse is not thereby an explicit
+small core. The purely imaginary contraction does not extend with a
+uniform constant to arbitrarily near-real nonzero threshold poles.
+None of the audited neighboring update theorems resolves the original
+product-LRA hard gate or proves general quadratic matrix multiplication.
+
+13. ACTUAL COMBINED MANUSCRIPT: EXACT-SOURCE AUDIT
+-------------------------------------------------
+Date: 2026-11-15 UTC.
+Actual paper:
+  docs/sharp-matrix-function-updates.tex
+
+I read every line of the original 741-line frozen source, SHA256
+  84ff24101cd0b495a475e6fbc2bb0e3ea17861a7ccdd9d66c903c6b9d828cdcc,
+including all theorem quantifiers, definitions, proofs, costs, scalar
+implementation details, source comparisons and bibliography.
+
+The initially associated 11-page PDF artifact had SHA256
+  89896aa96c6513a080c5ada530069277fe2ae293ab6ea0f1b7070d7cd225806e.
+The root coordinator separately owns the build/rendering check and the
+final PDF after the source corrections below. This audit's source PASS
+does not assert that this initial PDF contains the later corrections.
+
+Two precise statement corrections were requested and applied by root:
+
+ (i) The original core lemma's phrase "these cores ... are symmetric"
+     could include Hhat=(I+Mhat C)^(-1), which need not be symmetric.
+     The corrected source says Hhat exists and Mhat,Khat are symmetric;
+     the proof now names the resolvents and M,K as complex symmetric
+     and explicitly says H need not be symmetric. For example,
+     M=diag(1/10,1/5) and C=[[0,1],[1,0]] give a nonsymmetric H even
+     with PSD endpoints A=diag(9,4), B=A+C and positive shift t=1.
+     The proof and algorithm never required H to be symmetric, so no
+     bound, rank or operation count changed.
+
+(ii) The signed-raw paragraph now explicitly repeats X,U,K dimensions
+     and 1<=r<=m<=N, rather than inheriting a preceding theorem's local
+     variables. The whole-line theorem explicitly quantifies eps,delta
+     in (0,1). The rectangular theorem now says 1<=r<=m and likewise
+     quantifies eps,delta. These are the intended size assumptions
+     actually used by the cost proof.
+
+The symmetry-only intermediate source had SHA256
+  06e9e308eac3b8f34d5708a1272cadf55658bc28b831c7583d87bf1febbed618.
+I reread the corrected source passages. The source incorporating both
+corrections has SHA256
+  1d575478720cf539822645b6c0896d403f82effc8dc5468ef2a82f4be4118ac5.
+
+EXACT-SOURCE VERDICT: PASS at the latter hash. This verdict is for the
+actual combined manuscript after those two statement repairs, rather
+than just the underlying audited notes. No remaining mathematical or
+computational-cost defect was found.
+
+13.1 Imported inputs and scope of sharpness
+
+The paper accurately imports the Gaussian localization lemma as
+Lemma 3.1 of the checked companion sharp-fractional-holder manuscript.
+It states the analytic strip, envelope slopes alpha,beta, positive
+quadrature and precise fixed-strip node coefficient needed. Its own
+moving-strip proof explicitly controls the envelope constants; it does
+not apply an unspecified fixed-d O-constant to a varying d.
+
+The claimed matching rank lower coefficients are imported from the
+separately audited companion results, including the branch/homogeneous
+extensions. The paper states the correct quantifier: fixed r, eps to
+zero, worst case over unrestricted finite dimensions. The lower bound
+for positive rank-r updates is contained in the larger promised PSD
+endpoint class. Real matrices already realize the lower constructions,
+so restricting the algorithm inputs to real matrices does not invalidate
+sharpness. No running-time lower bound or fixed-input best-rank assertion
+is inferred from those compression lower bounds.
+
+13.2 Literal scalar realization and actual physical weights
+
+The constructive lemma's asymmetric retained interval and density give
+q<=L^2/(4*pi*d0*alpha*beta)+O_alpha(L^(7/4)). The computed p lower
+bound, moving d, positive Gaussian window coefficients, clipped Taylor
+squares and positive exponential-node approximations are exactly the
+audited constructions. All constants in the sector/Gaussian bounds are
+computable for fixed alpha. A fixed threshold L_alpha can therefore be
+selected by increasing an integer until their explicit error upper
+bounds fit the desired budget. Clamping L below that threshold is
+independent of the input spectra and changes only alpha-dependent
+constants, not the fixed-r leading coefficient or operation count.
+
+To make the initial constant-precision dependency entirely literal,
+one may compute pi and log(2) intervals of width 2^(-C_alpha(n+1))
+after the halving integer n is known and before setting
+L=n*(log(2))_+ plus its fixed budget shift. O_alpha(n) scalar series
+terms suffice. Since L=Theta_alpha(n+1), this gives the requested
+e^(-C'_alpha L) accuracy without circularity, an exponential oracle,
+or a fixed positive relative error in L. In particular
+n*((log(2))_+-log(2)) is bounded and tends to zero. This is the direct
+n-based realization already explicit in the preceding audited note.
+
+The actual PSD physical weight a_j*c_hat_alpha*t_j^(alpha+1) is
+correct. Normalizing the logarithmic integral by a^alpha does not
+introduce another a^alpha or c_alpha factor into that weight. The
+whole-line weights a_j*t_j^(alpha+1) multiply their displayed c_e,c_o
+or branch coefficients exactly once. Approximating those fixed constants
+to the budgeted relative accuracy has error O_alpha(a^alpha e^(-L)),
+because the actual coefficient mass and normalized integrand are
+uniformly bounded by the stated quantities.
+
+At alpha=1/2 all scalar operations are field operations, comparisons
+and positive square roots. Fixed dyadic alpha uses repeated roots and
+powers as claimed. General non-dyadic alpha retains the explicit
+charged scalar-power qualification in the theorem preamble, lemma,
+node algorithm and interpretation. No unsupported arbitrary-power
+oracle has been introduced by the typesetting.
+
+13.3 Actual stopping budgets, singular inputs and probabilities
+
+The bound B on |log s_j| is computable from retained x_j and the
+certified exponentially small logarithmic node perturbation. A fixed
+rounding allowance bounds all actual nodes; no input logarithm is
+evaluated. The least even iteration length above C_alpha(B+L+1),
+with a sufficiently large computable fixed constant, forces nu<=1,
+the small-core invertibility condition and the total weighted solve
+error after the e^(4B) amplification. Since B=O_alpha(L+1), this is
+O_alpha(L) actual iterations. Scalar comparisons implement the integer
+selection without another real primitive.
+
+The exact QR can find rank by zero tests and ordinary scalar square
+roots. C may be singular and even zero. The zero update returns zero;
+all other core formulas use I+MC rather than C inverse. The common
+inverse polynomials, not independently stopped RHS solves, preserve
+Mhat/Khat symmetry and conjugation. The real signed, one-sign PSD,
+and complex two-factor outputs have their claimed node ranks.
+
+All good-event tests and bounds are uniform over every RHS and shift.
+The sole probabilistic event is the one subspace embedding. Rank/pivot
+searches may terminate early, but every loop has a deterministic cap
+in advance. Singular small inverses or failed required sign tests return
+zero; coarse positive and imaginary solves are always well defined.
+Thus the probability guarantee and all-random-outcomes work/width cap
+are compatible. No PSD promise is checked by an uncharged full-matrix
+computation.
+
+The promised signed raw PSD base extension uses exactly the implicit
+factor Y=XL^dagger H on the OSE event. Its small support operations and
+thin actions have been charged. If its supported width is smaller than
+r, it can be zero-padded to the original m for a literal invocation of
+the earlier theorem, or the same thin-action bound can be read directly;
+either route stays within the original Nmr+m^3 count. The identity
+YY^T=A is only claimed on the good event, as required.
+
+13.4 Rectangular output and source comparisons
+
+The rectangular proof enforces blockwise sketch parity independently
+of the arbitrary perturbation QR basis, then uses the physical Woodbury
+identity to preserve it in the actual approximate node. Extracted blocks
+therefore have real rank at most 2r. The ordinary two-factor rank
+factorization for rectangular polar blocks is correctly distinguished
+from a signed square factorization. Dense right-absolute expansion
+O(m^2*r*L^2) and polar expansion O(Nm*r*L^2) are included in the
+claimed tilde bound; dense left-absolute N-by-N expansion is explicitly
+charged separately. Singular matrices use the continuous fractional
+polar map with zero value on the zero singular space; alpha=0 is not
+covered.
+
+The comparison section correctly labels Nm^2+m^3 as a proved explicit-
+Gram baseline with the same guarantee, not a lower bound for the best
+possible prior implementation. The speedup ratio and the cubic-square
+regime caveat are algebraically correct. It explicitly credits BKS,
+rational-update formulas, BCKS rational Krylov methods, SDA root and
+Riccati methods, FHL scaled-identity structure and known sparse
+embeddings. The BCKS absence of a base-function numerical input and
+its PSD positive-update square-root approximation are acknowledged.
+The printed-claim comparisons agree with sqrt-update-sota-audit.txt;
+the FHL factor-only runtime inference is not misrepresented as a
+printed theorem. The bibliography identifies working companion results
+as such. No global SOTA, priority or novelty certificate is implied.
+
+The paper also preserves the original product-LRA/omega=2 limitation:
+a nonzero shifted-square core still contains the unavailable true Gram.
+Neither this review nor the combined manuscript closes that separate
+research objective. Finite-word stability and input bit complexity
+remain explicitly outside the exact-arithmetic results.
+
+14. FINAL SOURCE DELTA CONFIRMATION
+-----------------------------------
+Date: 2026-11-15 UTC.
+Final source:
+  docs/sharp-matrix-function-updates.tex
+  SHA256 334b439ea2dd72c09e8d6024582e74862590c6cf192e5d48a9e7a43f1f63b3e6
+
+PASS continues to apply at this final hash. I inspected both final edits:
+the first-page status now records the completed actual-copy review, and
+Section 6 explicitly computes constant intervals of width
+2^(-C_alpha(n+1)) after finding n but before defining L. Their geometric
+series require O_alpha(n+1) terms. A sufficiently large fixed constant
+supplies the later error budgets, since L=Theta_alpha(n+1), and
+n*((log(2))_+-log(2)) is bounded and tends to zero. This is precisely
+the noncircular implementation already justified in section 13.2.
+
+For an exact delta check, I read the final source into memory and
+reversed only those two literal text edits. Its SHA256 became
+  1d575478720cf539822645b6c0896d403f82effc8dc5468ef2a82f4be4118ac5,
+exactly the fully audited preceding source hash. Thus no other source
+change is being accepted on the basis of the editorial description.
+The final PDF build and visual check remain the root coordinator's
+separate verification task.

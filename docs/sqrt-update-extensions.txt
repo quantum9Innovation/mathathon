@@ -14,7 +14,10 @@ update energy and the positive quadrature shift alone.
 
 General signed low-rank changes between PSD endpoints follow at the
 same cost, either with an indefinite small core or with two semidefinite
-calls. The latter construction is particularly simple. There is also an
+calls. Section11 additionally normalizes the signed factors, giving
+error eps||B-A||^(1/2), even if the input factors have arbitrarily severe
+cancellation. The latter two-call construction is particularly simple.
+There is also an
 exact covariance-factor refactorization that reduces any promised
 downdate to the original positive-update theorem at the same raw cost.
 
@@ -41,7 +44,7 @@ Given X in R^(N x m), U in R^(N x r), 1<=r<=m<=N, and eps,delta in
 
 and assume B>=0. There is an explicit randomized construction of Z with
 
-  width K=O(r log^2(r/eps)),
+  width K=O(r log^2(2r/eps)),
   ||ZZ^T-[A^(1/2)-B^(1/2)]||_2 <= eps ||U||_2,
 
 with probability at least 1-delta, in conventional arithmetic
@@ -125,7 +128,7 @@ s_min be its smallest value. It is enough to choose
 Indeed (1+s)/s^2 decreases with s>0, so (D3) holds simultaneously
 at every node. For the square-root grid s_min=Theta(rho^2), (D4)
 is achieved by eta=c rho^4 for a sufficiently small universal c.
-Thus ell=O(log(1/rho)), independently of the downdate margin.
+Thus ell=O(log(2/rho)), independently of the downdate margin.
 
 4. SHARP ENOUGH NODE ERROR: eta=O(rho^4) STILL SUFFICES
 ------------------------------------------------------
@@ -177,7 +180,11 @@ q=O(log^2(1/rho)) positive nodes t_j=a s_j and positive weights
   w_j=(h/pi)t_j^(3/2),
 
 with quadrature error O(rho sqrt(a)), s_min=Theta(rho^2), and
-s_max=Theta(rho^(-2)). The construction uses dyadic roots for the
+s_max=Theta(rho^(-2)). For literal tail cutoffs, use the LEAST integer
+K with 2^(-K/2)<=rho/C0, and dyadic log-grid t_j=a*2^(j/L0),
+-L0*K<=j<=L0*K, where L0 is a power of two comparable to log(2/rho).
+The least-cutoff choice is what gives the stated Theta estimates.
+The construction uses dyadic roots for the
 geometric grid and scalar square roots for the weights. Constants such
 as log(2)/pi are handled exactly as in the positive theorem.
 
@@ -255,15 +262,17 @@ For square-root weights the scaled powers in (S2) range from s^(-1/2)
 through s^(-7/2). Summing the geometric series gives total node error
 O(eta sqrt(a)rho^(-7)). Taking eta=c rho^8 yields O(rho sqrt(a)) and
 also ensures the inertia condition. The iteration count is still
-O(log(1/rho)); only its constant changes.
+O(log(2/rho)); only its constant changes.
 
 An actual signed factor requires no small eigenvalue or matrix-root
 oracle. Symmetric elimination with congruence gives a diagonal D and
-invertible T satisfying T^T Shat T=D. If a remaining diagonal pivot
-is zero but an off-diagonal entry is nonzero, replacing a basis vector
-e_i by e_i+e_j creates a nonzero diagonal pivot; if all entries vanish,
-the core is singular and the algorithm returns zero. On the success
-event this never happens. The whole congruence calculation is O(r^3).
+invertible T satisfying T^T Shat T=D. FIRST search every remaining
+diagonal entry and permute a nonzero one into the pivot. Only if ALL
+remaining diagonals vanish, select a nonzero off-diagonal entry a_ij
+and replace e_i by e_i+e_j; its diagonal is then 2a_ij!=0. If all
+remaining entries vanish, the core is singular and the algorithm
+returns zero. On the success event this never happens. The whole
+congruence calculation is O(r^3).
 
 Write Sigma=diag(sign(D_ii)) and W=T|D|^(-1/2). Then
 
@@ -275,7 +284,7 @@ Concatenate the node factors and signatures. This returns
 
   F=Z Sigma_all Z^T=Z_+Z_+^T-Z_-Z_-^T,
   ||F-[B^(1/2)-A^(1/2)]||<=eps||U||,
-  total width O(r log^2(r/eps)),
+  total width O(r log^2(2r/eps)),
   arithmetic ~O(Nmr+m^3), probability >=1-delta.       (S3)
 
 The exact resolvent difference obeys ||D_t||<=min(1/t,a/t^2) on the
@@ -283,10 +292,11 @@ positive real axis, because both resolvents lie between 0 and I/t.
 On complex quadrature-strip boundaries a fixed larger constant is
 allowed. Thus the same uniform quadrature envelope applies to (S3).
 
-For signed input, eps||U|| is a REPRESENTATION-SCALE tolerance. It is
-not automatically eps||UJU^T||^(1/2): signed factors can have severe
-cancellation. No condition-free conversion between those two norms is
-claimed here.
+For signed input, eps||U|| in this direct construction is a
+REPRESENTATION-SCALE tolerance. It is not automatically
+eps||UJU^T||^(1/2): signed factors can have severe cancellation.
+Section11 supplies an exact small-core normalization that upgrades the
+final theorem to the intrinsic update norm without a conditioning cost.
 
 7. SIMPLER SIGNED REDUCTION USING ONLY PSD CORES
 -----------------------------------------------
@@ -393,12 +403,12 @@ the resolvent identity give this directly. The trapezoid discretization
 error is C_alpha a^alpha exp(-2pi d/h). Choose
 
   rho=eps/(C_alpha r^alpha),
-  h=Theta_alpha(1/log(1/rho)),
+  h=Theta_alpha(1/log(2/rho)),
   s_min=Theta_alpha(rho^(1/alpha)),
   s_max=Theta_alpha(rho^(-1/beta)).
 
 The truncated rule then has error O_alpha(rho a^alpha), uses
-q=O_alpha(log^2(r/eps)) nodes, and has positive weights
+q=O_alpha(log^2(2r/eps)) nodes, and has positive weights
 w_j=c_alpha h t_j^(alpha+1). Dyadic logarithmic grid endpoints can
 be chosen by integer comparisons so that no input norm/log oracle is
 needed to choose the node count.
@@ -412,14 +422,14 @@ Hence eta=c_alpha' rho^(2/alpha) suffices both for core positivity
 and for O_alpha(rho a^alpha) total node error. For the direct signed
 estimate (S2), the largest negative power is s^(alpha-4), so taking
 eta=c_alpha'' rho^(4/alpha) suffices. Both choices give
-ell=O_alpha(log(r/eps)). The two-PSD-call signed reduction can instead
+ell=O_alpha(log(2r/eps)). The two-PSD-call signed reduction can instead
 use the downdate exponent 2/alpha in both calls.
 
 Since a^alpha<=r^alpha||U||^(2alpha), the resulting error is
 
   eps||U||^(2alpha),
 
-with width O_alpha(r log^2(r/eps)) and raw arithmetic
+with width O_alpha(r log^2(2r/eps)) and raw arithmetic
 ~O_alpha(Nmr+m^3), PROVIDED the scalar coefficients are available in
 the stated arithmetic model.
 
@@ -484,3 +494,78 @@ singular downdate-node cases satisfied (D5); the largest observed error
 was 0.125 of its bound. A rank-deficient raw-factor example satisfied
 the refactorization identity to about 1.1e-15 relative residual in
 ordinary double arithmetic. These checks make no stability claim.
+
+11. INTRINSIC UPDATE-NORM ACCURACY DESPITE SIGNED CANCELLATION
+-------------------------------------------------------------
+The signed theorem can in fact achieve the stronger target
+
+  ||F-[B^(1/2)-A^(1/2)]|| <= eps||B-A||^(1/2)         (I1)
+
+in the SAME ~O(Nmr+m^3) arithmetic and O(r log^2(2r/eps)) width,
+without dependence on the conditioning or cancellation of the supplied
+representation E=UJU^T. The following exact normalization supplies it.
+
+Compute a thin rank-revealing QR U=Q R, Q^TQ=I_k, k<=r. Form the
+symmetric core C=RJR^T, so E=Q C Q^T. Set
+
+  c=||C||_F.
+
+If c=0, then E=0 and return zero. Otherwise
+
+  ||E||_2=||C||_2 <=c<=sqrt(k)||E||_2.
+
+All these quantities are computable with ordinary arithmetic and one
+scalar square root, without an eigenvalue or norm oracle. Take an
+arbitrary PSD Cholesky factor L satisfying
+
+  LL^T=cI_k+C >=0,
+
+and define
+
+  Uc=Q [ L, sqrt(c) I_k ], Jc=diag(I_k,-I_k).
+
+Then
+
+  Uc Jc Uc^T=Q[(cI+C)-cI]Q^T=E,
+  Uc Uc^T=Q(2cI+C)Q^T,
+  ||Uc||_2^2 <=3c<=3sqrt(r)||E||_2.                  (I2)
+
+The factor width is at most2r. Critical singularity of cI+C causes no
+problem: the same PSD Cholesky convention as in Section8 handles zero
+pivots exactly. Forming C and L costs O(r^3), and QR and multiplication
+by Q cost O(Nr^2); both are inside the original budget because r<=m.
+
+Apply either signed construction to (X,Uc,Jc) with
+
+  eps'=eps/[sqrt(3) r^(1/4)].
+
+Its error eps'||Uc|| is at most the right-hand side of (I1). Since
+log(2r/eps')=O(log(2r/eps)), the output rank and operation count retain
+their claimed orders. A width2r update rather than r only changes
+constants: Nr^2 and r^3 are still absorbed by Nmr and m^3. Padding the
+raw base with zero columns to width max(m,2r)<=2m is another way to
+invoke exactly the same shifted-backend proof; its cost bounds remain
+valid with this constant factor enlargement. If desired, the two-call
+PSD reduction avoids indefinite factorization throughout.
+
+This method also makes precise why huge cancelling input factors need
+not force a condition parameter in exact arithmetic: the input is
+compressed to its small symmetric core and then shifted by its own
+computable Frobenius norm, before constructing the correction. In
+finite precision, cancellation in forming C would require a separate
+analysis; none is asserted by the arithmetic theorem.
+
+For a fixed fractional power alpha, (I2) gives
+
+  ||Uc||^(2alpha) <=3^alpha r^(alpha/2)||E||^alpha.
+
+Using eps'=eps/[3^alpha r^(alpha/2)] proves the intrinsic guarantee
+eps||E||^alpha with exactly the same rank/cost orders. The scalar-power
+qualification from Section9 remains: dyadic alpha uses only arithmetic
+and square roots; arbitrary fixed alpha needs its scalar evaluation
+primitive/cost stated explicitly.
+
+The shift decomposition C=(cI+C)-cI is elementary and should not itself
+be claimed as new. Its role here is to close the exact input-normalized
+algorithm theorem. Prior general low-rank-update methods and classical
+rank bounds remain mandatory comparisons.

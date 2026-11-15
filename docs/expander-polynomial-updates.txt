@@ -1,0 +1,295 @@
+SPECTRAL GAPS GIVE LOGARITHMIC-RANK FRACTIONAL GRAPH UPDATES
+=========================================================
+
+This deduction combines the spectral-gap input actually reviewed in
+spectral-gap/ with the matrix-function update objective in docs/. Its
+mechanism is classical polynomial analyticity and low-rank telescoping.
+It is a concrete conditional algorithm and random-regular corollary,
+not a new proof of Friedman's theorem or a certified novelty claim.
+
+1. DETERMINISTIC THEOREM
+=======================
+Let L,L' be connected weighted undirected graph Laplacians on N vertices.
+Let k be the number of distinct changed unordered edges (merge repeated
+changes first), and let M count edges in their union. Write
+
+  E=L'-L=U J U^T,
+  U_e=sqrt(|d_e|)(e_u-e_v), J=diag(sign d_e).
+
+Signed changes are allowed, provided the endpoint edge weights remain
+nonnegative. Suppose supplied constants 0<gamma<Lambda satisfy
+
+  gamma I <= L|_(1-perp), L'|_(1-perp) <= Lambda I.       (1)
+
+Fix 0<alpha<1 and 0<epsilon<1. There is a deterministic exact-real
+algorithm returning P,Q of width kq, with
+
+  ||PQ^T-(L'^alpha-L^alpha)|| <=epsilon||E||^alpha,       (2)
+
+where, putting
+
+  c=(Lambda+gamma)/2,
+  r=(Lambda-gamma)/(Lambda+gamma), sigma=1-r,
+
+it suffices to choose any integer q>=1 satisfying
+
+  2 alpha r^q/sigma <=epsilon.                          (3)
+
+Thus q=O_(Lambda/gamma)(log(2/epsilon)). An explicit conservative choice is
+
+  q >= sigma^-1 log(max(1,2 alpha/(epsilon sigma))).     (4)
+
+The logarithm is not a required unit-cost operation: testing (3) with
+successively generated r^q determines an admissible q in O(q) scalar
+arithmetic. Both q and coefficient generation are charged below.
+
+Construction, including every factor entry, costs
+
+  O((M+N) k q),                                         (5)
+
+using only sparse endpoint products, scalar operations and square roots
+when alpha=1/2. General fixed alpha additionally needs the ONE scalar
+value c^(alpha-1) charged/evaluated in the scalar model. The coefficients
+themselves use arithmetic with alpha. Dense expansion adds O(N^2 kq),
+and dense output storage is O(N^2). All constants in (5) are ordinary
+arithmetic-operation constants; there is no fast matrix multiplication
+or eigendecomposition in the algorithm.
+
+The algorithm outputs the correction. It does not require L^alpha, but
+recovering the full updated function needs a base representation.
+The exact matrix PQ^T is symmetric, although its two factors differ.
+The norm guarantee concerns exact arithmetic; finite-word numerical
+stability has not been proved.
+
+If E=0, return zero. The degenerate interval gamma=Lambda forces
+L=L'=gamma(I-11^T/N), hence E=0; it can be handled before the theorem.
+
+2. WHY NO DENSE PROJECTOR OR SMALL-UPDATE ASSUMPTION IS NEEDED
+===========================================================
+Let H=1-perp. Every edge incidence column lies in H, and both symmetric
+Laplacians preserve H. Their common kernel is span{1}, because (1)
+gives a strictly positive spectral gap. Define sparse affine actions
+
+  X=L/c-I, Y=L'/c-I.
+
+Although X,Y have eigenvalue -1 on constants, their RESTRICTIONS to H
+have norm at most r<1. Every update column and every vector generated
+below remains in H in exact arithmetic. All norm estimates involving
+r are applied only on H. Nothing requires materializing 11^T/N,
+computing a basis for H, or applying a dense projection.
+
+For arbitrary matrices X,Y and j>=1, noncommutative telescoping gives
+
+  Y^j-X^j=sum_(l=0)^(j-1) X^l(Y-X)Y^(j-1-l).           (6)
+
+Restricting to H and using Y-X=E/c yields
+
+  ||Y^j-X^j|| <= j r^(j-1)||E||/c.                      (7)
+
+On constants the difference is zero, so (7) also bounds its FULL
+operator norm. The factor ||E|| in this estimate is the reason no
+lower bound on the update magnitude appears in q.
+
+3. INTRINSIC ERROR FROM THE BINOMIAL TAIL
+=======================================
+Put b_j=binom(alpha,j), b_0=1. For 0<alpha<1,
+
+  b_1=alpha, b_(j+1)=b_j (alpha-j)/(j+1),
+  j|b_j|=alpha product_(i=1)^(j-1)(1-alpha/i)<=alpha
+  for every j>=1.                                      (8)
+
+The scalar binomial series and uniform convergence on [-r,r] give,
+on H,
+
+  L^alpha=c^alpha sum_(j>=0) b_j X^j,
+  L'^alpha=c^alpha sum_(j>=0) b_j Y^j.
+
+Their difference is therefore approximated by
+
+  F_q=c^alpha sum_(j=1)^q b_j(Y^j-X^j).                (9)
+
+The two series are only invoked on H; on constants both the true
+difference and F_q are zero. No value of a truncated polynomial at
+the kernel has to approximate zero individually.
+
+Equations (7),(8) and a geometric series prove
+
+  ||(L'^alpha-L^alpha)-F_q||
+   <=c^(alpha-1)||E|| sum_(j=q+1)^infinity
+                                   j|b_j| r^(j-1)
+   <=alpha c^(alpha-1)||E|| r^q/sigma.                  (10)
+
+Both endpoint restrictions lie in [gamma,Lambda]. Consequently
+
+  -(Lambda-gamma)I <= E|_H <=(Lambda-gamma)I,
+  ||E||<=Lambda-gamma<=Lambda.
+
+Since Lambda/c<=2 and 1-alpha in (0,1),
+
+  c^(alpha-1)||E||^(1-alpha) <=2^(1-alpha)<=2.          (11)
+
+Combining (10),(11),(3) proves (2). This estimate remains valid for
+arbitrarily tiny, cancelling, or singular signed perturbations.
+
+For (4), use r^q<=exp(-sigma q). This proves the explicit degree
+choice. The constants are conservative;
+Chebyshev or rational approximation can improve condition dependence.
+
+4. COMPLETE FACTORS BY FORWARD POWERS AND BACKWARD HORNER
+=======================================================
+Substitute E=UJU^T into (6), then (9), and define for 0<=l<=q-1
+
+  V_l=X^l U,
+  W_l=sum_(j=l+1)^q b_j Y^(j-1-l)U.
+
+The exact factor identity is
+
+  F_q=c^(alpha-1) sum_(l=0)^(q-1) V_l J W_l^T.         (12)
+
+Generate V forward:
+
+  V_0=U, V_(l+1)=L V_l/c-V_l.
+
+Generate W by backward Horner:
+
+  W_q=0, W_l=b_(l+1)U+L'W_(l+1)/c-W_(l+1).
+
+Concatenate the k-column blocks
+
+  P_l=c^(alpha-1)V_l J, Q_l=W_l.
+
+Their product is exactly (12), of rank at most kq. Each forward or
+backward recurrence uses one sparse endpoint times N-by-k block and
+O(Nk) vector arithmetic. There are O(q) recurrences, so (5) includes
+all factors. Scalar coefficients need O(q) operations. Initial sparse
+U needs O(k) work and O(Nk) if stored densely. No N k^2 or k^3 term
+is hidden by orthogonalization or a dense small core.
+
+The displayed sum is symmetric because it equals the polynomial
+difference (9) EXACTLY. If a signed symmetric factor Z Sigma Z^T
+is required, apply the elementary sum-and-difference identity to each
+term in (12), giving width at most 2kq in the same work order.
+No sign-definiteness of the approximation is asserted.
+
+5. ACTUAL SPECTRAL-GAP INPUT AND A RANDOM-REGULAR COROLLARY
+========================================================
+The imported project already uses the following source in its
+finite-defect theorem:
+
+  spectral-gap/snapshot/results/050-finite-defect.md, Section 2;
+  spectral-gap/snapshot/results/spectral-research/batch-050/
+      review-m2-accepted.md.
+
+For a uniform simple d-regular graph G_N, fixed integer d>=3, and
+admissible N with Nd even, Friedman/Bordenave gives
+
+  max(lambda_2(A_N), |lambda_N(A_N)|)
+       <=2sqrt(d-1)+zeta
+
+with probability tending to one, for every fixed zeta>0. The condition
+lambda_2, rather than a definition omitting repeated eigenvalue d,
+ensures connectivity on this event.
+
+Choose 0<zeta<d-2sqrt(d-1), and set
+
+  gamma=d-2sqrt(d-1)-zeta>0.
+
+For the combinatorial Laplacian L=dI-A_N, the good event guarantees
+L|_H>=gamma I. Also L<=2d I deterministically. Fix a conductance
+budget W_0>=0, independent of N, and consider ANY k edge additions
+whose total added weight is at most W_0. Then E>=0, E1=0, and
+
+  ||E||<=tr E=2 sum_e d_e<=2W_0.
+
+Therefore the same event guarantees (1) for EVERY such update, with
+
+  Lambda=2d+2W_0.
+
+The algorithm in Sections 1--4 consequently has
+
+  q=O_(d,W_0,alpha)(log(2/epsilon)),
+  width O_(d,W_0,alpha)(k log(2/epsilon)),
+  build O_(d,W_0,alpha)((N+k)k log(2/epsilon)),
+  dense correction O_(d,W_0,alpha)(N^2 k log(2/epsilon)).
+
+All statements hold with probability 1-o(1) over the HOST graph and,
+on that event, simultaneously for all allowed additions. Thus an
+update may be chosen after seeing the host; it need not be independent
+of the graph. The algorithm is deterministic conditional on the input
+and the stated gap bound. This uniformity costs no union bound over
+possible edge choices. It also allows growing k if W_0 remains fixed,
+with the displayed k factors counted explicitly.
+
+For fixed k and inverse-polynomial epsilon, the total explicit
+correction costs O(N^2 log N), while thin construction costs O(N log N).
+For fixed epsilon these become O(N^2) and O(N), respectively. This is
+an output-sensitive graph matrix-function statement, not unrestricted
+quadratic matrix multiplication.
+
+Primary source checked directly:
+Charles Bordenave, "A new proof of Friedman's second eigenvalue Theorem
+and its extension to random lifts," arXiv:1502.04482v4.
+https://arxiv.org/pdf/1502.04482
+Theorem 1, PDF page 2, states the uniform simple d-regular model and
+vanishing failure probability. Its equation (2) additionally gives,
+for each fixed 0<a<1, a constant c=c(d,a) and failure <=N^-a at
+deviation c(log log N/log N)^2. Hence for the fixed zeta above, the
+corollary may be strengthened to probability >=1-N^-a for all
+sufficiently large admissible N. Neither an explicit universal N_0
+nor an arbitrary prescribed finite-N failure delta is asserted here.
+
+6. SIGNED UPDATE VARIANT AND LIMITS
+==================================
+The deterministic theorem already includes signed edits whenever
+both endpoints satisfy the SAME supplied interval (1). For example,
+if the host has gap gamma_0 and the total removed conductance is
+at most W_-<gamma_0/2, Weyl's inequality gives endpoint gap at least
+gamma_0-2W_->0; positive additions do not reduce it. Endpoint upper
+bounds follow from host degree and total added conductance. Thus
+bounded deletions also fit after explicitly reducing gamma.
+
+Without a surviving positive lower spectral bound on 1-perp, this
+logarithmic-degree proof fails: r reaches one, and the binomial tail
+estimate no longer decays geometrically. The condition-free
+log-squared fractional-update theorem is a different guarantee that
+still covers critical deletions and changes of connected components.
+
+Polynomial low-rank updates, analyticity-based convergence, and graph
+spectral-gap consequences all have substantial prior literature. In
+particular Beckermann--Kressner--Schweitzer (2018) and their rational
+extension (2021) treat polynomial/rational exactness for matrix-function
+updates, including graph applications:
+https://arxiv.org/abs/1707.03045
+https://arxiv.org/abs/2008.11501
+
+The result above makes the intrinsic epsilon||E||^alpha guarantee,
+common-kernel restriction, full factor arithmetic, adaptive update
+uniformity, and source-model transfer explicit. No novelty certificate
+or new random-graph spectral theorem is claimed. It uses the spectral
+gap already reviewed in spectral-gap/, but does not use the sharper
+SG-11 mixed-product envelope or SG-04 cubic moment threshold. Those
+more specific permutation results require a separate sketch/moment
+analysis before they can support an AMM improvement.
+
+7. ALGEBRA DIAGNOSTIC
+====================
+NumPy diagnostic, seed 20261115, tested 225 cases: N=4,...,12,
+five weighted complete-graph pairs per size, three signed edge changes,
+and degrees q=1,2,4,8,16. Supplied gamma and Lambda were checked from
+both endpoints' eigenvalues solely for this diagnostic. Forward/backward
+factors (12) agreed with independently formed polynomial differences
+to at most 3.30e-16 in operator norm scaled by max(1,||F_q||).
+The largest observed true square-root-update tail divided by bound
+(10) was 0.261. Both assertions passed. These finite floating tests
+detect factor-order/sign mistakes; the general result rests on the
+written telescoping and binomial-tail proof, not the experiment.
+
+Reproducible script: scripts/check_expander_polynomial_updates.py
+Retained actual output: docs/expander-polynomial-diagnostics.txt
+Run with a Python environment containing NumPy:
+
+  python3 scripts/check_expander_polynomial_updates.py
+
+The retained run used NumPy 2.5.3. It includes 18 addition-only and
+27 deletion-only endpoint pairs. The script separately asserts endpoint
+graph admissibility, factor identity, and the proved tail estimate.

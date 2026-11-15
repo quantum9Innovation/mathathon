@@ -1,0 +1,371 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue]{hyperref}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newcommand{\R}{\mathbb R}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\rank}{\operatorname{rank}}
+\title{Fractional graph Laplacian updates without a spectral gap}
+\author{Working research manuscript}
+\date{November 2026}
+\begin{document}
+\maketitle
+\begin{abstract}
+We combine intrinsic-error matrix-function compression with shifted
+Laplacian solvers. After $k$ edge-weight changes in an undirected graph,
+the correction to its fractional Laplacian has a width
+$O_\alpha(k\log^2(2k/\varepsilon))$ approximation at operator error
+$\varepsilon\norm{\Delta L}^\alpha$. Construction takes expected
+$\widetilde O_\alpha((m+n)k)$ arithmetic operations, including the
+factors, without a spectral-gap assumption. Edge deletions, cancellation,
+and changes of connected components are allowed. A separate realization
+theorem transfers every positive rank-one fractional matrix correction,
+in the limit, to one edge-weight increase on a connected path with
+positive vertex masses. Consequently these paths already attain the
+exact worst-case leading compression-rank constant from the companion
+matrix theorem. The solver, resolvent identity, and Jacobi-to-path
+mechanism are established tools; the claims here concern their precise
+intrinsic-error synthesis and the transfer of sharp matrix counts.
+\end{abstract}
+
+\section{Graph model and algorithmic statement}
+An undirected weighted graph has nonnegative conductances and Laplacian
+$L=\sum_e w_e b_e b_e^T$, where $b_{uv}=e_u-e_v$.
+Let $L'$ be a second graph on the same $n$ vertices, obtained by changing
+$k\ge1$ distinct non-loop edge conductances by nonzero amounts $d_e$.
+All final conductances must remain nonnegative. Let $m$ count the edges
+in the union of the two graphs, and put
+\[
+ E=L'-L=UJU^T,\qquad
+ U_e=\sqrt{|d_e|}b_e,\qquad J=\operatorname{diag}(\operatorname{sign}d_e).
+\]
+Norms without a subscript are operator norms. Fix $0<\alpha<1$.
+Fractional powers assign value zero to the zero eigenspace.
+
+\begin{theorem}[Sparse construction]\label{thm:algorithm}
+For $0<\varepsilon,\delta<1/2$, there is a randomized algorithm returning
+$P,Q\in\R^{n\times\ell}$ such that
+\[
+ \ell=O_\alpha\bigl(k\log^2(2k/\varepsilon)\bigr),\qquad
+ \Pr\{\norm{PQ^T-(L'^\alpha-L^\alpha)}
+              \le\varepsilon\norm E^\alpha\}\ge1-\delta.
+\]
+Its expected construction cost is $\widetilde O_\alpha((m+n)k)$.
+Suppressed factors are logarithmic in $n,k,1/\varepsilon,1/\delta$.
+It uses shifted SDD solves in the two
+endpoint graphs, sparse edge arithmetic, and scalar quadrature.
+An exactly symmetric signed factor $Z\Sigma Z^T$ is available with
+width at most $2\ell$ and the same asymptotic cost.
+\end{theorem}
+
+The output is the \emph{correction}; no initial dense $L^\alpha$ is
+needed to construct it. Recovering the full updated fractional Laplacian
+also requires its base value. Expanding the correction adds
+$O(n^2\ell)$ arithmetic operations. For fixed $k$ and fixed tolerance,
+expansion costs $O(n^2)$; for inverse-polynomial tolerance the total
+expected cost is $\widetilde O(n^2)$ when $m=O(n^2)$.
+These statements concern graph matrix functions, not arbitrary matrix
+multiplication.
+
+Costs use exact-real arithmetic and the standard expected-time SDD
+solver theorem~\cite{KMP}. For general fixed $\alpha$, scalar power
+evaluations at the quadrature nodes are additionally counted as scalar
+operations. For $\alpha=1/2$, the nodes and weights can instead be
+constructed, to the stated error budget, using arithmetic, comparisons,
+positive square roots, and convergent series for fixed constants.
+No finite-word stability bound is asserted.
+
+\section{Intrinsic scaling and two endpoint solves}
+Merge repeated edits to the same edge before defining $k$ and $U$.
+The scale $a=\norm E_F$ and the factor size $b=\norm U_F^2$ are computable
+in $O(n+k)$ work from
+\begin{equation}\label{eq:scale}
+ a^2=\sum_v\left(\sum_{e\ni v}d_e\right)^2+2\sum_e d_e^2,
+ \qquad b=2\sum_e|d_e|.
+\end{equation}
+If there are no remaining edits, return zero. Otherwise $a>0$, and
+\begin{equation}\label{eq:cancellation}
+ \norm E\le a\le\sqrt{k}\norm E,\qquad
+ 1\le\chi:=b/a\le\sqrt{2k}.
+\end{equation}
+The first upper bound uses $\rank E\le k$; the second follows by
+Cauchy--Schwarz and the off-diagonal sum in~\eqref{eq:scale}.
+Thus mixed additions and deletions cannot hide arbitrary cancellation
+in the supplied edge representation.
+
+For $t>0$, define
+\[
+ R_t=(L+tI)^{-1},\quad S_t=(L'+tI)^{-1},\quad
+ V_t=R_tU,\quad W_t=S_tU.
+\]
+The resolvent identity gives
+\begin{equation}\label{eq:twoendpoint}
+ D_t:=R_t-S_t=R_t E S_t=V_t J W_t^T,
+ \qquad \norm{D_t}\le\min(2/t,a/t^2).
+\end{equation}
+No small inverse, Gram matrix, or update QR is needed.
+
+\begin{lemma}[Inexact solves]\label{lem:solve}
+Suppose each column solve for $V_t,W_t$ has relative energy error at
+most $\eta\le1$. The resulting blocks satisfy
+\[
+ \norm{\widehat V_tJ\widehat W_t^T-D_t}
+          \le 3\eta b/t^2.
+\]
+The approximate solve maps need not be linear or symmetric.
+\end{lemma}
+\begin{proof}
+For $A=L+tI$ and a right-hand side $u$, let $x=A^{-1}u$ and assume
+$\norm{\widehat x-x}_A\le\eta\norm{x}_A$. Since $A\succeq tI$,
+\[
+ \norm{\widehat x-x}_2^2
+ \le\eta^2t^{-1}u^TA^{-1}u\le\eta^2\norm u_2^2/t^2.
+\]
+Summing over the columns gives
+$\norm{\widehat V-V}_F,\norm{\widehat W-W}_F\le\eta\sqrt b/t$,
+while $\norm V_F,\norm W_F\le\sqrt b/t$.
+Expand the product difference and use $\norm J=1$ to obtain
+$(2\eta+\eta^2)b/t^2\le3\eta b/t^2$.
+\end{proof}
+
+\section{Quadrature, error, and full cost}
+Put $\beta=1-\alpha$ and $c_\alpha=\sin(\pi\alpha)/\pi$.
+Scalar integration followed by functional calculus gives the norm-convergent
+identity
+\begin{equation}\label{eq:integral}
+ L'^\alpha-L^\alpha=c_\alpha\int_0^\infty t^\alpha D_t\,dt.
+\end{equation}
+After $t=ae^y$ the integrand is
+$F(y)=c_\alpha a^{\alpha+1}e^{(\alpha+1)y}D_{ae^y}$.
+For every fixed $d<\pi$, the inequality
+$|\lambda+te^{i\theta}|\ge\cos(d/2)(\lambda+t)$ for
+$\lambda,t\ge0$, $|\theta|\le d$, proves analyticity and the bound
+\begin{equation}\label{eq:envelope}
+ \norm{F(x+i\theta)}\le C_{\alpha,d}a^\alpha
+                 \min(e^{\alpha x},e^{-\beta x}).
+\end{equation}
+This is the same uniform envelope as in the companion matrix
+analysis~\cite{Companion}; in particular no spectral endpoint enters.
+
+Here are sufficient quadrature parameters, with constants depending
+only on $\alpha$. Fix a sufficiently small $0<\rho<1/2$.
+Use an infinite logarithmic trapezoid rule with
+$h=\Theta_\alpha(1/\log(1/\rho))$, small enough, and retain a consecutive
+finite interval of nodes $t_j=ae^{jh}$ with
+\begin{equation}\label{eq:tails}
+ s_{\min}:=t_{\min}/a\asymp_\alpha\rho^{1/\alpha},\qquad
+ s_{\max}:=t_{\max}/a\asymp_\alpha\rho^{-1/\beta}.
+\end{equation}
+The constants in the cutoffs are chosen to bound both omitted tails
+by $\rho a^\alpha$. The infinite trapezoid error is bounded by
+$C_\alpha a^\alpha/(e^{2\pi d/h}-1)$, taking for example $d=\pi/2$.
+This follows by shifting the Fourier integral to the two strip edges
+in~\eqref{eq:envelope} and summing its nonzero sampled frequencies;
+the edge integrals are bounded by
+$C_\alpha a^\alpha(1/\alpha+1/\beta)$.
+Thus the exact-node quadrature has error $O_\alpha(\rho a^\alpha)$,
+positive weights
+$\omega_j=c_\alpha h t_j^{\alpha+1}$, and
+\begin{equation}\label{eq:q}
+ q=O_\alpha(\log^2(1/\rho)).
+\end{equation}
+
+Lemma~\ref{lem:solve} bounds the accumulated solve error by
+\begin{align*}
+ \sum_j\omega_j\norm{\widehat V_jJ\widehat W_j^T-D_{t_j}}
+ &\le C_\alpha\eta b h\sum_jt_j^{\alpha-1}\\
+ &\le C'_\alpha\eta\chi a^\alpha s_{\min}^{-\beta}.
+\end{align*}
+The last inequality is a geometric-series bound, since $\beta>0$.
+Choose
+\begin{equation}\label{eq:budgets}
+ \rho=\frac{\varepsilon}{C_\alpha(k+1)},\qquad
+ \eta=c_\alpha'\chi^{-1}\rho^{1/\alpha},
+\end{equation}
+where the first constant is large enough and the second small enough.
+Equations~\eqref{eq:tails}--\eqref{eq:budgets} give solve error
+$O_\alpha(\rho a^\alpha)$. Together with~\eqref{eq:cancellation}, all
+errors are at most $\varepsilon\norm E^\alpha$.
+Small relative errors in the positive weights can be included in this
+budget: $\sum_j\omega_j\norm{D_{t_j}}=O_\alpha(a^\alpha)$.
+
+The returned factors concatenate
+$P_j=\sqrt{\omega_j}\widehat V_jJ$ and
+$Q_j=\sqrt{\omega_j}\widehat W_j$. Each block has $k$ columns.
+There are $2kq$ column solves and $O(nkq)$ factor arithmetic.
+The energy-accuracy SDD theorem~\cite[Theorem 4.6, Lemmas 4.3 and 4.5]{KMP}
+applies because $L+tI$ and $L'+tI$ are SDD positive definite, including
+disconnected graphs (process their connected components separately;
+isolated vertices give scalar diagonal solves). To obtain arbitrary
+confidence, run each column solve independently
+$s=O(\log(2kq/\delta))$ times at tolerance $\eta/3$, with constant
+success probability greater than $1/2$. Choose $s$ odd and select the
+candidate with the smallest median pairwise $A$-energy distance
+(including the zero self-distance),
+where $A$ is that shifted system. On the event that a strict majority
+have error at most $r=(\eta/3)\norm{A^{-1}u}_A$, every good candidate
+has median distance at most $2r$. The selected candidate is therefore
+within $2r$ of a strict majority, which intersects the good majority;
+its error is at most $3r$. A binomial tail bounds failure by
+$\delta/(2kq)$. All distances are computable by sparse quadratic
+forms; their $O((m+n)s^2)$ cost per column is logarithmic overhead.
+A union bound now makes all solves accurate simultaneously.
+The cited runtime is \emph{expected}, with logarithmic accuracy and
+confidence overhead; this proves the runtime stated in
+Theorem~\ref{thm:algorithm}, not a deterministic runtime cap.
+
+For an exactly symmetric output replace each approximate node by its
+symmetric part, which cannot increase error to the symmetric target.
+The identity
+\[
+ \frac{VJW^T+WJV^T}{2}
+ =[V+W,V-W]\begin{pmatrix}J/4&0\\0&-J/4\end{pmatrix}[V+W,V-W]^T
+\]
+gives a signed factor without dense $k$-by-$k$ factorization.
+For $\alpha=1/2$, choose $h=\log(2)/H$ with dyadic integer
+$H=\Theta(\log(1/\rho))$; nodes $a2^{j/H}$ and their powers then use
+repeated square roots. Integer doubling chooses the cutoffs and precision
+budgets. Fixed constants can be evaluated to the needed accuracy by
+convergent scalar series. This supplies the stated ordinary-arithmetic
+version of the theorem.
+
+\section{Sharp matrix complexity already occurs on paths}
+Positive vertex masses are natural for generalized graph eigenproblems.
+For conductance Laplacian $K$ and positive diagonal mass matrix $M$, write
+$H=M^{-1/2}KM^{-1/2}$. An edge increase of conductance $w$ is the
+rank-one update $wM^{-1/2}b_e b_e^TM^{-1/2}$. Masses are held fixed
+within each update. This is broader than the combinatorial convention
+$M=I$, or the convention $M=\operatorname{diag}(K)$.
+
+Define $\mathcal N_{\rm mat}(\varepsilon)$ as the supremum of
+\[
+ \#\{j:\sigma_j((A+uu^T)^\alpha-A^\alpha)>\varepsilon\}
+\]
+over all finite PSD matrices $A$ and unit vectors $u$.
+Define $\mathcal N_{\rm path}(\varepsilon)$ similarly over connected
+weighted paths with positive masses, one edge conductance increase,
+and update operator norm one in mass-normalized coordinates.
+
+\begin{theorem}[Exact path transfer]\label{thm:path}
+For every $\varepsilon>0$,
+$\mathcal N_{\rm path}(\varepsilon)=\mathcal N_{\rm mat}(\varepsilon)$.
+Consequently, using the exact PSD count theorem in~\cite{Companion},
+\begin{equation}\label{eq:sharp}
+ \lim_{\varepsilon\downarrow0}
+ \frac{\mathcal N_{\rm path}(\varepsilon)}{\log^2(1/\varepsilon)}
+       =\frac1{4\pi^2\alpha(1-\alpha)}.
+\end{equation}
+For $r$ fixed, connected mass-weighted paths with $r$ edge increases
+already attain the universal rank-$r$ leading coefficient
+$r/[4\pi^2\alpha(1-\alpha)]$.
+\end{theorem}
+
+\begin{proof}
+The upper comparison is immediate because every graph pair belongs to
+the matrix class. For the reverse inequality first take $A\succ0$.
+Restrict to the cyclic subspace generated by $u$; on its orthogonal
+complement the correction is zero. Orthogonal Lanczos, with alternating
+basis signs, produces a real SPD tridiagonal matrix $T$ with strictly
+negative off-diagonal entries and $u=e_1$. Complex input data, if allowed,
+give the same real model by diagonalizing $A$ and removing coordinate
+phases of $u$ first. Lanczos breakdown simply terminates the cyclic block.
+
+Put $d=T^{-1}e_1$. All entries of $d$ are strictly positive. To check
+this, choose $s\ge\lambda_{\max}(T)$ and write $T=sI-B$ with
+$B\ge0$, $\norm B<s$; irreducibility makes the geometric inverse series
+strictly positive entrywise. With $D=\operatorname{diag}(d)$,
+\[
+ K_0=DTD,\qquad K_0\mathbf1=d_1 e_1.
+\]
+Hence $K_0$ is a path conductance Laplacian grounded at vertex $1$,
+with ground edge conductance $d_1$. Give its internal vertices masses
+$d_i^2$ and the ground vertex mass $R^2$. The full connected path has
+mass-normalized Laplacian
+\begin{equation}\label{eq:pathmatrix}
+ H_R=\begin{pmatrix}d_1/R^2&-e_1^T/R\\-e_1/R&T\end{pmatrix}.
+\end{equation}
+Increasing the ground edge conductance by $d_1^2$ adds $v_Rv_R^T$,
+where $v_R=(-d_1/R,e_1)^T$ and
+$\norm{v_Rv_R^T}=1+d_1^2/R^2$.
+Scale \emph{both} endpoint conductance sets by
+$c_R=(1+d_1^2/R^2)^{-1}$. The update now has norm exactly one, and
+\[
+ c_RH_R\longrightarrow0\oplus T,\qquad
+ c_R(H_R+v_Rv_R^T)\longrightarrow0\oplus(T+e_1e_1^T).
+\]
+Continuity of finite-dimensional fractional functional calculus and of
+singular values transfers every \emph{strict} threshold count to all
+sufficiently large finite $R$.
+
+For singular $A$, first replace it by $A+\tau I$ and let $\tau\downarrow0$;
+the same strict-margin argument applies. Thus every finite matrix count
+is bounded by the supremal path count. This proves equality, including
+thresholds at which some other singular values equal $\varepsilon$.
+Equation~\eqref{eq:sharp} now follows from the companion PSD theorem.
+
+For the last assertion, take $r$ disjoint copies of a norm-one update
+witness. Their update vectors are orthogonal, so the total update still
+has norm one and rank $r$. Concatenate the paths by arbitrarily small
+positive endpoint conductances, identically at both endpoints of the
+update. Continuity preserves the required strict counts, and the graph
+is one connected path. The universal rank-$r$ upper theorem from
+\cite{Companion} gives the matching leading coefficient.
+\end{proof}
+
+In particular the coefficient for square roots is $1/\pi^2$ per edge.
+The exact path theorem is a statement about suprema over all dimensions
+and all positive masses; the examples depend on $\varepsilon$. It does
+not assert an asymptotic for each fixed graph or establish the same
+sharp coefficient for paths with unit masses.
+
+The sparse algorithm extends to fixed positive masses by solving
+$(K+tM)x=M^{1/2}u$ and transforming back. Relative energy error is
+preserved under this congruence. The intrinsic scale is the Frobenius
+norm of the normalized update, while $b$ is the squared Frobenius norm
+of its normalized edge factor. The general bound includes logarithmic
+dependence on $\chi=b/a$, which need not be bounded by $\sqrt{2k}$
+for arbitrary masses. No such additional ratio occurs in
+Theorem~\ref{thm:algorithm} for unit masses.
+
+\section{Scope and relation to existing results}
+Low-rank rational matrix-function updates, including graph applications,
+are established~\cite{BCKS}; fractional graph diffusion and singularity
+treatment are studied in~\cite{BS}. Nearly-linear shifted SDD solvers
+are supplied by~\cite{KMP}. Jacobi operators and weighted paths with
+positive vertex weights have classical correspondences~\cite{CEM}.
+The two-endpoint factorization in~\eqref{eq:twoendpoint} is simply the
+resolvent identity. These mechanisms are not claimed as new.
+
+The specific deductions proved here are the cancellation-controlled,
+intrinsic-error sparse construction for signed edge edits and the exact
+supremal fractional-count transfer to one-edge path updates. The sharp
+coefficient depends on the companion matrix theorem; its proof is not
+repeated here. A bounded literature comparison has not established
+priority of these precise conclusions. No general quadratic-time matrix
+product algorithm follows. The imported \texttt{spectral-gap} project's
+exact mixed permutation moments offer a further sketching direction,
+but this manuscript proves no new permutation-sketch concentration bound.
+
+\begin{thebibliography}{9}
+\bibitem{Companion} Exact small-exponent constants for fractional matrix maps.
+Companion working manuscript, \texttt{sharp-fractional-holder.tex},
+especially the PSD count theorem and its positive rank-one lower bound.
+\bibitem{KMP} I. Koutis, G. L. Miller, R. Peng.
+A nearly-$m\log n$ time solver for SDD linear systems (2011).
+\url{https://arxiv.org/abs/1102.4842}.
+\bibitem{BCKS} B. Beckermann, A. Cortinovis, D. Kressner, M. Schweitzer.
+Low-rank updates of matrix functions II: Rational Krylov methods.
+SIAM J. Numer. Anal. 59 (2021), 1325--1347.
+\url{https://arxiv.org/abs/2008.11501}.
+\bibitem{BS} M. Benzi, I. Simunec.
+Rational Krylov methods for fractional diffusion problems on graphs (2021).
+\url{https://arxiv.org/abs/2012.08389}.
+\bibitem{CEM} A. Carmona, A. M. Encinas, M. Mitjana.
+On the M-matrix inverse problem for singular and symmetric Jacobi matrices.
+Electronic J. Linear Algebra 24 (2013), 237--254.
+\url{https://journals.uwyo.edu/index.php/ela/article/download/1181/1181/1181}.
+\end{thebibliography}
+\end{document}

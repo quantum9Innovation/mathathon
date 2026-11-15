@@ -1,0 +1,530 @@
+Exact small-block lifts for positive rational Petz divergences
+============================================================
+Working research record, 2026-11-15 UTC.
+
+STATUS AND RESULT
+
+The requested small-block construction is proved below from first
+principles. It represents the STANDARD/PETZ rational divergence, not
+the trace of the maximal matrix perspective. Each rational node needs
+exactly TWO complex-Hermitian PSD blocks of order 2n. There is no n^2
+Kronecker matrix in the representation or its construction.
+
+The idea is the elementary infimal convolution identity for the inverse
+of a sum of positive operators. It is a classical quadratic identity;
+no claim is made that this lift is new. It reconstructs the kind of
+small-block result asserted without proof in Faust--Fawzi (2023),
+Theorem 5, without assuming its unpublished reference [Faw23].
+
+Combining the lift with the positive rational bounds proved in
+positive-rational-approximation.tex gives, for trace-one rho,sigma > 0,
+
+ |D(rho||sigma)-D_m(rho||sigma)|
+   <= (C/2) exp[-pi sqrt(2m)] chi^2_P(rho||sigma),
+
+ chi^2_P(rho||sigma) = Tr[rho^2 sigma^{-1}]-1,
+
+using 2m blocks of order 2n and 4mn^2 real auxiliary dimensions.
+Thus scalar error epsilon requires at most
+
+ m <= log^2(C/epsilon)/(2pi^2)+3
+
+rational nodes, hence at most log^2(C/epsilon)/pi^2+6 such PSD blocks.
+Constants are fixed and independent of m, n, rho and sigma. C is the
+fixed a=1,b=2 constant in the already proved scalar theorem, not a new
+explicit numerical constant. Arithmetic preparation/root extraction
+and numerical conditioning retain the limitations of that theorem.
+
+An additional sign argument gives positive LOWER rational approximants
+at the same leading rate. Their Petz divergences are globally below D.
+Adding one endpoint kernel gives a convex UPPER SDP as well. Full
+statements and error/optimization certificates appear in Sections 4--6.
+
+This is an exact representation/approximation theorem. It is not a
+general O(n^2)-time solver theorem and does not settle the broader
+matrix-multiplication objective. No novelty, priority, external review,
+or formal-verification certificate is asserted.
+
+1. THE QUADRATIC IDENTITY
+
+Let H be any finite-dimensional complex Hilbert space, with positive
+self-adjoint operators P,Q and vector c. Then
+
+ <c,(P+Q)^{-1}c>
+   = min_{x+y=c} [<x,P^{-1}x>+<y,Q^{-1}y>].                 (1)
+
+Proof. Put z=(P+Q)^{-1}c. For any x+y=c, expansion gives
+
+ <x,P^{-1}x>+<y,Q^{-1}y>-<c,z>
+   = <x-Pz,P^{-1}(x-Pz)>+<y-Qz,Q^{-1}(y-Qz)> >= 0.
+
+The expansion uses real parts in the two cross terms, so is equally
+valid over complex H. Equality holds at x=Pz, y=Qz. The minimum is
+attained, and is unique because P and Q are positive definite. QED.
+
+An equivalent proof is the Lagrange multiplier condition
+P^{-1}x=Q^{-1}y=z, followed by (P+Q)z=c. Neither proof forms the
+matrix of P+Q in a basis.
+
+2. EXACT TWO-BLOCK LIFT FOR A SYLVESTER QUADRATIC
+
+Let A,B > 0 be n by n Hermitian matrices and C any COMPLEX n by n
+matrix. Equip the matrix space with <X,Y>_HS=Tr[X*Y]. Set
+
+ K_{A,B}(C)=<C,(L_A+R_B)^{-1}C>_HS,
+ L_A(Z)=AZ, R_B(Z)=ZB.
+
+Left and right multiplication are positive self-adjoint operators.
+Applying (1) gives
+
+ K_{A,B}(C)
+   = min_{X+Y=C} {Tr[X* A^{-1} X]+Tr[Y B^{-1} Y*]}.        (2)
+
+Consequently tau >= K_{A,B}(C) if and only if there exist complex
+X,Y and Hermitian U,V satisfying
+
+ X+Y=C,
+
+ [ A   X ] >= 0,       [ B   Y* ] >= 0,                   (3)
+ [ X*  U ]             [ Y   V  ]
+
+ tau >= Tr U+Tr V.
+
+Each displayed PSD block has order 2n. The first Schur complement is
+U >= X* A^{-1}X. The second is V >= Y B^{-1}Y*, with the order of
+Y and Y* ESSENTIAL. Minimizing the sum of traces proves sufficiency
+and necessity via (2). Every matrix entry is affine in A,B,C,X,Y,U,V.
+
+One can eliminate Y=C-X. X has 2n^2 real coordinates and U,V have
+n^2 each, hence exactly 4n^2 real auxiliary coordinates. No scalar
+quadratic-form auxiliary is required. The optimal X,Y need NOT be
+Hermitian even when C is Hermitian; imposing this restriction is not
+authorized by the proof and generally changes the value.
+
+If Z solves AZ+ZB=C, the equality certificate is
+
+ X=AZ, Y=ZB, U=X* A^{-1}X, V=Y B^{-1}Y*.
+
+This is only a proof/verification certificate. The SDP formulation (3)
+does not solve a Sylvester equation or construct an n^2 by n^2 matrix.
+
+Rectangular generalization: for A of order p, B of order q, and C of
+shape p by q, the same construction uses two blocks of order p+q.
+After eliminating Y there are 2pq+p^2+q^2=(p+q)^2 real auxiliary
+coordinates. This is a general Sylvester quadratic identity, not a
+special property of density matrices.
+
+3. SPECIALIZATION TO THE STANDARD/PETZ KERNEL
+
+For 0<t<1 let f_t(x)=(x-1)^2/[1+t(x-1)]. Let rho,sigma > 0 and
+Delta=rho-sigma. Define the standard/Petz divergence
+
+ S_f(rho||sigma)
+ = <sigma^{1/2}, f(L_rho R_sigma^{-1}) sigma^{1/2}>_HS.
+
+In eigenbases rho u_i=r_i u_i and sigma v_j=s_j v_j,
+
+ S_f = sum_{i,j} s_j f(r_i/s_j) |<u_i,v_j>|^2.
+
+For f=f_t this becomes
+
+ S_{f_t}
+ = sum_{i,j} (r_i-s_j)^2 |<u_i,v_j>|^2/[t r_i+(1-t)s_j]
+ = <Delta,(t L_rho+(1-t)R_sigma)^{-1}Delta>_HS.             (4)
+
+The last identity follows because
+<u_i,Delta v_j>=(r_i-s_j)<u_i,v_j>. This also proves that the
+lift represents exactly the Petz kernel used in the scalar-to-quantum
+error transfer; there is no substitution of a maximal divergence.
+
+Use (3) with A=t rho, B=(1-t)sigma and C=Delta:
+
+ X+Y=rho-sigma,
+
+ [ t rho   X ] >= 0,    [ (1-t)sigma   Y* ] >= 0,         (5)
+ [ X*      U ]          [ Y            V  ]
+
+ tau >= Tr U+Tr V.
+
+This is the promised exact two-block representation.
+
+An equivalent scaling avoids small prefactors on the diagonal:
+
+ sqrt(t) X+sqrt(1-t)Y=Delta,
+
+ [ rho   X ] >= 0,      [ sigma   Y* ] >= 0,              (6)
+ [ X*    U ]            [ Y       V  ]
+
+ tau >= Tr U+Tr V.
+
+The extra square roots are scalar coefficients. Formula (6) also makes
+the endpoints transparent. At t=0 use one block
+[sigma,Delta;Delta,U]>=0 and tau>=Tr U; at t=1 use
+[rho,Delta;Delta,U]>=0 and tau>=Tr U. All constructed interior nodes
+in the existing scalar theorem satisfy 0<t<1, so (5) suffices there.
+
+For fhat=sum_{i=1}^m u_i f_{t_i}, u_i>0, one takes separate X_i,Y_i,
+U_i,V_i for each node in (5) and the single affine inequality
+
+ tau >= sum_i u_i (Tr U_i+Tr V_i).                        (7)
+
+There are exactly 2m complex-Hermitian PSD blocks of order 2n, and
+4mn^2 real auxiliary coordinates after eliminating every Y_i.
+The blocks imply rho,sigma >= 0; the stated theorem restricts to the
+positive definite domain where inverses are unambiguous.
+
+For completeness, the same blocks give the usual PSD extension.
+For general A,B>=0, Schur complements mean
+U>=X* A^+ X, range(X) subset range(A), and
+V>=Y B^+ Y*, range(Y*) subset range(B), where + denotes pseudoinverse.
+The infimum identity still holds with (L_A+R_B)^+ and the condition
+C in range(L_A+R_B); it is infinite if that condition fails.
+To prove it, take Z=(L_A+R_B)^+ C, X=AZ, Y=ZB and use the same
+completion of squares with pseudoinverses on their ranges. For
+A=t rho, B=(1-t)sigma and C=Delta, the range condition always holds:
+if rho Z=0 and Z sigma=0, then <Z,rho>=<Z,sigma>=0, so
+<Z,Delta>=0. Thus Delta is perpendicular to the kernel of the
+self-adjoint Sylvester operator. Its value equals the limit obtained
+from rho+epsilon I,sigma+epsilon I, because Delta stays fixed and the
+Sylvester operator increases by epsilon times the identity. This
+also supplies a direct boundary proof without assuming continuity of
+an unspecified matrix functional.
+
+Joint convexity is immediate: the epigraph is a projection of the
+convex affine-LMI feasible set. Positive homogeneity follows by scaling
+all matrix variables. For a completely positive trace-preserving map
+Phi, apply id_2 tensor Phi to each PSD block and Phi to the splitting
+constraint. Trace preservation keeps the objective unchanged, proving
+
+ S_fhat(Phi(rho)||Phi(sigma)) <= S_fhat(rho||sigma),
+
+where images are positive definite, or with the PSD extension
+when they are singular. Thus the lift itself also proves data
+processing under quantum channels. This property is not needed to
+prove the approximation error.
+
+4. SHARP GLOBAL QUANTUM APPROXIMATION THEOREM
+
+Assume a scalar positive rational approximant obeys
+
+ |f_a(x)-fhat_m(x)| <= epsilon f_b(x), x>0.                (8)
+
+All spectral weights s_j |<u_i,v_j>|^2 are nonnegative. Termwise
+application of (8) to the spectral formula in Section 3 yields
+
+ |S_{f_a}(rho||sigma)-S_fhat_m(rho||sigma)|
+    <= epsilon S_{f_b}(rho||sigma).                      (9)
+
+This proof uses only ordinary diagonalization; it needs neither a
+matrix perspective identity nor a new monotonicity theorem.
+
+The proved scalar result in positive-rational-approximation.tex is
+
+ epsilon_m <= C_{a,b} exp[-2pi sqrt(a(b-a)m/b)],
+
+for 1<=a<b<=2, with positive distinct interior nodes. Hence (9), with
+the exact 2m-block lift, holds for ALL those power quasi-entropies.
+
+For a=1,b=2 and trace-one rho,sigma,
+
+ S_f1 = D(rho||sigma)=Tr[rho(log rho-log sigma)],
+ S_f2 = (Tr[rho^2 sigma^{-1}]-1)/2 = chi_P^2/2.
+
+Therefore there exist jointly convex, nonnegative, channel-monotone
+functions D_m, with 2m blocks of order 2n, such that
+
+ |D-D_m| <= (C/2) exp[-pi sqrt(2m)] chi_P^2.              (10)
+
+Given epsilon>0 with L=log(C/epsilon)>0, the explicit scalar
+construction gives error <= epsilon chi_P^2/2 using
+
+ m <= L^2/(2pi^2)+3,       #PSD blocks=2m.                (11)
+
+There is no hidden n factor in the number of blocks. The dependence
+on n consists of block order 2n and O(mn^2) real variable dimensions.
+
+For positive matrices with unequal traces, use generalized relative
+entropy D_gen=Tr[rho(log rho-log sigma)]-Tr rho+Tr sigma,
+and the same proof gives error <=epsilon Tr[Delta sigma^{-1}Delta]/2.
+
+5. POSITIVE ONE-SIDED APPROXIMANTS AT THE SAME RATE
+
+This section uses the SIGN of the actual scalar construction, not just
+its absolute-error theorem. The construction uses the multipoint
+polynomial Omega(t)=t(t+1) times products of squared real linear
+factors. Its exact Stieltjes error has sign sign(Omega(-x)), hence
+
+ f_a(x)-r_m(x) has sign sign(x-1), 1<=a<b<=2,             (12)
+
+apart from interpolation zeros; r_m is the positive rational sum.
+This sign is explicitly proved in the existing manuscript.
+
+General proposition. Suppose |f_a-r_m|<=e f_b, e>0, for the actual
+positive construction with 1<=a<b<=2. Define r_m^-=r_m/(1+e),
+simply scaling all its positive weights. Then
+
+ 0 <= f_a-r_m^- <= [2e/(1+e)] f_b  for EVERY x>0.        (13)
+
+Proof on 0<x<=1. Taylor's formula and f_a''(x)=x^{a-2} imply
+f_b<=f_a. In addition, a f_a(x)<=b f_b(x). To prove the latter
+including a=1, put y=-log x and use the identity
+
+ a f_a(x)=1-x-x integral_0^y exp[-(a-1)t]dt.
+
+Its right-hand side is increasing in a, proving the claim. Thus
+f_b<=f_a<=(b/a)f_b<=2f_b on this interval. The sign (12) and the
+error bound now give
+
+ f_a <= r_m <= f_a+e f_b <= (1+e)f_a.
+
+Thus r_m^-<=f_a and
+0<=f_a-r_m^-<=[e/(1+e)]f_a<=[2e/(1+e)]f_b.
+
+Proof on x>=1. Here f_a<=f_b by f_a''(x)<=f_b''(x), while (12)
+gives r_m<=f_a. Hence r_m^-<=f_a and
+
+ f_a-r_m^-=[f_a-r_m+e f_a]/(1+e)<=2e f_b/(1+e).
+
+Both sides vanish at x=1 with the continuous relative convention.
+This proves (13), preserving the number and location of poles and
+strict positivity of all weights. QED.
+
+Consequently every power-divergence construction in the full positive
+C1 range admits a positive one-sided lower approximation with the
+same leading exponent and rational-node budget. For the negative
+range -1<=b<a<=0, transport the corresponding positive-parameter
+inequality by f_a(x)=x f_{1-a}(1/x), which replaces every node t by
+1-t and preserves positive weights. This transfers one-sidedness
+and the relative error without another scaling.
+
+The same positive spectral weights transfer (13) to the corresponding
+Petz divergences. For any fixed a in [1,2) and b=2 the lower Petz
+approximation has a convex SDP epigraph with 2m blocks of order 2n.
+Adding eta S_f2 gives an upper SDP with just one additional block,
+with the same error scale. The remainder specializes to a=1,b=2.
+
+Take e=eta/2, eta>0, and define for relative entropy
+
+ D_m^-=S_{r_m^-},
+ D_m^+=D_m^-+eta S_f2.
+
+Applying the same positive spectral weights as in Section 4 gives
+
+ D_m^- <= D <= D_m^+,
+ D-D_m^- <= eta chi_P^2/2,
+ D_m^+-D <= eta chi_P^2/2,                               (14)
+
+using
+
+ m <= log^2(2C/eta)/(2pi^2)+3.                            (15)
+
+Both functions are jointly convex and have explicit affine SDP
+epigraphs. D_m^- uses 2m blocks of order 2n. The additional term in
+D_m^+ needs ONE endpoint block
+
+ [ sigma   Delta ] >= 0,   cost +(eta/2)Tr W.             (16)
+ [ Delta   W     ]
+
+Thus D_m^+ uses 2m+1 blocks of order 2n. The factor 2 in log(2C/eta)
+only changes the fixed prefactor and lower-order node terms; the
+sharp leading coefficient 1/(2pi^2) in the rational-node count stays
+the same. In m language the lower approximation has error bounded by
+a fixed constant times exp[-pi sqrt(2m)] chi_P^2.
+
+The extra endpoint pole in the upper approximant is natural. A finite
+positive sum with all nodes strictly inside (0,1) grows only linearly
+as x->infinity, whereas f1(x) grows as x log x. Such a sum cannot be
+a global upper bound on f1. The t=0 kernel grows quadratically and
+provides a valid positive global upper approximant.
+
+6. OPTIMIZATION CERTIFICATES AND SOLVER SCOPE
+
+Let F be any feasible set defined by affine constraints and LMIs in
+rho,sigma, restricted to trace-one positive definite states. Define
+
+ p=inf_F D, p^-=inf_F D_m^-, p^+=inf_F D_m^+.
+
+Since both approximants have SDP epigraphs,
+
+ p^- <= p <= p^+.                                       (17)
+
+Whenever the optima are attained and chi_P^2<=R throughout F,
+
+ p-p^- <= eta R/2,       p^+-p <= eta R/2.                (18)
+
+The same statements hold for infima by an approximating sequence.
+Thus the pair of SDPs gives a certified objective bracket of width
+at most eta R. For target width delta and R>0, take eta=delta/R;
+then the common rational node count is at most
+
+ log^2(2CR/delta)/(2pi^2)+3.                              (19)
+
+Even without a known uniform R, a feasible state returned by either
+program gives a true upper bound by evaluating D_m^+ at that state,
+and the lower SDP gives a true lower bound. Their numerical primal/
+dual objective bounds give an a posteriori optimization bracket.
+In particular, if x_-=(rho_-,sigma_-) minimizes the LOWER program,
+then [p^-,D_m^+(x_-)] brackets p, with its EXACT width equal to
+
+ D_m^+(x_-)-p^-=eta chi_P^2(x_-)/2.                       (20)
+
+Thus no supplied global chi^2 cap is needed for this a posteriori
+certificate: evaluate chi_P^2 at the returned lower optimizer. For an
+approximately optimal lower point x with D_m^-(x)<=p^-+zeta, the same
+width is at most zeta+eta chi_P^2(x)/2. More generally, replacing p^-
+by a certified SDP dual bound ell gives the directly checkable width
+[D_m^-(x)-ell]+eta chi_P^2(x)/2. This requires a feasible x and a
+valid dual bound, not merely a small solver-reported residual.
+Solver feasibility/rounding tolerances must of course be included in
+a certified numerical implementation; none are hidden in (17).
+
+A convenient sufficient bound is rho<=kappa sigma, kappa>=1. Set
+C0=sigma^{-1/2}rho sigma^{-1/2}<=kappa I. Then
+
+ Tr[rho^2 sigma^{-1}]=Tr[sigma C0^2]
+    <=kappa Tr[sigma C0]=kappa,
+
+so one may take R=kappa-1. At R=0 the feasible states have rho=sigma
+and the divergence is zero, so no approximation is needed.
+
+Cone storage versus the direct Kronecker epigraph:
+
+  Direct: m blocks of order n^2+1, cone dimension ~mn^4,
+          logdet barrier parameter m(n^2+1).
+  Here:   2m blocks of order 2n, cone dimension 8mn^2,
+          logdet barrier parameter 4mn.
+
+The cone dimensions here count real coordinates of complex-Hermitian
+cones. The trace inequality contributes one nonnegative scalar cone
+and adds 1 to the barrier parameter. Other problem constraints add
+their own cones and variables. The upper program adds one block of
+order 2n and n^2 real auxiliary coordinates.
+
+Under the usual assumptions for a short-step interior-point theorem,
+the PSD-cone contribution to the iteration count changes from
+O(n sqrt(m) log(1/tol)) to O(sqrt(mn) log(1/tol)). This comparison is
+ONLY an iteration/barrier-parameter comparison. The per-iteration
+linear solve depends on all affine constraints and variables and can
+still be expensive. Even assembling all auxiliary matrices costs
+Omega(mn^2), and generic dense Newton elimination is not quadratic in
+n. No end-to-end O(n^2), bit-complexity, numerical-conditioning,
+machine-stability or unconditional practical-speedup claim follows.
+
+Real-only solvers can use the standard realification of a Hermitian
+PSD matrix, doubling its order from 2n to 4n. This changes constants,
+not the O(mn^2) storage scaling. For genuinely real symmetric rho,
+sigma, all optimal variables may be real; X is still unrestricted
+real n by n and U,V are symmetric, with 2n^2+n real auxiliary
+coordinates per node.
+
+7. COMPUTABLE SCALAR CERTIFICATE AND CHECKS
+
+The unspecified asymptotic constant C is not needed to certify a
+particular constructed approximation. Here is an explicit certificate
+specialized from the two comparison bounds in the existing manuscript
+to a=1,b=2. For its two node products B_-,B_+, compute
+
+ d_- = max_{0<=s<=1} sqrt(s) B_-(s)^2,
+ d_+ = max_{0<=s<=1} sqrt(s) B_+(s)^2.
+
+Then a rigorous scalar relative error bound is
+
+ e_m=2pi max(d_-^2,d_+^2)+4d_-d_+.                       (21)
+
+Indeed its left-hand comparison bound is 2pi d_-^2+4d_-d_+, and
+its right-hand comparison bound is 4d_-d_++2pi d_+^2. Thus
+|f1-r_m|<=e_m f2 globally. The maxima are taken over endpoints and
+positive roots of the explicit critical polynomial in the existing
+manuscript with r=1/4. If the products use the same n Ganelius nodes,
+then m=2n+1, d_-=d_+=d, and e_m=(2pi+4)d^2.
+
+For actual coefficients and any rigorously evaluated upper bound
+e>=e_m, use the positive rational lower approximation r_m/(1+e)
+and its upper correction eta_m f2, where eta_m=2e/(1+e). Then the
+pointwise and a posteriori brackets above hold with eta=eta_m. This
+is a finite certificate using explicit scalar products and root
+problems, without knowing a numerical value for the Ganelius constant.
+Polynomial root extraction and verified evaluations remain separately
+charged; this is not a new finite-precision/bit-complexity theorem.
+
+Random genuinely complex examples at n=2,3,5,9, twenty each, with
+strictly positive trace-one rho,sigma and t uniformly between .001
+and .999 were checked with scipy.linalg.solve_sylvester. Setting
+Z to the Sylvester solution and X=t rho Z, Y=(1-t)Z sigma yielded:
+
+ n   max ||X+Y-Delta||_F    max |split cost-<Delta,Z>|
+ 2       4.11e-16                    8.88e-16
+ 3       1.31e-15                    2.66e-15
+ 5       3.80e-15                    2.13e-14
+ 9       3.38e-15                    2.49e-14
+
+Random perturbations (X+H,Y-H) always increased the objective, as
+predicted by the exact completion-of-squares proof. These floating
+point tests are orientation checks, not substitutes for the proof.
+No SDP solver was used for these checks.
+
+8. PRIMARY-SOURCE SCREEN AND THE ABANDONED FRENKEL ROUTE
+
+Primary source for the claimed old small-block theorem:
+  Oisin Faust and Hamza Fawzi, Rational approximations of operator
+  monotone and operator convex functions, arXiv:2305.12405v1 (2023),
+  https://arxiv.org/abs/2305.12405
+  https://arxiv.org/pdf/2305.12405
+
+Theorem 5 states O(m) blocks of order 2n, with a global Petz-chi^2
+weighted relative-entropy error. The preceding sentence explicitly
+offers it without proof, based on forthcoming [Faw23]. The reference
+title is Smaller semidefinite approximations of quantum f-divergences.
+The paper's stated conjectural exponent becomes the proved scalar
+exponent used here. The present lift is independently derived and
+does not resolve whether it is identical to [Faw23]'s intended proof.
+
+Targeted title/author and Sylvester/infimal-convolution searches did
+not locate a separately available current primary proof of [Faw23].
+Faust's December 2023 thesis lists it as in preparation:
+  https://api.repository.cam.ac.uk/server/api/core/bitstreams/95b542c8-984c-45ca-bfee-e90bcad55a73/content
+
+This bounded search does not certify novelty or exhaust the literature.
+The infimal-convolution identity itself is elementary and classical.
+Parallel-sum background is explicitly credited to W. N. Anderson Jr.
+and R. J. Duffin, Series and parallel addition of matrices, J. Math.
+Anal. Appl. 26(3),576--594 (1969),
+  https://doi.org/10.1016/0022-247X(69)90200-5
+For positive P,Q, equation (1) is the quadratic-form variational
+identity for P^{-1}:Q^{-1}=(P+Q)^{-1}. The proof in Section 1 is
+self-contained and does not require extracting a theorem from that
+reference.
+
+A route considered before (1) was found uses Frenkel's exact integral
+of trace-positive affine pencils. These need only n-sized PSD blocks.
+Relevant primary papers:
+  Peter E. Frenkel, Integral formula for quantum relative entropy
+  implies data processing inequality, Quantum 7, 1102 (2023),
+  https://arxiv.org/abs/2208.12194
+  Christoph Hirche and Marco Tomamichel, Quantum Renyi and
+  f-divergences from integral representations, CMP 405,208 (2024),
+  https://arxiv.org/abs/2306.12343
+  Gereon Kossmann and Rene Schwonnek, Optimising the relative entropy
+  under semidefinite constraints, npj Quantum Information 12,23 (2026),
+  https://arxiv.org/abs/2404.17016
+  https://www.nature.com/articles/s41534-026-01184-4
+
+The last work obtains sublinear discretization convergence with small
+matrix dimensions. A fixed positive quadrature of the trace-positive
+pencils reduces to a piecewise-linear hinge sum even on commuting
+scalar inputs. It cannot inherit root-exponential rational convergence
+just by substituting the new rational coefficients. For example, on
+[1,2] the scalar f1 has curvature f1''>=1/2. If a continuous
+piecewise-linear function with at most m+1 pieces approximates f1 in
+uniform absolute error E, one segment has length at least 1/(m+1).
+The second midpoint difference of f1 on that segment is at least
+h^2/8 while an affine function's is zero. The three evaluation errors
+bound that difference by 4E, so E>=1/[32(m+1)^2]. A relative f2
+bound on this interval implies absolute error <=epsilon/2, giving
+epsilon>=1/[16(m+1)^2]. A sharper constant is not needed: fixed hinge
+quadrature is polynomial, not root-exponential, in this model.
+
+Moreover their general integral-based f-divergence is distinct from
+Petz for rational generators. Its chi^2 is the BKM metric, not
+Tr[rho^2 sigma^{-1}]-1. The exact Sylvester infimal convolution above
+avoids both issues by retaining the original Petz rational kernels.

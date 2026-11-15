@@ -1,0 +1,146 @@
+Independent review of logarithmic-rank updates using a graph spectral gap
+========================================================================
+
+Reviewer: separate Codex research agent, 2026-11-14.
+Source read in full: expander-polynomial-updates.txt, SHA256
+  57df50485353baae096a74e11f68c9f0f2c493788f9995a7a4cf605e525a22c9
+
+Final delta reviewed: the source adds Section 7, a separately performed
+225-case floating-point diagnostic, with mathematical text unchanged.
+Final source SHA256
+  98cc3f2e755e1e21e2d79d888571b78d9de027002207e67de9497197269a9e88
+The mathematical PASS applies to this final source as well. This reviewer
+did not independently reproduce the diagnostic; its reported observations
+are corroboration, not premises of the reviewed proof.
+
+REPRODUCIBILITY DELTA
+  Final source SHA256
+    9d5079d1b1f486a5b8eba0ed5153bf82825ee8940501d4f67002b81bf6de476d
+  Section 7 now links scripts/check_expander_polynomial_updates.py and
+  docs/expander-polynomial-diagnostics.txt, states the run command and
+  identifies NumPy and the addition/deletion case counts. The reviewer
+  read the script and retained output, then independently reran it:
+  all 225 assertions passed with the retained maxima. This verifies the
+  diagnostic's algebraic scope and reproducibility, not the asymptotic
+  theorem. Proof text is unchanged; mathematical PASS remains valid.
+
+Finding: PASS of the deterministic theorem, factor construction and
+random-regular corollary under their explicit hypotheses and arithmetic
+model. This is an informal independent mathematical review, not external
+peer review or a formal-verification certificate. No novelty is certified.
+
+Deterministic proof
+--------------------
+1. The common subspace H=1-perp is essential and correctly retained.
+   Both connected Laplacians have the same one-dimensional kernel. All
+   incidence update columns and every forward/backward recurrence vector
+   lie in H. Sparse X=L/c-I and Y=L'/c-I therefore suffice; their norm-one
+   constant eigenvectors never enter any estimate using r<1. No dense
+   projector or uncharged orthogonalization is needed.
+
+2. With c=(Lambda+gamma)/2, the assumed common interval gives
+   ||X|H||,||Y|H||<=r=(Lambda-gamma)/(Lambda+gamma). The noncommutative
+   identity Y^j-X^j=sum_l X^l(Y-X)Y^(j-1-l) is correctly ordered.
+   Its norm bound is j r^(j-1)||E||/c on H and on the full space, since
+   its restriction to constants is exactly zero.
+
+3. For b_j=binom(alpha,j), the exact identity
+     j|b_j|=alpha product_{i=1}^{j-1}(1-alpha/i)<=alpha
+   holds for j>=1 and 0<alpha<1. The uniformly convergent binomial
+   series on [-r,r] and the telescoping bound give tail
+     alpha c^(alpha-1)||E|| r^q/(1-r).
+   This treats the difference itself; it does not subtract two unscaled
+   absolute approximations and lose control for tiny updates.
+
+4. The common interval gives ||E||<=Lambda-gamma<=Lambda even for
+   noncommuting endpoints: apply gamma I<=L,L'<=Lambda I to their
+   difference. Consequently
+     c^(alpha-1)||E||^(1-alpha)<=(Lambda/c)^(1-alpha)<=2.
+   Equations (3),(10),(11) therefore prove intrinsic error
+   epsilon||E||^alpha with no minimum update-size assumption.
+   E=0 is separately and correctly handled.
+
+5. Since log(r)<=-(1-r), the degree condition (4), together with q>=1,
+   is sufficient for (3). Its constants depend on the supplied spectral
+   interval ratio rather than the graph size or update magnitude. The
+   geometric stopping test uses O(q) scalar operations, so no logarithm
+   or arbitrary power oracle is silently needed to choose q.
+
+Complete factors and work
+--------------------------
+6. The source's exact identity is
+     F_q=c^(alpha-1)sum_{l=0}^{q-1} X^l U J W_l^T,
+     W_l=sum_{j=l+1}^q b_j Y^(j-1-l)U.
+   Symmetry of Y permits the displayed transpose. Backward Horner
+   W_l=b_{l+1}U+Y W_{l+1}, W_q=0, computes all right blocks with only
+   q sparse N-by-k block products. Forward powers compute the left
+   blocks in the same order of work. There is no quadratic-in-q loop
+   hidden by the polynomial expansion.
+
+7. Concatenating these blocks gives width kq and O((M+N)kq) ordinary
+   arithmetic including factor entries, coefficient generation and dense
+   zero initialization if used. Diagonal J and a common scalar scaling
+   cost O(Nkq), not O(Nk^2). Explicit output expansion is separately
+   charged as O(N^2kq). The resulting exact product is symmetric because
+   it equals the polynomial difference; termwise symmetrization gives
+   a signed factor of width at most 2kq with no dense small-core solve.
+
+8. The alpha=1/2 algorithm uses arithmetic and square roots. General
+   fixed alpha explicitly charges one scalar c^(alpha-1) evaluation;
+   the binomial coefficients need only arithmetic with alpha. Nothing
+   here establishes floating-point stability or finite-word complexity.
+
+Random-regular and adaptive-update corollary
+---------------------------------------------
+9. Independently inspected the ACTUAL PRIMARY SOURCE:
+   Charles Bordenave, A new proof of Friedman's second eigenvalue Theorem
+   and its extension to random lifts, arXiv:1502.04482v4, PDF page 2.
+     https://arxiv.org/pdf/1502.04482
+   Theorem 1 is for the uniform SIMPLE d-regular graph, fixed d>=3,
+   along admissible N with Nd even, and bounds max(lambda_2,|lambda_N|)
+   by 2sqrt(d-1)+zeta with probability tending to one. Its equation (2)
+   gives the stated N^-a bound, for fixed 0<a<1, at a deviation
+   c(d,a)(log log N/log N)^2. The source distinguishes this second
+   eigenvalue from a definition omitting repeated trivial eigenvalues.
+   Thus the good event does ensure connectivity when zeta is chosen
+   below d-2sqrt(d-1). The manuscript transfers the correct source model.
+
+10. On that host event, L|H>=gamma I and L<=2d I. ANY conductance
+    additions with total budget W0 have E>=0 and
+    ||E||<=tr(E)=2sum_e d_e<=2W0. Therefore every such updated operator
+    lies in the SAME interval [gamma,2d+2W0] on H. Additions preserve
+    connectivity. This is a deterministic implication of one host event,
+    so updates may be chosen adaptively after observing the host without
+    a union bound over edge choices. Growing k is allowed with the
+    stated k and input-size costs; W0 must remain fixed for the displayed
+    fixed-constant corollary.
+
+11. The imported project already reviews this spectral-gap input in
+    snapshot/results/050-finite-defect.md and its batch-050 review.
+    The new deduction therefore connects an ACTUAL imported spectral-gap
+    result to the matrix-function update objective. It does not use the
+    sharper SG-11 mixed permutation envelope or SG-04 cubic threshold.
+
+12. For signed edits, total removed weight W_- produces a negative
+    perturbation of norm at most 2W_-. Weyl gives the stated surviving
+    lower gap gamma0-2W_->0; additions cannot reduce it. The endpoint
+    upper bound is controlled by the base operator and added weight.
+    If this gap condition fails, no logarithmic-degree claim is made.
+
+Significance and remaining scope
+---------------------------------
+The log(1/epsilon) rank dependence improves the gap-free log-squared
+bound when a common positive spectral interval is available. Its full
+factor work and intrinsic update scaling are proved, including arbitrarily
+small updates and the common-kernel issue. The graph-expansion corollary
+is uniform over all budgeted additions and has an elementary deterministic
+implementation once the gap event holds.
+
+Polynomial and rational low-rank matrix-function updates are classical,
+including Beckermann--Kressner--Schweitzer and later work. This report
+does not determine whether the exact combined statement is already an
+explicit corollary in that literature. It proves no new graph eigenvalue
+theorem, no unrestricted quadratic matrix multiplication, no permutation
+embedding theorem, and no lower bound establishing sharp logarithmic
+rank for the fixed-gap graph class. Those limits are correctly preserved
+in the reviewed source.

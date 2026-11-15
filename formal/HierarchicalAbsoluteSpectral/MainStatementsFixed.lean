@@ -49,6 +49,18 @@ def projectionOutputProgram (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
           product := C.val
           product_eq := C.property.trans (ArithmeticKernel.program_eval _ _ _) }
 
+theorem projectionOutputProgram_eval (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
+    (A : Matrix (Fin n) (Fin m) ℝ) (B : Matrix (Fin m) (Fin p) ℝ)
+    (U : Matrix (Fin n) (Fin w) ℝ) (hw : w ≤ r) :
+    (projectionOutputProgram kernels A B U hw).eval =
+      { width := w
+        width_le := hw
+        left := U
+        right := (Uᵀ*A)*B
+        product := U*((Uᵀ*A)*B)
+        product_eq := rfl } := by
+  simp only [projectionOutputProgram,eval_bind,eval_pure,certify_eval,ArithmeticKernel.program_eval]
+
 theorem projectionOutputProgram_product (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     (A : Matrix (Fin n) (Fin m) ℝ) (B : Matrix (Fin m) (Fin p) ℝ)
     (U : Matrix (Fin n) (Fin w) ℝ) (hw : w ≤ r) :

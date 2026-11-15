@@ -1,0 +1,456 @@
+RAW FRACTIONAL-FUNCTION UPDATES AND THE REMAINING QUADRATIC BRIDGE
+2026-11-15. Owner: /root/fresh_quadratic_bridge.
+
+STATUS AND SCOPE
+===============
+The original product-LRA hard gate is still OPEN. In particular, nothing
+here proves N^2 total time for N=m^(9/8), r=1, theta=1/m. The positive-part
+of a nonzero threshold still contains an unknown Gram/inverse mass, and
+the new square-root-update theorem cannot be substituted for that missing
+operation without a further argument.
+
+A useful broader conventional-arithmetic algorithm DOES follow. Low-rank
+updates of both whole-line fractional Hermitian maps, and of rectangular
+absolute/polar fractional maps, can be computed on their intrinsic Holder
+scale in ~O(Nmr+m^3), without PSD promises, condition/gap parameters,
+factor cancellation parameters or a supplied base matrix function. A
+direct core formula avoids doubling perturbation rank. A bipartite parity
+identity avoids another factor two when passing to rectangular dilations.
+
+The generic O(log^2) rank/cost theorem below is fully explicit with the
+ordinary dyadic trapezoid rule. The sharp leading-rank upgrade uses the
+checked Gaussian localization lemma in sharp-fractional-holder.tex and
+the constructive scalar realization being written by sqrt_update_sota in
+sharp-rank-algorithm-search.txt. Those scalar details must receive their
+own audit before promoting the sharp-rank IMPLEMENTATION claim.
+
+No global novelty claim is made: general rational low-rank matrix-function
+updates and rational Krylov methods are established work (BCKS2021).
+The potential extra content is the complete raw-input, intrinsic-error,
+condition-independent cost/rank theorem and its sharp leading constants.
+
+1. GENERAL HERMITIAN INPUT AND ALGORITHM STATEMENT
+================================================
+Let X be real N-by-m, J an explicit real symmetric m-by-m matrix, and
+
+  S=X J X^T.
+
+Let the supplied real symmetric perturbation have a thin representation
+E=U K U^T, with U N-by-r, K symmetric, 1<=r<=m<=N. Neither J nor K
+needs to be invertible or an involution. Put T=S+E. Both endpoints may
+be indefinite and singular. Fix 0<alpha<1, beta=1-alpha, and define
+
+  f_e(x)=|x|^alpha,
+  f_o(x)=sign(x)|x|^alpha,
+  g_+(x)=(-i x)^alpha, g_-(x)=(i x)^alpha.
+
+For f_e and f_o the algorithm returns a real signed factor
+F=Z Sigma Z^T, Sigma diagonal with entries +1/-1, such that
+
+  ||F-[f(T)-f(S)]|| <= epsilon ||E||^alpha
+
+with probability >=1-delta. Its width is O_alpha(r log^2(2r/epsilon)),
+and its conventional arithmetic is
+
+  ~O_alpha(Nmr+m^3).
+
+The logarithms suppressed are only dimensions, accuracy and confidence.
+Output expansion is extra O(N^2 r log^2(2r/epsilon)). The complex branch
+maps admit an analogous complex thin factor P Q^T of the same order of
+width/cost. All matrices in this note are real except these temporary
+complex shifted solves and complex-branch outputs.
+
+For alpha=1/2, the computation uses arithmetic, comparisons and positive
+scalar square roots, with fixed constants approximated by ordinary scalar
+series. Dyadic alpha uses repeated square roots as well. Arbitrary fixed
+alpha requires its input-dependent scalar-power evaluations to be added
+to the model/charged explicitly; no hidden unit-cost power oracle is
+asserted. There is no finite-word stability theorem here.
+
+2. INTRINSIC CORE WITHOUT ARTIFICIAL RANK DOUBLING
+================================================
+Compute a thin rank-revealing QR U=Q R with Q^T Q=I_k, k<=r. Set
+
+  C=R K R^T, E=Q C Q^T, a=||C||_F.
+
+If a=0 return zero exactly. Otherwise
+
+  ||E||=||C|| <=a<=sqrt(r)||E||.
+
+This costs O(Nr^2+r^3), inside Nmr+m^3. C can be singular; none of the
+following formulas uses C^-1 or its square root. In particular, replacing
+C by a difference of shifted PSD cores is unnecessary and would obscure
+the exact perturbation-rank count.
+
+For any z off the real axis write
+
+  R_z=(S-zI)^-1, R'_z=(T-zI)^-1,
+  V_z=R_z Q, M_z=Q^T R_z Q,
+  H_z=(I+M_z C)^-1, K_z=C H_z.
+
+The determinant lemma proves H_z exists. The exact identities are
+
+  H_z=I-Q^T R'_z Q C,
+  K_z=C(I+M_z C)^-1=(I+C M_z)^-1 C,
+  D_z:=R_z-R'_z=V_z K_z V_z^T.                 (1)
+
+For real symmetric S,T the resolvents and K_z are complex symmetric;
+the transposes in (1) are intentional, rather than adjoints. At z=it,
+t>0, Hermitian resolvent bounds give
+
+  ||H_z|| <=M(t):=1+a/t,
+  ||K_z|| <=a M(t),
+  ||D_z|| <=min(2/t,a/t^2).                    (2)
+
+The H identity follows by multiplication or the usual Woodbury formula;
+it remains valid for singular C. It is the key to eliminating dependence
+on the supplied representation's conditioning or cancellation.
+
+3. ACTUAL RAW RESOLVENTS, SYMMETRY AND CONJUGATION
+================================================
+Use one constant-distortion OSE to form G0=L^T L approximating G=X^T X:
+
+  (1-eta0)G0 <=G<=(1+eta0)G0, eta0=1/4.
+
+This is ~O(Nm+m^3) conventional arithmetic with logarithmic confidence
+dependence (e.g. Nelson--Nguyen2013, Theorem9). L is full row rank on its
+support, and no true Gram G is formed. Put K0=L J L^T. This is symmetric
+even when J is singular.
+
+For zeta=it let z=1/zeta, A_z=I-zJG, A0_z=I-zJG0, b=J X^T h. The
+exact physical resolvent and the implemented iteration are
+
+  (S-zeta I)^-1 h =-zeta^-1[h+zXw_*], A_z w_*=b,
+  w_0=0,
+  w_(ell+1)=w_ell+A0_z^-1(b-A_z w_ell).          (3)
+
+Each true G action is X^T(XW) on the current thin RHS block. The coarse
+inverse is explicitly
+
+  A0_z^-1=I+z J L^T(I-zK0)^-1 L.
+
+At a purely imaginary z, I-zK0 is invertible, so per-node small setup is
+ordinary complex elimination, O(m^3), not an eigenvalue/inverse oracle.
+
+Writing G-G0=L^T D L with ||D||<=eta0 for analysis, the coarse error
+recurrence is
+
+  L(w_(ell+1)-w_*)=zK0(I-zK0)^-1 D L(w_ell-w_*).
+
+Since max_(lambda real)|z lambda/(1-z lambda)|<=1, and the physical
+resolvent correction satisfies ||[(I-zS)^-1-I]h||<=||h||, the SAME fixed
+iteration length ell yields an actual linear operator Rhat_zeta with
+
+  ||Rhat_zeta-R_zeta|| <=C0 eta0^ell/t.          (4)
+
+This is an operator-norm statement: the fixed iteration is linear and
+the bound holds for every h. It therefore applies to the entire Q block,
+not only separately to chosen columns. Set nu=C0 eta0^ell.
+
+Symmetry matters in the next step. Put B0_z=A0_z^-1 J. Woodbury gives
+
+  B0_z=J+z J L^T(I-zK0)^-1 L J,
+
+which is complex symmetric. The finite inverse polynomial in (3) is
+
+  sum_(j=0)^(ell-1) z^j B0_z[(G-G0)B0_z]^j.
+
+Each alternating product begins and ends with B0_z and is symmetric
+under transpose. Hence Rhat_zeta is exactly complex symmetric. Real
+arithmetic and the same iteration also give
+
+  Rhat_(-it)=conj(Rhat_(it)).                    (5)
+
+No PSD or normality of Rhat is needed for the whole-line algorithm.
+
+4. UNIFORM SMALL-CORE AND NODE ERRORS
+===================================
+Use Vhat=Rhat Q, Mhat=Q^T Rhat Q, Hhat=(I+Mhat C)^-1 and Khat=C Hhat.
+If
+
+  gamma(t):=nu (a/t)(1+a/t)<=1/2,               (6)
+
+inverse perturbation and (2),(4) give
+
+  ||Hhat||<=2M(t), ||Khat||<=2aM(t),
+  ||Khat-K||<=2nu a^2 M(t)^2/t.
+
+Khat is complex symmetric by the second identity in (1), so define the
+actual symmetric approximate node Dhat=Vhat Khat Vhat^T. Its rank is
+at most rank(C)<=r, even if the original U had redundant columns. Expanding
+the two V factors and the core gives
+
+  ||Dhat-D|| <=6nu a M(t)/t^2
+                         +2nu a^2 M(t)^2/t^3.   (7)
+
+Indeed ||V||<=1/t, ||Vhat||<=2/t, ||Vhat-V||<=nu/t; the V differences
+contribute coefficients4+2, and the inverse-core difference coefficient2.
+This works for singular C and uses no lower bound on any base/update
+eigenvalue. Formula (7) is the shared core lemma also used for the
+PSD-endpoint sharp-rank algorithm.
+
+5. EXPLICIT WHOLE-LINE QUADRATURE
+================================
+Let phi=pi alpha/2, c_e=2sin(phi)/pi, c_o=2cos(phi)/pi, and use D_z
+from (1). The exact differences are
+
+  f_e(T)-f_e(S)=c_e int_0^infinity t^alpha Im D_(it) dt,
+  f_o(T)-f_o(S)=-c_o int_0^infinity t^alpha Re D_(it) dt. (8)
+
+These follow by subtracting the scalar resolvent representations and
+functional calculus. For example R(it)-R(-it)=2it/(S^2+t^2), while
+R(it)+R(-it)=2S/(S^2+t^2). At fixed alpha both integrals converge in norm
+by (2). The complex branch is a single-pole linear combination, as in
+factor-four-extensions.txt Section13.2.
+
+Put t=a exp(y). In every fixed strip |Im y|<=d<pi/2 the logarithmic
+integrands satisfy the UNIFORM operator envelope
+
+  ||F(y)||<=C_(alpha,d) a^alpha
+        min(exp(alpha Re y),exp(-beta Re y)).     (9)
+
+This follows because the imaginary parts of poles +/-i a exp(y) have
+magnitude >=a exp(Re y) cos(d), so both endpoint resolvents are bounded
+by 1/[a exp(Re y)cos(d)]. The difference identity gives the other term.
+No base spectral norm or condition parameter enters (9).
+
+Choose rho=epsilon/[C_alpha(r+1)], a logarithmic trapezoid spacing
+h=Theta_alpha(1/log(1/rho)), and dyadic positive nodes t_j=a2^(j/H),
+where H is a power of two of order log(1/rho). Choose the least integer
+tail cutoffs with s_min=t_min/a=Theta_alpha(rho^(1/alpha)) and
+s_max=t_max/a=Theta_alpha(rho^(-1/beta)). Node count is
+q=O_alpha(log^2(2r/epsilon)), quadrature error O_alpha(rho a^alpha).
+At alpha=1/2 every node and t_j^(alpha+1) uses only scalar square roots
+and products; h=log(2)/H and fixed coefficients can be approximated by
+convergent scalar series to the requisite positive relative accuracy.
+
+Weighting (7) by h*t_j^(alpha+1) and putting s_j=t_j/a bounds the total
+node error by
+
+  C_alpha nu a^alpha h sum_j
+   [s_j^(alpha-1)(1+1/s_j)
+                +s_j^(alpha-2)(1+1/s_j)^2]
+  <=C'_alpha nu a^alpha s_min^(alpha-4).
+
+Taking nu<=c_alpha rho^(4/alpha) makes this O_alpha(rho a^alpha) and
+also implies (6) at every node. It takes only ell=O_alpha(log(1/rho))
+raw iterations. Use exact integer halving budgets rather than silently
+assuming input logarithms or arbitrary scalar powers for this choice.
+
+Since a^alpha<=r^(alpha/2)||E||^alpha and rho r^(alpha/2)<=epsilon/C_alpha,
+all quadrature/node/coefficient errors sum to epsilon||E||^alpha after
+fixing constants. This proves the claimed intrinsic error theorem.
+
+6. REAL FACTORS AND COMPLETE CONVENTIONAL COST
+============================================
+For one node write Vhat=P+iQ0 and Khat=A+iB, with real symmetric A,B.
+Then
+
+  Re Dhat=[P,Q0] [[A,-B],[-B,-A]] [P,Q0]^T,
+  Im Dhat=[P,Q0] [[B,A],[A,-B]] [P,Q0]^T.         (10)
+
+Each has real rank at most2r. Thin QR and symmetric congruence elimination
+on the at-most2r core give a signed factor using only arithmetic,
+comparisons and square roots. Zero pivots are handled by exact rank
+tests or a basis change e_i ->e_i+e_j; no small eigendecomposition is
+assumed. Concatenate these factors with the real quadrature weights.
+
+Setup OSE/coarse Gram/factor/core costs ~Nm+m^3. Initial X^T Q and
+per-node raw actions cost O(Nmr) each; each of ell=O_alpha(log(r/epsilon))
+iterations also uses at most O(m^2r) small arithmetic. Each node has
+O(m^3) coarse solve setup, O(Nr^2+r^3) factor extraction. Multiplying
+by q polylogarithmic nodes gives ~O_alpha(Nmr+m^3). There is no hidden
+full-width multiply X times an m-by-m transform. All node counts and
+iterations are fixed in advance. On a failed sketch, a singular small
+core is detected and returns zero, with the same dimensional runtime cap.
+
+For every fixed real homogeneous scalar map a0*x_+^alpha+b0*(-x)_+^alpha,
+combine the even/odd cores in (10) BEFORE extracting factors. They share
+the same [P,Q0] feature block, so each combined real node still has rank
+at most2r. This extends the same algorithm and sharp rank coefficient to
+all nonzero real homogeneous maps in the 1:2:4 theorem.
+
+7. RECTANGULAR ABSOLUTE AND POLAR-MAZUR UPDATES
+=============================================
+Let M be real N-by-m, N>=m, and let Delta=U V^T with U N-by-r,
+V m-by-r, r<=m. Set M'=M+Delta. Its Hermitian dilation is
+
+  D(M)=[[0,M],[M^T,0]]=Y Jswap Y^T,
+  Y=diag(M,I_m), Jswap=[[0,I_m],[I_m,0]].
+
+Ambient size is N+m, latent width2m, input work O(Nm+m^2). The update
+
+  D(Delta)=diag(U,V) Jswap_r diag(U,V)^T
+
+has rank <=2r and norm exactly ||Delta||. Apply Sections1--6 to the
+dilated endpoints. Functional calculus gives
+
+  f_e(D(M))=diag(|M^T|^alpha,|M|^alpha),
+  f_o(D(M))=[[0,M|M|^(alpha-1)],
+            [(M|M|^(alpha-1))^T,0]].
+
+The zero singular values are assigned value zero. Block extraction
+therefore returns low-rank approximations of the right/left absolute
+power changes and the polar-Mazur change, each with error
+
+  epsilon ||Delta||^alpha,
+  conventional raw cost ~O_alpha(Nmr+m^3).
+
+No gap or minimum singular value is needed; in particular these statements
+remain valid at singular M or M'. Intrinsic normalization in Section2
+removes arbitrary cancellation between U and V. This is a fractional
+polar map with alpha>0; it does NOT establish a condition-free update of
+the discontinuous alpha=0 polar factor.
+
+For RIGHT absolute and polar-Mazur corrections, even forming every output
+entry costs only O(m^2*r*q) or O(N*m*r*q), respectively. These are absorbed
+by ~O_alpha(Nmr+m^3). Thus those two theorems include the full explicit
+matrix output at the displayed total asymptotic cost. LEFT absolute power
+has N-by-N output and separately costs O(N^2*r*q) to expand.
+
+8. PARITY PRESERVES THE SHARP RECTANGULAR NODE RANK
+=================================================
+Generic dilation bookkeeping would give4r real node rank. That is
+avoidable. Choose the OSE for Y blockwise, giving
+
+  G0=diag(G0_M,I_m), G=diag(M^T M,I_m).
+
+Let P=diag(I_N,-I_m) on physical space and Qsign=diag(I_m,-I_m) on
+latent space. Then P Y=Y Qsign, Jswap anticommutes with Qsign, and G0
+and G-G0 commute with Qsign. The fixed iteration in (3) consequently
+satisfies
+
+  P Rhat_(it) P=-Rhat_(-it)=-conj(Rhat_(it)).      (11)
+
+One can check this directly from the symmetric finite inverse polynomial:
+Qsign B0_z Qsign=-B0_(-z), so its ell-th polynomial transforms with one
+overall minus sign when z is replaced by -z. The outer resolvent scaling
+then gives (11). No true Gram is needed to enforce this algebra.
+
+The exact update E_d=D(Delta) also anticommutes with P. The Woodbury
+node can be written without an inverse Rhat as
+
+  Dhat=Rhat E_d(I+Rhat E_d)^-1 Rhat.
+
+Its parity is therefore P Dhat P=-conj(Dhat). This follows simply by
+replacing the three occurrences of Rhat/E_d by their parity transforms;
+the two factors inside I+Rhat E_d lose both signs. It does not assume
+that Rhat itself is invertible. Hence Dhat's two diagonal blocks are
+purely imaginary and its off-diagonal blocks are real.
+
+But complex rank(Dhat)<=rank(E_d)<=2r. A purely imaginary diagonal
+block, divided by i, has REAL rank equal to its complex rank; the same
+is true of a real off-diagonal block. Thus each extracted node of the
+absolute or polar-Mazur map has real rank <=2r, not4r. Compute a generic
+realification first, then exact thin QR/core rank compression to realize
+this rank. It costs O(Nr^2+r^3) and stays inside the theorem's budget.
+
+9. SHARP LEADING RANK UPGRADE AND ITS IMPLEMENTATION OBLIGATION
+============================================================
+The checked Gaussian lemma in sharp-fractional-holder.tex replaces the
+uniform trapezoid by q<=L^2/(4*pi*d*alpha*beta)+O(L^(7/4)) nodes in a
+strip of half-width d, at error e^-L. For whole-line maps d<pi/2; for
+positive-endpoint powers d<pi. All preceding raw/core perturbation
+estimates still apply because the largest and smallest retained log
+nodes are O_alpha(L), and nu can be set e^(-C_alpha L).
+
+For fixed rank r and epsilon->0 the suggested leading widths are
+
+  PSD fractional power:       [r/(4*pi^2*alpha*beta)+o(1)]log^2(1/epsilon),
+  one complex branch:         [r/(2*pi^2*alpha*beta)+o(1)]log^2(1/epsilon),
+  real whole-line map:        [r/(  pi^2*alpha*beta)+o(1)]log^2(1/epsilon),
+  rectangular absolute/polar: [r/(  pi^2*alpha*beta)+o(1)]log^2(1/epsilon).
+
+The rectangular last line uses (11) and rank2r per extracted node;
+blindly applying a rank2r Hermitian theorem would incorrectly double it.
+These coefficients match the checked worst-case lower bounds. At
+alpha=1/2 they are respectively r/pi^2,2r/pi^2,4r/pi^2,4r/pi^2.
+
+To obtain ONE uniform algorithm with the exact o(1) leading term, rather
+than an arbitrarily-close fixed-strip constant, choose
+d=d_boundary-L^(-1/4). The elementary sector bounds in (9) grow only
+polynomially in L, so the Gaussian proof's slack O(L^(3/4)) absorbs them.
+The scalar window/node construction must also be charged. The shared
+implementation being developed by sqrt_update_sota uses positive clipped
+polynomial-square integration for Gaussian window weights, and scaled
+Taylor/exponentiation for exp(log-node), with poly(L) scalar arithmetic.
+Its precise scalar proof is outside this file and needs independent audit.
+Until then, the order-optimal uniform-grid algorithm in Sections1--8 is
+the unqualified complete algorithm theorem; these sharp implementation
+coefficients are a rigorously identified upgrade conditional on that
+explicit scalar realization, not a free Gaussian/erf oracle.
+
+10. AN ADDITIONAL PSD BASE GENERALITY
+===================================
+If S=X J X^T is itself promised PSD, the PSD root-update theorem need
+not require an explicitly positive raw base factor. On the OSE event
+write X=Z L, Z=X L^dagger, so (1-eta0)I<=Z^T Z<=(1+eta0)I.
+K0=L J L^T is PSD by congruence (indeed this is true on every sketch
+outcome, because row(L) is a subspace of row(X)). Compute a PSD
+Cholesky K0=H H^T and use the IMPLICIT positive factor
+
+  Y=X L^dagger H=Z H, YY^T=S.
+
+Its coarse Gram proxy is H^T H. Y and Y^T actions on r columns require
+only the corresponding X/X^T thin products and small transforms,
+O(Nmr+m^2r). There is no full-width materialization of Y. Thus the
+positive-base solver extends to promised signed raw PSD bases at the
+same cost. This is standard factor/congruence algebra, not a claimed
+new invention of positive feature factorizations.
+
+11. WHAT STILL PREVENTS THE ORIGINAL NONZERO CUTOFF
+================================================
+For S=X J X^T the desired threshold map is (S-tI)_+ on the supported
+space. Replacing it by |S-tI| requires sqrt((S-tI)^2), and
+
+  (S-tI)^2=t^2 I+X(J G J-2tJ)X^T, G=X^T X.
+
+The signed low-rank core JGJ-2tJ contains the unknown true Gram. Calling
+the new function-update algorithm with that core would hide exactly
+the forbidden Gram computation. A tI augmentation also has full ambient
+rank rather than the desired thin raw access. In supported coordinates,
+the threshold core instead contains inverse mass (Z^T Z)^-1; applying
+it on thin vectors is cheap, but the partial-spectrum method requires
+an explicit core, which is not supplied by that observation.
+
+Likewise the poles of a sharp filter at a nonzero threshold approach
+the real spectrum. The signed raw recurrence in (3) then contracts by
+eta0*|z|/|Im z|, which can exceed one. The intrinsically scaled function
+update theorem proves neither the required near-real inverse nor a
+polynomial-mass separation filter. No original target or omega=2 claim
+follows from this broader neighboring algorithm.
+
+PRIMARY INGREDIENTS / PRIORITY
+=============================
+Nelson--Nguyen, OSNAP, arXiv:1211.1002, Theorem9, supplies an OSE with
+logarithmic failure dependence and polylogarithmic sparsity/row overhead.
+The actual primary PDF was inspected: s=Theta(log^3(d/delta)/eps0),
+rows=Omega(d log^8(d/delta)/eps0^2), success1-delta, with fixed eps0.
+https://arxiv.org/pdf/1211.1002
+Beckermann--Cortinovis--Kressner--Schweitzer, Low-rank updates of matrix
+functions II, arXiv:2008.11501, SINUM59(2021),1325--1347, already develops
+general rational-update/Krylov formulas. Whole-line fractional Holder
+existence is classical (Ricard2018 and subsequent general results).
+Its primary arXiv record was inspected; it explicitly attributes rational
+exactness connections to Bernstein--Van Loan and separately treats sign
+updates. No invention of that mechanism is claimed here.
+https://arxiv.org/abs/2008.11501
+The raw contraction is proved in raw-factor-fresh-search.txt and its
+general singular-J version in partial-spectrum-fresh-search.txt.
+The exact small-exponent/count constants are separately audited in
+sharp-holder-proof-checks.txt and factor-four-independent-audit.txt.
+The new deductions above require their own independent proof and
+priority audit. No external publication or human review is claimed.
+
+ALGEBRA DIAGNOSTIC (NOT A PROOF OR STABILITY CLAIM)
+================================================
+NumPy diagnostic, seed2026111507, tested90 general signed raw cases,
+including singular J, rank-deficient X and singular perturbation C.
+With18 fixed Richardson steps, the largest observed resolvent error /
+proved bound(4) was0.183, and node error / bound(7) was0.000402.
+Complex symmetry discrepancy was at most2.7e-12 relative in floating
+arithmetic. Another60 rectangular dilation cases tested the blockwise
+coarse factor and arbitrary QR coordinates for D(Delta). Resolvent parity
+held exactly in the floating calculation, Woodbury-node parity to1.6e-15,
+and no extracted real block had numerical rank greater than2r. These
+checks detect algebra/sign mistakes; exact proofs are Sections2--8.

@@ -59,15 +59,21 @@ theorem familyScalarProgram_admissible (m N : ℝ) (hm : 0 < m) (hN : 0 < N) :
   exact ⟨hN.ne',(div_pos hm hN).le,by norm_num,
     (familyScheduleProgram_checked (1/1024) (Real.sqrt (m/N)/1024) (by norm_num) (by positivity)).1⟩
 
+theorem familyScalarProgram_depth (m N : ℝ) (hm : 0 < m) (hN : 0 < N) :
+    (familyScalarProgram m N hm hN).eval.schedule.depth =
+      (familyScheduleProgram (1/1024) (Real.sqrt (m/N)/1024) (by norm_num)
+        (by positivity : 0 < Real.sqrt (m/N)/1024)).eval.depth := by
+  simp only [familyScalarProgram,ArithmeticProgram.eval,ArithmeticOp.eval]
+  erw [eval_bind,eval_pure]
+
 theorem familyScalarProgram_work (m N : ℝ) (hm : 0 < m) (hN : 0 < N) :
     (familyScalarProgram m N hm hN).work =
       4*(familyScalarProgram m N hm hN).eval.schedule.depth+9 := by
   have hw := (familyScheduleProgram_checked (1/1024) (Real.sqrt (m/N)/1024)
     (by norm_num) (by positivity : 0 < Real.sqrt (m/N)/1024)).2.1
-  simp only [familyScalarProgram,ArithmeticProgram.work,ArithmeticProgram.eval,ArithmeticOp.eval,
-    work_bind,work_pure,eval_bind,eval_pure,add_zero]
+  rw [familyScalarProgram_depth]
+  simp only [familyScalarProgram,ArithmeticProgram.work,ArithmeticOp.eval,work_bind,work_pure,add_zero]
   rw [hw]
-  simp only [eval_bind,eval_pure]
   omega
 
 def FamilyScalarParameters.schedule_scale {m N : ℝ} (out : FamilyScalarParameters m N) :

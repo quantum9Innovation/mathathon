@@ -6,8 +6,23 @@ The problem and target bounds are in [the research direction](docs/research-dire
 
 The active research goal is broader: pursue a general quadratic-time advance
 and practical theoretical algorithms with manageable constants and standard
-operations. These remain open. The results below establish narrower arithmetic
-bounds; they do not yet establish the requested general breakthrough.
+operations. The results below establish narrower theorems and algorithms;
+the requested general breakthrough remains open.
+
+The [graph connection manuscript](docs/graph-fractional-updates.pdf)
+([source](docs/graph-fractional-updates.tex)) constructs corrections to
+fractional graph Laplacians after k edge changes in expected
+~O((m+n)k) arithmetic, at intrinsic operator error epsilon*||Delta L||^alpha,
+without a spectral-gap assumption. It also transfers the exact worst-case
+matrix compression constant to single-edge updates on paths with positive
+vertex masses. The [verification record](docs/graph-fractional-proof-checks.txt)
+separates proof review, numerical diagnostics, and priority limits.
+The [spectral-gap corollary](docs/expander-polynomial-updates.txt) gives
+width O(k log(1/epsilon)) and ordinary sparse construction on expanders,
+including a uniform random-regular-host guarantee for bounded additions.
+The imported [spectral-gap project](spectral-gap/README.md) is now available.
+Its sharp permutation moments have not yet yielded an improved multiplication
+sketch, as recorded in the [cross-project assessment](docs/matrix-graph-bridge-state.txt).
 
 A [working paper on exact fractional matrix constants](docs/sharp-fractional-holder.pdf)
 ([source](docs/sharp-fractional-holder.tex)) derives the exact leading
@@ -19,6 +34,24 @@ audit; see the [verification record](docs/sharp-holder-proof-checks.txt).
 Classical scalar rates and compression methods are credited. Novelty of
 the precise matrix limits remains under review.
 
+The [companion classification paper](docs/fractional-channel-classification.pdf)
+([source](docs/fractional-channel-classification.tex)) proves the complete
+uniform law for every complex homogeneous fractional function, including
+approach to two exceptional analytic families, the 1:2:4 comparison, and
+the joint transition with matrix dimension. The actual source passed an independent review;
+see its [verification record](docs/channel-classification-proof-checks.txt)
+and [priority audit](docs/channel-classification-priority-audit.txt).
+Classical Cauchy spectral laws and two-channel representations are credited.
+
+A [second working paper](docs/positive-rational-approximation.pdf)
+([source](docs/positive-rational-approximation.tex)) gives complete proofs
+of the bounds in Faust--Fawzi (2023) Conjectures 1 and 2, using positive
+rational sums with the conjectured exponents and fixed prefactors.
+The [verification record](docs/positive-rational-proof-checks.txt) covers
+the actual source, all endpoint cases, arithmetic scope, and explicit SDP
+representations. No later resolution was found in a bounded search;
+priority and external verification remain open.
+
 The [square-root-update construction](docs/nongalactic-wildcard-search.txt)
 gives conventional arithmetic cost ~O(Nmr+m^3) for a factor of a correction
 to sqrt(XX^T), at additive error epsilon*||U|| and rank
@@ -26,6 +59,18 @@ O(r log^2(r/epsilon)). Its [state-of-the-art comparison](docs/sqrt-update-sota-a
 finds a possible gain over explicit Gram construction, with substantial
 risk that existing methods already imply the complete bound. No global
 state-of-the-art or novelty claim is made.
+The [signed/downdate extension](docs/sqrt-update-extensions.txt) achieves
+intrinsic error epsilon*sqrt(||B-A||), including singular endpoints and
+cancelling signed factors; its full arithmetic theorem passed an
+[independent audit](docs/sqrt-update-independent-audit.txt).
+
+The complete [sharp-rank algorithm paper](docs/sharp-matrix-function-updates.pdf)
+([source](docs/sharp-matrix-function-updates.tex)) now realizes the optimal
+leading compression ranks at the same conventional cost, including signed
+Hermitian and rectangular fractional-map corrections. The square-root case
+uses arithmetic and scalar square roots. The actual manuscript passed an
+independent audit; see the [verification record](docs/sharp-update-proof-checks.txt)
+for precise input, error, scalar-model and full-output guarantees.
 
 A new [working paper on cluster-robust Krylov bounds](docs/cluster-robust-krylov.pdf)
 ([source](docs/cluster-robust-krylov.tex)) proves condition-number-free

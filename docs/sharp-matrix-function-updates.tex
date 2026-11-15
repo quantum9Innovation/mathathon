@@ -1,0 +1,751 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,array}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{remark}[theorem]{Remark}
+\numberwithin{equation}{section}
+\newcommand{\R}{\mathbb R}
+\newcommand{\C}{\mathbb C}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\sgn}{\operatorname{sgn}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\op}{\mathrm{op}}
+\newcommand{\Frob}{\mathrm F}
+\newcommand{\nn}{\mathcal N}
+\title{Sharp-rank algorithms for low-rank updates\texorpdfstring{\\}{ }of fractional matrix functions}
+\author{Working research manuscript}
+\date{November 2026}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We give algorithms for low-rank corrections to fractional matrix
+functions from thin raw factors. The error is
+$\varepsilon\|E\|_{\op}^{\alpha}$ for the actual perturbation $E$,
+including arbitrarily cancelling supplied factors. Conventional arithmetic
+cost is $\widetilde O_\alpha(Nmr+m^3)$, with no condition number,
+spectral gap, or supplied base matrix function. For fixed perturbation
+rank $r$ and $\varepsilon\downarrow0$, the output width has the sharp
+leading coefficient in the uniform worst-case rank bound. At
+$\alpha=1/2$ the coefficients of $r\log^2(1/\varepsilon)$ are
+$1/\pi^2$ for positive-endpoint roots, $2/\pi^2$ for a complex branch,
+and $4/\pi^2$ for real whole-line maps and rectangular absolute/polar
+fractional maps. The square-root algorithms use only field operations,
+comparisons, scalar square roots, and discrete randomness. We explicitly
+realize the positive Gaussian quadrature without exponential or error
+function oracles. For rectangular right absolute and polar corrections,
+forming every output entry is included in the same asymptotic cost.
+\end{abstract}
+
+\noindent\textit{Review and priority status.}
+The mathematical notes and complete typeset source passed separate
+independent internal audits, including an actual-copy review. There is
+no claim of external peer review, formal verification, finite-word
+stability, or certified novelty. Rational matrix-function updates,
+root-exponential compression, and randomized preconditioning have
+substantial antecedents. The precise synthesis and sharp output
+guarantees, rather than those individual tools, are the subject here.
+
+\section{Input, guarantees, and sharp leading widths}
+
+All input matrices are real, and $\|\cdot\|$ means the operator norm.
+Fix $0<\alpha<1$ and $\beta=1-\alpha$. Costs count exact real field
+operations, comparisons, positive scalar square roots, and discrete
+randomness. Complex shifted solves use pairs of real coordinates.
+The notation $\widetilde O$ suppresses only logarithms of dimensions,
+$1/\varepsilon$ and $1/\delta$, where $\delta$ is the failure probability.
+Constants may depend on the fixed scalar function and $\alpha$.
+
+The principal case $\alpha=1/2$, and more generally dyadic $\alpha$,
+uses the preceding scalar operations alone. For arbitrary fixed
+$\alpha$, input-dependent scalar powers such as $a^\alpha$ must be
+added to the model or their evaluation cost charged. Our statements
+for such $\alpha$ include this qualification. Fixed scalar constants
+can be approximated by ordinary convergent series at polynomial cost
+in $\log(1/\varepsilon)$.
+
+\begin{theorem}[Positive endpoints]\label{thm:PSD}
+Let $X\in\R^{N\times m}$, $U\in\R^{N\times r}$,
+$1\le r\le m\le N$, and let $K\in\R^{r\times r}$ be symmetric.
+Set $A=XX^T$, $E=UKU^T$, and promise $B=A+E\succeq0$.
+For $\varepsilon,\delta\in(0,1)$ an algorithm returns a real signed
+factor $F=Z\Sigma Z^T$, where $\Sigma$ is diagonal with entries
+$\pm1$, satisfying
+\begin{equation}\label{eq:errorPSD}
+ \Pr\{\|F-(B^\alpha-A^\alpha)\|
+             \le\varepsilon\|E\|^\alpha\}\ge1-\delta
+\end{equation}
+in conventional arithmetic $\widetilde O_\alpha(Nmr+m^3)$.
+Its width is $O_\alpha(r\log^2(2r/\varepsilon))$, and for each fixed
+$r$, uniformly over dimensions and input spectra, the width is at most
+\begin{equation}\label{eq:PSDwidth}
+ \left[\frac{r}{4\pi^2\alpha\beta}+o_r(1)\right]
+                          \log^2(1/\varepsilon).
+\end{equation}
+If $E\succeq0$, $\Sigma$ may be taken positive; if $E\preceq0$,
+negative. Singular endpoints and critical downdates are included.
+Dense expansion adds $O(N^2\,\mathrm{width})$.
+\end{theorem}
+
+For $X\in\R^{N\times m}$, $U\in\R^{N\times r}$,
+$1\le r\le m\le N$, and symmetric $K\in\R^{r\times r}$,
+write a general signed raw base as
+\begin{equation}\label{eq:rawS}
+ S=XJX^T,\qquad J=J^T\in\R^{m\times m},
+ \qquad T=S+UKU^T.
+\end{equation}
+Neither $J$ nor $K$ must be nonsingular or an involution. Define
+\[
+ f_e(x)=|x|^\alpha,\quad
+ f_o(x)=\sgn(x)|x|^\alpha,\quad
+ g_\pm(x)=(\mp ix)^\alpha,
+\]
+using the principal scalar branch and value zero at zero.
+
+\begin{theorem}[Whole-line functions]\label{thm:whole}
+For $\varepsilon,\delta\in(0,1)$ and the input~\eqref{eq:rawS},
+with no positivity promise, the same
+conventional cost returns an approximation to $f(T)-f(S)$ with error
+$\varepsilon\|E\|^\alpha$ and probability at least $1-\delta$.
+For $f=f_e,f_o$, or any fixed nonzero real homogeneous function
+$a_0x_+^\alpha+b_0(-x)_+^\alpha$, the output is a real signed factor
+with leading width
+\begin{equation}\label{eq:wholewidth}
+ \left[\frac{r}{\pi^2\alpha\beta}+o_r(1)\right]
+                              \log^2(1/\varepsilon).
+\end{equation}
+For $g_\pm$ a complex factor $PQ^T$ has leading width
+\begin{equation}\label{eq:branchwidth}
+ \left[\frac{r}{2\pi^2\alpha\beta}+o_r(1)\right]
+                              \log^2(1/\varepsilon).
+\end{equation}
+All widths are $O_\alpha(r\log^2(2r/\varepsilon))$ without taking a
+limit. The scalar-operation qualification above applies throughout.
+\end{theorem}
+
+\begin{theorem}[Rectangular changes]\label{thm:rect}
+Let $M\in\R^{N\times m}$, $N\ge m$, and
+$\Delta=UV^T$ with $U\in\R^{N\times r}$, $V\in\R^{m\times r}$,
+$1\le r\le m$. For $\varepsilon,\delta\in(0,1)$ put
+$M'=M+\Delta$. The differences of
+\[
+ |M|^\alpha=(M^TM)^{\alpha/2},\qquad
+ |M^T|^\alpha=(MM^T)^{\alpha/2},\qquad
+ \mathcal P_\alpha(M)=M|M|^{\alpha-1}
+\]
+have low-rank approximations with error $\varepsilon\|\Delta\|^\alpha$,
+the probability/cost of Theorem~\ref{thm:whole}, and leading width
+\eqref{eq:wholewidth}. The polar map is defined by singular values,
+with zero on the zero singular space. Forming every entry of the right
+absolute-power or polar correction is included in
+$\widetilde O_\alpha(Nmr+m^3)$. Left absolute-power expansion costs
+an additional $O(N^2\,\mathrm{width})$.
+\end{theorem}
+
+The coefficients for $\alpha=1/2$, divided by $r$, are
+\[
+\begin{array}{c|c}
+ \text{map or endpoint class}&\text{coefficient of }\log^2(1/\varepsilon)\\ \hline
+ \text{PSD power}&1/\pi^2\\
+ \text{one complex branch}&2/\pi^2\\
+ \text{real whole-line map}&4/\pi^2\\
+ \text{rectangular absolute/polar fractional map}&4/\pi^2
+\end{array}
+\]
+The companion compression theorem~\cite{Sharp,Extensions} gives matching
+worst-case lower coefficients for these classes, for each fixed $r$.
+Thus ``sharp'' refers to the leading \emph{output rank}, over unrestricted
+finite dimensions. It asserts neither optimal runtime nor the exact
+minimum rank for a fixed input or fixed positive $\varepsilon$.
+
+\section{An intrinsic singular perturbation core}
+
+Compute rank-revealing thin QR $U=QR$, where $Q^TQ=I_k$ and $k\le r$.
+Set
+\begin{equation}\label{eq:intrinsic}
+ C=RKR^T,\qquad E=QCQ^T,\qquad a=\|C\|_{\Frob}.
+\end{equation}
+If $a=0$, return zero. Otherwise
+$\|E\|=\|C\|\le a\le\sqrt r\|E\|$.
+This uses $O(Nr^2+r^3)$ work. It does not introduce an eigennorm oracle,
+and it removes arbitrarily large cancellation in the supplied factors.
+
+For a resolvent $R_z=(S-zI)^{-1}$ put
+$R'_z=(T-zI)^{-1}$, $V_z=R_zQ$, $M_z=Q^TR_zQ$.
+The same notation is used at $z=-t$ for positive endpoints.
+
+\begin{lemma}[Core and perturbation bounds]\label{lem:core}
+At $z=it$ for Hermitian endpoints, or $z=-t$ for PSD endpoints, $t>0$,
+\begin{align}
+ H_z&=(I+M_zC)^{-1}=I-Q^TR'_zQC,&\|H_z\|&\le\mu:=1+a/t,
+                                                        \label{eq:coreH}\\
+ K_z&=CH_z=(I+CM_z)^{-1}C=K_z^T,&
+ D_z:=R_z-R'_z&=V_zK_zV_z^T.             \label{eq:coreD}
+\end{align}
+Suppose a common symmetric linear inverse approximation obeys
+$\|\widehat R_z-R_z\|\le\nu/t$, $\nu\le1$.
+Define $\widehat V,\widehat M,\widehat H,\widehat K$ by the same formulas.
+If $\nu(a/t)(1+a/t)\le1/2$, then $\widehat H$ exists,
+$\widehat M$ and $\widehat K$ are symmetric, and
+\begin{align}
+ \|\widehat K\|&\le2a\mu,&
+ \|\widehat K-K\|&\le2\nu a^2\mu^2/t,\\
+ \|\widehat V\widehat K\widehat V^T-VKV^T\|
+       &\le6\nu a\mu/t^2+2\nu a^2\mu^2/t^3.   \label{eq:nodeError}
+\end{align}
+No inverse of $C$ is used; each computed node has rank at most
+$\rank C=\rank E$.
+\end{lemma}
+\begin{proof}
+The determinant lemma and endpoint resolvent invertibility give
+$I+MC$ invertible. Woodbury gives both identities
+\eqref{eq:coreH}--\eqref{eq:coreD}; the bound follows from
+$\|R'_z\|\le1/t$ and $\|C\|\le a$. The equality
+$C(I+MC)^{-1}=(I+CM)^{-1}C$ proves transpose symmetry, including
+singular $C$. The resolvents and $M,K$ are complex symmetric in the
+complex case, so the transposes rather than adjoints are intentional;
+$H$ need not be symmetric.
+
+Now $\|\widehat M-M\|\le\nu/t$. Inverse perturbation gives
+$\|\widehat H\|\le2\mu$ and
+$\|\widehat H-H\|\le2\nu a\mu^2/t$.
+Use $\|V\|\le1/t$, $\|\widehat V\|\le2/t$ and
+$\|\widehat V-V\|\le\nu/t$. Expanding the two $V$ factors and then
+the core gives coefficients $4+2$ and $2$ in~\eqref{eq:nodeError}.
+The rank assertion follows because $\widehat H$ is invertible.
+\end{proof}
+
+\section{Raw inverse actions with one sketch}
+
+A constant-distortion OSE forms $G_0=L^TL$ satisfying, with probability
+at least $1-\delta$,
+\begin{equation}\label{eq:OSE}
+ (1-\eta_0)G_0\preceq G=X^TX\preceq(1+\eta_0)G_0,
+ \qquad\eta_0=1/4.
+\end{equation}
+The support factor $L$ is full row rank. Standard sparse embeddings
+give $\widetilde O(Nm+m^3)$ conventional setup. Explicitly,
+\cite[Theorem 9]{NN} has sparsity
+$\Theta(\log^3(d/\delta)/\epsilon_0)$ and
+$O(d\log^8(d/\delta)/\epsilon_0^2)$ rows for a $d$-dimensional
+space, with success $1-\delta$. Use fixed sufficiently small
+$\epsilon_0$ to obtain~\eqref{eq:OSE}; rank deficiency causes no issue.
+Only the sketched Gram is formed. The same event controls every later
+node, RHS and iteration.
+
+\subsection*{Positive base}
+For $A=XX^T$, set $P=G_0+tI$ and
+$F_t=P^{-1/2}(G-G_0)P^{-1/2}$, so $\|F_t\|\le1/4$.
+For an even integer $\ell$ define
+\[
+ Q_\ell=P^{-1/2}\sum_{j=0}^{\ell-1}(-F_t)^jP^{-1/2},\qquad
+ \widehat R_{-t}=t^{-1}(I-XQ_\ell X^T).
+\]
+The inverse square roots are analysis only: Cholesky of $P$ and ordinary
+preconditioned Richardson implement the polynomial. Every true
+$G$ action is $X^T(XW)$ on a thin block. Since
+\[
+ 0\preceq(G+tI)^{-1}-Q_\ell
+          \preceq4^{-\ell}(G+tI)^{-1},
+\]
+we have the exact common-operator bound
+\begin{equation}\label{eq:positiveR}
+ 0\preceq\widehat R_{-t}-R_{-t}\preceq4^{-\ell}I/t,
+ \qquad \widehat R_{-t}\succeq0.
+\end{equation}
+The polynomial and its physical output are symmetric.
+
+\subsection*{Signed base and imaginary poles}
+For $S=XJX^T$ set $K_0=LJL^T$. At $\zeta=it$ put $z=1/\zeta$ and
+\[
+ A_z=I-zJG,\quad A_{0,z}=I-zJG_0,\quad b=JX^Th.
+\]
+Starting at $w_0=0$, perform
+\begin{equation}\label{eq:Richardson}
+ w_{j+1}=w_j+A_{0,z}^{-1}(b-A_zw_j),\qquad
+ \widehat R_\zeta h=-\zeta^{-1}(h+zXw_\ell).
+\end{equation}
+The actual coarse inverse is
+\[
+ A_{0,z}^{-1}=I+zJL^T(I-zK_0)^{-1}L.
+\]
+It uses an $m$-dimensional complex solve; $I-zK_0$ is nonsingular
+because $K_0$ is real symmetric and $z$ purely imaginary. Per-node
+setup is $O(m^3)$ conventional arithmetic.
+
+To prove convergence, write $G-G_0=L^TDL$ analytically with
+$\|D\|\le\eta_0$. For the exact solution $w_*$ the recurrence is
+\[
+ L(w_{j+1}-w_*)=zK_0(I-zK_0)^{-1}DL(w_j-w_*).
+\]
+The first factor has norm at most one. Moreover
+$\|[(I-zS)^{-1}-I]h\|\le\|h\|$. The Gram sandwich transfers
+coarse seminorm error to physical error and gives
+\begin{equation}\label{eq:imagR}
+ \|\widehat R_{it}-R_{it}\|
+       \le\sqrt{5/3}\,4^{-\ell}/t.
+\end{equation}
+This holds for the actual linear operator defined by the fixed iteration,
+uniformly for every $h$; nullspace components of the latent iterate do
+not matter.
+
+Symmetry must also be checked. The matrix
+\[
+ B_{0,z}=A_{0,z}^{-1}J
+       =J+zJL^T(I-zK_0)^{-1}LJ
+\]
+is complex symmetric. The finite inverse polynomial is
+$\sum_{j=0}^{\ell-1}z^jB_{0,z}[(G-G_0)B_{0,z}]^j$.
+Each alternating word begins and ends with $B_{0,z}$ and is transpose
+symmetric. Thus $\widehat R_{it}$ is complex symmetric, and real
+coefficients give $\widehat R_{-it}=\overline{\widehat R_{it}}$.
+A generic RHS-dependent stopping rule would not supply this property.
+
+\section{Integral representations and uniform envelopes}
+
+For PSD endpoints and $c_\alpha=\sin(\pi\alpha)/\pi$,
+\begin{equation}\label{eq:PSDintegral}
+ B^\alpha-A^\alpha
+       =c_\alpha\int_0^\infty t^\alpha D_{-t}\,dt.
+\end{equation}
+Here $\|D_{-t}\|\le\min(1/t,a/t^2)$, since both endpoint resolvents
+lie between zero and $I/t$. For Hermitian endpoints,
+$\|D_{it}\|\le\min(2/t,a/t^2)$. Put
+$\phi=\pi\alpha/2$, $c_e=2\sin\phi/\pi$, $c_o=2\cos\phi/\pi$.
+The whole-line formulas are
+\begin{align}
+ f_e(T)-f_e(S)&=c_e\int_0^\infty t^\alpha\Im D_{it}\,dt,
+                                                   \label{eq:evenIntegral}\\
+ f_o(T)-f_o(S)&=-c_o\int_0^\infty t^\alpha\Re D_{it}\,dt,\\
+ g_+(T)-g_+(S)&=i c_\alpha\int_0^\infty t^\alpha D_{-it}\,dt.
+                                                   \label{eq:branchIntegral}
+\end{align}
+The conjugate formula gives $g_-$. These identities follow from scalar
+Stieltjes formulas and functional calculus; the displayed norm bounds
+justify subtracting and integrating, including at zero eigenvalues.
+
+Set $t=a e^y$ and divide the logarithmic integrand by $a^\alpha$.
+For positive endpoints it is analytic on $|\Im y|<\pi$, with
+\begin{equation}\label{eq:envelope}
+ \|F(x+i\theta)\|\le M_d e^{-g(x)},\qquad
+ g(x)=\alpha(-x)_++\beta x_+,
+ \quad M_d\le C_\alpha\cos(d/2)^{-2}.
+\end{equation}
+Indeed $|\lambda+t|\ge\cos(d/2)(\lambda+|t|)$ for $\lambda\ge0$.
+For whole-line maps the strip is $|\Im y|<\pi/2$, with
+$M_d\le C_\alpha\cos(d)^{-2}$. Both imaginary resolvents then have
+distance at least $a e^x\cos d$ from the real spectrum. For the analytic
+extension of~\eqref{eq:evenIntegral}, use
+$(D_{it}-D_{-it})/(2i)$, rather than interpreting $\Im$ off the real
+line; similarly use their half-sum for the odd map.
+
+On the real line $\|F(x)\|+\|F'(x)\|\le C_\alpha$ uniformly in
+spectra and dimensions. For example
+$D_t'=-R_AD_t-D_tR_B$ at negative real shifts, and the analogous
+imaginary derivative has the same norm bound
+$\|D_t'\|\le2\|D_t\|/t$. Differentiating the prefactor proves the
+claim. These envelopes involve neither $\|S\|/\|E\|$ nor conditioning.
+
+\section{A positive quadrature with explicit scalar realization}
+
+We use the precise Gaussian localization result from the companion
+paper~\cite[Lemma 3.1]{Sharp}. If $F$ is analytic on a strip of
+half-width $d_0$ and satisfies~\eqref{eq:envelope}, then for fixed
+$0<d<d_0$ there is a positive quadrature of error $e^{-L}$ and
+\begin{equation}\label{eq:fixedGaussian}
+ q\le\frac{L^2}{4\pi d}\left(\frac1\alpha+\frac1\beta\right)
+                   +O_{\alpha,d}(L^{7/4}).
+\end{equation}
+We next make its moving-strip version and scalar operations explicit.
+This step is needed for an algorithm attaining the exact leading rank.
+
+\begin{lemma}[Constructive moving strip]\label{lem:constructive}
+For the normalized integrands above, let $d_0=\pi$ or $\pi/2$.
+For every sufficiently large $L$ one can compute positive nodes $s_j$
+and nonnegative coefficients $a_j$, in $O_\alpha(L^3)$ scalar
+arithmetic/square-root operations, such that
+\begin{equation}\label{eq:movingCount}
+ q\le\frac{L^2}{4\pi d_0\alpha\beta}+O_\alpha(L^{7/4}),
+ \quad |\log s_j|\le C_\alpha(L+1),\quad
+ \sum_j a_j\le C_\alpha(L+1).
+\end{equation}
+Replacing the ideal logarithmic quadrature by the actual nodes and
+coefficients has normalized error at most $e^{-L}$ after fixed
+constant budget adjustments. There is no exponential, Gaussian integral,
+or error function oracle. At general $\alpha$ only the separately
+qualified scalar powers in evaluating $F$ remain.
+\end{lemma}
+\begin{proof}
+Compute certified rational intervals for $\pi$ and $\log2$ of width
+$e^{-C_\alpha L}$, using Machin's arctangent identity and the
+$\operatorname{atanh}(1/3)$ series. Their geometric tails cost
+$O_\alpha(L)$ operations. Let $p\le\pi$ be the lower approximation;
+put $d=p-L^{-1/4}$ or $p/2-L^{-1/4}$, respectively. For large $L$,
+$M_d=O_\alpha(\sqrt L)$ by~\eqref{eq:envelope}. Use
+\[
+ \ell=L^{3/4}+C_\alpha,\quad b=2\sqrt L+C_\alpha,\quad
+ I_j=[j\ell,(j+1)\ell],\quad
+ \varphi_j(z)=\pi^{-1/2}\int_{I_j}e^{-(z-u)^2}\,du.
+\]
+Retain intervals meeting
+$[-(L+\ell)/\alpha,(L+\ell)/\beta]$. Write
+$m_j=\min_{I_j}g$, $Q_j=\max(\ell,L-m_j+3\ell)$ and
+$h_j=2pd/Q_j$. Retain lattice points $x=nh_j$ in $I_j+[-b,b]$.
+The ideal positive coefficient is $h_j\varphi_j(x)$.
+
+For clarity, the companion proof's errors remain uniform as $d$ moves.
+The boundary integrals of $F\varphi_j$ are at most
+$C_\alpha M_d\ell e^{-m_j}$. Omitted windows contribute
+$O_\alpha(M_de^{-L-\ell})$; infinite trapezoid errors sum to
+$O_\alpha(M_dL e^{-L-3\ell})$, since $2\pi d/h_j\ge Q_j$.
+Gaussian lattice tails outside the enlarged intervals contribute
+$O_\alpha(M_dL e^{-2L})$. Polynomial growth $M_d=O_\alpha(\sqrt L)$
+is absorbed by these margins. Fixed buffers or a finite-small-$L$
+fallback make the desired error budget valid. All constants here come
+from the displayed sector and Gaussian bounds and are computable for
+fixed $\alpha$. One may choose a fixed threshold $L_\alpha$ from those
+bounds and replace smaller requested $L$ by $L_\alpha$; this does not
+change the asymptotic coefficient or introduce input spectral data.
+
+Counting these lattices uses
+\[
+ \int_\R(L-g(x))_+\,dx
+       =\frac{L^2}{2}\left(\frac1\alpha+\frac1\beta\right).
+\]
+The Riemann-sum and $3\ell$ losses are $O_\alpha(L\ell)$, and window
+enlargement costs $O_\alpha(L^2b/\ell)$. Thus
+$q\le L^2/(4pd\alpha\beta)+O_\alpha(L^{7/4})$, proving
+\eqref{eq:movingCount}. Also $h_j<1$ for large $L$, and
+$h\sum_n e^{-(nh-u)^2}<4$ for $h\le1$. Integrating over the retained
+intervals gives total coefficient mass $O_\alpha(L+1)$.
+
+Here is a positive scalar implementation of each window. Clip
+$I_j-x$ to $[-R_0,R_0]$, where $R_0=4\sqrt{L+1}$. Set
+\[
+ D=\lceil64(L+1)\rceil,\qquad
+ P_D(w)=\sum_{h=0}^D\frac{(-1/2)^h w^{2h}}{h!},\qquad
+ \widehat\varphi_j(x)=p^{-1/2}\int_{(I_j-x)\cap[-R_0,R_0]}P_D(w)^2\,dw.
+\]
+The integral is a polynomial primitive, evaluated at two clipped
+endpoints. It is nonnegative exactly. On the clipped interval,
+$z=w^2/2\le8(L+1)$, so
+\[
+ |P_D(w)-e^{-w^2/2}|\le\frac{z^{D+1}}{(D+1)!}
+       \le(e/8)^{D+1}\le2^{-D}.
+\]
+Squaring changes the error by at most $3\cdot2^{-D}$; the clipped
+Gaussian tail is $O(e^{-16(L+1)})$. The $p$ error is smaller after
+choosing its fixed accuracy constant. Consequently every window has
+absolute error $O(e^{-16(L+1)})$. Precomputing $P_D^2$ costs $O(L^2)$,
+and each primitive evaluation costs $O(L)$, for $O_\alpha(L^3)$ total.
+Absolute accuracy suffices even for very small window weights.
+
+Finally $|x|\le B=O_\alpha(L+1)$. Choose a power of two $M\ge8(B+1)$
+of order $B+1$; compute a degree-$O_\alpha(L)$ Taylor approximation
+$P$ to $e^{x/M}$, and set $s=P^M$ by repeated squaring. Then $P>0$,
+$s>0$, and $|\log s-x|\le e^{-C_\alpha L}$. Taylor remainder at
+$|x/M|\le1/8$ proves this estimate; the logarithm is analysis only.
+The operation count is $O_\alpha(L)$ per node and independent of the
+magnitude of the input scale $a$. By the real-line derivative bound
+and the total coefficient mass, these node changes, the window errors,
+and fixed scalar-constant approximations contribute at most $e^{-L}$
+after a harmless constant shift of $L$. This proves the lemma.
+\end{proof}
+
+\section{The actual node algorithms and their costs}
+
+Choose $\rho=\varepsilon/[C_\alpha(r+1)]$. Repeated halving finds the
+least integer $n$ with $2^{-n}\le\rho$ in $O(\log(1/\rho))$ operations.
+Before defining $L$, compute the constant intervals to width
+$2^{-C_\alpha(n+1)}$ using the geometric series above; $O_\alpha(n+1)$
+terms suffice. This supplies all requested constant precision without
+a circular dependence on $L$.
+Using the certified upper approximation to $\log2$, take
+$L=n(\log2)_+$ plus a fixed budget shift. Thus
+\begin{equation}\label{eq:Lscale}
+ L=\log(1/\varepsilon)+O_\alpha(\log(2r)),\qquad e^{-L}\le\rho.
+\end{equation}
+All lattice endpoints and integer ceilings in the preceding construction
+are found by comparisons within polynomial ranges in $L$; a floor or
+logarithm of an input magnitude is not a free primitive.
+
+For each actual node $t_j=as_j$, use the appropriate common inverse
+from Section 3, with one fixed even iteration count $\ell_{\rm inv}$.
+Let $B=\max_j|\log s_j|+1=O_\alpha(L+1)$ analytically; a computable
+bound $1+\max_j|x_j|$ plus a fixed rounding allowance suffices. Choose
+the least even integer $\ell_{\rm inv}\ge C_\alpha(B+L+1)$ large enough that
+$\nu\le e^{-C_\alpha(B+L+1)}$ in~\eqref{eq:positiveR} or
+\eqref{eq:imagR}. No spectral ratio enters this choice.
+
+For example, multiplying~\eqref{eq:nodeError} by $t^{\alpha+1}$ and
+putting $s=t/a$ gives an error at most a fixed multiple of
+\[
+ \nu a^\alpha\{s^{\alpha-1}(1+1/s)
+                         +s^{\alpha-2}(1+1/s)^2\}.
+\]
+For $e^{-B}\le s\le e^B$ this is at most
+$C_\alpha\nu a^\alpha e^{4B}$. The coefficient mass is
+$O_\alpha(L+1)$, so the preceding fixed iteration count makes the
+total solve error at most $a^\alpha e^{-L}$. It also ensures the
+invertibility condition in Lemma~\ref{lem:core} at every actual node.
+Together with Lemma~\ref{lem:constructive} the final error is at most
+$C_\alpha a^\alpha e^{-L}\le\varepsilon\|E\|^\alpha$, since
+$a^\alpha\le r^{\alpha/2}\|E\|^\alpha$ and
+$r^{\alpha/2}/(r+1)\le1$.
+
+The physical PSD weight is
+$w_j=a_j\widehat c_\alpha t_j^{\alpha+1}$, with
+$\widehat c_\alpha>0$ a scalar approximation to $c_\alpha$ of the
+budgeted relative accuracy. Whole-line nodes use
+$a_jt_j^{\alpha+1}$ multiplying the real or imaginary cores in
+\eqref{eq:evenIntegral}--\eqref{eq:branchIntegral}, with their fixed
+scalar coefficients approximated to the same accuracy. The needed
+scalar powers use the operation model stated in Section 1.
+
+\subsection*{Real and complex node factors}
+For PSD endpoints $\widehat K$ is real symmetric with rank at most $r$.
+Exact congruence elimination gives
+$\widehat K=L_j\Sigma_jL_j^T$ with at most $\rank C$ columns.
+Always search all remaining diagonal entries for a nonzero pivot first;
+if all vanish and an off-diagonal $a_{ij}\ne0$ remains, replace
+$e_i$ by $e_i+e_j$, producing diagonal $2a_{ij}$. Stop at a zero
+residual matrix. This is $O(r^3)$ arithmetic, with square roots for
+absolute diagonal pivots, and works for singular $C$.
+The node factor is $\sqrt{w_j}\widehat V_jL_j$, where
+$w_j$ is the nonnegative actual scalar weight.
+
+If $C\succeq0$, then $\widehat M\succeq0$ by
+\eqref{eq:positiveR}, and
+$\widehat K=C^{1/2}(I+C^{1/2}\widehat MC^{1/2})^{-1}C^{1/2}\succeq0$.
+These square roots are analysis only; PSD Cholesky with zero pivots
+implements the factor. For $C\preceq0$ and $B\succeq0$, the exact
+downdate core inverse has norm at most $1+a/t$. The same perturbation
+condition keeps its approximated core positive, giving
+$\widehat K\preceq0$. This proves the sign assertion in
+Theorem~\ref{thm:PSD}.
+
+For an imaginary node write $\widehat V=P+iQ_0$ and
+$\widehat K=A_0+iB_0$, with real symmetric $A_0,B_0$. Then
+\begin{align*}
+ \Re\widehat D&=[P,Q_0]
+       \begin{pmatrix}A_0&-B_0\\-B_0&-A_0\end{pmatrix}[P,Q_0]^T,\\
+ \Im\widehat D&=[P,Q_0]
+       \begin{pmatrix}B_0&A_0\\A_0&-B_0\end{pmatrix}[P,Q_0]^T.
+\end{align*}
+Each real node has rank at most $2r$. For a real homogeneous map,
+combine these two cores on the \emph{same} feature block before
+factoring; this avoids an additional factor two. A single complex
+branch uses $\widehat V\widehat K\widehat V^T$ directly, at width
+at most $r$.
+
+The node count~\eqref{eq:movingCount}, multiplied by these node ranks,
+proves~\eqref{eq:PSDwidth}--\eqref{eq:branchwidth} using~\eqref{eq:Lscale}.
+All factors can be concatenated; no unknown matrix function is evaluated.
+
+\subsection*{Operation and failure accounting}
+Before the nodes, intrinsic QR/core costs $O(Nr^2+r^3)$, and the
+sketch/coarse setup costs $\widetilde O(Nm+m^3)$. Reusable $X^TQ$
+costs $O(Nmr)$. Each of $O_\alpha(L^2)$ nodes costs
+$O(m^3+\ell_{\rm inv}Nmr+Nr^2+r^3)$; the scalar preparation costs
+$O_\alpha(L^3)$. Thus, suppressing dimension/confidence logarithms only,
+an explicit accuracy-dependent bound is
+\[
+ \widetilde O(Nm+m^3)+O_\alpha(NmrL^3+m^3L^2+L^3).
+\]
+This is $\widetilde O_\alpha(Nmr+m^3)$ with conventional multiplication.
+Physical factor storage is $O_\alpha(NrL^2)$ in addition to input and
+sketched-core storage. Output expansion has the costs already stated.
+
+The only random failure allowance is the one OSE event. Every loop
+count is fixed in advance. A singular small inverse or a failed required
+PSD test returns zero; neither can occur on that event. Congruence zero
+residuals represent rank loss and are not failure. Coarse imaginary
+solves are always nonsingular, and positive $G_0+tI$ is always SPD.
+Hence the operation/width cap holds on every random outcome. Verifying
+the promised PSD endpoints is not an additional task of the algorithm.
+
+\section{Rectangular dilation and a rank-preserving parity}
+
+For $M\in\R^{N\times m}$ define
+\[
+ \mathcal D(M)=\begin{pmatrix}0&M\\M^T&0\end{pmatrix}
+       =YJ_sY^T,\qquad
+ Y=\diag(M,I_m),\qquad J_s=\begin{pmatrix}0&I_m\\I_m&0\end{pmatrix}.
+\]
+The latent width is $2m$, ambient size $N+m$, and raw input cost
+$O(Nm+m^2)$. For $\Delta=UV^T$ its dilation is
+$\diag(U,V)J_{s,r}\diag(U,V)^T$, of rank at most $2r$ and norm
+exactly $\|\Delta\|$. Functional calculus gives
+\begin{align*}
+ f_e(\mathcal D(M))&=\diag(|M^T|^\alpha,|M|^\alpha),\\
+ f_o(\mathcal D(M))&=
+ \begin{pmatrix}0&\mathcal P_\alpha(M)\\
+                 \mathcal P_\alpha(M)^T&0\end{pmatrix}.
+\end{align*}
+This already proves the rectangular error and cost, but generic real
+node factoring would overcount the leading rank. The following exact
+parity removes that loss.
+
+Choose the OSE blockwise, so
+$G_0=\diag(G_{0,M},I_m)$. Put
+$P=\diag(I_N,-I_m)$ on physical space and
+$Q_s=\diag(I_m,-I_m)$ on latent space. Then $PY=YQ_s$,
+$J_sQ_s=-Q_sJ_s$, and $G_0,G-G_0$ commute with $Q_s$.
+The symmetric finite polynomial of Section 3 consequently gives
+\begin{equation}\label{eq:parityR}
+ P\widehat R_{it}P=-\widehat R_{-it}
+                       =-\overline{\widehat R_{it}}.
+\end{equation}
+Indeed $Q_sB_{0,z}Q_s=-B_{0,-z}$, so its degree-$j$ alternating word
+acquires $(-1)^{j+1}$; the external resolvent scaling proves
+\eqref{eq:parityR}.
+
+The update $E_d=\mathcal D(\Delta)$ anticommutes with $P$. The computed
+Woodbury node may be written
+\[
+ \widehat D=\widehat R E_d(I+\widehat R E_d)^{-1}\widehat R.
+\]
+This formula needs no inverse of $\widehat R$; the middle inverse
+exists by the small-core determinant lemma. Substitution into
+\eqref{eq:parityR} gives $P\widehat DP=-\overline{\widehat D}$.
+Thus diagonal blocks are purely imaginary and off-diagonal blocks real.
+Their complex ranks are at most $\rank E_d\le2r$. Dividing a purely
+imaginary block by $i$, or taking a real off-diagonal block, preserves
+that rank over the real field. Each extracted absolute or polar node
+therefore has real rank at most $2r$, giving exactly
+\eqref{eq:wholewidth}, not twice that coefficient.
+
+A generic realification can first be formed, then thin QR and a small
+exact rank factorization compress each block to $2r$ columns in
+$O(Nr^2+r^3)$ work. Rectangular polar blocks use an ordinary two-factor
+rank factorization, rather than a rectangular signed Cholesky.
+Expanding a right absolute correction costs $O(m^2rL^2)$ and a polar
+correction $O(NmrL^2)$, both already absorbed by the theorem. Left
+absolute expansion has $N^2$ entries and its separately stated cost.
+This completes Theorem~\ref{thm:rect}.
+
+\section{A further PSD raw-base generality}
+
+The positive-endpoint algorithm also applies to a promised PSD signed
+raw base $A=XJX^T$ without materializing a new tall positive factor.
+On the OSE event write $X=ZL$ with $Z=XL^\dagger$ and
+$(1-\eta_0)I\preceq Z^TZ\preceq(1+\eta_0)I$.
+Since $J$ restricted to $\operatorname{row}(X)$ is PSD,
+$K_0=LJL^T\succeq0$. In fact this remains true on every sketch
+outcome because $\operatorname{row}(L)\subseteq\operatorname{row}(X)$.
+Compute small PSD Cholesky $K_0=HH^T$. The implicit positive factor
+\[
+ Y=XL^\dagger H=ZH,\qquad YY^T=A
+\]
+is exact on the OSE event. Its coarse Gram proxy is $H^TH$, and its
+thin actions cost $O(Nmr+m^2r)$. Small support inverses and Cholesky
+cost $O(m^3)$; no $N$-by-$m$ transformed factor is materialized.
+Thus the same positive-base proof and operation count apply.
+
+\section{Comparison, interpretation, and limits}
+
+There is a direct same-guarantee explicit-Gram baseline. Form $X^TX$
+in $O(Nm^2)$ conventional work, then use the same finite rational rule
+with exact small shifted inverses and thin lifts. It has the same
+intrinsic error, singular-endpoint scope, leading ranks, and conventional
+cost $\widetilde O(Nm^2+m^3)$. The proved improvement here is
+\[
+ \widetilde O(Nm^2+m^3)\quad\longrightarrow\quad
+ \widetilde O(Nmr+m^3).
+\]
+The ratio can approach $m/r$ when $Nr$ is sufficiently large compared
+with $m^2$. For $N=\Theta(m)$ both cubic terms remain; for $r=m$ the
+construction bounds also have the same order. These comparisons concern
+these two proved realizations, not lower bounds for competing algorithms.
+
+Root-exponential rank upper mechanisms already occur in
+Birman--Koplienko--Solomyak~\cite{BKS}. Rational-function update algebra
+is classical~\cite{BV}; rational Krylov update methods are developed
+in Beckermann--Cortinovis--Kressner--Schweitzer~\cite{BCKS}. Their method
+already handles general low-rank changes without taking the base
+function as numerical input; its Hermitian positive-update square-root
+approximant is PSD. Those properties are not unique to our construction.
+Their printed bounds use rational approximation on enclosing spectral
+sets, rather than the precise raw-factor/intrinsic-scale operation theorem
+above. This is a scoped comparison of statements, not a claim that
+earlier tools cannot be composed to imply our theorem.
+
+Shmueli--Drineas--Avron~\cite{SDA} already treats root downdates and
+Riccati formulations. Its printed guarantees assume SPD endpoints and
+root/inverse-root access, with a stated iteration assumption in its cost.
+Fasi--Higham--Liu~\cite{FHL} gives stronger exact rank-$r$ formulas for
+scaled-identity bases; our uniform worst-case ranks do not supersede
+that special structure. Sparse embeddings and preconditioned iterations
+are established ingredients~\cite{NN}. There is substantial risk that
+the raw operation theorem is a routine synthesis of known results.
+A bounded primary-source review located no complete matching statement,
+but neither novelty nor global state-of-the-art superiority is certified.
+
+The sharp-rank claim uses the companion lower theorem, whose precise
+matrix constants have their own classical scalar/Hankel antecedents
+and priority qualifications~\cite{Sharp,Extensions}. It is an intrinsic
+update-scale guarantee, not error relative to the possibly much smaller
+correction norm. It gives fractional polar maps with $\alpha>0$,
+not the discontinuous $\alpha=0$ polar factor. It does not give a
+general quadratic matrix-product algorithm: squaring a nonzero threshold
+$XJX^T-tI$ introduces the unavailable core $J(X^TX)J-2tJ$.
+
+Exact arithmetic matters. The Gaussian polynomial primitive can have
+severe coefficient cancellation, and the supplied factors may themselves
+cancel severely. No numerical stability, finite-word complexity, SDP
+solver runtime, or hardware speed conclusion is asserted.
+
+\begin{thebibliography}{9}\raggedright
+\bibitem{Sharp}
+\emph{Exact small-exponent constants for fractional matrix maps}.
+Working companion manuscript, November 2026.
+\href{sharp-fractional-holder.pdf}{Local companion PDF}; source and
+independent review record are in the same research workspace.
+
+\bibitem{Extensions}
+\emph{Factor four: finite-dimension crossover and structural significance}.
+Working companion note, November 2026, Sections 13--14; independently
+reviewed internally. Local file \texttt{factor-four-extensions.txt}.
+
+\bibitem{NN}
+J.~Nelson and H.~L.~Nguy\^en.
+OSNAP: Faster numerical linear algebra algorithms via sparser subspace embeddings.
+FOCS 2013; Theorem 9 of \url{https://arxiv.org/pdf/1211.1002}.
+
+\bibitem{BKS}
+M.~Sh.~Birman, L.~S.~Koplienko and M.~Z.~Solomyak.
+Estimates of the spectrum of a difference of fractional powers of selfadjoint operators.
+\emph{Izv. Vyssh. Uchebn. Zaved. Mat.} (1975), no.~3, 3--10.
+\url{https://www.mathnet.ru/eng/ivm6330}.
+
+\bibitem{BV}
+D.~S.~Bernstein and C.~F.~Van Loan.
+Rational matrix functions and rank-1 updates.
+\emph{SIAM J. Matrix Anal. Appl.} \textbf{22} (2000), 145--154.
+\href{https://doi.org/10.1137/S0895479898333636}{doi:10.1137/S0895479898333636}.
+
+\bibitem{BCKS}
+B.~Beckermann, A.~Cortinovis, D.~Kressner and M.~Schweitzer.
+Low-rank updates of matrix functions II: Rational Krylov methods.
+\emph{SIAM J. Numer. Anal.} \textbf{59} (2021), 1325--1347.
+\url{https://arxiv.org/abs/2008.11501}.
+
+\bibitem{SDA}
+S.~Shmueli, P.~Drineas and H.~Avron.
+Low-rank updates of matrix square roots.
+\emph{Numer. Linear Algebra Appl.} \textbf{31} (2024), e2528;
+first published online 2023.
+\href{https://doi.org/10.1002/nla.2528}{doi:10.1002/nla.2528}.
+
+\bibitem{FHL}
+M.~Fasi, N.~J.~Higham and X.~Liu.
+Computing the square root of a low-rank perturbation of the scaled identity matrix.
+\emph{SIAM J. Matrix Anal. Appl.} \textbf{44} (2023), 156--174.
+\href{https://doi.org/10.1137/22M1471559}{doi:10.1137/22M1471559}.
+\end{thebibliography}
+\end{document}

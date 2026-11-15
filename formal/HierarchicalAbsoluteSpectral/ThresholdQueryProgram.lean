@@ -60,11 +60,11 @@ theorem computedKrylovRitzValue_eq_fixed (kernels : ∀ a b c : ℕ, ArithmeticK
 compressed Gram, fixed-size lift, and two fresh Gaussian inertia calls. -/
 def gaussianKrylovRitzTestsProgram (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     (T : Core k) (hT : T.IsHermitian) (actions : ∀ b, MatrixAction T b)
-    (q : ℕ) (S : Core k) (G : Fin r → Fin k → ℝ) (j : Fin k) (ε : ℝ)
+    (q : ℕ) (S : Core k) (source : MatrixAction Sᵀ r) (G : Fin r → Fin k → ℝ) (j : Fin k) (ε : ℝ)
     (g : Fin 2 → Fin (k*k) → ℝ) :
     ArithmeticProgram (Option (CertifiedRitzTests
       (computedKrylovRitzValue kernels T hT actions q S G j) ε)) := do
-  let M ← gaussianKrylovFullMatrixProgram kernels T hT actions q S G
+  let M ← gaussianKrylovFullMatrixProgram kernels T hT actions q S source G
   have hM : M.val.IsHermitian := by
     rw [M.property]
     exact krylovRitzFixedMatrix_isHermitian kernels T hT q _
@@ -79,9 +79,9 @@ def gaussianKrylovRitzTestsProgram (kernels : ∀ a b c : ℕ, ArithmeticKernel 
 theorem gaussianKrylovRitzTestsProgram_admissible
     (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     (T : Core k) (hT : T.IsHermitian) (actions : ∀ b, MatrixAction T b)
-    (q : ℕ) (S : Core k) (G : Fin r → Fin k → ℝ) (j : Fin k) (ε : ℝ)
+    (q : ℕ) (S : Core k) (source : MatrixAction Sᵀ r) (G : Fin r → Fin k → ℝ) (j : Fin k) (ε : ℝ)
     (g : Fin 2 → Fin (k*k) → ℝ) :
-    (gaussianKrylovRitzTestsProgram kernels T hT actions q S G j ε g).admissible := by
+    (gaussianKrylovRitzTestsProgram kernels T hT actions q S source G j ε g).admissible := by
   simp only [gaussianKrylovRitzTestsProgram,admissible_bind,
     gaussianKrylovFullMatrixProgram_admissible,fixedRitzTestsProgram_admissible,true_and]
   split <;> trivial
@@ -89,10 +89,10 @@ theorem gaussianKrylovRitzTestsProgram_admissible
 theorem gaussianKrylovRitzTestsProgram_success_ae
     (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     (T : Core k) (hT : T.IsHermitian) (actions : ∀ b, MatrixAction T b)
-    (q : ℕ) (S : Core k) (G : Fin r → Fin k → ℝ) (j : Fin k) (ε : ℝ) :
+    (q : ℕ) (S : Core k) (source : MatrixAction Sᵀ r) (G : Fin r → Fin k → ℝ) (j : Fin k) (ε : ℝ) :
     ∀ᵐ g ∂Measure.pi (fun _ : Fin 2 => gaussianVector (k*k)), ∃ out,
-      (gaussianKrylovRitzTestsProgram kernels T hT actions q S G j ε g).eval = some out := by
-  let M := (gaussianKrylovFullMatrixProgram kernels T hT actions q S G).eval
+      (gaussianKrylovRitzTestsProgram kernels T hT actions q S source G j ε g).eval = some out := by
+  let M := (gaussianKrylovFullMatrixProgram kernels T hT actions q S source G).eval
   have hM : M.val.IsHermitian := by
     rw [M.property]
     exact krylovRitzFixedMatrix_isHermitian kernels T hT q _
@@ -101,19 +101,19 @@ theorem gaussianKrylovRitzTestsProgram_success_ae
   obtain ⟨tests,htests⟩ := hg
   unfold gaussianKrylovRitzTestsProgram
   rw [eval_bind,eval_bind,show (fixedRitzTestsProgram kernels
-    (gaussianKrylovFullMatrixProgram kernels T hT actions q S G).eval.val _ j ε g).eval =
+    (gaussianKrylovFullMatrixProgram kernels T hT actions q S source G).eval.val _ j ε g).eval =
       some tests from htests]
   exact ⟨_,rfl⟩
 
 theorem gaussianKrylovRitzTestsProgram_success_of_polynomial_events
     (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     (T : Core k) (hT : T.IsHermitian) (actions : ∀ b, MatrixAction T b)
-    (q : ℕ) (S : Core k) (G : Fin r → Fin k → ℝ) (j : Fin k) (ε : ℝ)
+    (q : ℕ) (S : Core k) (source : MatrixAction Sᵀ r) (G : Fin r → Fin k → ℝ) (j : Fin k) (ε : ℝ)
     (g : Fin 2 → Fin (k*k) → ℝ)
     (h0 : ShiftedInertiaPolynomialGood (krylovRitzFixedMatrix kernels T q (Sᵀ*columnsMatrix G)) 1 (g 0))
     (h1 : ShiftedInertiaPolynomialGood (krylovRitzFixedMatrix kernels T q (Sᵀ*columnsMatrix G)) (1-2*ε) (g 1)) :
-    ∃ out, (gaussianKrylovRitzTestsProgram kernels T hT actions q S G j ε g).eval = some out := by
-  let M := (gaussianKrylovFullMatrixProgram kernels T hT actions q S G).eval
+    ∃ out, (gaussianKrylovRitzTestsProgram kernels T hT actions q S source G j ε g).eval = some out := by
+  let M := (gaussianKrylovFullMatrixProgram kernels T hT actions q S source G).eval
   have hM : M.val.IsHermitian := by
     rw [M.property]
     exact krylovRitzFixedMatrix_isHermitian kernels T hT q _
@@ -122,7 +122,7 @@ theorem gaussianKrylovRitzTestsProgram_success_of_polynomial_events
   obtain ⟨tests,htests⟩ := fixedRitzTestsProgram_success_of_polynomial_events kernels M.val hM j ε g h0' h1'
   unfold gaussianKrylovRitzTestsProgram
   rw [eval_bind,eval_bind,show (fixedRitzTestsProgram kernels
-    (gaussianKrylovFullMatrixProgram kernels T hT actions q S G).eval.val _ j ε g).eval =
+    (gaussianKrylovFullMatrixProgram kernels T hT actions q S source G).eval.val _ j ε g).eval =
       some tests from htests]
   exact ⟨_,rfl⟩
 
@@ -167,30 +167,30 @@ theorem decisionOfOptionalTests_eq {N : ℕ} {values : Fin N → ℝ} {ε : ℝ}
 read by the program; it receives only certified Boolean sign tests. -/
 def repeatedKrylovQueryProgram (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     (T : Core k) (hT : T.IsHermitian) (actions : ∀ b, MatrixAction T b)
-    (q : ℕ) (S : Core k) (j : Fin k) (ε : ℝ) (N : ℕ)
+    (q : ℕ) (S : Core k) (source : MatrixAction Sᵀ r) (j : Fin k) (ε : ℝ) (N : ℕ)
     (G : Fin N → Fin r → Fin k → ℝ) (g : Fin N → Fin 2 → Fin (k*k) → ℝ) :
     ArithmeticProgram ThresholdDecision := do
   let tests ← dependentTabulate N _ (fun i =>
-    gaussianKrylovRitzTestsProgram kernels T hT actions q S (G i) j ε (g i))
+    gaussianKrylovRitzTestsProgram kernels T hT actions q S source (G i) j ε (g i))
   .pure (decisionOfOptionalTests tests)
 
 theorem repeatedKrylovQueryProgram_admissible
     (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     (T : Core k) (hT : T.IsHermitian) (actions : ∀ b, MatrixAction T b)
-    (q : ℕ) (S : Core k) (j : Fin k) (ε : ℝ) (N : ℕ)
+    (q : ℕ) (S : Core k) (source : MatrixAction Sᵀ r) (j : Fin k) (ε : ℝ) (N : ℕ)
     (G : Fin N → Fin r → Fin k → ℝ) (g : Fin N → Fin 2 → Fin (k*k) → ℝ) :
-    (repeatedKrylovQueryProgram kernels T hT actions q S j ε N G g).admissible := by
+    (repeatedKrylovQueryProgram kernels T hT actions q S source j ε N G g).admissible := by
   simp only [repeatedKrylovQueryProgram,admissible_bind,dependentTabulate_admissible,admissible_pure,and_true]
-  exact fun i => gaussianKrylovRitzTestsProgram_admissible kernels T hT actions q S _ j ε _
+  exact fun i => gaussianKrylovRitzTestsProgram_admissible kernels T hT actions q S source _ j ε _
 
 theorem repeatedKrylovQueryProgram_eq_of_success
     (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     (T : Core k) (hT : T.IsHermitian) (actions : ∀ b, MatrixAction T b)
-    (q : ℕ) (S : Core k) (j : Fin k) (ε : ℝ) (N : ℕ)
+    (q : ℕ) (S : Core k) (source : MatrixAction Sᵀ r) (j : Fin k) (ε : ℝ) (N : ℕ)
     (G : Fin N → Fin r → Fin k → ℝ) (g : Fin N → Fin 2 → Fin (k*k) → ℝ)
     (hsuccess : ∀ i, ∃ out,
-      (gaussianKrylovRitzTestsProgram kernels T hT actions q S (G i) j ε (g i)).eval = some out) :
-    (repeatedKrylovQueryProgram kernels T hT actions q S j ε N G g).eval =
+      (gaussianKrylovRitzTestsProgram kernels T hT actions q S source (G i) j ε (g i)).eval = some out) :
+    (repeatedKrylovQueryProgram kernels T hT actions q S source j ε N G g).eval =
       thresholdDecision (fun i => computedKrylovRitzValue kernels T hT actions q S (G i) j) ε := by
   simp only [repeatedKrylovQueryProgram,eval_bind,dependentTabulate_eval,eval_pure]
   exact decisionOfOptionalTests_eq _ hsuccess
@@ -198,16 +198,16 @@ theorem repeatedKrylovQueryProgram_eq_of_success
 theorem repeatedKrylovQueryProgram_work
     (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     (T : Core k) (hT : T.IsHermitian) (actions : ∀ b, MatrixAction T b)
-    (q : ℕ) (S : Core k) (j : Fin k) (ε : ℝ) (N : ℕ)
+    (q : ℕ) (S : Core k) (source : MatrixAction Sᵀ r) (j : Fin k) (ε : ℝ) (N : ℕ)
     (G : Fin N → Fin r → Fin k → ℝ) (g : Fin N → Fin 2 → Fin (k*k) → ℝ) :
-    (repeatedKrylovQueryProgram kernels T hT actions q S j ε N G g).work =
-      ∑ i : Fin N, (gaussianKrylovRitzTestsProgram kernels T hT actions q S (G i) j ε (g i)).work := by
+    (repeatedKrylovQueryProgram kernels T hT actions q S source j ε N G g).work =
+      ∑ i : Fin N, (gaussianKrylovRitzTestsProgram kernels T hT actions q S source (G i) j ε (g i)).work := by
   simp only [repeatedKrylovQueryProgram,work_bind,dependentTabulate_work,work_pure,add_zero]
 
 theorem repeatedKrylovQueryProgram_safe_of_events
     (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     (T : Core k) (hT : T.PosSemidef) (actions : ∀ b, MatrixAction T b)
-    (q : ℕ) (S : Core k) (j : Fin k) (ε : ℝ) (hε : 0 < ε) (hε' : ε ≤ 1/4) (N : ℕ)
+    (q : ℕ) (S : Core k) (source : MatrixAction Sᵀ r) (j : Fin k) (ε : ℝ) (hε : 0 < ε) (hε' : ε ≤ 1/4) (N : ℕ)
     (G : Fin N → Fin r → Fin k → ℝ) (g : Fin N → Fin 2 → Fin (k*k) → ℝ)
     (h0 : ∀ i, ShiftedInertiaPolynomialGood
       (krylovRitzFixedMatrix kernels T q (Sᵀ*columnsMatrix (G i))) 1 (g i 0))
@@ -216,10 +216,10 @@ theorem repeatedKrylovQueryProgram_safe_of_events
     (hritz : ∃ i, (1-ε)*(orderedEigenvalue T hT.isHermitian j)^2 ≤
       computedKrylovRitzValue kernels T hT.isHermitian actions q S (G i) j) :
     ThresholdDecisionSafe (orderedEigenvalue T hT.isHermitian j) ε
-      (repeatedKrylovQueryProgram kernels T hT.isHermitian actions q S j ε N G g).eval := by
-  rw [repeatedKrylovQueryProgram_eq_of_success kernels T hT.isHermitian actions q S j ε N G g
+      (repeatedKrylovQueryProgram kernels T hT.isHermitian actions q S source j ε N G g).eval := by
+  rw [repeatedKrylovQueryProgram_eq_of_success kernels T hT.isHermitian actions q S source j ε N G g
     (fun i => gaussianKrylovRitzTestsProgram_success_of_polynomial_events kernels T hT.isHermitian
-      actions q S (G i) j ε (g i) (h0 i) (h1 i))]
+      actions q S source (G i) j ε (g i) (h0 i) (h1 i))]
   exact thresholdDecision_safe _ _ ε (orderedEigenvalue_nonneg T hT j) hε hε'
     (fun i => computedKrylovRitzValue_always_safe kernels T hT actions q S (G i) j) hritz
 

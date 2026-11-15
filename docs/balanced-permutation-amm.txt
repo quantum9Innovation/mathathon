@@ -1,0 +1,298 @@
+Balanced permutation sketches for approximate matrix multiplication
+==================================================================
+
+Research continuation candidate, 2026-11-14. The identities and finite
+variance formulas below are proved here. This is NOT a new embedding
+width theorem, a relative-spectral AMM theorem, a priority claim, or a
+completed breakthrough. It records a concrete route connecting the
+matrix-product work in docs to the centered-permutation results in
+spectral-gap, and identifies its remaining combinatorial obligation.
+
+1. The sketch and its exact Gram factor
+-------------------------------------
+
+Let m=sq, with integers 2<=s<=m and q>=1. Partition the m coordinates
+uniformly into s labeled buckets, each of size q. Equivalently, let P
+be a uniform m-by-m permutation matrix, let H_0 be the s-by-m incidence
+matrix of a fixed balanced partition, and set H=H_0 P. Each column of
+H has one entry equal to one; all other entries are zero. Each row has
+q entries equal to one. Define
+
+  p=(q-1)/(m-1),  J_0=11^T/m,  Pi_0=I-J_0,
+  W=(H^T H-p11^T)/(1-p).                                    (1)
+
+For i!=j the probability that i and j occupy the same bucket is p.
+The diagonal entries of H^T H are one. Hence
+
+  E W=I,  W1=1.                                             (2)
+
+Write J_s=1_s1_s^T/s and Pi_s=I_s-J_s. Since HH^T=qI_s,
+
+  Pi_H=(1/q)H^T Pi_s H
+
+is an orthogonal projection of rank s-1, with range orthogonal to 1.
+Putting lambda=q/(1-p)=(m-1)/(s-1) gives the exact identity
+
+  W=J_0+lambda Pi_H.                                        (3)
+
+In particular W is PSD, has rank s, and has eigenvalues 1 on span{1},
+lambda on the bucket-constant zero-sum subspace, and zero on the
+within-bucket zero-sum subspace. When q=1, W=I and there is no compression.
+
+The apparent rank s+1 in (1) can be reduced to s without a dense
+factorization. An explicit s-by-m factor is
+
+  S=[(1-p)^(-1/2)Pi_s+q^(-1/2)J_s]H,   S^T S=W.             (4)
+
+Indeed the two row projections are orthogonal, so S^T S equals
+(1-p)^(-1)H^T Pi_s H+q^(-1)H^T J_s H, which is (3). Applying S
+requires unsigned bucket aggregation followed by subtraction and scaling
+of the mean over bucket rows. Thus the bucket incidence is unsigned;
+the complete Gram factor includes a rank-one centering operation.
+
+2. An unbiased AMM estimator with complete arithmetic costs
+----------------------------------------------------------
+
+Let A be n-by-m and B be m-by-v, fixed before the random partition.
+The estimator
+
+  C=A W B
+   =[(AH^T)(HB)-p(A1)(1^T B)]/(1-p)
+   =(AS^T)(SB)                                               (5)
+
+satisfies E C=AB and rank C<=s. Bucket aggregation and centering build
+the factors in O(m(n+v)+s(n+v)) arithmetic operations, plus O(m)
+permutation generation. Naive explicit expansion takes O(nvs); fast
+rectangular multiplication can replace this term if desired. Storing
+the factors takes O(s(n+v)). Unbiasedness alone is not an accuracy
+guarantee.
+
+For d independent partitions define Wbar=d^(-1)sum_c W_c and Cbar=A Wbar B.
+The constant direction can be stored only once:
+
+  Wbar=J_0+(lambda/d)sum_c Pi_(H_c),
+  rank Wbar<=min(m,1+d(s-1)).                                 (6)
+
+One explicit factor uses the row 1^T/sqrt(m), followed by the d blocks
+sqrt(lambda/d) Q_c^T, where the columns of Q_c form an orthonormal
+basis of range Pi_(H_c). Such a basis need not be constructed densely:
+the s bucket rows with their common row mean removed give a redundant
+factor of the same asymptotic size, and a fixed Householder transform
+on the s bucket coordinates can remove the zero row in O(s) work per
+input/output column. The complete naive cost is
+
+  O(d m(n+v)+nv[1+d(s-1)]),                                  (7)
+
+with O((n+v)[1+d(s-1)]) output-factor storage. For fixed total width
+and n=v=N, explicit output therefore costs O(N^2). No assertion is
+made that fixed width achieves the requested accuracy on arbitrary A,B.
+
+3. Exact matrix variance and a basic rigorous AMM consequence
+------------------------------------------------------------
+
+Let T=W-I. Permutation invariance, or (2)-(3), gives
+
+  E Pi_H=Pi_0/lambda,
+  T=lambda Pi_H-Pi_0,
+  E T^2=(lambda-1)Pi_0=c Pi_0,
+  c=(m-s)/(s-1).                                            (8)
+
+For independent centered T_c and Tbar=d^(-1)sum_c T_c, the cross
+expectations vanish, entrywise and as matrix products. Consequently
+
+  E Tbar^2=(c/d)Pi_0,
+  E||Tbar x||_2^2=(c/d)||Pi_0 x||_2^2.                        (9)
+
+For the AMM error E_AMM=A Tbar B, positivity and the Frobenius trace
+identity yield
+
+  E||E_AMM||_F^2
+   <= (c/d) min{ ||A Pi_0||^2 ||Pi_0 B||_F^2,
+                 ||A Pi_0||_F^2 ||Pi_0 B||^2 }.             (10)
+
+For example, ||A Tbar B||_F<=||A Pi_0|| ||Tbar B||_F and
+E||Tbar B||_F^2=tr(B^T E Tbar^2 B); the other inequality follows
+by transposing. Markov's inequality and ||X||<=||X||_F therefore give
+the valid probability bound
+
+  Pr{||E_AMM||>epsilon}
+  <= [c/(d epsilon^2)]
+       min{ ||A Pi_0||^2 ||Pi_0 B||_F^2,
+            ||A Pi_0||_F^2 ||Pi_0 B||^2 }.                   (11)
+
+This elementary bound can be large when s<<m. It neither proves nor
+disproves that higher moments give substantially better subspace or
+spectral AMM bounds. In particular (9) measures the entire vector
+Tbar x, not just its projection back into a target subspace; it is
+not itself the variance of the squared-norm embedding error.
+
+4. Exact squared-norm variance by collision classes
+--------------------------------------------------
+
+Assume m>=4. For a zero-sum unit vector x put t4=sum_i x_i^4 and
+Z=x^T(W-I)x. Let
+
+  r3=(q-1)(q-2)/[(m-1)(m-2)],
+  r22=p[(q-2)(q-3)+(m-q)(q-1)]/[(m-2)(m-3)].
+
+Then E Z=0 and
+
+  Var Z = [2p(1-t4)+8r3(t4-1/2)+r22(3-6t4)-p^2]/(1-p)^2.  (12)
+
+Proof. Write I_ij for the same-bucket indicator and
+Q=2sum_(i<j) I_ij x_i x_j. Since sum x_i=0 and ||x||=1,
+Z=(Q+p)/(1-p) and E Q=-p. In Q^2 the two unordered coordinate
+pairs can be equal, have one shared vertex, or be disjoint.
+
+The equal-pair contribution is
+4p sum_(i<j)x_i^2x_j^2=2p(1-t4).
+
+For the shared-vertex terms the ordered sum of pair weights is
+sum_i x_i^2[(sum_(j!=i)x_j)^2-sum_(j!=i)x_j^2]=2t4-1.
+Their probability is r3, yielding 4r3(2t4-1).
+
+The sum of all unordered pair weights is -1/2. Thus the ordered sum
+over disjoint pairs is
+1/4-(1-t4)/2-(2t4-1)=3/4-3t4/2.
+Condition on the first pair being in one bucket. The third vertex is
+either in that bucket, followed by a fourth in the same bucket, or
+outside it, followed by a fourth in the third vertex's bucket. This
+gives exactly r22 and the remaining contribution r22(3-6t4).
+Subtracting (E Q)^2=p^2 proves (12). Independent averaging divides
+the variance of x^T(Wbar-I)x by d.
+
+For m=4,q=2 the unit coordinate contrast has variance 1/2; the unit
+balanced sign vector (1,1,-1,-1)/2 has variance 2. The dependence on
+t4 shows why matrix variance (8) alone does not determine norm-error
+variance for a fixed subspace.
+
+5. A collision obstruction that any proposed embedding must respect
+-------------------------------------------------------------------
+
+Take x=e_i-e_j, i!=j. If those coordinates collide in one bucket,
+Sx=0. This occurs with probability exactly p. If they do not collide,
+
+  ||Sx||^2/||x||^2=1/(1-p).
+
+Thus any single-sketch (epsilon,delta) norm-preservation claim with
+epsilon<1 must have delta>=p. If epsilon<p/(1-p), both outcomes fail,
+so the failure probability is one. For d independent sketches, the
+distortion of the squared norm is exactly
+
+  [p-K/d]/(1-p),  K~Binomial(d,p),                            (13)
+
+and the event that all d sketches erase x has probability p^d.
+These elementary obstructions are not lower bounds for all AMM
+algorithms or all sketches; they concern this precise balanced scheme.
+
+6. An exact centered-permutation trace expansion
+------------------------------------------------
+
+This section specifies where the imported spectral-gap results apply.
+Let K=H_0^T H_0 and K_0=K-qJ_0. For color c put
+
+  Y_c=P_c-J_0,  gamma=1/(1-p).
+
+Since K_0 1=0 and P_c fixes the constant direction, (3) becomes
+
+  T_c=gamma Y_c^T K_0 Y_c-Pi_0,
+  (T_c)_(ij)=gamma sum_(a,b)(K_0)_(ab)
+                   (Y_c)_(ai)(Y_c)_(bj) -(Pi_0)_(ij).       (14)
+
+Every entry in Y_c is a centered cell of a uniform permutation;
+different c are independent permutation colors.
+
+For an integer t>=1 write F=A^T A and G=BB^T. Cyclicity of trace gives
+
+  E tr[(E_AMM E_AMM^T)^t]
+    = E tr[(Tbar G Tbar F)^t]
+    = d^(-2t) sum_(c_1,...,c_(2t))
+           E tr[T_(c_1)G T_(c_2)F ... T_(c_(2t-1))G T_(c_(2t))F]. (15)
+
+To make the scalar moment connection entirely explicit, set L=2t,
+let D_l=G for odd l and D_l=F for even l, and take i_(2L+1)=i_1.
+Each trace in (15) is the sum over i_1,...,i_(2L) of
+
+  product_(l=1)^L (T_(c_l))_(i_(2l-1),i_(2l))
+                   (D_l)_(i_(2l),i_(2l+1)).                (16)
+
+Substitute (14) and select a subset J of the L factors at which the
+quadratic Y term, rather than -Pi_0, is used. The expectation attached
+to that term is exactly
+
+  E product_(l in J)
+          (Y_(c_l))_(a_l,i_(2l-1)) (Y_(c_l))_(b_l,i_(2l)),  (17)
+
+with deterministic coefficient
+
+  gamma^|J| (-1)^(L-|J|)
+  product_l (D_l)_(i_(2l),i_(2l+1))
+  product_(l notin J) (Pi_0)_(i_(2l-1),i_(2l))
+  product_(l in J) (K_0)_(a_l,b_l),                          (18)
+
+summed over all a_l,b_l for l in J and all the i indices.
+
+The monomial (17) has 2|J|<=4t centered-permutation occurrences.
+Group occurrences that have the same color, row and column into
+powers. Let a be the number of distinct colored cells. A centered
+singleton has multiplicity one. It is isolated if no other distinct
+cell of its color shares its row OR column; let h be the number of
+such isolated singletons and b the number of other singletons.
+
+The exact mixed envelopes SG-11, SG-14 and SG-16 in
+spectral-gap/CLAIM_LEDGER.md apply to every such monomial, including
+repeated powers and arbitrarily many colors. For clarity write
+P_h(m,r) for the positive partition polynomial with block-size-j weight
+[((j-1)m+r)(j-1)!], with P_0=1. In the regime 2<=a<=m they give
+
+  SG-11: |E(17)| <= 2^b m^(-h)P_h(m,a-h)/(m)_a;
+
+  SG-14, b>=1:
+    |E(17)| <= 2^(b-1)m^(-h-1)P_h(m,a-h-1)/(m)_(a-1);
+
+  SG-16, b>=2:
+    |E(17)| <= 2^(b-2) [
+      2m^(-h-1)P_h(m,a-h-1)/(m)_(a-1)
+       -m^(-h-2)P_h(m,a-h-2)/(m)_(a-2)].                    (19)
+
+Here (m)_a=m(m-1)...(m-a+1). The bound for an empty monomial is one.
+For a=1 a singleton has expectation zero; a higher centered power has
+absolute expectation at most 1/m. Taking 4t<=m ensures that every
+nonempty monomial is in one of these stated ranges. The bounds in
+(19) are attained in their respective full admissible classes when
+b=0,1,2 as recorded in the source. This does NOT say the extremizing
+supports necessarily occur with dominant coefficient in (15).
+
+7. The unresolved step toward a useful AMM or embedding theorem
+---------------------------------------------------------------
+
+Equations (14)-(19) are an exact reduction to the imported moment
+theorems, not a completed trace bound. To prove a new width theorem,
+one must sum (18) over collision patterns and colors while retaining
+enough of the matrix structure of F,G and the bucket kernel K_0.
+Taking absolute values of all deterministic entries immediately can
+destroy orthogonality and create prohibitive dimension factors.
+
+A successful analysis needs an explicit bound on that entire weighted
+pattern sum, including repeated cells, shared rows/columns, singleton
+gains, color choices, and dependence on rank, stable rank or coherence.
+It must beat the elementary baseline (11), obey the collision obstruction
+(13), and then supply the actual spectral AMM/Gram guarantee required
+by the existing product algorithms. Finally one must count the total
+width 1+d(s-1), factor construction, confidence, and explicit expansion.
+
+No such improved pattern-sum theorem is presently established here.
+Balanced hashing, centering, averaging, and the second-moment methods
+have substantial prior-art risk; the formulas above are a verified
+starting point, not a declaration of first discovery.
+
+Verification
+------------
+
+scripts/check_balanced_permutation_amm.py enumerates all unlabeled
+balanced partitions for several m<=8 and checks with exact rational
+arithmetic: E W=I, W1=1, the projection polynomial, covariance (8),
+quadratic variance (12), and coordinate-contrast collision probabilities.
+Its recorded output is docs/balanced-permutation-checks.txt. Finite
+enumeration corroborates these identities and does not prove the
+unresolved trace-pattern sum.

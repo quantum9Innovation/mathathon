@@ -5,6 +5,7 @@ import HierarchicalAbsoluteSpectral.CoarseAlgebraDominatedKernelFamily
 feasible kernel family; it is not an additional model assumption. -/
 namespace HierarchicalAbsoluteSpectral
 set_option autoImplicit false
+set_option backward.isDefEq.respectTransparency false
 noncomputable section
 open MeasureTheory
 open scoped Matrix.Norms.L2Operator

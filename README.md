@@ -24,6 +24,12 @@ proves exact leading fractional compression coefficients r/(4*pi^2*alpha)
 for endpoint/update norm ratio R>1, and (r-1)/(4*pi^2*alpha) at R=1.
 Its [independent review](matmul/bounded-spectrum-fractional-independent-audit.txt)
 also checks the finite rank discontinuity and connected-path transfer.
+The [constructive bounded-spectrum graph algorithm](matmul/bounded-spectrum-graph-algorithm.txt)
+now attains that sharper leading width at expected nearly linear cost.
+It explicitly charges growing polynomial subtraction, moving-strip
+quadrature, scalar construction and all shifted graph solves. Its
+[verification record](matmul/bounded-spectrum-graph-algorithm-proof-checks.txt)
+contains the complete proof review and reproducible algebra checks.
 
 The [graph connection manuscript](matmul/graph-fractional-updates.pdf)
 ([source](matmul/graph-fractional-updates.tex)) constructs corrections to

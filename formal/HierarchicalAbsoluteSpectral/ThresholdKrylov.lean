@@ -23,7 +23,7 @@ theorem blockKrylov_polynomial_identity (T : Core k) (Ω : Matrix (Fin k) (Fin r
     (p : ℝ[X]) (q : ℕ) (hq : p.natDegree ≤ q) (W : Matrix (Fin r) (Fin h) ℝ) :
     blockKrylov T Ω q*blockKrylovCoefficients p q W = (aeval T p*Ω)*W := by
   rw [Polynomial.aeval_eq_sum_range' (show p.natDegree < q+1 by omega)]
-  simp only [Finset.sum_mul, Matrix.smul_mul]
+  simp only [Matrix.sum_mul, Matrix.smul_mul]
   rw [← Fin.sum_univ_eq_sum_range]
   ext i c
   simp only [Matrix.mul_apply, blockKrylov, blockKrylovCoefficients,

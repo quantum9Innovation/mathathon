@@ -20,8 +20,11 @@ theorem orthonormal_toEuclideanLin_inner (U : Matrix (Fin k) (Fin w) ℝ)
     (hU : Uᵀ*U = 1) (v : EuclideanSpace ℝ (Fin w)) :
     ⟪U.toEuclideanLin v,U.toEuclideanLin v⟫_ℝ = ⟪v,v⟫_ℝ := by
   have hh := quadratic_compression (1 : Core k) U v
-  simpa only [Matrix.mul_one, hU, quadratic_eq_inner, Matrix.toLpLin_one,
-    LinearMap.one_apply] using hh.symm
+  rw [Matrix.mul_one, hU] at hh
+  have hleft := quadratic_eq_inner (1 : Core k) (U.toEuclideanLin v)
+  have hright := quadratic_eq_inner (1 : Core w) v
+  simp only [Matrix.toLpLin_one, LinearMap.id_apply] at hleft hright
+  exact hleft.symm.trans (hh.symm.trans hright)
 
 theorem orthonormal_toEuclideanLin_injective (U : Matrix (Fin k) (Fin w) ℝ)
     (hU : Uᵀ*U = 1) : Function.Injective U.toEuclideanLin := by

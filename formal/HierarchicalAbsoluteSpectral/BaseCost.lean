@@ -9,6 +9,7 @@ namespace HierarchicalAbsoluteSpectral
 set_option autoImplicit false
 set_option maxHeartbeats 1000000
 noncomputable section
+open Matrix
 
 theorem baseConstructionCost_bound (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     (C p : ℝ) (hC : 0 < C) (hp : 2 ≤ p)
@@ -45,7 +46,7 @@ theorem baseConstructionCost_bound (kernels : ∀ a b c : ℕ, ArithmeticKernel 
     simpa only [one_mul] using mul_le_mul_of_nonneg_right hL (by positivity : 0 ≤ 23*(C+1)*N)
   have hlast : L*(23*(C+1)*N)+L*(11*(C+1)*N) ≤ 40*(C+1)*N*L := by
     nlinarith [mul_nonneg (by linarith : 0 ≤ L) (mul_nonneg (by linarith : 0 ≤ C+1) hnp)]
-  have hsum := (add_le_add hfixed hloop).trans ((add_le_add_right hfixed' _).trans hlast)
+  have hsum := (add_le_add hfixed hloop).trans ((add_le_add hfixed' le_rfl).trans hlast)
   simpa only [baseConstructionCost, Nat.cast_add, Nat.cast_mul, Nat.cast_ofNat] using hsum
 
 theorem exists_fast_base_program (ζ : ℝ) (hζ : 0 < ζ) :

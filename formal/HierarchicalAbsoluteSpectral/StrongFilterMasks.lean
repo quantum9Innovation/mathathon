@@ -65,10 +65,11 @@ theorem spectral_filter_split {r k : ℕ} (hr : r ≤ k) (Q : Core k)
             ((columnEmbedding (leadingEmbedding hr))ᵀ*Ω)) +
         Q*(Matrix.diagonal (trailingMask r f)*Ω) := by
   have hsplit : Matrix.diagonal f = Matrix.diagonal (leadingMask r f)+Matrix.diagonal (trailingMask r f) := by
-    rw [← Matrix.diagonal_add]
-    congr 1
-    funext i
-    by_cases hi : i.val < r <;> simp [leadingMask, trailingMask, hi]
+    ext i j
+    by_cases hij : i = j
+    · subst j
+      by_cases hi : i.val < r <;> simp [leadingMask, trailingMask, hi]
+    · simp [Matrix.diagonal_apply, hij]
   conv_lhs => rw [hsplit]
   rw [Matrix.mul_add, Matrix.add_mul, ← leading_diagonal_lift hr]
   simp only [Matrix.mul_assoc]
@@ -79,7 +80,7 @@ theorem orthogonal_diagonal_mul {k : ℕ} (Q : Core k) (hQ : Qᵀ*Q = 1)
       Q*Matrix.diagonal (fun i => a i*b i)*Qᵀ := by
   calc
     _ = Q*(Matrix.diagonal a*(Qᵀ*Q)*Matrix.diagonal b)*Qᵀ := by simp only [Matrix.mul_assoc]
-    _ = _ := by rw [hQ, Matrix.mul_one, Matrix.diagonal_mul_diagonal]; rfl
+    _ = _ := by rw [hQ, Matrix.mul_one, Matrix.diagonal_mul_diagonal]
 
 theorem orthogonal_diagonal_complement {k : ℕ} (Q : Core k) (hQ : Q*Qᵀ = 1)
     (a : Fin k → ℝ) :

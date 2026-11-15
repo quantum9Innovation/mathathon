@@ -1,0 +1,119 @@
+Coherent shifted solves: a shared backward-operator research gate
+2026-11-14. Root-owned research note; not a new runtime theorem.
+
+PURPOSE
+The general-quadratic track now computes many off-axis raw-factor
+resolvents together. Linear spectral filters can have exponentially large
+residue mass, making separate column-error bounds inadequate. This note
+isolates a different, computable condition: all columns are exact for ONE
+nearby Hermitian operator. That would permit polynomial/filter perturbation
+bounds without summing residue magnitudes. The required construction is
+OPEN; the elementary backward-interpolation algebra is standard.
+
+1. EXACT HERMITIAN INTERPOLATION CERTIFICATE
+
+Let H=H*, Y be m-by-q of full column rank, and C be the desired action
+matrix. Write Y=Q T with Q*Q=I, and R=C-HY. There exists E=E* with
+
+  (H+E)Y=C
+
+if and only if Y*R is Hermitian. Necessity follows from Y*EY=Y*R.
+For sufficiency put F=R T^-1, A=Q*F. The condition says A=A*, and
+
+  E=F Q*+Q F* - Q A Q*                                  (1)
+
+is Hermitian and satisfies EQ=F, hence EY=R. In an orthonormal basis
+extending Q its blocks are [[A,B*],[B,0]], with F=[A;B]. Therefore
+
+  ||R Y^dagger|| <= min_(E=E*, EY=R)||E||
+                       <=2||R Y^dagger||.                (2)
+
+The lower bound is ||EQ||=||F||; the upper follows from
+||A||+||B||<=2||F||. No inverse of H is used. For rank-deficient Y,
+one additionally needs ker(Y) contained in ker(R), then reduces to an
+independent column basis. Small per-column residuals alone imply neither
+compatibility nor a small value in (2).
+
+For shifted systems (H-z_j I)y_j=b_j, take C_j=z_j y_j+b_j.
+For the (I-z_j H) convention take C_j=(y_j-b_j)/z_j, z_j!=0.
+Complex arithmetic uses conjugate transposes and Hermitian compatibility.
+
+2. THE CHECK CAN FIT THE ORIGINAL HARD-CASE BUDGET
+
+One batched true H-action computes R. QR, F=RT^-1, and a q-by-q
+Gram/core compute the compatibility and norm in (2). For physical
+dimension N=m^(9/8), q=~sqrt(m), ordinary QR/Gram costs Nq^2=m^(17/8)
+times logs, below target m^(9/4). The raw q-column action costs
+~I q^(omega-2), which equals the target at omega=9/4.
+Thus this is an actual affordable certificate, not a free dense inverse
+or an uncomputed norm of an N-by-N perturbation. A common model at the
+required TAIL scale, not merely at ||H|| scale, would still be necessary
+for relative spectral approximation. Moving a real threshold into this
+model is also not supplied by this certificate alone.
+
+3. WHY THE OBVIOUS CONSTRUCTIONS DO NOT ALREADY PASS
+
+Stationary shifted Richardson iterations are not automatically resolvents
+of a common nearby matrix. With scalar coarse H0, L steps on a common
+seed generate true polynomials of degree at most L-1, regardless of the
+number of shifts. Taking more than L generic shifts then gives column
+dependencies whose desired actions need not respect the same dependencies.
+The rank-deficient compatibility condition above can fail outright.
+
+Common Galerkin projection enforces a common operator on its subspace,
+but the global criterion (2) can be too strong. Suppose the right-hand
+sides lie in range(Q), and the q projected shifted solutions span that
+space, Y=Q M with M invertible. Galerkin gives desired actions
+C=Q(Q*H Q)M. Then
+
+  R Y^dagger=-(I-QQ*)H Q Q*.                            (3)
+
+Thus the common-Hermitian backward error is the FULL invariance residual
+of Q, not just its ability to approximate the leading r vectors. A space
+can give excellent low-rank approximation while having a constant tail
+invariance residual. This criterion is sufficient, not known necessary
+for the user's spectral-output objective.
+
+4. HEREDITARY SYMMETRIC MULTISECANT UPDATES
+
+The raw-factor worker proposed maintaining an explicit/coarse core H_j.
+For an orthonormal query block Q, compute F=(H-H_j)Q by a true batched
+action. Since Q*F is Hermitian, update
+
+ H_(j+1)=H_j+F Q*+Q F* - Q(Q*F)Q*.                      (4)
+
+This enforces H_(j+1)Q=HQ, stays Hermitian, and changes rank by at most2q.
+It is a concrete algebraic closure; old interpolated directions remain
+exact if the query/update construction preserves their annihilation.
+That hereditary condition must be checked, not assumed for arbitrary Q.
+For instance, if existing exact directions V are orthogonal to Q, then
+V*F=0 follows from (H-H_j)V=0, and (4) preserves them.
+
+For q<=sqrt(m), the fast rectangular kernel can form the rank2q update
+within ~m^2; recomputing a small-core Frobenius form costs ~m^omega.
+If only logarithmically many rounds suffice, raw input plus all updates
+would fit the desired gate. Such a ROUND bound is NOT established.
+
+A caution against a universal argument using only relative coarse error:
+H0=cI can be a valid constant-distortion proxy for a matrix with spectrum
+in [c-h,c+h]. Spectral queries/updates from this proxy may stay in a
+low-depth block Krylov span. A claimed logarithmic-round theorem must
+either prove additional power beyond that span or exploit the actual
+random sketch distribution; generic quasi-Newton superlinear convergence
+does not establish a gap-free bound.
+
+5. CURRENT CREATIVE BRIDGES
+
+* Common backwards error on the head/dual certificate only, allowing
+  arbitrary benign tail invariance error, rather than global (2).
+* Rational Arnoldi / interpolation with a cheap collective correction
+  that enforces compatibility without sequentially rebuilding every pole.
+* Random-sketch-specific multisecant analysis using the whole known coarse
+  eigenbasis, rather than a theorem for every possible coarse proxy.
+* Low-rank CARE forcing and stabilization certificates from
+  inertia-fresh-search.txt, to replace linear sharp filtering entirely.
+
+None is yet an unrestricted quadratic algorithm. The raw-factor worker
+owns the concrete batched-resolvent/Cayley-series implementations; this
+note specifies a possible missing certificate and its actual verification
+cost, without claiming it has been constructed.

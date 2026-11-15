@@ -1,0 +1,408 @@
+CARE branch certificate and raw-factor solver bridge -- 2026-11-14
+================================================================
+Dedicated worker note. Only this file is edited by this worker.
+
+STATUS
+The raw-factor CARE solver is still missing. This note proves a global
+threshold wrapper for an approximate PSD Riccati solution. The wrapper
+does NOT assume that the positive index of H is already at most r.
+It therefore closes a logical gate in the proposed threshold algorithm,
+but does not establish its requested arithmetic complexity.
+
+1. GLOBAL RESIDUAL / RANK DICHOTOMY
+---------------------------------
+Let H=H^T be m-by-m, ||H||<=1, 1<=r<m, and s=r+1. Let 0<e<=1.
+Choose a forcing matrix F, a known bound L>=||F||, and alpha>0 with
+
+  alpha L<=e,      E=alpha^2 F F^T.
+
+For a PSD approximate solution X, let
+
+  R=H X+X H-X^2+E,          ||R||<=eta.                  (1)
+
+Suppose the following two capture conditions hold for some b>0:
+
+  (C1) If lambda_s(H)>=16e, and U_s comprises fixed top-s
+       orthonormal eigenvectors of H, then
+       sigma_min(U_s^T F)>=b.
+
+  (C2) If lambda_s(H)<16e, let U comprise ALL H eigenvectors
+       with eigenvalues >16e (at most r vectors). If U is nonempty,
+       sigma_min(U^T F)>=b.
+
+Assume also 0<b<=L. These are only conditions on fixed H spectral subspaces, not on an
+iterate-dependent subspace. Assume
+
+  eta <= alpha^2 e b^2 /100.                             (2)
+
+Since b<=L whenever its capture condition is used, (2) also implies
+eta<=e^3/100. The following dichotomy is valid without ANY assumption
+on n_+(H):
+
+  A. If X has at least s eigenvalues >4e, then
+     lambda_s(H)>e.
+
+  B. Otherwise, let P project onto the X eigenvectors with
+     eigenvalues >4e. Then rank(P)<=r and
+
+       (I-P) H (I-P) <=35e (I-P).                        (3)
+
+In case B one additionally has ||X-2H_+||<=66e.
+The constants are deliberately loose. This is an absolute-error
+threshold oracle with a constant gray interval. A physical pencil
+transfer must set e to the desired theta-scaled budget in its metric.
+
+The only computational inputs to this wrapper are a low-rank PSD X and
+its certified Riccati residual. No stability test for H-X, no independent
+inertia computation, and no prior positive-index promise is needed.
+
+2. PROOF: NEGATIVE BRANCHES ARE ALMOST UNFORCED H-INVARIANT SPACES
+----------------------------------------------------------------
+Put S=X-H and K=H^2+E, so R=K-S^2. A top X eigenvector gives
+
+  ||X|| <=1+sqrt(1+e^2+eta)<3,     ||S||<4.               (4)
+
+Let V have orthonormal columns spanning any S spectral subspace below
+-t, so S V=-V T, tI<T<4I. Write X_V=V^T X V>=0. Compressing (1),
+
+  V^T R V=V^T X^2 V+X_V T+T X_V+V^T E V.               (5)
+
+The inverse of Y->TY+YT preserves PSD order by its integral formula.
+Consequently
+
+  0<=X_V<=eta/(2t) I,
+  ||XV||^2<=3eta/(2t),
+  ||F^T V||^2 <=(eta+4eta/t)/alpha^2.                  (6)
+
+For t=e<=1 the last expression is <=5eta/(alpha^2 e);
+using 7 instead of 5 below leaves additional slack. Also
+
+  H V=V T+X V.                                         (7)
+
+Thus every substantially negative branch of S is almost H-invariant,
+with a positive compressed H spectrum, and it sees almost no forcing.
+
+3. PROOF: A DIMENSION COUNT HANDLES TOO MANY POSITIVE MODES
+---------------------------------------------------------
+Use t=e in (6), and put W=V^perp. Pinch H across V,W:
+
+  H'=P_V H P_V+P_W H P_W.
+
+The off-diagonal block in (7) is P_W X V. A symmetric matrix with
+off-diagonal blocks C,C^T has norm ||C||, so
+
+  ||H-H'||<=d:=sqrt(3eta/(2e)).                          (8)
+
+Suppose lambda_s(H)>=16e. Let Z be the H' spectral subspace above 8e.
+Sylvester separation of the H' block <=8e from H U_s>=16e U_s gives
+
+  ||(I-P_Z)U_s||<=d/(8e).
+
+No gap within either spectral block is used. The inverse Sylvester norm
+bound follows from the semigroup integral, with separation 8e. Therefore
+
+  sigma_s(P_Z F)>=b-dL/(8e).                            (9)
+
+Because H' is block diagonal across V,W, Z splits as Z_V plus Z_W.
+If dim(Z_W)<s, the matrix P_(Z_W)F has rank<s. Singular-value
+perturbation and (6) would then give
+
+  sigma_s(P_Z F)<=||P_(Z_V)F||<=||F^T V||
+                  <=sqrt(7eta/(alpha^2 e)).             (10)
+
+But (2) and alpha L<=e imply
+
+  dL/(8e)<=sqrt(3/200)b/8 <b/50,
+  sqrt(7eta/(alpha^2 e))<=sqrt(7/100)b <0.27b,
+
+contradicting (9). Thus dim(Z_W)>=s. Since S_W>=-e I,
+
+  X_W=H'_W+S_W>=H'_W-eI,
+
+and hence lambda_s(X)>=7e. We have proved the useful count implication
+
+  lambda_s(X)<=4e   ==>   lambda_s(H)<16e.              (11)
+
+This is the missing argument when n_+(H)>r. Injectivity on the ENTIRE
+positive space is unnecessary: a rank/singular-value argument uses only
+a fixed s-dimensional strong head.
+
+4. PROOF: THE SAFE CASE IGNORES SMALL POSITIVE BULK
+------------------------------------------------
+Suppose lambda_s(X)<=4e, so (11) holds. Let U span all H eigenvectors
+>16e, of dimension <=r. The remaining H block is <=16e I.
+If U is empty, H<=16e I and X>=0 already imply S>=-16e I.
+If U is nonempty, suppose S has a nonempty spectral subspace V below
+-32e. Necessarily 32e<4 by (4). Use t=32e in (6) and (7).
+Sylvester separation of H_(Uperp)<=16e I from T>=32e I yields
+
+  d_0:=||(I-UU^T)V||
+        <=sqrt(3eta/(64e))/(16e)
+        <=sqrt(3)b/(1280L)<b/(500L).                    (12)
+
+Thus for every unit v in V,
+
+  ||F^T v||>=b sqrt(1-d_0^2)-Ld_0>b/2.                 (13)
+
+Since t<4, (6) gives
+
+  ||F^TV||^2 <=8eta/(alpha^2 t)
+              =eta/(4alpha^2 e)<=b^2/400,             (14)
+
+a contradiction. We conclude S>=-32e I in both cases.
+
+Let S_+ be the positive part of S. Then
+
+  ||S-S_+||<=32e,
+  ||S_+^2-K||<=1024e^2+eta.
+
+For PSD matrices A,B, the square-root inequality
+||sqrt(A)-sqrt(B)||<=sqrt(||A-B||) follows by Loewner sandwiching
+and the scalar inequality sqrt(x+d)-sqrt(x)<=sqrt(d). It gives
+
+  ||S-sqrt(K)||<=32e+sqrt(1024e^2+eta)<65e.
+
+Also 0<=sqrt(H^2+E)-|H|<=alpha L I<=e I, so
+
+  ||X-2H_+||<=66e.                                      (15)
+
+Compressing 2H_+<=X+66e I to the complement of the X eigenvectors
+>4e proves (3), since H<=H_+.
+
+Finally, the other output is sound for EVERY PSD X with the residual
+bound, without either capture condition:
+
+  S<=|S|=sqrt(H^2+E-R)<=|H|+sqrt(e^2+eta) I,
+  X<=2H_++sqrt(e^2+eta) I<2H_++2e I.                    (16)
+
+Therefore lambda_s(X)>4e implies lambda_s(H)>e, proving case A.
+
+5. GAUSSIAN FORCING AND H-SANDWICHED FORCING
+-------------------------------------------
+Let Omega be m-by-ell standard Gaussian, with
+ell=C(r+1+log(1/delta)). For fixed H, its top-(r+1) eigenspace is
+fixed. A standard Gaussian smallest-singular-value bound gives
+
+  sigma_min(U_(r+1)^T Omega)>=b_0=sqrt(ell)/2
+
+with high probability for sufficiently large absolute C. Every prefix
+of at most r+1 rows inherits the same lower bound. One can use the
+elementary high-probability Frobenius bound
+
+  ||Omega||<=L_0=sqrt(2m ell/delta)
+
+and absorb the two failures into delta. This loose bound suffices;
+all required residual accuracies remain inverse-polynomial.
+
+Plain forcing. Take F=Omega, L=L_0, b=b_0, and any alpha L_0<=e.
+Both capture conditions hold on the same fixed-head Gaussian event.
+The required residual is eta<=alpha^2 e b_0^2/100. At alpha=e/L_0
+this is the old e^3 b_0^2/(100L_0^2) budget, now WITHOUT the old
+n_+(H)<=r promise.
+
+Weighted forcing. Take F=H Omega, L=L_0, any alpha L_0<=e, and
+
+  eta<=alpha^2 e^3 b_0^2/100.                            (17)
+
+Whenever C1 is needed, lambda_s(H)>=16e implies its capture bound
+with b=16e b_0. Whenever C2 is needed, every U eigenvalue is >16e,
+so the same capture bound holds. Set b=min{16e b_0,L_0}; (17) is
+stronger than requirement (2) with that b, since e b_0<=L_0.
+Thus the exact same dichotomy holds.
+
+This weighted version is compatible with the H-sandwiched forcing
+used for the conditioning of the RADI graph. In particular it allows
+
+  alpha^2=min{e^2/L_0^2, b_0^2/(4L_0^4)}
+
+when the graph-conditioning proof requests that smaller alpha. At
+alpha=e/L_0, (17) becomes eta<=e^5 b_0^2/(100L_0^2). The two extra
+powers of e cost only logarithmic arithmetic precision / convergence
+factors if a genuinely logarithmic-step solver exists. They do not
+establish that solver's raw shifted-inverse costs.
+
+6. COMPUTATION THAT IS AND IS NOT CHARGED
+----------------------------------------
+For X=YY^T with k columns and E=alpha^2 FF^T, write
+
+  Z=[Y,HY,F],
+  J_R=[[-Y^TY,I,0],[I,0,0],[0,0,alpha^2 I]],
+  R=Z J_R Z^T.
+
+One H-action on k right hand sides plus thin QR and a (2k+ell)-core
+eigenvalue computation certifies ||R||. The P space in the dichotomy
+comes from the k-core Y^TY, followed by lifting. If a block H-action
+costs T_H(k), ordinary arithmetic charges
+
+  T_H(k)+O(m(k+ell)^2+(k+ell)^3).
+
+Weighted forcing also requires the initial H Omega action. None of
+these are free inverse calls. In the actual matrix-product reduction,
+one must instantiate T_H with all applications of true raw factors
+and any needed accurately preconditioned Gram solves counted.
+
+The wrapper itself neither forms the full raw Gram nor reads new
+tall factors beyond those actions. It can adaptively certify a failed
+threshold (too many positive modes) or return an r-dimensional safe
+space even though the original branch lemma only covered q<=r.
+
+The unresolved gate is STILL producing this PSD Y Y^T to the certified
+residual using cheap raw H actions / shifted solves. No bound
+O~(Ir+m^omega), O~(Ir+m^3), or general quadratic matrix-product bound
+has been established by this note. No novelty claim has been audited.
+
+7. EXACT TRANSFER TO THE ORIGINAL RAW PRODUCT
+-------------------------------------------
+The safe-space certificate has a direct physical interpretation. First
+assume A has full column rank, and put
+
+  G=A^T A,    Q=B B^T,    H_0=Q-tG^(-1).
+
+Suppose a coefficient subspace P (orthonormal columns, rank<=r) obeys
+
+  (I-PP^T)H_0(I-PP^T)<=d(I-PP^T).                       (18)
+
+Set U=orth(A P), and return
+
+  X_out=U,      Y_out=B^T A^T U,      C=U Y_out^T.
+
+Then rank(C)<=r and
+
+  ||AB-C||^2 <=t+d||G||.                                (19)
+
+Proof: write any u in col(A) as u=A G^(-1)x, so x=A^T u and
+||u||^2=x^T G^(-1)x. If u is orthogonal to AP, then P^T x=0.
+Equation (18) gives
+
+  ||B^T A^T u||^2=x^T Qx
+     <=t x^T G^(-1)x+d||x||^2
+     <=(t+d||G||)||u||^2.
+
+The component outside col(A) contributes zero to B^T A^T. Taking the
+supremum on U^perp proves (19). No approximate-eigenvector perturbation
+or spectral gap is used in this transfer.
+
+If the global wrapper was applied to H=H_0/c with ||H||<=1, its safe
+output has d=35ce. Thus the physical error bound is
+
+  ||AB-C|| <=sqrt(t+35ce||G||).                           (20)
+
+Choosing e to fit the desired physical squared-norm slack is necessary;
+the normalized e parameter is not automatically equal to theta.
+
+Rank deficiency can be removed from the coefficient space without a
+true raw Gram. A coarse embedding of A has exactly the same nullspace
+on its successful subspace-embedding event. Factor its sketched Gram as
+L^T L, with L of full row rank rho<=m, and define the explicit small
+right inverse R_L=L^T(LL^T)^(-1). Work with
+
+  Abar=A R_L,          Bbar=L B.
+
+Since R_L L projects onto row(A), Abar Bbar=AB. The nonzero-column
+matrix Abar has rho independent columns, and its true Gram satisfies
+
+  (1-eta_0)I <=Abar^T Abar <=(1+eta_0)I
+
+when the original coarse event is
+(1-eta_0)L^T L<=A^TA<=(1+eta_0)L^T L. Neither Abar nor Bbar needs
+to be formed: all block actions use raw A,B plus explicit m-cores.
+The factor ||G|| in (19) is then at most 1+eta_0.
+
+In these coordinates a true Gbar^(-1) action is genuinely cheap:
+constant-conditioned Richardson with identity preconditioner uses
+O(log(1/xi)) raw Gbar actions for absolute operator-action error xi.
+A Gbar action on k columns costs O(Ik+m^2k) conventionally. Qbar
+actions also use only B, B^T and small core products. Thus approximate
+H_0 actions to the residual certification accuracy cost
+
+  O~(Ik log(1/xi)+m^3)
+
+after the coarse preparation, with the explicit thin-QR/core residual
+terms of Section 6 included if k+ell is not bounded by m. Inner errors
+must be budgeted into eta; taking them inverse-polynomially smaller
+than eta only adds logarithmic factors. This does NOT make H_0 shifted
+inverses cheap: those have the threshold cancellation missing from the
+constant-conditioned Gbar inverse.
+
+A known upper bound c>=||H_0|| can also be obtained without forming a
+true Gram. Sketch B^T with constant distortion, transfer that small
+sketched Gram by L, compute its norm in the explicit m-core, and combine
+the resulting Qbar norm bound with t/(1-eta_0). All work is
+O~(I+m^3) conventionally. Any dependence of a desired relative guarantee
+on c/t must be retained when setting e and logarithmic accuracy factors;
+this note does not suppress arbitrary spectral dynamic range.
+
+Finally, lifting AP, orthogonalizing its <=r columns, forming Y_out,
+and expanding C cost
+
+  O(Ir+(n+p)r^2+r^3+npr).
+
+This makes the CERTIFICATION-AND-OUTPUT route concrete for arbitrary raw
+factors once a low-rank PSD approximate CARE solution is supplied. The
+construction of that solution remains the unresolved step.
+
+8. CHECKED BRIDGES THAT DO NOT YET IMPLEMENT THE SOLVER
+-----------------------------------------------------
+Scalar stable drift / descriptor feedback. Moving all threshold
+dependence into the quadratic CARE coefficient is not sufficient.
+For example, with drift -aI and forcing FF^T, the differential CARE is
+
+  X'=-2aX-X K X+FF^T,       X(0)=0.
+
+If P projects onto span(F), then X=PXP implies X'=PX'P. Hence its
+zero-initialized PSD trajectory, whenever defined, remains in the
+forcing span. The same invariant holds for the elementary low-rank
+Riccati updates: scalar drift plus a feedback update with range in P
+maps P into itself. Such a formulation cannot discover a general H
+positive eigenspace through a fixed narrow raw forcing span. It would
+need a different branch mechanism, an already informative forcing
+transform, or another operation not supplied by this invariant.
+This is not a no-go theorem for all descriptor/KYP formulations.
+
+Zero-shift cancellation. Weighted forcing gives the exact identity
+H^(-1)(H Omega)=Omega when H is nonsingular. But RADI's update at an
+exact zero shift has a vanishing real-shift prefactor. Taking shifted
+derivatives / confluent steps immediately calls for H^(-1)Omega.
+The single cancellation does not yield an iterated raw solver.
+
+Bounded right-hand-side transfer. The operator
+(H-zeta I)^(-1)H is bounded when zeta=-a+ia and H is Hermitian, but
+the corresponding raw pole is still close to the original spectral
+threshold. Already for the simpler physical threshold H=S-gamma I,
+the raw shifted solve is
+
+  S-(gamma-zeta)I,
+
+and the off-axis angle in the raw-factor theorem is
+
+  c=|Im zeta|/|gamma-zeta|=Theta(a/gamma)  (a<<gamma).
+
+A fixed coarse Gram with distortion eta_0 only gives a Richardson
+contraction bound eta_0/c, which does not contract at these critical
+shifts. Weighted forcing does not change that preconditioner identity.
+One must prove an additional cancellation-aware iteration or a new
+preconditioner; bounded exact output alone does not supply it.
+
+9. REMAINING LOGICAL / COMPLEXITY OBLIGATIONS
+-------------------------------------------
+The proved global wrapper applies whenever the low residual has been
+attained, including q>r. A solver theorem stated only for q<=r is still
+insufficient to supply a bounded-time global threshold routine: an
+infeasible threshold can have many positive modes, and a solver could
+grow to large rank before meeting the residual target.
+
+Exact monotone RADI iterates X_j<=X_E do permit sound early rejection:
+X_E<=2H_++alpha L I means sufficiently many large X_j eigenvalues
+already certify sufficiently many positive H eigenvalues. What is not
+proved here is a uniform polylogarithmic time to either that rejection
+or the required residual for arbitrary positive index. A random
+threshold dither can remove extremely near-zero eigenvalues, but its
+combination with a bounded-rank early-stopping convergence theorem
+requires a separate proof.
+
+More fundamentally, even the positive-index-promised RADI solve needs
+the critical shifted-H inverse discussed in Section 8. The raw off-axis
+batched theorem does not currently implement it. Consequently this
+work establishes a rigorous global certificate and physical output
+transfer, not the proposed near-input-plus-core construction or a
+general N^2 algorithm. No formal external job was started or stopped.

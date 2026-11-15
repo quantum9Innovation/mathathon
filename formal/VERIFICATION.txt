@@ -187,10 +187,11 @@ Constructed dependencies added while pursuing the full goal
   the polynomial's scalar approximation bound on the spectrum.
 
   FiniteRefinement.finite_refinement_invariant proves all inequalities of
-  (9), the actual finite inverse-factor invertibility, the 55h margins,
-  Bnext=2B and Cnext=100(C+1), from the preceding invariant and the
-  uniform scalar polynomial approximation. The latter still needs its
-  full degree-bounded construction theorem; it is not hidden as an axiom.
+  (9), invertibility, the 55h margins, Bnext=2B and Cnext=100(C+1).
+  ConstructedRefinement.constructed_finite_refinement now instantiates
+  the finite polynomial and its uniform error internally. Its hypotheses
+  are the preceding invariant and proxy estimates, with no scalar
+  approximation or relative-metric-closeness hypothesis.
 
   StrongAction.strong_action_dual_certificate derives the quadratic strong
   certificate from the actual operator-norm condition. Its physical-span
@@ -205,19 +206,60 @@ Constructed dependencies added while pursuing the full goal
   DyadicNodes.lean constructs dyadic Gauss--Chebyshev nodes by nested scalar
   square roots and complex-pair field arithmetic. It proves their analytic
   node formula, interval membership, distinctness, the actual Lagrange
-  interpolant's node values and its degree bound. This does not yet prove
-  the required uniform interpolation error or the FFT implementation cost.
+  interpolant's node values and its degree bound.
+
+  Lemma 4 is now AutomaticPolynomial.inverse_root_polynomial_algorithm.
+  Start with that theorem to inspect the complete scalar statement:
+  its inputs are 0<eta<=1/8 and 0<tau<1/4; its output p is decoded from
+  the actual automaticInverseRootProgram, and its conclusion includes
+  admissibility, degree below n=2^s, n<=(17000/eta)log(1/(tau eta)),
+  uniform relative error <=tau, and total work <=80(s+3)2^s.
+
+  The proof path is AnalyticInverseRoot -> CircleCoefficients ->
+  InverseRootSeries -> ChebyshevAliasing -> InterpolationError ->
+  DyadicDegree. It proves the analytic branch and Cauchy decay, the full
+  Chebyshev expansion, norm-one aliasing, and the paper's explicit
+  24/(eta sqrt(eta))*rho^-n interpolation error for the actual interpolant.
+
+  DyadicDCT and DCTViaDFT prove that a length-4n Fourier transform returns
+  exactly its Chebyshev coefficients. ArithmeticProgram gives explicit
+  field, root and comparison instructions, their operational evaluation,
+  and an admissibility predicate checking every executed divisor/radicand.
+  FFTProgram stores/reuses both recursive transforms and all twiddle
+  factors; correctness and real-operation cost are verified together.
+  ScalarConstruction, DCTProgram and PolynomialConstruction include the
+  nested scalar roots, sampled values, padding copies and output scaling.
+  DegreeSelection proves the repeated-squaring selector terminates,
+  chooses exactly the specified minimal dyadic size, and costs 2s+8.
+  The analytical contour integrals, exponentials and trigonometric
+  identities are proofs only; they are not instructions in these programs.
+
+  NeumannMass and NeumannDegree construct the even inverse-mass polynomials,
+  prove positivity for every symmetric input (also outside the good event),
+  and relative inverse accuracy at logarithmic degree near the identity.
+  FineProxy.constructed_fine_pencil_error proves the uniform 8hD pencil
+  error using those actual masses and the Gram/sketch inequalities. Its
+  positivity and inverse-G estimate follow from the identity floor.
+
+  BlockPrograms, NeumannAction and ChebyshevAction implement entrywise
+  block arithmetic and polynomial actions. Given an actual operator program
+  costing T on k-by-b blocks, the Neumann program costs at most
+  2q(T+2kb), and the n-term Chebyshev program costs at most n(T+4kb).
+  MatrixAction packages the program, product equality, admissibility and
+  proved cost for use by composition/scaling/polynomial compiler lemmas.
+  Those are verified interfaces still to instantiate in the full algorithm.
 
 Remaining work for a full formalization of Theorems 1 and 2
 
-  1. A formal finite exact-real arithmetic algorithm and its operation-cost
-     semantics, including the fixed matrix-multiplication kernel.
+  1. Extend the verified scalar operational model to the complete matrix
+     algorithms, including the fixed matrix-multiplication kernel.
   2. Product-support/sketch construction, all failure-event bounds, and the
      companion's exact characteristic-coefficient/inertia oracle.
-  3. Lemma 4's uniform analytic Chebyshev interpolation error, finite dyadic
-     DCT implementation and degree/cost bounds. The finite metric algebra
-     from that scalar error bound is now proved. Also construct the actual
-     fine/true Neumann inverse masses and instantiate the fine-proxy bounds.
+  3. Complete and instantiate matrix-free action programs for the scalar
+     approximation and inverse masses, and the finite base Newton/Cholesky
+     construction. The inverse-mass accuracy and fine-proxy matrix bounds,
+     complete scalar polynomial construction and resulting finite-refinement
+     metric inequalities are now checked.
   4. The min--max/eigenvalue near-threshold step, Gaussian head/tail bounds,
      and the strong operator-norm bound for the actual filtered Gaussian
      output. The conversion of that norm to hstrong is now proved.

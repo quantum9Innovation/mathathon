@@ -21,11 +21,14 @@ Required named results, preserving the original statements
   lem:relative   Relative-perturbation matrix inequality: CHECKED.
   lem:poly       Finite uniform inverse-root polynomial, degree
                   O(eta^-1 log(1/(tau eta))), field/positive-root coefficient
-                  construction in O(n log n). Node construction and exact
-                  interpolation now checked; uniform error/cost pending.
+                  construction in O(n log n): CHECKED, including automatic
+                  repeated-squaring degree selection and an admissible
+                  operational program. See inverse_root_polynomial_algorithm.
+                  ChebyshevAction now proves its n-action recurrence and
+                  actual arithmetic cost, given a verified operator program.
   lem:refine     Finite actual factor, full invariant and action degree.
-                  Full metric invariant checked GIVEN the scalar polynomial
-                  approximation. Polynomial generation and action costs pending.
+                  Full metric invariant checked for the constructed polynomial,
+                  with no approximation hypothesis. Matrix-action costs pending.
   lem:transfer   Near-threshold min--max and physical strong-action transfer.
                   Physical/strong quadratic transfer checked. Near-threshold
                   eigenvalue/min--max proof pending.
@@ -67,48 +70,73 @@ Current construction path
   AnalyticRefinement -> PolynomialMetric -> FiniteRefinement.
   StrongAction + PhysicalPencil -> SupportFilter -> existing spectral result.
 
-  These now establish the actual finite-refinement inequalities from the
-  previous invariant, proxy bounds and scalar polynomial approximation.
+  ConstructedRefinement now establishes the actual finite-refinement
+  inequalities from the previous invariant and proxy bounds, using the
+  fully constructed scalar polynomial and its proved approximation.
   They derive the physical and quadratic strong-action certificates, rather
   than leaving them as opaque matrix assumptions.
 
-Next critical mathematical dependency
+Completed scalar approximation construction
 
-  Complete lem:poly for the actual inverseRootInterpolant in DyadicNodes.lean.
-  Its nodes, sampled values, distinctness and degree are constructed. Prove
-  the uniform approximation with exponential decay in eta*n, choose a
-  sufficient dyadic n, and verify the coefficient-generation operation bound.
-  Do not replace it by a slower Bernstein/Taylor approximation: that loses
-  the H/h degree needed for the main theorem's runtime.
+  AnalyticInverseRoot -> CircleCoefficients -> InverseRootSeries proves the
+  actual analytic branch, annular Cauchy coefficient bounds, summability and
+  Chebyshev expansion. ChebyshevAliasing proves the interval-norm-one alias
+  at the actual dyadic nodes. InterpolationError proves the paper's explicit
+  24/(eta*sqrt(eta))*rho^-n error for its Lagrange interpolant.
 
-  A plausible library-backed route is analytic Fourier/Cauchy estimates for
-  g((w+w^-1)/2) on the annulus with outer radius 1+eta/4. Mathlib has complex
-  Cauchy annulus/circle-integral deformation, analytic square roots and
-  additive-circle Fourier theory, but no ready generic Laurent/Chebyshev
-  interpolation error theorem was found. This route is not yet implemented.
+  DyadicDegree proves the relative error and explicit uniform degree bound
+  n <= (17000/eta)*log(1/(tau*eta)) for the original stopping rule.
+  DyadicDCT and DCTViaDFT prove exact DCT reconstruction and its reduction
+  to one length-4n Fourier transform using the nested-root dyadic root.
 
-  Concrete library endpoints: Complex CauchyIntegral's
-  circleIntegral_eq_of_differentiable_on_annulus_off_countable moves the
-  coefficient contour from radius 1 to rho. AddCircle's
-  hasSum_fourier_series_of_summable reconstructs a continuous function from
-  summable Fourier coefficients, avoiding a new general Laurent-series API.
-  The actual nested-root nodes and Lagrange value polynomial are now in
-  DyadicNodes.lean; do not confuse its naive definition with a fast DCT.
+  ArithmeticProgram defines operational field/root/comparison instructions,
+  executed work, and admissibility (no invalid division or square root).
+  FFTProgram materializes and reuses transform tuples and twiddle tables;
+  its correctness and <=8(s+1)2^s real-operation bound are checked together.
+  ScalarConstruction, DCTProgram and PolynomialConstruction include actual
+  scalar roots, samples and output scaling. No trigonometric or integration
+  operation is used in those construction programs.
 
-  An alternative to proving all Chebyshev alias identities is to bound the
-  interpolation operator by a polynomial in n, e.g. n^2 via Chebyshev
-  derivative and Lagrange-basis bounds. Its factor can be absorbed into the
-  exponential approximation by increasing the sufficient dyadic degree by
-  a constant, still proving exactly O(eta^-1 log(1/(tau eta))). Such a route
-  must prove that same degree and O(n log n) coefficient bound; simply
-  retaining a weaker approximation/cost statement does not close lem:poly.
+  DegreeSelection executes the repeated-squaring search, proves termination,
+  exact minimal output and 2s+8 work including parameter preparation.
+  AutomaticPolynomial.inverse_root_polynomial_algorithm combines selection
+  and coefficient generation, with admissibility, <=80(s+3)2^s work, degree,
+  and uniform relative accuracy referring to the same executed output.
+
+Next construction dependencies
+
+  NeumannMass and NeumannDegree now construct the true/fine even masses,
+  prove unconditional positivity, relative inverse accuracy on the coarse
+  event and a logarithmic degree bound. FineProxy.constructed_fine_pencil_error
+  derives the 8hD proxy inequalities from the actual Neumann polynomials
+  and the Gram/sketch bounds. It derives positivity and the inverse-G bound
+  from the identity floor rather than assuming these as extra certificates.
+
+  BlockPrograms provides materialized entrywise arithmetic. NeumannAction
+  and ChebyshevAction now compile verified operator programs into the
+  Neumann/polynomial actions with correctness, admissibility and operation
+  counts. MatrixAction packages these actual program witnesses and proves
+  composition, scaling, sum, difference and both polynomial compilers.
+
+  Next instantiate these interfaces with the recursive inverse factors,
+  stored fine factors and matrix kernels. For the refinement action:
+  prepare c=1/sqrt(1+epsilon), eta=8epsilon, tau=h/(10^6(1+B)); compute
+  the automatic coefficient table; compose inflated R/transpose, the fine
+  pencil action, and the checked Chebyshev compiler. Charge scalar preparation
+  and coefficient preparation in the same program. Recomputing coefficients
+  per action is allowed only if the same paper soft cost bound is proved.
+  Expected explicit action bound before those preparation charges is
+    cR + kb + n*(cR+cRT+cKj+6kb).
+  The equality automaticInverseRootProgram_polynomial already identifies
+  the generated coefficient table with the exact refinementPolynomial.
+
+  Then construct the finite base Newton/Cholesky metric and its actions.
 
 Subsequent construction dependencies
 
-  Finite Neumann masses/proxy proof; finite base Newton/Cholesky construction;
   actual support/sketch reduction and its probability; safe spectral threshold
   oracle and positive bracket; strong Gaussian polynomial capture; operational
-  exact-arithmetic and matrix-free action counts; verified fast matrix kernels
+  matrix-free action counts; verified fast matrix kernels
   and core algebra; full probability/cost/depth assembly and corollaries.
 
 Do not mark the goal complete until the named main theorems and all gates

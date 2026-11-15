@@ -1,0 +1,1257 @@
+RAW-FACTOR FRESH SEARCH -- GENERAL QUADRATIC TRACK
+2026-11-14. Work in progress. This file alone is owned by this worker.
+
+CURRENT RESULT AND SCOPE
+
+There is a constructive batched off-axis resolvent theorem, proved below.
+It handles the fixed swap coupling J needed for arbitrary products AB,
+allows rank deficiency, and uses only a constant-distortion raw sketch.
+For q supplied off-axis shifts and supplied right hand sides, its cost is
+
+  ~O(I_X q^(omega-2) log(1/eps) + m^omega),       1 <= q <= m,
+
+with dimension/confidence logarithms suppressed. The small-core setup is
+an EXACT Frobenius normal form, not an exact eigenvalue oracle. Thus no
+condition-number logarithm or per-shift m^omega cost is hidden. Arithmetic
+is exact; this is not yet a backward-stability/finite-word theorem.
+
+Section11 further proves an order-q APPROXIMATE bounded Cayley-Krylov
+construction for S^2, hence for MM^T of arbitrary raw AB, at the same
+~O(I_X q^(omega-2) log(q/eps)+m^omega) cost. Fast Möbius/Taylor basis
+changes eliminate a provisional m q^2 composition term. This is a genuine
+constructive finite algorithm; its conversion to sharp LRA remains open.
+
+This is NOT yet a general LRA or N^2 algorithm. Imaginary-axis poles are
+far from a nonzero real spectral threshold. The remaining substantive
+question is a stable filter/representation with the required sharpness,
+or a new way to move the resolvent center towards the real threshold.
+Root is independently investigating the filter and coefficient growth.
+
+The original partial monomial Krylov primitive remains open. Two exact
+summary/data-structure barriers are recorded after the constructive result,
+with their precise restricted models. Neither rules out special dependent
+Krylov columns or approximate query algorithms.
+
+
+1. RAW FACTOR AND SIGNED DILATION MODEL
+
+Let X be an arbitrary real N-by-m matrix; write I_X=Nm, G=X^T X.
+Let J be a supplied real symmetric involution: J^T=J, J^2=I.
+The main case is a fixed coordinate permutation, so J-actions cost O(mq).
+Define the real symmetric physical operator
+
+  S = X J X^T.
+
+For arbitrary A(n,d), B(d,p), use
+
+  X = diag(A,B^T),      J = [0 I_d; I_d 0],
+  S = [0 AB; (AB)^T 0].
+
+Then N=n+p, m=2d, and the raw input size is O(d(n+p)); the zero blocks
+need not be stored. Everything below applies to the product dilation
+without forming P=A^T A, Q=BB^T, or either true Gram.
+
+For z off the real axis and a physical right hand side h, Woodbury gives
+
+  (I-zS)^(-1)h = h + z X (J-zG)^(-1) X^T h.             (1)
+
+This identity is valid with rank-deficient X. The matrix J-zG is invertible:
+JG has only real nonzero eigenvalues because they coincide with those of
+G^(1/2) J G^(1/2), and zero eigenvalues cannot make I-zJG singular.
+Alternatively (1) follows directly by multiplying both sides.
+
+
+2. COARSE SKETCH, INCLUDING ITS ACTUAL INPUT COST
+
+Choose a fixed eta in (0,1), e.g. eta=1/4. A standard sparse OSE forms
+Y=Pi X in ~O(I_X) arithmetic, with ~O(m) rows, so that with probability
+at least 1-delta its Gram G0=Y^T Y satisfies
+
+  (1-eta)G0 <= G <= (1+eta)G0.                           (2)
+
+Forming THIS sketched Gram and rank-revealing exact LDL/Gram factorization
+costs ~O(m^omega), since Y has only ~O(m) rows. Obtain a full-row-rank
+L(rho,m), rho<=m, with
+
+  G0=L^T L.
+
+No true Gram is formed. The same coarse event works for all subsequent
+shifts, right hand sides, and iterations, including adaptive choices.
+The cost statement only needs a classical OSNAP with polylogarithmic
+row/sparsity overhead; no 2026 optimal embedding theorem is needed.
+
+Primary source: Nelson--Nguyen, OSNAP, arXiv:1211.1002:
+https://arxiv.org/abs/1211.1002 . The abstract and main theorems give
+~O(m/eps^2) rows and polylog(m)/eps nonzeros per input-coordinate column,
+and near-input-plus-rank^omega regression preprocessing. Here eps is a
+fixed numerical constant and supplied failure is handled by the standard
+logarithmic-confidence parameterization. Equivalently, any supplied
+constant-distortion coarse factor L satisfying (2) is sufficient for the
+deterministic theorem below.
+
+The rank-deficient LDL step uses field operations, comparisons/zero tests,
+and positive scalar square roots. It can also use an exact small QR of Y;
+all its dimensions are ~O(m), so this does not hide tall QR of X.
+
+
+3. CONTRACTION FOR THE SIGNED RAW SADDLE
+
+Put E=G-G0. By (2) and full row rank of L there exists a real symmetric
+D(rho,rho) with ||D||_2<=eta and
+
+  E=L^T D L.                                             (3)
+
+For example D=(LL^T)^(-1)L E L^T(LL^T)^(-1). The Loewner inequalities
+show ||D||<=eta; equality (3) uses that E and G0 have the same nullspace
+annihilation. D is ANALYTICAL and is never computed.
+
+Let K=L J L^T, a supplied rho-by-rho real symmetric matrix. Define
+
+  A=J-zG,                  A0=J-zG0.
+
+The coarse inverse is
+
+  A0^(-1) = J + z J L^T (I-zK)^(-1) L J,                 (4)
+
+and in particular
+
+  L A0^(-1) L^T = K(I-zK)^(-1).                          (5)
+
+For b supplied, start w_0=0 and perform ordinary preconditioned Richardson
+
+  w_(t+1) = w_t + A0^(-1)[b-A w_t].                      (6)
+
+For w_*=A^(-1)b and e_t=w_t-w_*, (3)--(5) imply
+
+  L e_(t+1) = z K(I-zK)^(-1) D L e_t.                    (7)
+
+For z purely imaginary,
+
+  ||z K(I-zK)^(-1)||_2
+    = max_(lambda in spec K) |z lambda|/|1-z lambda| <= 1.
+
+Hence ||L e_t|| <= eta^t ||Lw_*||. Transferring using (2),
+
+  ||X(w_t-w_*)||
+       <= sqrt((1+eta)/(1-eta)) eta^t ||Xw_*||.            (8)
+
+This is a SEMINORM argument and does not invert G0. Nullspace components
+of w are harmless because the required physical output is Xw. It is
+therefore valid with rank-deficient A or B and with ill-conditioned raw
+factors, without a support-coordinate change on the tall input.
+
+More generally set c(z)=|Im z|/|z|. For any nonreal z,
+
+  max_(lambda real) |z lambda|/|1-z lambda| = 1/c(z).
+
+Thus (7) contracts by eta/c(z) whenever c(z)>eta.
+
+
+4. UNIFORM PHYSICAL RESOLVENT ERROR, NO SPECTRAL-RATIO LOG
+
+Take b=X^T h and form y_t=h+zXw_t. Equation (1) says y_*=h+zXw_*.
+For pure imaginary z, diagonalizing S only for ANALYSIS shows
+
+  ||zXw_*|| = ||[(I-zS)^(-1)-I]h|| <= ||h||.
+
+Combine with (8):
+
+  ||y_t-(I-zS)^(-1)h||
+        <= C_eta eta^t ||h||,
+  C_eta=sqrt((1+eta)/(1-eta)).                            (9)
+
+The bound is uniform over the magnitude of z, over all eigenvalues and
+condition numbers of S, and over all physical h. In particular t=O(log
+(1/eps)) produces additive operator-action error eps||h||; there is no
+log(||S||/target-scale) term. For c(z)>=c0>eta, the corresponding bound is
+
+  ||y_t-y_*|| <= (C_eta/c0)(eta/c0)^t ||h||.              (10)
+
+The statement is per-column; simultaneously it gives Frobenius error
+<=eps||Hrhs||_F for a block of q right hand sides. To obtain a spectral
+operator approximation on one prescribed q-dimensional input subspace,
+apply to an orthonormal basis with per-column eps/sqrt(q), costing only
+an extra logarithm in q. One must not claim a spectral block bound with
+the same eps from independent per-column bounds without that adjustment.
+
+
+5. ALL SHIFTED PRECONDITIONERS SHARE ONE EXACT SMALL-CORE SETUP
+
+The potentially fatal per-shift setup in (4) can be avoided. Compute ONCE
+a Frobenius normal form and its transformation
+
+  K = P C P^(-1),
+
+where C is block diagonal with companion blocks. This costs
+O(rho^omega (loglog rho)^2) deterministic field operations and zero tests,
+including the transformation matrix. Computing P^(-1) costs O(rho^omega).
+
+Primary theorem: Neiger--Pernet--Villard, Computing Krylov iterates in the
+time of matrix multiplication, ISSAC2024, Corollary5.2:
+https://arxiv.org/html/2402.07345v2#S5.SS1 . The abstract explicitly states
+the Frobenius form WITH transformation in that complexity. This theorem
+is applied only to the explicit COARSE rho-core K, never to the true G.
+
+Given a block R=[r_j] and shifts z_j, (4) requires
+
+  a_j=LJr_j,
+  d_j=P^(-1)a_j,
+  f_j=(I-z_j C)^(-1)d_j,
+  output_j=Jr_j+z_j J L^T P f_j.
+
+All four dense basis/factor products can be batched across q columns.
+For each companion block of size d, solving (I-z_j C_d)f=d_j costs O(d)
+field operations by a forward recurrence plus one scalar division.
+For the convention C has subdiagonal1 and final column -c_i, compute
+
+  a(z)=1+c_(d-1)z+...+c_0 z^d,
+  f_d=[d_d+z d_(d-1)+...+z^(d-1)d_1]/a(z),
+  f_1=d_1-z c_0 f_d,
+  f_i=d_i+z f_(i-1)-z c_(i-1) f_d  (2<=i<d).
+
+The nonreal shifts ensure a(z)!=0 since K is symmetric and hence all
+roots of its characteristic polynomial are real. Summing block sizes,
+all companion solves cost O(mq) per iteration. No exact eigenvalues,
+approximate eigensolver, matrix-function oracle, or per-shift dense inverse
+has been assumed. Complex field operations have constant real cost.
+
+This FNF construction can be badly conditioned in finite precision.
+Equation (9) is an exact-arithmetic mathematical guarantee. A numerical
+implementation can instead investigate orthogonal Schur/eigenbasis
+preparation, but its finite-word conditioning/precision analysis is a
+separate obligation and is not silently included here.
+
+
+6. RAW BLOCK ARITHMETIC COST AND STORAGE
+
+For 1<=q<=m<=N, splitting a rectangular product into q-sized square blocks
+gives the elementary bound
+
+  T_MM(N,m,q) = O(N m q^(omega-2))
+
+up to harmless ceilings and fixed exponent slack. Thus one raw G-action
+on the current block W costs O(I_X q^(omega-2)) via XW and X^T(XW).
+The small-core/factor products in Section5 cost O(m^2 q^(omega-2)),
+which fits this bound since N>=m. J actions, recurrences and additions
+cost O(mq). Initial X^T Hrhs and final XW cost the same raw block bound.
+
+Consequently all q supplied imaginary-axis resolvents with eps||h_j||
+per-column error, failure<=delta, are obtained in
+
+  ~O( I_X q^(omega-2) log(1/eps) + m^omega ),             (11)
+
+with additional logq for a spectral subspace guarantee if desired.
+Storage can reuse physical N-by-q block buffers, coefficient m-by-q
+buffers, and O(m^2 polylogm) coarse/core data, in addition to X. The
+Frobenius routine's temporary storage is charged at its arithmetic bound;
+this note does not assert a sharper in-place FNF implementation.
+
+The q shifts and right hand sides may depend on the coarse sketch. They
+must be available together when each block action is performed. A later
+adaptive sequential right hand side cannot be retroactively batched for
+free. This nonadaptive-width requirement is precisely why (11) does not
+already solve ordinary sequential monomial Krylov.
+
+At m=2d with A,B of shape N0-by-d,d-by-N0, q=~sqrt(d), omega=9/4 and
+N0=d^(9/8), (11) is ~O(d^(9/4) log(1/eps)); it matches the decisive
+output exponent. This proves that MANY suitable resolvents can be built
+at that cost. It does not yet prove that their span or a stable combination
+attains the requested rank-one spectral approximation at theta=1/d.
+
+With conventional multiplication omega=3, (11) is O(I_X q log(1/eps)
++ m^3 polylogs), so its speedup over separate solves is chiefly shared
+preconditioner setup. It is not a new conventional-arithmetic LRA frontier.
+
+
+7. EXACT ONLINE ARBITRARY QUERIES HAVE A DIFFERENT BARRIER
+
+This section is a scoped arithmetic-circuit statement, not a lower bound
+for the requested approximate algorithm or dependent Krylov sequence.
+
+Fix a scalar arithmetic field K containing the algorithm's finitely many
+input-independent constants. Choose a positive-definite symmetric H with
+d=m(m+1)/2 entries algebraically independent over K. (There are such
+matrices in the open SPD cone.) Allow arbitrary preprocessing of H into
+stored real scalar values. A query arrives as a new independent symbolic
+vector v and must return Hv exactly, using a finite straight-line program
+of t binary field gates and freely reading stored scalar values. On its
+generic branch, it can use at most 2t+m distinct stored scalars: every
+used scalar must enter a gate or be a direct output.
+
+Let F be the field generated over K by those accessed scalars. Every
+output is in F(v). Exact equality with Hv on a nonempty open query cell
+implies a rational-function identity, hence every coefficient H_ij is in
+F. Thus d<=trdeg_K(F)<=2t+m, so
+
+  t >= (m(m+1)/2-m)/2 = Omega(m^2).                      (12)
+
+The same count holds for a finite algebraic decision tree on an open
+branch. Allowing a fixed number of algebraic root gates only replaces F
+by an algebraic extension, which does not increase transcendence degree.
+No assertion is made for arbitrary nonalgebraic primitives, free vector
+gates, unbounded real-encoding/decoding operations, or approximate outputs.
+
+For q genuinely independent ONLINE queries, specialize all earlier query
+vectors to values in K and apply the same generic branch argument to the
+new symbolic vector at each stage. The earlier stored state is still
+preprocessing independent of that new vector. Each query has Omega(m^2)
+arithmetic cost. This excludes an exact arbitrary-query data structure
+with total o(m^2 q), even with unbounded preprocessing. In particular a
+total m^(9/4) for q=sqrt(m) cannot be obtained by this model. A claim about
+randomized exact algorithms would need its own branch/measure argument;
+the clean proposition here is deterministic and generic-circuit based.
+
+This does NOT apply to v,Hv,H^2v,... as independent query variables. Their
+dependence on H invalidates the coefficient-field argument. It also does
+not prevent the NONADAPTIVE batched procedure of Sections1--6: a block of
+q independent queries can be processed using fast matrix multiplication,
+without returning each answer before the next query becomes available.
+
+
+8. A CLOSED ONE-RHS ROW-MERGE SUMMARY MUST ENCODE THE FULL GRAM
+
+Let v!=0 be fixed. Suppose a summary s(H) permits exact rank-one updates
+H -> H+xx^T for arbitrary x, and after an update returns BOTH
+(H+xx^T)v and (H+xx^T)^2v. Assume it can also return baseline u=Hv and
+t=H^2v. Put b=x^T v. Direct expansion gives
+
+  (H+xx^T)^2v
+       = t + b Hx + (x^T u + ||x||^2 b)x.                 (13)
+
+Whenever b!=0, its output recovers
+
+  Hx = [(H+xx^T)^2v-t-(x^T u+||x||^2b)x]/b.             (14)
+
+Thus the summary determines Hx on an open dense set of x, hence all of H.
+For an algebraic summary of s scalar values, transcendence degree gives
+s>=m(m+1)/2 on generic SPD inputs. The same dimensional obstruction holds
+for continuous summaries on an open set by the usual topological dimension
+argument. Even order-three one-start Krylov cannot admit a uniformly
+smaller-dimensional exact summary closed under arbitrary row updates.
+
+This strengthens the elementary two-dimensional counterexample already
+recorded in factor-algebra-search.txt. Its limitation is explicit: a merge
+algorithm may retain the raw factors, which have MORE than m^2 scalars,
+or use multipole/new-seed summaries with a full-dimensional state. The
+theorem does not prove that such a richer representation costs a true Gram
+to compute, nor does it rule out a globally computed short Krylov sequence.
+
+
+9. A RIGOROUS EXPONENTIAL RESIDUE-MASS OBSTRUCTION
+
+This rules out a direct stable linear combination of only imaginary-axis
+resolvents as a free sharp filter. It does not rule out quotient operations,
+coherent common-backward-operator constructions, or a useful subspace with
+an independently proved perturbation theorem.
+
+Let 0<theta<=1/2 and
+
+  r(x)=a0+sum_j a_j/(1-i s_j x),       s_j real,
+  K=sum_j |a_j|.
+
+Suppose |r(x)|<=1 throughout x in [1/2,1], but |r(1+theta)|>=2. Then
+
+  K >= (1/4) 2^[ arcosh(7/5)/sqrt(8theta) ].             (15)
+
+Proof. Differentiating each summand, |r'(x)|<=K/(2x) for x>=1,
+since max_s |s|/(1+s^2 x^2)=1/(2x). The required jump therefore gives
+K>=2/log(1+theta)>1. Put L=ceil(log2(4K)). For any imaginary z=i s,
+the Taylor expansion around x=1 has exact remainder
+
+  1/(1-zx) - [1/(1-z)]sum_(k=0)^(L-1)[z(x-1)/(1-z)]^k
+    = [z(x-1)/(1-z)]^L/(1-zx).
+
+For real x in [1/2,3/2], |z/(1-z)|<=1 and |1/(1-zx)|<=1, so its
+absolute value is <=2^(-L). Summing yields a degree-(L-1) polynomial p
+with |r-p|<=K2^(-L)<=1/4 on the same interval. Thus |p|<=5/4 on
+[1/2,1] and |p(1+theta)|>=7/4. Chebyshev extremality gives
+
+  7/5 <= T_(L-1)(1+4theta)
+        =cosh((L-1)arcosh(1+4theta))
+        <=cosh((L-1)sqrt(8theta)).
+
+It applies to complex p too: rotate its value at 1+theta to be positive
+real and take the real part, preserving its bound on the real interval.
+Since L-1<=log2(4K), rearrangement gives (15).
+
+Consequently a termwise evaluation error budget for this type of filter
+requires log(1/eps)=Omega(theta^(-1/2)) even when each scalar resolvent
+itself is cheaply computable. Degree/pole count alone does not certify
+stable filtering. This is the exact obstruction behind the earlier
+observation that, with scalar coarse G0, L Richardson steps produce only
+a degree-L polynomial of the true operator no matter how many shifts
+are evaluated. The coefficient result does not require scalar G0.
+
+
+10. APPROXIMATE TRUNCATED CAYLEY KRYLOV IN THE PSD CASE
+
+There IS a further order-sensitive constructive theorem. It generates
+bounded Cayley powers to polynomial absolute accuracy at the desired
+q-sensitive input cost. It does not yet furnish a stable sharp LRA filter.
+
+Specialize to J=I, so S=X X^T is PSD. Let s>0 be arbitrary and
+
+  T=(S-sI)(S+sI)^(-1),             spec(T) subset [-1,1].
+
+For a supplied physical h and integer 2<=q<=m, the first q vectors
+
+  [h,Th,...,T^(q-1)h]
+
+can be approximated, in Frobenius norm to eps||h||, with probability
+>=1-delta in
+
+  ~O( I_X q^(omega-2) log(q/eps) + m^omega ).             (16)
+
+No log(condition number of S), no restriction on s, and no supplied exact
+eigenvalues enter. The output vectors are approximate; this is NOT the
+exact partial raw monomial Krylov oracle requested in the main problem.
+
+10.1 Holomorphic contraction
+
+For PSD K and Re z<=0,
+
+  ||zK(I-zK)^(-1)||<=1,
+  ||[(I-zS)^(-1)-I]h||<=||h||.
+
+Thus Sections3--4 give error <=C_eta eta^L||h|| uniformly on the ENTIRE
+left half-plane after L coarse Richardson iterations. For |t|<1 put
+
+  z(t)=-(1-t)/[(1+t)s],             Re z(t)<0.
+
+The Cayley generating function has the exact identity
+
+  V(t)=(I-tT)^(-1)h
+      =h/(1-t) - [2t/(1-t^2)](I-z(t)S)^(-1)h.           (17)
+
+Construct the raw Richardson iteration simultaneously as a truncated
+power series in t, to order q. It is algebraically the SAME iteration
+as evaluating at each complex t, so its full rational-function error
+bound on |t|=r<1 is
+
+  ||V_L(t)-V(t)|| <= [2r/(1-r^2)] C_eta eta^L ||h||.
+
+Choose r=1-1/q. Cauchy's coefficient inequality and
+r^(-(q-1))<=e imply that each of the first q coefficient errors is at
+most e C_eta q eta^L||h||. Their combined Frobenius error is therefore
+<=e C_eta q^(3/2)eta^L||h||. Taking L=O(log(q/eps)) proves the accuracy
+claim without an exponential-in-q tolerance.
+
+10.2 The polynomial-matrix operations really fit (16)
+
+The raw saddle equation, with its scalar denominator cleared, is
+
+  B(t) w(t)=(1+t)s X^T h,
+  B(t)=(1+t)s I+(1-t)G.
+
+Its coarse preconditioner is the explicit degree-one core
+
+  B0(t)=(1+t)s I+(1-t)G0
+       =(sI+G0)(I-tT0),
+  T0=(sI+G0)^(-1)(G0-sI).
+
+Compute T0, the inverse of sI+G0, and ONE Frobenius form T0=P C P^(-1)
+in ~O(m^omega). All are coarse m-cores. To apply B0(t)^(-1) to ANY
+m-vector polynomial R(t) modulo t^q, first multiply its q-column
+coefficient block by P^(-1)(sI+G0)^(-1), then solve
+
+  (I-t C)F(t)=D(t) mod t^q,
+
+then multiply the coefficient block by P. The two transforms cost
+O(m^2 q^(omega-2)). The companion solve is efficient even though its
+right hand side is a polynomial, rather than a constant vector:
+
+  f_d(t) = [sum_(j=1)^d t^(d-j)d_j(t)]
+           /[1+c_(d-1)t+...+c_0t^d]  mod t^q,
+  f_1=d_1-t c_0f_d,
+  f_i=d_i+t f_(i-1)-t c_(i-1)f_d.
+
+Forming the numerator/recurrences costs O(dq); invert the scalar
+denominator modulo t^q once (its constant coefficient is1), then use
+fast polynomial multiplication. Summed over all companion blocks, this
+costs ~O(mq) per application, with ~O(mq) precomputed series data.
+
+Every true B(t)-action is a raw G multiplication on q coefficients,
+costing O(I_X q^(omega-2)); multiplication by (1+-t) only shifts/adds
+coefficient columns. The final X lift and scalar series manipulations
+in (17) have the same or smaller cost. Iterating L times modulo t^q
+produces exactly the first q coefficients of the rational Richardson
+iterate, because all inverses expanded have nonzero constant term.
+This proves (16), including the degree-sensitive preconditioner cost.
+
+10.3 Why this does not already settle sharp spectral LRA
+
+The monomials T^j are uniformly bounded, but a Chebyshev filter tailored
+to a shorter tail interval, e.g. [-1,0], can have exponentially large
+coefficients in that basis. Polynomial absolute accuracy of the Cayley
+Krylov block alone therefore does not establish a stable approximate
+Krylov subspace or a useful sharp filter.
+
+The obvious Chebyshev generating function does not preserve the cheap
+holomorphic domain. Its denominator is I-2tT+t^2I; after Cayley mapping,
+it contains
+
+  (1-t)^2 S + (1+t)^2 sI.
+
+The corresponding raw scalar shift is
+-[(1-t)/(1+t)]^2/s, which approaches the positive real axis as t approaches
+the unit circle. Uniform coarse contraction then fails. This is exactly
+the missing stability, not an uncharged polynomial manipulation.
+
+The theorem may be useful for stable matrix-function classes whose
+coefficients in bounded Cayley powers have polynomial mass, or as a
+building block for a common-backward-operator construction. No priority
+or novelty claim is made without a primary-literature audit.
+
+
+11. SIGNED EXTENSION: BOUNDED CAYLEY POWERS OF S^2 FOR ARBITRARY AB
+
+The same q-sensitive approximate-series theorem DOES extend to arbitrary
+products, by a quarter-plane square-root mapping. An initial implementation
+had an m q^2 composition term; the fast Möbius/Taylor transformations in
+Section11.4 remove it. The resulting bound for approximate bounded rational
+Krylov powers is
+
+  ~O(I_X q^(omega-2) log(q/eps) + m^omega).               (18)
+
+Here J is again any fixed symmetric involution, S=X J X^T, s>0 arbitrary,
+and the returned q columns approximate
+
+  [h,T h,...,T^(q-1)h],
+  T=(S^2-s^2I)(S^2+s^2I)^(-1),
+
+to Frobenius error eps||h||. It allows rank deficiency and has no spectral
+condition-number logarithm. For the product dilation, S^2 is block diagonal
+with blocks MM^T and M^T M. Starting h=[g;0] therefore computes the bounded
+Cayley-Krylov powers of MM^T in its first physical block. No true Gram or
+full transformed tall factor is formed.
+
+11.1 A uniform analytic domain for the SIGNED saddle
+
+For |t|<1 choose the analytic branch
+
+  z(t)=(i/s) sqrt((1-t)/(1+t)),            z(0)=z0=i/s.
+
+The quotient (1-t)/(1+t) lies in the open right half-plane. Its square
+root has argument between -pi/4 and pi/4; hence z(t) has argument between
+pi/4 and 3pi/4, so c(z(t))>=1/sqrt(2) uniformly throughout the disk.
+The same holds for -z(t). With eta=1/4, the signed raw Richardson
+iteration therefore contracts by at most sqrt(2)eta<1 at EVERY t.
+
+Define
+
+  R2(t)=(I-z(t)^2 S^2)^(-1)
+       =(1/2)[(I-z(t)S)^(-1)+(I+z(t)S)^(-1)].
+
+The average identity follows by multiplying the commuting resolvents.
+Since z(t)^2=-(1-t)/[(1+t)s^2], the generating function of T obeys
+
+  (I-tT)^(-1)h
+       =h/(1-t)-[2t/(1-t^2)]R2(t)h.                     (19)
+
+Apply the uniform error (10) to each of the two raw resolvents, then use
+the same Cauchy coefficient argument as Section10. All q coefficient
+errors together are bounded by
+
+  e sqrt(2) C_eta q^(3/2)(sqrt(2)eta)^L ||h||.
+
+Thus L=O(log(q/eps)) iterations suffice. The square root here is solely
+a scalar formal series/analytic mapping; no matrix square root is taken.
+
+11.2 Efficient application of a NONLINEAR coarse series inverse
+
+It remains to justify that A0(t)=J-z(t)G0 can be inverted on arbitrary
+polynomial vector right hand sides without q copies of an m-core solve.
+
+Set u(t)=z(t)-z0. Then u(0)=0 and u'(0)=-z0!=0. Its compositional inverse
+is the explicit rational series
+
+  t(u)=[z0^2-(z0+u)^2]/[z0^2+(z0+u)^2].                (20)
+
+The denominator has constant coefficient 2z0^2!=0. Put
+
+  A00=J-z0G0,                 T0=A00^(-1)G0.
+
+Both are explicit m-cores, A00 is invertible, and
+
+  A0(t)=A00(I-u(t)T0).
+
+Compute one exact complex-field Frobenius form T0=P C P^(-1), together
+with the fused transform P^(-1)A00^(-1), in ~O(m^omega). No symmetry of
+T0 is required by the Frobenius theorem. This setup is independent of the
+Richardson iteration and of its polynomial right hand sides.
+
+For each input polynomial R(t), to compute A0(t)^(-1)R(t) mod t^q:
+
+  (a) Transform its q coefficient columns by P^(-1)A00^(-1).
+  (b) Compose each resulting scalar coordinate polynomial with t(u).
+  (c) Solve (I-u C)F(u)=D(u) mod u^q by companion series recurrences.
+  (d) Compose each coordinate of F(u) with u(t), and transform by P.
+
+The two basis transformations cost O(m^2 q^(omega-2)); (c) costs ~O(mq)
+as in Section10. Both composition maps are fixed linear maps on q scalar
+coefficients, so precompute their q-by-q matrices. Their application to
+m coordinate polynomials costs O(mq^2) conventionally. The matrices can
+be prepared in ~O(q^2) using q successive truncated polynomial products;
+the coefficients of u(t) follow in O(q) from the scalar square-root
+differential equation. Equation (20) uses ordinary scalar-series inversion.
+Thus neither composition preparation nor application exceeds the m q^2
+term claimed in (18).
+
+The true residual A(t)w(t) requires one raw G-action on its q coefficient
+columns, plus multiplication by the scalar series z(t), costing
+O(I_X q^(omega-2))+~O(mq). The final X lift and scalar convolutions in
+(19) are equally charged. As before, truncating every arithmetic operation
+modulo t^q gives exactly the first q coefficients of the full analytic
+Richardson iterate, so the analytic estimate applies to the actual finite
+algorithm. For real h, the two signs have conjugate coefficient series;
+one complex solve and coefficientwise real parts suffice. Two solves also
+fit the same bound and handle arbitrary complex h.
+
+11.3 Scope of this constructive step
+
+This is a product-aware, q-sensitive APPROXIMATE rational Krylov theorem
+with the requested raw-factor tradeoff, not an exact monomial Krylov theorem
+and not yet a relative spectral LRA result. Basis conversion to a sharp
+filter can still need exponential accuracy. No such conversion or common
+nearby-operator perturbation theorem is asserted. All costs above are
+exact-field costs; a stable finite-precision implementation of the FNF
+and formal composition steps remains separate work.
+
+11.4 Quasi-linear composition by Möbius maps and fast Taylor shifts
+
+The O(mq^2) bound in Section11.2 can be improved to ~O(mq). All arguments
+below are over characteristic-zero fields and use exact scalar arithmetic.
+Fast Taylor shifts cost O(M(q)) through the standard factorial convolution:
+the coefficient of x^j in f(x+a) is
+
+  (1/j!) sum_(k>=j) f_k k! a^(k-j)/(k-j)!.
+
+All q such sums are one convolution after reversing/scaling coefficients.
+Factorials, powers and their inverses cost O(q) preparatory arithmetic.
+
+First, any Möbius substitution x=(1-w)/(1+w) on a degree-d polynomial
+f can be performed rationally in ~O(q), d<q. Let h(y)=f(-1+y), obtained
+by one Taylor shift. Define the reversed/scaled polynomial
+
+  k(v)=sum_(j=0)^d h_j 2^j v^(d-j).
+
+Then
+
+  (1+w)^d f((1-w)/(1+w)) = k(1+w).
+
+The right side is a second Taylor shift. Dividing by the known scalar
+series (1+w)^d modulo the requested order uses O(M(q)) arithmetic.
+The numerator can be retained polynomially when convenient.
+
+FORWARD composition R(t(u)). Write v=1+u/z0 and w=v^2; then
+t=(1-w)/(1+w). For each coordinate polynomial f(t), d=q-1, compute
+
+  F(w)=(1+w)^d f((1-w)/(1+w)),
+
+using the two shifts above. Interleave F's coefficients to obtain F(v^2),
+of degree at most2d, then Taylor-shift v=1+a in O(M(2q)) arithmetic.
+Multiply its first q a-coefficients by (2+2a+a^2)^(-d) mod a^q, and scale
+a=u/z0. This is the desired f(t(u)) mod u^q. The denominator series costs
+only O(q) after f_0=2^(-d): its coefficients obey
+
+  2(k+1) f_(k+1)
+     =-(2k+2d) f_k-(k-1+2d) f_(k-1),       f_(-1)=0,
+
+by differentiating (2+2a+a^2)^(-d). This also treats d=0.
+
+REVERSE composition R(u(t)). Given g(u) of degree<q, compute
+G(v)=g(z0(v-1)) by scaling and one Taylor shift, then split
+
+  G(v)=E(v^2)+v O(v^2).
+
+Substitute w=(1-t)/(1+t) into E(w),O(w) by the same Möbius routine, then
+multiply the odd part by the known v(t)=sqrt((1-t)/(1+t)) series.
+All degrees are O(q), and all scalar products/inverses are quasi-linear.
+
+Thus BOTH compositions cost ~O(q) per coordinate, not O(q^2). Truncation
+is legitimate because u(0)=t(0)=0: terms discarded at degree>=q cannot
+contribute to any of the first q coefficients under either substitution.
+The temporary polynomial interleaving has degree<2q, so it changes only
+constant factors. All coordinates together cost ~O(mq), which is bounded
+by O(I_X q^(omega-2)) for 1<=q<=m<=N. Combining with the already counted
+raw block products, core transforms and companion solves proves (18).
+
+The Möbius composition idea was supplied by the root agent; the finite
+factorial-convolution/denominator derivation above closes its cost proof.
+
+
+12. ACTUAL APPLICATION: LOW-POSITIVE-INDEX SIGNED PSD PROJECTION
+
+The following is an actual approximation algorithm, not only a primitive.
+It was proposed by root, and the raw resolvent theorem supplies its solver.
+It is a narrower problem than unrestricted product LRA; no seminal novelty
+claim is made without the further literature comparison noted below.
+
+THEOREM (exact-field, low positive index). Let S=XJX^T with raw X(N,m),
+N>=m, J a fixed symmetric involution, and assume n_+(S)<=r, 1<=r<=m.
+For every eps,delta in (0,1), one can construct a PSD matrix C=ZZ^T of
+rank at most r with
+
+  P{ ||C-S_+||_2 <= eps||S||_2 } >= 1-delta
+
+at construction cost
+
+  ~O(I_X r + m^3)                 conventional arithmetic,
+  ~O(I_X r^(omega-2)+m^omega)      with fast small-core linear algebra.
+
+All suppressed accuracy/confidence dependencies are logarithmic; no gap,
+smallest-positive-eigenvalue, or factor-energy promise is imposed. The fast
+row's small-core approximate PSD truncation uses the same standard fast
+symmetric-core primitive already cited in the main research direction;
+the conventional row has the explicit scalar-root Jacobi implementation
+below. Both rows use exact-field coarse Frobenius preparation. This is not
+yet a floating-point backward-stability theorem. Expanding the N-by-N
+answer adds O(N^2 r), or its usual fast rectangular multiplication bound.
+
+12.1 A computable scale from the COARSE core
+
+On the coarse event (2), X=Tphys L with
+(1-eta)I<=Tphys^T Tphys<=(1+eta)I. Consequently
+
+  S=Tphys K Tphys^T,       K=L J L^T,
+  (1-eta)||K|| <= ||S|| <= (1+eta)||K||.
+
+Let U=(1+eta)||K||_F and c0=(1+eta)/(1-eta). Then
+
+  ||S||<=U<=c0 sqrt(m)||S||.
+
+This uses only the coarse core and a positive scalar square root. If K=0,
+then S=0 on the event and return zero. Otherwise the known quantity
+ell=U/(c0 sqrt(m)) is a positive lower bound on ||S||. Thus a requested
+operator error proportional to eps ell implies the theorem's relative
+error; the extra sqrt(m) only adds a logarithm to all filter tolerances.
+
+12.2 Explicit rational |x| approximation with controlled coefficient mass
+
+For real x,
+
+  |x|=(2/pi) integral_(0)^infinity x^2/(x^2+t^2) dt.
+
+After t=Ue^y, the integrand is a translated scaled sech:
+x^2 Ue^y/(x^2+U^2e^(2y))=|x|/[2cosh(y-log(|x|/U))].
+The infinite logarithmic trapezoid rule with spacing h has uniform error
+at most C U exp(-pi^2/h), by Poisson summation and the elementary Fourier
+transform of sech. Truncating at t in [U2^(-K),U2^K] adds at most C U2^(-K)
+uniformly for |x|<=U, since the integrand is <=t at the small-t end and
+<=U^2/t at the large-t end.
+
+For target alpha U, choose K=ceil(log2(C/alpha)), L a power of two at
+least K, h=log(2)/L, and indices -LK<=j<=LK. Then
+
+  a(x)=sum_j w_j x^2/(x^2+t_j^2),
+  t_j=U2^(j/L),     w_j=(2h/pi)t_j,
+
+satisfies sup_(|x|<=U)||x|-a(x)|<=alpha U. The number of terms is
+O(log^2(1/alpha)); their nonnegative coefficient mass obeys
+
+  W=sum_j w_j <= C U/alpha.
+
+Nodes use only O(log L) repeated positive square roots to form 2^(1/L),
+then scalar multiplication. pi and log(2) are fixed constants, not new
+matrix-function primitives. Parameter caps are chosen by repeated scalar
+doubling/comparisons. The construction is finite.
+
+Every matrix term is
+
+  S^2(S^2+t_j^2I)^(-1)
+   =I-(1/2)[(I-iS/t_j)^(-1)+(I+iS/t_j)^(-1)].
+
+Thus the raw imaginary-resolvent theorem evaluates
+F=(S+a(S))/2 to ||F-S_+||<=nu using only polylog(U/nu) shifted solves
+and Richardson iterations: the scalar approximation takes alpha≈nu/U,
+and each resolvent needs accuracy O(nu/W)=Omega(alpha^2). This precision
+has logarithmic iteration cost. The function approximation is uniform at
+zero, so no tiny-positive-eigenvalue condition occurs. The finite solver
+is one common linear operator F on all right hand sides, although F need
+not be exactly self-adjoint; its operator error bound is uniform.
+
+12.3 Two filtered sketches give the rank-r PSD output
+
+For r<m draw a physical Gaussian Omega(N,r+1), independent of the coarse
+sketch. If A=S_+ has true rank k<=r, a standard square Gaussian head
+inverse bound and a Frobenius norm bound imply, with failure<=delta/3,
+
+  ||Omega|| ||(U_+^T Omega)^dagger|| <= B,
+  B=(100N(m+1)/delta)^3.
+
+This deliberately loose polynomial avoids additional oversampling or any
+unknown k in the algorithm. The k=0 case is immediate. Choose
+
+  nu=eps ell/[100(B+1)].
+
+Use the filter to compute Y=F Omega and an exact orthonormal basis Q of
+range(Y), with P=QQ^T. Since (I-P)Y=0 and A has rank k,
+
+  ||(I-P)A||
+   =||(I-P)A Omega (U_+^T Omega)^dagger U_+^T||
+   <=nu B.
+
+It follows ||A-PAP||<=2nu B. Use a SECOND filter pass on Q, set
+R=Q^T F Q, and symmetrize R. It differs from the exact PSD rank-<=r core
+Q^T A Q by at most nu. Compute a rank-<=r PSD approximation Rhat with
+error <=Cnu to that core, and output C=Q Rhat Q^T=ZZ^T. Therefore
+
+  ||C-A|| <=2nu B+Cnu <=eps ell <=eps||S||.
+
+The second pass is needed: replacing R by Q^T S Q and clipping its
+negative eigenvalues would require another perturbation argument, because
+the negative part of S can contaminate Q. Filtering Q directly avoids it.
+
+For conventional arithmetic, diagonalize the small symmetric R by Jacobi
+until off-diagonal Frobenius norm<=nu, then keep the largest r positive
+diagonal values and their orthogonal columns. This takes O(s^3 log(sU/nu))
+operations up to an additional log(s) factor, s<=r+1, uses ordinary field
+operations and positive roots, and does not assume eigenvalue separation.
+For an explicit finite realization, use maximum-pivot Jacobi and maintain
+off-diagonal magnitudes in a heap. Each rotation reduces squared
+off-diagonal norm by at least its current fraction 2/[s(s-1)], requires
+O(s) arithmetic for matrix/eigenvector updates and O(s log s) heap work,
+so O(s^2 log(sU/nu)) rotations give the asserted ~O(s^3) cost.
+Its approximation to the exact PSD
+rank-r core has error O(nu) by Weyl and truncation. Fast symmetric-core
+linear algebra gives the corresponding ~O(m^omega) option.
+
+If r=m, the exact Gram/core route costs O(I_X m^(omega-2)+m^omega), or
+O(I_X m+m^3) conventionally, so it fits the displayed bounds directly.
+For r<m, all sketch, QR, compressed products, small truncation and lifting
+costs fit the displayed r-sensitive bounds; r+1 is within a constant of r.
+There are only polylog(Nm/(eps delta)) poles and precision iterations,
+and one common coarse/Frobenius setup. No hidden per-pole core setup occurs.
+
+12.4 Comparison and limitation
+
+Jones--Anderson, Approximate Projection onto the PSD Cone Using
+Randomization, arXiv:2410.19208v2, Aug18,2026, Algorithms2--3 and
+Corollary1/Proposition2, is a close primary comparison:
+https://arxiv.org/pdf/2410.19208 . It uses randomized range finding on
+the explicit symmetric matrix or a shifted version; its residual bounds
+depend on singular tails or shifted eigenvalue tails. It does not by itself
+give the raw-factor/polylog-accuracy bound just proved from low positive
+index alone. Kang et al., arXiv:2507.09165v2, uses composite polynomial
+matrix products for PSD projection, another relevant comparison.
+
+However, low-positive-index matrices also have a classical secular form:
+S=UU^T-VV^T with U of width<=r, and positive eigenvalues lambda solve
+det[I-U^T(VV^T+lambda I)^(-1)U]=0. Rank-one secular bisection and ridge
+solves are established tools. A wider literature audit is needed before
+claiming that the result or its conventional implementation is new.
+
+Most decisively, this theorem does NOT solve the original rank-r relative
+LRA problem: the unshifted product dilation has m positive eigenvalues,
+while subtracting a nonzero spectral threshold expands the raw identity
+factor or requires the unknown true support metric. Neither operation is
+free. The broad quadratic objective remains open despite this useful
+gap-free signed-covariance application.
+
+
+13. TENSOR-LEVEL NEW INGREDIENT CANDIDATE: TANGENT-BUNDLE MULTIPLICATION
+
+This changes the family of ingredients rather than optimizing the already
+barrier-limited univariate D0--D4 rules. It is an actual degeneration and
+rank computation, but it has NOT yet yielded a better multiplication
+exponent or a broad quadratic algorithm. These are standard geometric
+constructions applied as candidate tensor ingredients, not a priority claim.
+
+Work over C (or any suitable infinite characteristic-zero field). On P^2,
+let P2_(a,b), a>=1,b>=1, denote multiplication
+
+  H0(O(a-1)) x H0(O(b-1)) -> H0(O(a+b-2)).
+
+Its three leg dimensions are
+
+  binom(a+1,2), binom(b+1,2), binom(a+b,2).
+
+Define E_(a,b), a>=1,b>=0, as multiplication by a scalar section f on
+the tangent-bundle section module:
+
+  H0(O(a-1)) x H0(T_P2(b-1)) -> H0(T_P2(a+b-2)).
+
+Its three leg dimensions are
+
+  binom(a+1,2), (b+1)(b+3), (a+b)(a+b+2).
+
+The Euler sequence 0->O->O(1)^3->T_P2->0, twisted by b-1 and a+b-2,
+gives exact global-section rows because H1(O(k))=0 on P^2. Multiplication
+by f gives a commuting diagram between those rows. Choosing bases adapted
+to the subspaces in each row makes the middle multiplication tensor block
+upper triangular with diagonal blocks P2_(a,b) and E_(a,b). Scaling away
+the off-diagonal block yields the shared-first-leg degeneration
+
+  P2_(a,b) partialsum_1 E_(a,b)
+       degenerates from partialsum_1^3 P2_(a,b+1).        (20)
+
+Here P2_(a,0)=0 by convention. The first leg is unchanged. The dimensions
+match on both unshared legs, e.g.
+
+  binom(b+1,2)+(b+1)(b+3)=3binom(b+2,2).
+
+This is the P^2/Euler analogue of the binary-polynomial concavity relation,
+but the tangent bundle has rank2 and does not split into line bundles.
+Consequently E is a genuinely additional tensor family, not merely a
+different numerical choice in the old scalar-P rules.
+
+13.1 Minimal tensor rank by geometric interpolation
+
+In fact the tensor rank of E_(a,b) is EXACTLY its output dimension:
+
+  rank(E_(a,b))=(a+b)(a+b+2).                             (21)
+
+Upper bound: the dual of the target section space is spanned by point/fiber
+evaluations ev_(x,ell), where x is a point of P^2 and ell a fiber covector.
+A nonzero section is nonzero at some point, so these evaluations separate
+sections; select a basis of D=dim(target) such evaluation functionals.
+For each selected evaluation,
+
+  ev_(x,ell)(f*g) = f(x) ell(g(x)),
+
+after fixed line-bundle trivialization. This is a rank-one bilinear form.
+The D coordinate outputs thus give rank<=D. No assertion about grouping
+full rank2 fibers or generic vector-bundle interpolation is needed: one
+may use distinct points/covectors for each of the D scalar evaluations.
+
+Lower bound: the multiplication map onto the target is surjective. The
+Euler description writes each tangent section as a triple of homogeneous
+polynomials modulo the radial triple; scalar polynomial multiplication
+spans every target triple. Thus its output flattening rank is D.
+
+For a=2,b=0, E is the 3-by-3 outer product modulo scalar identity, with
+output dimension8 and rank8. Explicitly compute six off-diagonal products;
+two additional products (f1+f2)(g1-g2) and (f2+f3)(g2-g3), together with
+those off-diagonals, give two independent diagonal differences. This is a
+small concrete check of (21), not a claimed new rank-8 algorithm.
+
+The same rank<=output-dimension argument applies to multiplication of
+scalar sections with sections of any vector bundle, whenever the target
+is separated by fiber evaluations. Surjective multiplication gives equality.
+
+13.2 Duality and the next actual closure question
+
+On P^2, T^* is isomorphic to T(-3). Serre duality therefore identifies
+
+  H0(T(k))^* with H2(T(-k-6)).
+
+If E^i_(a,b) denotes the analogous multiplication on H^i(T(b-1)), then
+swapping E^0's unshared legs gives
+
+  (23) E^0_(a,b)  isomorphic to E^2_(a,-a-b-3).          (22)
+
+The tangent bundle has H0(T(k)) for k>=-1, H2(T(k)) for k<=-5, and the
+isolated middle group H1(T(-3))=C; T(-2) and T(-4) are acyclic. These
+facts follow directly from the Euler sequence and line-bundle cohomology.
+The isolated middle channel and the nonsplit rank2 module are absent from
+the P^1 line-bundle picture. A useful new tripling/separation relation would
+have to exploit this closure, rather than merely replacing one-dimensional
+intervals by boxes. No such exponent-improving relation is proved yet.
+
+The one proved degeneration (20), cheap rank (21), and duality (22) are
+the concrete current tensor-level output. Dimension counts alone do not
+show that they beat the 9/4 operational barrier for the older ingredients.
+
+13.3 Complementary Euler relation (root's construction)
+
+The dual Euler sequence, using T^*=T(-3), is
+
+  0->T(b-1)->O(b+1)^3->O(b+2)->0.
+
+For b>=0 the relevant H1 tangent terms vanish, so its global-section
+multiplication diagram similarly gives
+
+  E_(a,b) partialsum_1 P2_(a,b+3)
+       degenerates from partialsum_1^3 P2_(a,b+2).        (23)
+
+Root supplied this complementary sequence. It is not sufficient to infer
+a better exponent: for a quadratic scalar dimension function u(b), the
+two expressions 3u(b+1)-u(b) and 3u(b+2)-u(b+3) coincide exactly. Any
+successful spectral argument must exploit more than those leading
+dimension identities, for example a genuinely useful duality/boundary
+closure or a new matrix-multiplication extraction.
+
+13.4 A fully explicit TERNARY QUADRUPLING degeneration
+
+There is another concrete new-family packing relation:
+
+  partialsum_1^3 P2_(2,b) partialsum_1 (23)P2_(2,b)
+       degenerates_1 from P2_(2,2b+1),       b>=1.        (24)
+
+Proof. Put L=b+1 and R=C[x,y,z]/(x^L,y^L,z^L). The right tensor is
+multiplication by an arbitrary linear f from degree2b to degree2b+1.
+The subspace of degree2b polynomials divisible by x^L, y^L, or z^L is
+a direct sum of three corner spaces: no monomial is divisible by two
+such powers, because 2b+1<2L. The corresponding output corner spaces
+are also disjoint and multiplication by f preserves each corner. Each
+corner map is ordinary degree(b-1)->degree b multiplication by f,
+namely P2_(2,b).
+
+The quotient diagonal block is f:R_(2b)->R_(2b+1). The complete
+intersection R is Gorenstein with socle degree3b and perfect coefficient
+pairing R_j x R_(3b-j)->C. Thus this quotient block is the transpose of
+f:R_(b-1)->R_b. Both these low degrees are below L, so it is precisely
+the transpose of P2_(2,b). Scaling the off-diagonal blocks away proves
+(24), without transforming the shared first leg.
+
+Both unshared leg dimensions are saturated:
+
+  3binom(b+1,2)+binom(b+2,2)=binom(2b+2,2),
+  3binom(b+2,2)+binom(b+1,2)=binom(2b+3,2).
+
+For b=1, the (3,6,10)-dimensional tensor P2_(2,3) degenerates to three
+normal length3 vector channels and one transposed length3 channel.
+
+The restriction to first degree1 is substantive for the NAIVE identification
+of the whole central block with an ordinary polynomial tensor: for first
+degree a-1, disjoint corners require L>=a+b-1, whereas BOTH dual degrees
+being ordinary require L<b+2. Only a<=2 satisfies these. The stronger
+restriction argument in Section13.6 nevertheless recovers a fourth ordinary
+fragment for ALL a, by strong Lefschetz rather than by this identification.
+
+13.5 The actual central module for arbitrary first degree
+
+For arbitrary a>=2,b>=1 put L=a+b-1 and B=a+2b-1. Decomposing
+P2_(a,B) into the three disjoint corner blocks gives three P2_(a,b)
+and the quotient map f:R_(L+b-1)->R_(2L-1). Its Gorenstein transpose is
+
+  f: Sym^(a+b-3) V ->
+       Sym^(2a+b-4) V / (x^L,y^L,z^L)_(2a+b-4).         (25)
+
+The source is ordinary because its degree is L-2; the target has the
+three corner relations x^L,y^L,z^L times Sym^(a-3)V. Keeping this
+quotient, rather than silently calling it an ordinary P2 tensor, is the
+correct general-degree closure obligation.
+
+Geometrically it is an intermediate-cohomology module. Let K_L be the
+rank2 syzygy bundle in
+
+  0->K_L->O(-L)^3 --(x^L,y^L,z^L)-->O->0.
+
+Then H1(K_L(k))=R_k. Equivalently K_L is the pullback of Omega^1_P2
+under [x:y:z]->[x^L:y^L:z^L]. Its self-duality up to twist recovers
+the Gorenstein pairing. This explicitly links the tangent/cohomology
+line with the new quadrupling relation. No rank-minimal interpolation
+bound is asserted for these H1 quotients; the point-evaluation argument
+in Section13.1 applies to H0 target sections and does not automatically
+apply to intermediate cohomology.
+
+Relation (24) has fixed first dimension3, so by itself it is not a proof
+of omega<=2 or even of an improvement over9/4. The unresolved mathematical
+task is to couple growing first-leg representations to this central-module
+closure and prove a violated operational constraint or an actual useful
+MM degeneration. The exact relations (20)--(25) are current proved data.
+
+
+13.6 GENERAL ternary quadrupling by strong Lefschetz
+
+The central-module obstruction to IDENTIFYING the whole quotient does not
+prevent RESTRICTING a fourth ordinary fragment. In fact, for all a>=2,b>=1,
+
+  partialsum_1^3 P2_(a,b) partialsum_1 (23)P2_(a,b)
+       degenerates_1 from P2_(a,a+2b-1).                 (26)
+
+Use L=a+b-1 and the decomposition of Section13.5. Its central transpose
+is the map (25). Put ell=x+y+z and restrict its input to
+
+  g=ell^(a-2) g0,       g0 in Sym^(b-1)V.
+
+Then fg=ell^(a-2)(f g0), where f g0 ranges in the ordinary degree L-1
+piece R_(L-1). The map
+
+  ell^(a-2): R_(L-1) -> R_(L+a-3)
+
+is injective by strong Lefschetz for the monomial complete intersection.
+Here is a short representation proof of the needed form. Each univariate
+ring C[x]/x^L is an irreducible sl2 module with raising operator multiply
+by x; tensor the three modules. Its raising operator is multiply by ell,
+and its weight is twice the total degree minus the socle degree3L-3.
+On every irreducible summand a raising power is injective before the
+middle symmetric weight. Thus multiplication ell^d from degree j is
+injective whenever 2j+d<=3L-3. With j=L-1,d=a-2 this inequality is
+a-1<=L, which holds for b>=1.
+
+Choose a fixed linear left inverse on this image. It recovers the full
+ordinary product f g0, so the central transpose restricts to P2_(a,b).
+Transposing back supplies the fourth, permuted fragment in (26). No map
+depends on f, and the shared first leg is untouched. The three original
+corner blocks remain separated by the preceding triangular degeneration.
+
+For a>2 there is unused dimension; for a=2, (26) reduces to the saturated
+relation (24). This is an actual growing-first-leg new-family degeneration,
+not an asserted improvement of omega. In particular, root checked that a
+naive squared lift of the old p=3/4 operational barrier has slack in this
+quadrupling relation, so (26) alone is insufficient to break9/4.
+
+13.7 Cheap central-module rank by root's apolar quadrature
+
+Root supplied an independent rank bound for ANY graded trilinear slice of
+R=C[x,y,z]/(x^L,y^L,z^L). Its socle functional is coefficient extraction
+at x^(L-1)y^(L-1)z^(L-1). For homogeneous f,g,h of total degree3L-3,
+
+  coeff_(L-1,L-1,L-1)(fgh)
+   =L^(-2) sum_(zeta^L=xi^L=1)
+      zeta^(-(L-1)) xi^(-(L-1))
+      f(1,zeta,xi)g(1,zeta,xi)h(1,zeta,xi).              (27)
+
+The two root-of-unity sums select y,z exponents congruent to L-1 modL.
+The total degree permits only the pair (L-1,L-1), since replacing either
+by2L-1 already exceeds3L-3 when the other is at leastL-1. Then the x
+exponent is also L-1. Thus each of the L^2 summands is rankone and every
+graded slice, including the central tensor in (25), has tensor rank<=L^2.
+The formula annihilates the complete-intersection ideal in each input at
+the relevant total degree, so it descends to the quotient pieces.
+
+This closes a real rank-cost issue for intermediate cohomology without
+misapplying H0 point interpolation. It is the elementary roots-of-unity
+form of the monomial apolar/Waring bound. It still needs a suitable
+catalyst/fragment extraction to yield a new multiplication exponent.
+
+13.8 Full-flag Cartan/Pieri closure
+
+Let C_(lambda,mu) be the Cartan multiplication tensor of line-bundle
+sections on the SL3 full flag variety, with lambda,mu dominant weights.
+Its output is the irreducible V_(lambda+mu), and geometric evaluation
+as in Section13.1 shows rank exactly dim V_(lambda+mu). For Dynkin
+coordinates (p,q), dim V_(p,q)=(p+1)(q+1)(p+q+2)/2.
+
+The standard trivial rank3 bundle and its dual have tautological Borel
+filtrations with line-quotient weights given, up to the usual dual sign
+convention, by
+
+  epsilon1=(1,0), epsilon2=(-1,1), epsilon3=(0,-1)
+
+and their negatives. Twist the filtration by L_mu and compare
+multiplication by f in H0(L_lambda). If all shifted weights are dominant
+(e.g. mu has both coordinates>=1), higher cohomology vanishes, so the
+adapted section filtrations give the compatible shared-first-leg relations
+
+  partialsum_1^3 C_(lambda,mu)
+    degenerates_1 to partialsum_(1,i) C_(lambda,mu+epsilon_i),
+
+and the analogous relation with all epsilon_i negated. This is a
+compatible multiplication-diagram statement; it does not infer a tensor
+degeneration merely from the Pieri dimension identity.
+
+After the usual shared-leg p-norm spectral transformation, these become
+two discrete superharmonicity inequalities on the triangular weight lattice.
+The cubic Weyl dimension function itself satisfies the interior dimension
+identities. An exponent improvement would require a nontrivial boundary,
+Borel--Weil--Bott, or permutation/cap-product closure. In particular no
+claim p<=2/3 follows just from having a rank3 trivial bundle. This is the
+current more general representation-theoretic search, still unresolved.
+
+13.9 A PROVED barrier for the relaxed Cartan/Pieri inequalities
+
+The interior Pieri constraints plus dimension bounds do not themselves
+force the hoped-for uniform spectral exponent2/3. Here is an explicit
+scalar model at p=3/4 satisfying all those relaxed constraints.
+
+For A,B>=1 define x=A-1,y=B-1,c=2^(-4/3), and
+
+  v(x,y)=min(x,y)^(1/3)[min(x,y)+2max(x,y)],
+  u(A,B)=A+B-1+c v(x,y),
+  Phi(C_(lambda,mu))=u(dim V_lambda,dim V_mu)^(3/4).
+
+Assign every permutation of a Cartan tensor the same value in this model.
+It is NOT claimed to be an actual spectral point; in particular arbitrary
+cross-family tensor-product/degeneration relations have not been checked.
+The statement concerns exactly the relaxed constraints specified below.
+
+First, u is increasing and separately concave. For x<=y, the curved
+piece v=x^(4/3)+2y x^(1/3) has
+
+  d^2v/dx^2=(4/9)x^(-5/3)(x-y)<=0,
+
+and joins the affine branch at x=y with the same first derivative.
+At x=0 use the continuous extension. The Weyl dimension identity gives
+3 D(mu)=sum_i D(mu+epsilon_i), and likewise for the opposite steps.
+Jensen's inequality therefore proves ALL the interior shared-leg
+superharmonicity inequalities in Section13.8, in either argument.
+
+The vector boundary is exact: u(A,1)=A, so Phi(C_(lambda,0))=A^(3/4),
+as required when all three vector-leg exponents are3/4.
+
+The generic evaluation restriction gives diagonal subrank at least
+min(A,B). The model satisfies Phi>=min(A,B): if A<=B and A>=2,
+
+  u(A,B)>=2A-1+3c(A-1)^(4/3)>=A^(4/3).
+
+For the last step use Bernoulli's inequality
+(A-1)^(4/3)>=A^(4/3)-(4/3)A^(1/3), then 3c>1 and
+2A-1>=A>=4c A^(1/3) for A>=2. A=1 is immediate.
+
+The rank upper bound also holds. For nontrivial SL3 representations
+A,B>=3, put s=A+B-1>=5. At fixed x+y=s-1,
+v(x,y)<=3((s-1)/2)^(4/3), hence
+
+  u(A,B)<=s+[3/2^(8/3)](s-1)^(4/3)<=s^(4/3).
+
+For the final inequality, g(s)=(s^(4/3)-s)/(s-1)^(4/3) is increasing
+on s>=5 (differentiate; its sign reduces to t^3-4t+3 at t=s^(1/3)).
+Also g(5)>1/2>3/2^(8/3). If A=1 or B=1, rank upper bound is immediate.
+Finally D(lambda+mu)>=A+B-1 because the SL3 Weyl dimension polynomial
+has nonnegative mixed coefficients after its constant1 is removed.
+Thus Phi<=D(lambda+mu), the exact-rank bound.
+
+Consequently the rank-minimal Cartan tensors, exact vector boundary,
+diagonal subrank, and ALL interior standard/dual Pieri constraints admit
+the uniform p=3/4 model. Cubic Weyl dimension by itself cannot improve
+the exponent through these relations. This is an analytic relaxed-model
+barrier, not an assertion that no stronger bundle/BWB relation can help.
+
+The ternary quadrupling inequality also passes a finite diagnostic for
+this model for every2<=a<=300,1<=b<=300; its minimum is equality at
+a=b=2. That finite computation is NOT a universal proof and is not part
+of the claimed barrier theorem. Root has a more structured product-of-
+binary-barrier candidate that preserves additional old-family data; its
+Pieri validity is currently a separate piecewise analytic question.
+
+Primary checks for the standard ingredients:
+  Watanabe, Theorem4/5 and Corollary6 (sl2 and monomial-CI Lefschetz):
+  https://www.sci.osaka-cu.ac.jp/~mh/paper/Comm-Alg/35/jsca35watanabej.pdf
+  Borel--Weil--Bott theorem, e.g. Theorem3.3.1 of H. Liu's Lie group notes:
+  https://www.math.columbia.edu/~hliu/classes/s17-lie-groups.pdf
+These verify the background tools; the tensor applications and relaxed
+model calculation above still require independent mathematical review.
+
+
+13.10 A small-Coppersmith--Winograd connection for later extraction
+
+The symmetric central slice
+
+  T_L(f,g,h)=coeff_(L-1,L-1,L-1)(fgh),
+  deg f=deg g=deg h=L-1,
+
+has balanced leg dimension L(L+1)/2 and rank<=L^2 by (27). For L=2 its
+six monomial terms are the xyz/permanent tensor. Over C this is linearly
+equivalent to the small CW_2 tensor, since x0(x1^2+x2^2) splits into a
+product of three independent linear forms and polarization preserves the
+symmetric tensor equivalence. Its rank4 agrees with the L^2 bound.
+
+This suggests a hybrid polynomial/CW/apolar extraction question for the
+higher L family, not a known useful MM restriction. In particular balanced
+leg dimensions and near-minimal rank do not by themselves show that an
+L-by-L matrix multiplication tensor occurs as a restriction/degeneration.
+No such embedding, asymptotic extraction, or improved exponent is proved.
+
+
+14. ACTIVE NEXT MATHEMATICAL GATE
+
+The constructive result moves the missing work from simultaneous raw
+solves to spectral filtering: can q off-axis resolvents, with preparation
+and stable combination costs counted, provide a useful sharp threshold
+subspace at q substantially below theta^(-1/2), or can a new structured
+representation move the center close to the real axis while keeping
+the contraction independent of theta? Direct use of a fixed coarse
+preconditioner at a shift with c(z)≈theta only gives contractioneta/theta,
+so it is invalid. Refining the embedding to eta≈theta restores a polynomial
+accuracy cost and is not a solution.
+
+No general quadratic matrix-product algorithm, no omega=2 claim, and no
+general near-input-plus-core LRA theorem has been proved in this file.
+The broad objective remains active. The proved outputs include the signed
+raw-factor batched resolver, bounded Cayley-series construction, restricted
+low-positive-index PSD application, new-family tensor degenerations, and a
+relaxed Cartan/Pieri barrier. None supplies the missing unrestricted sharp
+threshold LRA or a new matrix-multiplication exponent.

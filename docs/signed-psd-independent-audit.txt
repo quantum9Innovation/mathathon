@@ -1,0 +1,159 @@
+Independent coordinator audit: signed positive-part candidate
+============================================================
+2026-11-14. Working proof audit, not a priority certificate.
+
+The active broad N^2/seminal-result goal is NOT achieved by this candidate.
+The result concerns S=X J X^T with small positive index, at threshold zero.
+It does not yet apply cheaply to AB's nonzero singular-value threshold.
+
+Candidate statement checked here
+-------------------------------
+X is N-by-m, N>=m, and J is a fixed symmetric involution. More general
+explicit symmetric J can be treated by a small-core congruence, with its
+cost and implicit tall-factor application charged. Let q=n_+(S)<=r.
+In a real-arithmetic model with comparisons, positive square roots and
+Gaussian draws, return PSD factors of width <=q with
+
+  ||C-S_+||_2 <= eps ||S_+||_2
+
+with probability >=1-delta, using conventional arithmetic
+
+  ~O(N m (r+1)+m^3),
+
+plus O(N^2 r) if the full dense result is explicitly requested. Logarithms
+may involve dimensions, 1/eps and 1/delta, but no ratio between the positive
+and negative spectral scales. This is an exact-arithmetic claim; the
+characteristic-polynomial normalization below is not a finite-word claim.
+The signed-resolvent lemma from raw-factor-fresh-search.txt is an input to
+this audit; its entire proof was not re-audited in this file.
+
+1. Support and positive norm scale
+---------------------------------
+A constant-distortion fast OSE gives G0=L^T L with ker(L)=ker(X). With
+R=L^T(LL^T)^(-1), Z=XR and K=L J L^T, one has S=Z K Z^T and
+
+  g_lo I <= Z^T Z <= g_hi I,
+
+for absolute positive constants. Neither Z nor a full tall transformed
+factor is formed. All thin applications cost O(Nm*width) conventionally.
+The positive index is that of the explicit supported core K, by inertia.
+If it is zero, output zero. If a=lambda_max(K)>0, generalized Rayleigh
+quotients give
+
+  g_lo a <= ||S_+|| <= g_hi a.
+
+The worker supplied a magnitude-independent approximation of a. For an
+even power of two d>=log_2(k), k=order(K), form K^d. Its nonzero eigenvalues
+are mu_j^d, with mu_j=|lambda_j(K)| decreasing. Elementary coefficients
+e_j of its characteristic polynomial obey
+
+  mu_j^d/j <= e_j/e_(j-1) <= (k-j+1)mu_j^d.
+
+Lower bound: every (j-1)-subset can be extended by a missing top-j index,
+whose eigenvalue is >=mu_j^d; a j-subset is counted at most j times.
+Upper bound: remove a largest-index element from each j-subset; its value
+is <=mu_j^d and each (j-1)-subset has at most k-j+1 extensions.
+
+Successive square roots give a_j=(e_j/e_(j-1))^(1/d) in [mu_j/2,2mu_j].
+Newton log-concavity makes a_j nonincreasing. Binary-search the first j
+with n_+(K-a_j I/4)>0. If mu_l=a, this predicate is true by l, hence
+
+  a/2 <= a_j <4a.
+
+Thus v=4 g_hi a_j satisfies 2||S_+||<=v<=64||S_+|| for a coarse ratio
+g_hi/g_lo<=4. Matrix powers, a cubic characteristic-polynomial routine,
+and O(log k) inertia calls cost ~O(m^3). The root argument is related to
+classical Graeffe/root-radius methods; no novelty is claimed for it.
+
+2. A bounded filter independent of the negative scale
+---------------------------------------------------
+Put T=S/v, f(x)=x_+/(1+x^2), and F=f(T). Positive eigenvalues of T are
+at most 1/2, so 0<=F<=2I/5 and rank(F)=q. The scalar identity
+
+ f(x) = (1/2) x/(1+x^2)
+       +(1/pi) integral_R x^2 exp(y)
+                         /[(x^2+exp(2y))(1+x^2)] dy
+
+holds for every real x. The log-integrand is bounded by
+min(exp(y),exp(-y)) uniformly in x. On each closed strip
+|Im(y)|<=d0<pi/2, the denominator is bounded below by a constant times
+(x^2+|exp(y)|^2)(1+x^2). This gives an integrable uniform boundary bound.
+Poisson summation / the strip trapezoidal estimate therefore gives
+error O(exp(-c/h)) at step h. Truncating |y|<=O(log(1/eta)) gives error
+O(eta). Taking h=Theta(1/log(1/eta)) yields O(log^2(1/eta)) nodes.
+All poles in x are imaginary; there is no shift near a nonzero real
+threshold. Half-shifted logarithmic nodes avoid t=exp(y)=1 collisions.
+
+The quadrature has f_hat(0)=0 exactly. Its terms are rational functions
+of x with factors (x^2+t^2)^(-1), (1+x^2)^(-1). Partial fractions or
+sequential resolvent actions use only imaginary shifts. All coefficients,
+nodes and inverse pole separations are at worst polynomial in 1/eta;
+coarse-refinement accuracy therefore costs logarithms, not eta^(-c).
+
+Each node can simply factor its m-by-m coarse shifted core conventionally.
+There are only polylogarithmically many nodes. The nongalactic theorem
+does not require Frobenius normal form or fast matrix multiplication.
+
+3. Two actions and the small inverse function
+--------------------------------------------
+Draw a Gaussian Omega with width O(q+log(1/delta)), capped at supported
+dimension if necessary. In the supported eigenbasis, standard Gaussian
+events give ||Omega||<=L, sigma_min(Omega_head)>=beta with L/beta
+polynomial in m and 1/delta. The exact ambient kernel is irrelevant
+because the filter vanishes at zero and its implementation can cancel
+identity terms analytically, returning vectors in range(X).
+
+For Y=f_hat(T)Omega and Q=orth(Y), put chi=L/beta. The direct rank-q
+identity F=F Omega Omega_head^dagger U_head^T gives
+
+  ||(I-QQ^T)F|| <= eta chi.
+
+Apply f_hat(T) a SECOND time to Q. Symmetrizing its compressed matrix
+B does not increase its error from B0=Q^T F Q, which is PSD, rank<=q,
+and bounded by 2I/5. Clip B's eigenvalues to [0,2/5] and keep at most q.
+Weyl's inequality shows this changes B by at most eta. Consequently
+
+  F_hat=Q B_hat Q^T >=0, rank(F_hat)<=q,
+  ||F_hat-F|| <=2 eta(chi+1).
+
+For z in [0,2/5], define psi(z)=(1-sqrt(1-4z^2))/(2z), psi(0)=0.
+Its positive Catalan series z+z^3+2z^5+5z^7+... proves, by telescoping
+matrix powers, the OPERATOR Lipschitz bound
+
+  ||psi(A)-psi(B)|| <=(25/12)||A-B||
+
+for PSD A,B of norm<=2/5. This is stronger than merely observing scalar
+Lipschitz continuity, which alone would not justify the matrix claim.
+Since psi(f(x))=x for 0<=x<=1/2, and f vanishes on negative x,
+
+  ||v psi(F_hat)-S_+|| <=(25/6)v eta(chi+1).
+
+Choose eta=eps/[1000(chi+1)] to leave room for numerical function-action
+and small-core errors. All new tolerances have only logarithmic cost.
+Apply psi only to the small PSD core and lift its square-root factors.
+An unfiltered Q^T S Q Ritz computation is deliberately not used: an
+arbitrarily large negative bulk would make that argument invalid.
+
+4. What this audit does and does not establish
+--------------------------------------------
+The algebra, scale normalization, Gaussian range identity, second-action
+reconstruction and operator Lipschitz step pass this independent review.
+Core and thin-factor costs fit the claimed conventional envelope, assuming
+the existing raw imaginary-resolvent lemma and a fast OSE implementation.
+No large hardware benchmark or fabricated numerical experiment is needed
+to justify these analytic steps. A finite-word stability theorem, complete
+constants for the strip quadrature, and independent review of every backend
+lemma are separate obligations if a formal manuscript is pursued.
+
+Priority remains OPEN. In particular, for full-column-rank X, Sylvester's
+law gives n_+(S)=n_+(J). Small positive inertia then amounts to a rank-q
+positive update of a negative PSD matrix after a core congruence. Classical
+secular, Birman--Schwinger and low-rank update methods are serious possible
+antecedents. Comparing only to randomized PSD-projection papers does not
+settle this issue. Nor does this theorem prove a broad N^2 algorithm.
+
+Sources / related primary work being audited by the workers:
+  https://arxiv.org/abs/2410.19208
+  https://kenclarkson.org/psdSoda/p.pdf
+  https://arxiv.org/abs/2507.09165
+See inertia-fresh-search.txt for the ongoing full-statement comparison.

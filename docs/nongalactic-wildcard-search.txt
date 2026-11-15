@@ -1,0 +1,964 @@
+NONGALACTIC WILDCARD SEARCH
+==========================
+2026-11-14. Agent-owned working record. No edits outside this file.
+
+STATUS
+------
+The original arbitrary-factor relative spectral LRA gate remains OPEN.
+No N^2 theorem, omega=2 claim, or seminal-priority claim is made here.
+
+There is a concrete neighboring candidate, with a complete mathematical
+construction being checked below: condition-independent low-rank
+corrections to the square root after a low-rank positive covariance update.
+This returns an actual matrix factor using ordinary Cholesky, raw products,
+and a constant-distortion sketch; it is not an assumed shifted-solve oracle.
+Its error is additive in the natural Holder scale ||update||^(1/2), NOT
+relative to the possibly much smaller correction norm. That distinction
+is essential. Priority remains under audit.
+
+1. CANDIDATE THEOREM
+--------------------
+Let X be real N-by-m, m<=N, U real N-by-r, 1<=r<=m, and H=XX^T.
+Given eps,delta in (0,1), construct Z of width
+
+    q*r,  q=O(log^2(r/eps)),
+
+such that, with probability at least 1-delta,
+
+    ||ZZ^T - [(H+UU^T)^(1/2)-H^(1/2)]||_2 <= eps ||U||_2.
+
+The conventional-arithmetic construction cost is
+
+    ~O(N*m*r + m^3),
+
+with only dimension, eps and delta logarithms suppressed. Storage is
+O(N*m + N*r*polylog(r/eps) + m^2*polylog(m/delta)). The factors use only
+ordinary arithmetic, positive scalar square roots, and comparisons. H may
+be singular, ||H||/||UU^T|| may be arbitrary, and no condition or gap
+parameter enters the operation count. The base root H^(1/2) is NOT needed
+as an input. The output is a factor for its correction, not the base root.
+Explicit expansion adds O(N^2*r*polylog(r/eps)).
+
+The exact rank statement below does not require a raw factor or randomness:
+if A,B are PSD and rank(B-A)<=r, then for 0<alpha<1 there is a rank
+O_alpha(r*log^2(1/eps)) approximation to B^alpha-A^alpha with spectral
+error <=eps||B-A||^alpha. If B>=A, the approximant can be PSD.
+Only alpha=1/2 is currently fully costed in the square-root/field model.
+
+2. RESOLVENT INTEGRAL AND A UNIFORM LOW-RANK ENVELOPE
+---------------------------------------------------
+For PSD A,B and 0<alpha<1,
+
+ B^alpha-A^alpha
+   = c_alpha integral_0^infinity
+        t^alpha [(A+tI)^(-1)-(B+tI)^(-1)] dt,
+ c_alpha=sin(pi*alpha)/pi.
+
+This follows from the scalar Stieltjes formula and spectral calculus;
+subtracting the two formulas is justified by the bounds below. With
+E=B-A and t>0,
+
+ R_A(t)-R_B(t)=R_A(t) E R_B(t),
+ rank(R_A(t)-R_B(t))<=r,
+ ||R_A(t)-R_B(t)|| <= min(2/t,||E||/t^2).
+
+For E>=0, the first bound improves to 1/t and every difference is PSD.
+At t=a*exp(y), a=||E||>0, the integrand including dt becomes
+
+ F(y)=c_alpha*(a*exp(y))^(alpha+1)*(R_A-R_B).
+
+For |Im y|<=d<pi, both resolvents are analytic and
+
+ ||F(y)|| <= C_(alpha,d)*a^alpha*
+                    min(exp(alpha Re y),exp(-(1-alpha)Re y)).
+
+To check the sector estimate, for lambda>=0 and |arg t|<=d,
+|lambda+t|>=cos(d/2)*(lambda+|t|). The triangle bound and resolvent
+identity therefore supply the two terms above, uniformly over the entire
+spectra of A and B. In particular the L1 boundary norm on each strip edge
+is O_(alpha,d)(a^alpha), independent of dimension, ||A||, or lambda_min.
+
+The logarithmic trapezoid rule on the infinite line has error
+O(a^alpha*exp(-2*pi*d/h)). This can be proved by applying a scalar
+strip-contour estimate to u^*F(y)v for arbitrary unit u,v; its constant is
+uniform, hence the resulting bound is in operator norm, not entrywise.
+Truncating at y in [-K,K] has error
+O_alpha(a^alpha*[exp(-alpha*K)+exp(-(1-alpha)*K)]).
+Choose K=O_alpha(log(1/eps)), h=Theta_alpha(1/log(1/eps)); then q=O(log^2)
+positive nodes suffice. Every node has rank at most r. This proves the
+universal rank theorem, including singular PSD endpoints.
+
+For alpha=1/2, the finite real formula is
+
+ Delta_q=sum_j w_j D_j,
+ D_j=(H+t_j I)^(-1)-(H+UU^T+t_j I)^(-1),
+ w_j=(h/pi)*t_j^(3/2)>0.
+
+Woodbury gives an actual rank-r PSD factor at every node:
+
+ V_j=(H+t_j I)^(-1)U,
+ S_j=I+U^T V_j,
+ D_j=V_j S_j^(-1)V_j^T.
+
+No base square root and no indefinite threshold inverse occur.
+
+3. FINITE NODES, NORMALIZATION, AND NO NORM ORACLE
+------------------------------------------------
+For the raw algorithm take a=||U||_F^2, computed in O(Nr). If a=0 return
+zero. Otherwise a/r<=||UU^T||<=a. Set an internal accuracy
+
+    rho=eps/(C*sqrt(r))
+
+for a sufficiently large absolute C. Scale by a and apply the preceding
+uniform envelope, which only needs ||E||<=a. Its quadrature error is
+O(rho*sqrt(a))<=eps||U||/constant after fixing C.
+
+Use h=log(2)/L, L a power of two of order log(1/rho), and
+t_j=a*2^(j/L), -LK<=j<=LK, with K=Theta(log(1/rho)). Choose K so
+2^(-K/2)<=rho/C0. All nodes and t_j^(3/2) use positive scalar square
+roots: form 2^(1/L) by log2(L) repeated roots, then multiply/divide along
+the geometric sequence. The fixed constant log(2)/pi can either be in the
+arithmetic constant field or approximated to relative O(rho) by ordinary
+convergent scalar series in O(log(1/rho)) operations. A relative O(rho)
+weight perturbation contributes O(rho sqrt(a)), by the same positive
+envelope. No exp/log evaluation on an input-dependent large magnitude is
+being treated as a unit-cost primitive.
+
+4. RAW POSITIVE RESOLVENTS WITH AN EVEN NEUMANN TRUNCATION
+-------------------------------------------------------
+Let G=X^T X. A standard sparse OSE provides G0=L0^T L0 with
+
+    (1-eta0)G0 <= G <= (1+eta0)G0, eta0=1/4,
+
+in ~O(Nm+m^3) conventional work, with failure <=delta. Form only the
+sketched Gram, not G. The event holds for every later pole.
+For each t>0, set P=G0+tI and F=P^(-1/2)(G-G0)P^(-1/2), ||F||<=eta0.
+Cholesky-factor P once, costing O(m^3) per pole. For an EVEN integer ell,
+define the common symmetric inverse polynomial
+
+ Q_ell=P^(-1/2)*sum_(k=0)^(ell-1)(-F)^k*P^(-1/2).
+
+Its action on W=X^T U is obtained by ordinary preconditioned Richardson
+or the equivalent Neumann recursion, with each G-action through X^T(XW).
+No P^(-1/2) is explicitly required. Writing Q_*=(G+tI)^(-1), even ell
+gives the exact Loewner bounds
+
+    0 <= Q_*-Q_ell <= eta0^ell Q_*.
+
+Indeed their difference is
+P^(-1/2) F^ell (I+F)^(-1) P^(-1/2); F^ell is PSD and commutes with I+F.
+The physical approximate inverse
+
+    Rhat_t=t^(-1)(I-X Q_ell X^T)
+
+then satisfies
+
+    R_t <= Rhat_t <= R_t+(eta0^ell/t)I,
+    ||Rhat_t|| <= (1+eta0^ell)/t,
+
+because X Q_* X^T<=I. This both proves a uniform norm bound and ensures
+Rhat_t is exactly symmetric PSD. A generic two-sided solve error would
+not automatically ensure that property.
+
+Compute Vhat_t=Rhat_t U using the raw factors; form
+Shat_t=I+U^T Vhat_t, which is SPD; Cholesky-factor Shat_t=C_t C_t^T;
+and return the node factor
+
+    Z_t=sqrt(w_t)*Vhat_t*C_t^(-T).
+
+The concatenation Z=[Z_t] is always an actual real PSD factor. No unknown
+resolvent or correction is assumed available to the algorithm.
+
+5. ERROR FROM THE INEXACT RAW RESOLVENTS
+--------------------------------------
+Let eta=eta0^ell<=1. With ||U||<=sqrt(a),
+
+ ||Vhat-V||<=eta sqrt(a)/t, ||V||<=sqrt(a)/t,
+ ||Shat-S||<=eta a/t, ||S^(-1)||,||Shat^(-1)||<=1.
+
+Expanding Vhat Shat^(-1)Vhat^T - V S^(-1)V^T and applying the inverse
+difference identity yields
+
+ ||Dhat_t-D_t|| <=3 eta*a/t^2 + eta*a^2/t^3.              (E1)
+
+With s_j=t_j/a and w_j=(h/pi)t_j^(3/2), the combined error is at most
+
+ C eta sqrt(a)*h*sum_j[ s_j^(-1/2)+s_j^(-3/2)]
+   <=C' eta sqrt(a)*(rho^(-1)+rho^(-3)),
+
+since s_min=Theta(rho^2) and h*sum of each geometric series is bounded
+by a constant times its largest term. Thus eta<=c*rho^4 suffices for
+O(rho sqrt(a)) solve error. Achieve this with even
+ell=O(log(1/rho)), independently of ||H||, its nonzero condition number,
+or a possible ambient nullspace. Combining with quadrature and coefficient
+budgets gives the stated eps||U|| target after choosing constants.
+
+6. COMPLETE CONVENTIONAL COST ACCOUNTING
+---------------------------------------
+Input/OSE/sketched Gram preparation: ~O(Nm+m^3).
+Initial X^T U: O(Nmr), reusable for every pole.
+Per pole: O(m^3) to factor P; ell raw products O(Nmr*ell); all triangular
+solves O(m^2 r*ell)<=O(Nmr*ell); final XW O(Nmr); U^T Vhat and factor
+normalization O(Nr^2)<=O(Nmr); r-core Cholesky O(r^3)<=O(m^3).
+With q=O(log^2(r/eps)), ell=O(log(r/eps)), this is
+
+    ~O(Nmr+m^3),
+
+using conventional multiplication alone. q copies of a cubic core setup
+are polylogarithmic overhead, not hidden r-dependent or condition-dependent
+work. No fast multiplication/Frobenius canonical form is needed.
+Returned width q*r and physical storage N*q*r are explicitly charged.
+If desired, QR compresses the output factors with O(Nr^2 q^2), still
+inside ~O(Nmr), because r<=m. The exact correction and every computed
+factor lie in span(X,U), of dimension <=m+r.
+
+7. LITERATURE AUDIT TO DATE
+---------------------------
+Primary sources checked on 2026-11-14:
+
+* Beckermann--Cortinovis--Kressner--Schweitzer,
+  Low-rank updates of matrix functions II: Rational Krylov methods,
+  SIAM J. Numer. Anal. 2021, https://arxiv.org/pdf/2008.11501 .
+  Section3.3 explicitly discusses replacing f by rational r and using
+  generalized Sherman--Morrison formulas. Theorem4.5 bounds update error
+  through uniform approximation of f on a spectral interval containing
+  both endpoints; Example4.8 treats sqrt through a Markov-function trick.
+  The low-rank rational-update mechanism is therefore established prior
+  art. The currently inspected theorem does not directly give an
+  all-PSD-endpoints bound normalized solely by ||B-A||^(1/2), independent
+  of BOTH spectral endpoints. Need check references and newer work before
+  claiming novelty for that stronger uniform bound or the raw runtime.
+
+* Shmueli--Drineas--Avron, Low-Rank Updates of Matrix Square Roots,
+  2023, https://arxiv.org/pdf/2201.13156 . Theorem3 gives geometric
+  singular-value decay of the correction for SPD endpoints using a
+  condition-dependent spectral interval. Section2.2's operation count
+  assumes a low-rank Riccati solver with bounded trust-region iterations.
+  The present candidate instead has an explicit finite quadrature and
+  raw positive solver, including singular base covariance matrices.
+  This is a comparison of inspected statements, not a priority verdict.
+
+* Nelson--Nguyen, OSNAP, https://arxiv.org/abs/1211.1002 . Supplies the
+  conventional constant-distortion raw Gram preprocessing used here.
+
+No external publication, message, or repository commit has occurred.
+
+8. IMPORTANT LIMITATIONS AND FAILED UPGRADES
+-------------------------------------------
+The normalization eps||U|| is not eps||Delta||. The latter cannot have a
+dimension/condition-independent rank bound in general. A useful stress
+family is a diagonal base whose square-root eigenvalues are separated
+geometrically, with a rank-one update chosen so the linearized correction
+has almost constant diagonal and tiny off-diagonal entries. Then the
+correction can require high relative numerical rank while ||U|| is much
+larger than ||Delta||. A rigorous finite version remains to be written if
+that observation is used as a theorem; it is only a scoped sanity check
+at this stage.
+
+The theorem does not obtain a rank-r (1+theta)-relative approximation to
+AB, or a sharp nonzero real spectral cutoff. It is a different actual
+matrix-function problem where positivity puts all inverse systems outside
+the spectrum. Whether the neighboring advance is sufficiently new/useful
+for a standalone result remains an open assessment, not a reason to call
+the original research goal complete.
+
+9. MATCHING LOWER BOUND: LOG-SQUARED RANK IS NECESSARY
+---------------------------------------------------
+This is a new derivation in this search. Priority is NOT yet established.
+It proves that the uniform update-norm theorem's rank dependence cannot
+be improved from root-exponential to geometric, even for rank-one PSD
+updates and positive-definite base matrices.
+
+Fix an integer q>=1, k=q^2, h=1/q, and indices 0<=i,j<k. Put
+
+ a_i=exp(h*i), P=diag(a_i), H=P^2,
+ K_ij=2sqrt(a_i*a_j)/(a_i+a_j)=sech(h*(i-j)/2),
+ d=exp(-pi^2*q)/(100q),
+ u_i=sqrt(2d*a_i), E=u*u^T, C=d*K.
+
+The letter d here is a positive scalar, not the ambient dimension.
+P C+C P=E exactly. K is positive definite (a Cauchy kernel, also seen
+from its strictly positive Fourier symbol below). Hence P+C is SPD and
+
+    (P+C)^2=H+E+C^2.
+
+Let Delta=(H+E)^(1/2)-P. Operator monotonicity gives
+
+    0<=Delta<=C,
+    C-Delta=(H+E+C^2)^(1/2)-(H+E)^(1/2).
+
+Both square roots on the last line have smallest eigenvalue >=1. Their
+difference solves the Sylvester equation with RHS C^2. Its semigroup
+integral therefore proves
+
+    ||C-Delta||<=||C||^2/2.                              (L1)
+
+9.1 The positive Toeplitz symbol supplies a finite lower bound
+
+The Fourier transform of sech(x/2) is 2pi*sech(pi*omega). Poisson
+summation yields the absolutely convergent symbol
+
+ f_h(theta)=sum_(j in Z) sech(h*j/2)*exp(i*j*theta)
+    =(2pi/h)*sum_(ell in Z) sech(pi*(theta+2pi*ell)/h).
+
+For every theta in [-pi,pi], the ell=0 term alone gives
+
+    f_h(theta)>=(2pi/h)*exp(-pi^2/h).
+
+The quadratic form of any finite principal Toeplitz section is the
+integral of f_h(theta) times its trigonometric polynomial's squared
+modulus. Parseval then gives
+
+    lambda_min(K)>=2pi*q*exp(-pi^2*q).                  (L2)
+
+A geometric-series row-sum estimate gives
+
+ ||K||<=1+4/[exp(h/2)-1]<=9q.                           (L3)
+
+This uses a fixed finite k=q^2 section. No asymptotic Toeplitz theorem,
+unproved boundary correction, or infinite-dimensional eigenvalue limit
+is needed.
+
+9.2 Transfer to the true nonlinear square-root correction
+
+By (L1)--(L3),
+
+ lambda_min(Delta)
+   >=2pi*q*d*exp(-pi^2*q)-(81/2)*q^2*d^2
+   >=pi*q*d*exp(-pi^2*q),                              (L4)
+
+because q*d=exp(-pi^2*q)/100 and 81/200<pi.
+Also
+
+ ||E||=||u||^2=2d*sum_i a_i
+      =2d*[exp(h*k)-1]/[exp(h)-1]
+      <=2d*q*exp(q).                                  (L5)
+
+Combining (L4)--(L5),
+
+ lambda_min(Delta)
+    >= [pi/(10sqrt(2))] *
+       exp(-[(3/2)pi^2+1/2]*q) * sqrt(||E||).           (L6)
+
+Thus, for universal positive constants c,C, there is a k=q^2 dimensional
+rank-one PSD update with EVERY singular value of its square-root
+correction at least
+
+    c*exp(-C*sqrt(k))*||E||^(1/2).
+
+Every approximation of rank <k has error at least that quantity, by the
+spectral best-rank theorem. Given sufficiently small eps, choose
+q=floor(log(c/eps)/(2C)); then k=Theta(log^2(1/eps)) and (L6) is larger
+than eps||E||^(1/2). This proves the necessary Omega(log^2(1/eps)) rank.
+Direct sums of r identical blocks give rank(E)=r, unchanged ||E||, and
+necessary rank Omega(r*log^2(1/eps)). The upper and lower dependencies
+therefore match up to absolute constants for alpha=1/2.
+
+The lower bound is about the required OUTPUT rank at the displayed
+uniform error scale; it is not a query-complexity or arithmetic lower
+bound. The explicit finite Cholesky/raw-product algorithm in Sections1--6
+remains the constructive positive result.
+
+10. A RIGOROUS FULL-RANK FAMILY FOR RELATIVE CORRECTION ERROR
+---------------------------------------------------------
+The earlier informal warning in Section8 can also be made finite and
+elementary. Take k arbitrary, a_i=R^i, R=10^4, P=diag(a_i),
+K_ij=2sqrt(a_i*a_j)/(a_i+a_j), and u_i=sqrt(2d*a_i) with d=1/100.
+Then the sum of off-diagonal magnitudes in each K row is at most
+
+    4/[sqrt(R)-1]<0.041,
+
+so 0.959I<=K<=1.041I. The same C=dK, E=uu^T, H=P^2 construction and
+(L1) give ||C-Delta||<=d^2*(1.041)^2/2<0.000055. Hence
+
+    lambda_min(Delta)>0.00953,
+    ||Delta||<0.01041.
+
+Any rank<k approximation therefore has error >0.91||Delta||. This is a
+rank-one PSD update of an SPD base, with an arbitrarily high-dimensional
+correction requiring full rank for even a 10%-relative spectral error.
+Consequently a dimension/condition-independent rank bound in r,eps alone
+cannot hold when the scale is ||Delta|| rather than ||E||^(1/2).
+Output-sensitive algorithms could still be possible, because this family
+has large output numerical rank. This observation does not rule those out.
+
+11. NUMERICAL SANITY CHECKS AND IMPLEMENTATION CAVEAT
+-------------------------------------------------
+The sandbox has no python/python3 in PATH. A direct JavaScript test in the
+functions execution isolate implemented small Cholesky solves, symmetric
+Jacobi roots and the positive Woodbury quadrature. For N=18,m=8,r=2,
+eps=1e-3, four singular base covariances of nominal scales 0,1,1e3,1e5
+gave errors normalized by ||U|| of
+
+    2.76352e-5, 2.26669e-5, 2.48952e-5, 2.23572e-5.
+
+Their correction norms were respectively 1,0.87064,0.83164,0.72770.
+The deliberately conservative test used q=683 poles. These are sanity
+checks of the integral and normalization, NOT a floating-point stability
+proof or hardware/performance result. Exact-field even-Richardson claims
+were checked algebraically, not inferred from those numerical outputs.
+
+The q constant can be reduced substantially: with d_strip=pi/2, the
+infinite quadrature error is O(exp(-pi^2/h)); thus L in h=log(2)/L only
+needs to exceed (log(2)/pi^2)*log(C/rho), rounded up to a power of two.
+The earlier larger L was asymptotically valid but unnecessary.
+
+12. LARGER ALGORITHM BRANCHES EXAMINED AFTER THE SIDE THEOREM
+----------------------------------------------------------
+* Noncommutative geometric mean when one operand is its own PSD low-rank
+  update has an exact rank-r correction, obtainable from the classical
+  formula for sqrt(I+VV^T). This is not being claimed as a new algorithm.
+* Gaussian optimal-transport corrections have a useful positive integral
+  after squaring, but unlike the square-root difference their scale involves
+  relative base geometry. A rank-one update can induce a full-rank relative
+  correction; no near-input output-sensitive algorithm is established.
+* Replacing relative correction error by an adaptive absolute refinement
+  yields an extra log(||E||^(1/2)/||Delta||) scale dependence and can require
+  full numerical rank. It does not prove the desired uniform runtime.
+* Low-rank Sylvester/Lyapunov or Riccati truncation needs a contraction in
+  the final operator norm or a new rank-control theorem. A coarse SPD
+  spectral equivalence alone controls an energy norm; its transfer is not
+  a condition-free spectral contraction. No such lemma is assumed.
+
+These branches are recorded to prevent the actual proved correction
+algorithm from being inflated into the unsolved larger objective.
+
+13. SHARP THEOREM FOR EVERY FRACTIONAL POWER
+-----------------------------------------
+The all-alpha theorem is now explicit, including the lower bound.
+For each fixed alpha in (0,1), there are positive constants c_alpha,
+C_alpha such that for all finite PSD A,B with rank(E)<=r, E=B-A,
+
+ s_(j*r+1)(B^alpha-A^alpha)
+       <=C_alpha*exp(-c_alpha*sqrt(j))*||E||^alpha,
+
+with the obvious dimension caps. This is the upper bound of Section2,
+reparameterized from eps to rank. The worst-case dependence on j is
+optimal: there are rank-r PSD updates in dimension r*q^2 for which
+
+ s_(r*q^2)(B^alpha-A^alpha)
+       >=c'_alpha*exp(-C'_alpha*q)*||E||^alpha.
+
+Thus the worst-case approximation rank at error eps||E||^alpha is
+Theta_alpha(r*log^2(1/eps)), as eps decreases and ambient dimension is
+allowed to grow. This is a statement about the whole class, not about
+the best rank of every individual correction. PSD updates admit PSD
+approximants. Both endpoints may be singular in the upper theorem.
+
+13.1 Exact lower family and constants
+
+Fix q>=1 integer, k=q^2, h=1/q, and 0<=i<k. Let
+
+ a_i=exp(h*i), H=diag(a_i),
+ v_i=alpha^(-1/2)*a_i^((1-alpha)/2), E=d*v*v^T.
+
+The Frechet derivative of f(x)=x^alpha at H applied to E is d*K, where
+
+ K_ij=K_alpha(h*(i-j)),
+ K_alpha(s)=sinh(alpha*s/2)/(alpha*sinh(s/2)), K_alpha(0)=1.
+
+Indeed divided differences multiply E_ij, and their factors in
+(a_i*a_j)^((alpha-1)/2) cancel v_i*v_j exactly.
+With the Fourier convention hatK(omega)=integral K(s)exp(-iomega*s)ds,
+
+ hatK_alpha(omega)
+    =(2pi/alpha)*sin(pi*alpha)/[cosh(2pi*omega)+cos(pi*alpha)].
+
+This transform is strictly positive. It can be proved by residues or by
+expanding sinh(alpha*s/2)/sinh(s/2) into geometric exponentials for
+s>0 and summing the elementary Fourier integrals. The corresponding
+standard transform pair is in DLMF Table1.14.1, with its 1/sqrt(2pi)
+normalization converted to the convention here:
+https://dlmf.nist.gov/1.14 .
+
+Poisson summation and the same finite Toeplitz/Parseval argument as in
+Section9 yield
+
+ lambda_min(K)>=c0*q*exp(-2pi^2*q),
+ c0=pi*sin(pi*alpha)/alpha.                             (A1)
+
+For theta in [-pi,pi], keep the zero image in the positive Fourier
+symbol and use cosh(2pi*theta/h)+cos(pi*alpha)
+<=2exp(2pi^2/h). This proves the displayed explicit c0 without needing
+a minimum-location claim for the periodic symbol.
+
+Let Delta=(H+E)^alpha-H^alpha and L=Df(H)[E]=dK.
+Operator monotonicity and operator concavity give 0<=Delta<=L.
+There is a useful exact norm remainder bound, because H>=I:
+
+ ||L-Delta||<=alpha*(1-alpha)*||E||^2/2.                 (A2)
+
+Proof: with c=sin(pi*alpha)/pi and R_H(t)=(H+tI)^(-1),
+
+ L-Delta=c integral_0^infinity
+      t^alpha R_H(t) E R_H(t) E R_(H+E)(t) dt.
+
+The norm is bounded by c||E||^2 integral t^alpha/(1+t)^3 dt.
+The scalar beta integral is pi*alpha*(1-alpha)/(2sin(pi*alpha)).
+Multiplication gives (A2). Individual integrands need not be symmetric;
+Loewner nonnegativity of their total comes from operator concavity.
+
+Set
+
+ D0=1/[alpha*(1-alpha)], R0=1/[2alpha*(1-alpha)],
+ d0=min(1,c0/(4R0)),
+ d=(d0/q)*exp(-[2pi^2+2(1-alpha)]q).
+
+The elementary geometric-series estimate gives
+
+ ||E||=d||v||^2<=D0*d*q*exp((1-alpha)q).                (A3)
+
+By (A2)--(A3),
+
+ ||L-Delta||<=R0*d^2*q^2*exp(2(1-alpha)q)
+             <=(c0/4)*d*q*exp(-2pi^2*q).
+
+Combine with (A1) and Weyl to obtain
+
+ lambda_min(Delta)>=(c0/2)*d*q*exp(-2pi^2*q).
+
+Normalize using (A3):
+
+ lambda_min(Delta)
+   >=c1*exp(-C1*q)*||E||^alpha,
+ c1=(c0/2)*D0^(-alpha)*d0^(1-alpha)>0,
+ C1=(2-alpha)*[2pi^2+1-alpha].                          (A4)
+
+Every step is finite and its constants depend only on fixed alpha.
+Direct sums give the factor r in the necessary rank exactly as before.
+Section9's specialized square-root proof has better constants, but (A4)
+has the benefit of one uniform argument for all fractional powers.
+
+13.2 Consequence for small Schatten exponents, and a priority caution
+
+The upper singular-value bound implies, for fixed alpha and 0<s<=1,
+
+ ||B^alpha-A^alpha||_(S_s)
+   <=C_alpha*r^(1/s)*(C_alpha/s^2)^(1/s)*||E||^alpha.
+
+This follows by summing exp(-c_alpha*s*sqrt(j)); its integral is
+O_alpha(s^(-2)). Thus the logarithm of the small-s constant grows like
+O_alpha(log(1/s)/s), not O(1/s^2).
+
+Ricard2018 already proves membership and Holder bounds in ALL Schatten
+classes, with unspecified constants C_(p,alpha). That is important prior
+art, not an unrelated comparison. To determine whether the displayed
+sharp rank theorem is new, one must audit whether its proof (or BKS1975 /
+Rotfeld1977 cited there) yields the same small-p constant after tracking
+cutoff derivatives. No novelty conclusion follows merely from the rate
+not appearing in the abstract.
+Primary source: https://arxiv.org/pdf/1805.05677 , Theorems3.2/3.4,
+Corollaries2.8--2.11 and the Sobolev cutoff argument in Lemma2.7.
+Root is independently doing this constant/priority audit.
+
+14. A GENERAL COMPLETE-BERNSTEIN COMPRESSION PRINCIPLE
+----------------------------------------------------
+This is an extension of the MATHEMATICAL approximation theorem; it does
+not assume a generic cheap scalar-measure-moment oracle for an algorithm.
+Its purpose is to isolate the actual property behind the uniform bound.
+
+Let
+
+ f(x)=c+b*x+f0(x),
+ f0(x)=integral_(0,infinity) x/(x+t) mu(dt),
+ c,b>=0, mu>=0, integral (1+t)^(-1)mu(dt)<infinity.
+
+This is the standard complete-Bernstein / nonnegative operator-monotone
+representation. The constants cancel in differences and the linear
+correction bE has rank<=r exactly. We impose the following weak scaling
+on f0: for some fixed C>=1 and 0<alpha<=beta<1, all a>0 satisfy
+
+ f0(s*a)<=C*s^alpha*f0(a), 0<s<=1,
+ f0(s*a)<=C*s^beta *f0(a), 1<=s<infinity.               (B1)
+
+Then for all PSD A,B with E=B-A, rank(E)<=r and a=||E||>0, there is a
+rank O_(C,alpha,beta)(r*log^2(1/eps)) correction approximation satisfying
+
+ ||f(B)-f(A)-Ceps||<=eps*f0(a),
+
+after adding the exact rank-r term bE. For B>=A, its nonlinear part is
+PSD. The result includes singular endpoints when f(0) is interpreted by
+continuity. Fractional powers and positive mixtures of powers with
+exponents in a fixed compact subset of (0,1) satisfy (B1).
+
+14.1 Tail truncation from growth, without analytic density assumptions
+
+Write g(t)=t[(A+tI)^(-1)-(B+tI)^(-1)], so
+
+ f0(B)-f0(A)=integral g(t)mu(dt),
+ ||g(t)||<=min(2,a/t), rank(g(t))<=r.
+
+For a PSD update the first constant is 1; using 2 only changes universal
+budgets for general endpoints. Since l/(l+t)>=1/2 on t<=l,
+
+ ||integral_(0,l) g(t)mu(dt)||<=2mu((0,l))<=4f0(l).
+
+For t>=u, u/(u+t)>=u/(2t), so
+
+ ||integral_(u,infinity)g(t)mu(dt)||
+       <=a*integral_(u,infinity)mu(dt)/t<=2a*f0(u)/u.
+
+By (B1), choose
+
+ l=a*(eps/(C1*C))^(1/alpha),
+ u=a*(C1*C/eps)^(1/(1-beta)),
+
+to make both tails <=eps*f0(a)/4. The interval [l,u] has only
+O_(C,alpha,beta)(log(1/eps)) dyadic subintervals.
+
+14.2 Positive quadrature with exponentially small interval error
+
+On one interval [v,2v], rescale t=v*z with z in [1,2]. The function g(vz)
+is analytic in the Bernstein ellipse of any fixed parameter sufficiently
+close to 1; parameter 2 works, since its leftmost real point is 7/8>0.
+On that ellipse, both resolvents have norm O(1/v), so
+
+ ||g(vz)||<=C2*min(1,a/v).
+
+Standard polynomial approximation on this fixed ellipse has degree-d
+error <=C3*2^(-d)*min(1,a/v), uniformly in A,B and dimension. Apply it
+to u^*g(vz)w for arbitrary unit u,w; the bounds are uniform, hence in
+operator norm. Gaussian quadrature for the positive finite measure mu
+restricted to [v,2v] has positive weights, at most s nodes, and is exact
+on scalar polynomials through degree 2s-1. Its matrix integration error
+is therefore at most
+
+ C4*2^(-2s)*mu([v,2v])*min(1,a/v).
+
+This also covers finite-support measures: use their exact atoms when
+fewer than s nodes exist. Disjointly allocate any atoms at interval
+boundaries to one adjacent interval.
+
+Summing interval errors does NOT incur an extra interval-count factor:
+
+ sum_intervals mu([v,2v])*min(1,a/v)
+       <=C5*integral min(1,a/t)mu(dt)<=2C5*f0(a).
+
+Thus s=O(log(1/eps)) nodes per interval suffice, and every quadrature
+term has rank<=r, with PSD sign for a PSD update. Counting intervals
+proves the theorem. Within this growth-controlled class the log-squared
+dependence is optimal in general, because fixed fractional powers are
+members and Section13 supplies matching lower families.
+
+14.3 Which part is an actual algorithm
+
+For sqrt, all nodes/weights are explicit and Section4 gives the complete
+raw-factor arithmetic implementation. The same is true for fixed dyadic
+fractional powers, with constants depending on the exponent and with
+positive scalar roots generated by repeated square roots. Positive finite
+mixtures of these powers add their finite factors and error budgets.
+
+For an arbitrary complete-Bernstein f described only abstractly, Gaussian
+quadrature nodes/weights require the measure's scalar moments or another
+effective scalar description. The mathematical compression theorem does
+not make those data free. The matrix solve cost alone is not a complete
+general-f algorithm, and is not presented as one here.
+
+15. WHY THE PRINCIPLE DOES NOT EXTEND TO EVERY OPERATOR-MONOTONE f
+----------------------------------------------------------------
+There is a SINGLE fixed bounded complete-Bernstein function with only a
+polynomial worst-case rank bound at its natural update scale. This rules
+out a careless all-CBF root-exponential claim, even with constants allowed
+to depend on that fixed f.
+
+Take R=10^4 and
+
+ f(x)=sum_(j>=0) (j+1)^(-2)*x/(x+R^(-j)).               (C1)
+
+The representing measure is finite, of total mass pi^2/6, so (C1) is a
+bounded complete-Bernstein function, continuous at zero by dominated
+convergence. For each n, set
+
+ lambda_i=R^(-i), 0<=i<n,
+ A=diag(lambda_i), u_i=sqrt(lambda_i), E=u*u^T, B=A+E.
+
+Here rank(E)=1 and a=||E||=sum lambda_i is in [1,R/(R-1)]. Every atom
+contributes a PSD rank-one correction. Keep just the first n atoms to
+obtain a Loewner lower bound on Delta=f(B)-f(A).
+For t_j=lambda_j, write
+
+ s_j=1+u^T(A+t_j I)^(-1)u
+    =1+sum_i lambda_i/(lambda_i+lambda_j)
+    <=j+2+1/(R-1)<=(2+1/(R-1))*(j+1).
+
+The retained contribution is W W^T, with W=T*diag(gamma_j),
+
+ T_ij=sqrt(lambda_i*lambda_j)/(lambda_i+lambda_j),
+ gamma_j^2=1/[(j+1)^2*s_j]
+          >=1/[(2+1/(R-1))*n^3].
+
+The symmetric T has diagonal 1/2 and off-diagonal row sum at most
+2/(sqrt(R)-1)<0.0203. Hence lambda_min(T)>0.4797 and
+
+    Delta>=W W^T >=(0.11/n^3) I_n.                    (C2)
+
+Also f(a)<=pi^2/6. Consequently, with eps_n=0.03/n^3,
+
+    eps_n*f(||E||)<0.05/n^3<lambda_min(Delta).
+
+Every rank<n approximation fails the target eps_n*f(||E||), whereas
+log^2(1/eps_n)=O(log^2 n). Thus no bound O_f(log^2(1/eps)) can hold for
+all updates for this fixed operator-monotone function. Its slow logarithmic
+behavior near zero violates (B1)'s positive lower growth exponent.
+
+This is a scope result paired with a constructive upper algorithm and
+sharp fractional compression theorem, not a replacement of those results
+by an obstruction. No priority claim is established for (C1)--(C2).
+
+16. PRIMARY-AUDIT STATUS AFTER THE SHARPNESS EXTENSION
+---------------------------------------------------
+* Aleksandrov--Peller2009, Functions of operators under perturbations of
+  class Sp, https://arxiv.org/pdf/0908.3623 . Intro states BKS normed-ideal
+  inequalities; Theorems9.1--9.2 give generic finite-rank Holder / Besov
+  results, and9.9 constructs polynomial singular tails for a specially
+  selected Holder function. Those broad statements do not directly settle
+  the fixed fractional-power sharp uniform theorem here.
+* Ricard2018, https://arxiv.org/pdf/1805.05677 . Crucial stronger comparator
+  as detailed in13.2. Root owns the careful small-p-constant audit.
+* Beckermann--Townsend2017/2019,
+  https://arxiv.org/pdf/1609.09494 . The displacement-rank theorem has
+  spectral-set/Zolotarev dependence. It is relevant to Cauchy lower-family
+  conditioning; no claim that the Cauchy or Poisson facts are new.
+* Marcus Webb, Low-rank approximation of analytic kernels, IMA JNA,
+  published16Oct2026,
+  https://doi.org/10.1093/imanum/drag083 . Theorem1.1 gives a broad
+  analytic-kernel/Cauchy--Zolotarev framework on prescribed spectral sets.
+  It is another comparator, not evidence of a new uniform update theorem.
+* Trefethen--Weideman2014, The Exponentially Convergent Trapezoidal Rule,
+  https://people.maths.ox.ac.uk/trefethen/publication/PDF/2014_149.pdf ,
+  Theorem5.1 supplies the exact strip quadrature bound used inSection2.
+* Standard CBF representation verified in the author primary appendix
+  of Jacob--Schilling, https://ems.press/content/serial-article-files/35466?nt=1 .
+
+No peer-reviewed novelty certificate or exhaustive citation audit exists.
+Root independently checked the specialized sqrt lower proof, constants,
+finite Toeplitz transfer, and direct sums; all passed as of this save.
+The all-alpha and CBF extensions above are newly written, not yet covered
+by that independent check.
+
+17. QUANTITATIVELY SHARP SMALL-p HOLDER CONSTANTS (ROOT CONSEQUENCE)
+-----------------------------------------------------------------
+Root identified this stronger consequence of the upper/lower rank theorem;
+the wildcard worker independently checked its telescoping and parameters.
+It is a candidate quantitative refinement of Ricard's theorem, not a
+priority-certified new result.
+
+Fix alpha in (0,1). For 0<s<=1 let K_(s,alpha)^+ be the smallest constant,
+uniform over ALL finite matrix dimensions and PSD A,B, such that
+
+ ||B^alpha-A^alpha||_(S_s)
+    <=K_(s,alpha)^+*||B-A||_(S_(alpha*s))^alpha.         (H1)
+
+Then the constructions above prove
+
+    c_alpha*s^(-2) <= (K_(s,alpha)^+)^s
+                  <= C_alpha*s^(-2).                  (H2)
+
+Equivalently
+
+ log K_(s,alpha)^+ = (2/s)log(1/s)+O_alpha(1/s).
+
+In Ricard's source-exponent notation p=alpha*s, this says
+log C_(p,alpha)=(2alpha/p)log(1/p)+O_alpha(1/p).
+The statement concerns fixed alpha and p decreasing to zero, not alpha
+simultaneously approaching 0 or1, nor exact constants for fixed p.
+
+17.1 Upper proof without a finite-rank promise
+
+For a rank-one PSD update t*v*v^T with ||v||=1, Section13's upper bound
+and its scalar integral imply
+
+ sum_j s_j(Delta)^s <= C_alpha*s^(-2)*t^(alpha*s).
+
+Indeed sum_(j>=0)exp(-c_alpha*s*sqrt(j))
+<=1+2/(c_alpha^2*s^2). The prefactor C_alpha^s is uniformly bounded
+above by max(1,C_alpha) for 0<s<=1.
+
+For arbitrary PSD endpoints, E=B-A has spectral decomposition E=E+-E-.
+Both paths
+
+ A -> A+E+ = B+E- <- B
+
+are sums of positive rank-one updates, so every intermediate matrix is
+PSD. Telescope the two paths, and apply the Schatten s-power triangle
+inequality ||sum_j T_j||_(S_s)^s<=sum_j||T_j||_(S_s)^s, valid for 0<s<=1.
+The resulting sum of update magnitudes is EXACTLY
+
+    sum_j |lambda_j(E)|^(alpha*s)
+       =||E||_(S_(alpha*s))^(alpha*s).
+
+This proves the upper bound in (H2), with no rank factor remaining.
+There is no q-norm integration of the original continuum integral: the
+argument first gets operator-norm singular-value decay, then sums scalar
+singular values, then uses a FINITE telescope.
+
+17.2 Matching lower proof
+
+For the rank-one family of Section13, all q^2 output singular values are
+at least c_alpha*exp(-C_alpha*q)*||E||^alpha. Thus its ratio in (H1),
+raised to s, is at least
+
+    q^2*c_alpha^s*exp(-C_alpha*s*q).
+
+Choose q=floor(1/s). For all 0<s<=1, q>=1/(2s), s*q<=1, and
+c_alpha^s>=min(1,c_alpha). This is at least c'_alpha*s^(-2).
+The input update is rank one, so every Schatten norm of E equals ||E||.
+No additional norm conversion or dimension-dependent loss occurs.
+
+18. ROOT'S FULL SELF-ADJOINT EXTENSION: INDEPENDENT CONSTANT CHECK
+----------------------------------------------------------------
+The same quantitative constant order holds for BOTH Ricard maps
+
+    F_even(H)=|H|^alpha,
+    F_odd(H)=sgn(H)|H|^alpha,
+
+for arbitrary finite self-adjoint H,K. Root owns the main extension;
+the identities and rank/envelope details below were independently checked.
+
+The exact scalar/matrix integrals are
+
+ |H|^alpha
+   =[2sin(pi*alpha/2)/pi]*integral_0^infinity
+                      t^(alpha-1)*H^2/(H^2+t^2I) dt,
+
+ sgn(H)|H|^alpha
+   =[2cos(pi*alpha/2)/pi]*integral_0^infinity
+                      t^alpha*H/(H^2+t^2I) dt.
+
+For E=H-K and R_H(z)=(H-zI)^(-1), define
+
+ D_even(t)=H^2/(H^2+t^2I)-K^2/(K^2+t^2I),
+ D_odd(t)=t*H/(H^2+t^2I)-t*K/(K^2+t^2I).
+
+The correct first-order-resolvent identities are
+
+ D_even(t)=-t/(2i)*{[R_H(it)-R_K(it)]
+                              -[R_H(-it)-R_K(-it)]},
+ D_odd(t)=t/2*{[R_H(it)-R_K(it)]
+                              +[R_H(-it)-R_K(-it)]}.
+
+Thus both differences have rank<=2rank(E) and, for real t>0,
+
+    ||D(t)||<=min(1,||E||/t).
+
+For the first bound, H^2/(H^2+t^2I) is a PSD contraction, while
+tH/(H^2+t^2I) has spectrum in [-1/2,1/2]. For the second, each
+resolvent difference is bounded by ||E||/t^2. When t=exp(y) is complex
+with |Im y|<=d<pi/2, all bounds gain only a constant depending on d,
+because both poles +/-it stay at distance >=|t|cos(d) from the real axis.
+
+After the logarithmic substitution, BOTH integrands are t^alpha D(t),
+with uniform envelope min(t^alpha,||E||t^(alpha-1)) and an analytic strip
+of fixed width. Hence the same root-exponential low-rank upper theorem
+holds, with the factor2 in rank absorbed into constants.
+
+For arbitrary Hermitian E, telescope its ordinary signed rank-one
+spectral decomposition along an arbitrary Hermitian path; PSD intermediates
+are unnecessary for these two functions. The same s-power triangle
+inequality proves their quantitative Holder constants satisfy (H2).
+The PSD lower family is simultaneously a lower family for both maps.
+
+For a rectangular T, its self-adjoint dilation is
+
+    D(T)=[0 T; T^* 0].
+
+The odd functional calculus has off-diagonal block U|T|^alpha, where
+T=U|T| is the polar decomposition. Both input and output Schatten power
+sums double in the dilation, so the factors2 cancel exactly. Thus the
+non-selfadjoint homogeneous polar Mazur map has the same Theta_alpha(s^-2)
+order for the best constant raised to s. The even dilation also gives
+an upper bound for T->|T|^alpha with at most a fixed factor2 at power-s
+level; the PSD family again supplies the matching lower order.
+
+The exact sharp leading coefficient of s^-2 is NOT computed. What is
+claimed mathematically is matching order and the sharp coefficient2 of
+log(1/s)/s in log K, with constants depending on fixed alpha.
+
+19. SEMIFINITE LIFT VIA TRACE-SUPPORT RANK, WITHOUT MATRIX EMBEDDING
+------------------------------------------------------------------
+This is a useful scope check and a constructive proof route. A uniform
+finite-matrix inequality alone must not be assumed to imply the same
+inequality for every von Neumann algebra. The following direct lift avoids
+that inference for semifinite algebras.
+
+Let (M,tau) be semifinite and define tau-rank(T)=tau(support(|T|)) for
+bounded T in M, with the equivalent left-range trace. If P is a projection
+of finite trace r, then tau-rank(X P Y)<=r for bounded X,Y in M. Supports
+of sums have trace at most the sum of the support traces.
+
+For a perturbation E=tP, every positive/imaginary shifted-resolvent
+difference in Sections2/18 therefore has tau-rank<=r or2r, respectively.
+The q-node quadrature approximant has tau-rank<=q*r or2q*r and the SAME
+operator-norm error, whose proof uses only functional calculus and scalar
+uniform resolvent bounds. No finite-dimensional diagonalization is used
+by that error proof.
+
+The generalized singular value mu(u;Delta) is bounded by the norm error
+of any approximant with tau-rank<=u. It consequently obeys
+
+ mu(u;Delta)<=C_alpha*|t|^alpha*exp(-c_alpha*sqrt(u/r)),
+
+with harmless changes for small u/r. Integrating its s-th power over
+u>=0 gives
+
+ ||Delta||_(L_s(M,tau))^s
+       <=C'_alpha*s^(-2)*tau(P)*|t|^(alpha*s).
+
+For finite-simple self-adjoint E=sum_j t_j P_j with disjoint finite-trace
+projections, telescope the perturbations t_jP_j along a self-adjoint path.
+The s-power triangle and the last bound yield the exact quantity
+
+ sum_j tau(P_j)*|t_j|^(alpha*s)
+       =||E||_(L_(alpha*s)(M,tau))^(alpha*s).
+
+Thus the same O_alpha(s^-2) power constant holds for every finite-simple
+perturbation in every semifinite algebra. The PSD lower family already
+supplies the matching lower bound, since finite matrix algebras are
+semifinite examples.
+
+The standard completion step takes bounded finite-simple approximants
+E_n to E in L_(alpha*s), forms B+E_n, uses continuity of continuous
+self-adjoint functional calculus in the local measure topology, and
+Fatou for L_s. When endpoints are unbounded, B+E_n is self-adjoint because
+E_n is bounded; identification of its measure limit with A uses E=A-B
+in the algebra of tau-measurable operators. A final theorem should cite
+the exact standard measure-continuity/Fatou facts, or state the bounded
+case first and prove this approximation lemma separately.
+
+The route uses finite-simple spectral perturbations, NOT a dyadic layer
+cake estimate that would accidentally incur another 1/s factor. It does
+not establish the analogous claim for general typeIII/Haagerup Lp-spaces;
+that needs its own reduction. The finite-matrix theorem is already complete
+without this optional extension.
+
+20. MORE RECENT PRIMARY COMPARATORS: WHAT HAS AND HAS NOT BEEN CHECKED
+----------------------------------------------------------------------
+* McDonald--Sukochev, Lipschitz estimates in quasi-Banach Schatten ideals,
+  Math.Ann.2022; https://arxiv.org/pdf/2009.08069v2 . Theorem4.5.3 is a
+  strong Holder estimate under a homogeneous Besov hypothesis;4.6.2 is
+  weak Holder. Constants use hidden dependence on p,alpha and no explicit
+  p->0 optimal order appears in the inspected statements. The proof uses
+  wavelet estimates rather than the elementary integral rank construction.
+  This does NOT prove its consequences cannot recover our upper rate.
+* Its reference28 is now Huang--Sukochev--Zanin, Operator theta-Holder
+  functions with respect to ||.||_p, 0<p<=infinity, JLMS105(2022),2436--2477,
+  https://arxiv.org/pdf/2110.09708v2 . Theorem1.2/5.9 extends Ricard to
+  f in S_(d,theta), with d=floor(1/p+2)+1; constants C_(p,theta) remain
+  unspecified in the inspected statements. The adjective 'sharp' for d(p)
+  refers to derivative order, not to optimal Holder constants. Its proof
+  of5.9 also uses finite-simple perturbation telescoping, which is therefore
+  established prior methodology and not a novelty claim here.
+* Ricard2015, Holder estimates for the noncommutative Mazur maps,
+  https://arxiv.org/abs/1407.8334 , concerns1<=p,q<infinity. It comments on
+  endpoint dependence near q=1; that is a different parameter regime from
+  target/source exponents both decreasing to0 at fixed ratio alpha.
+* Otte Heinavaara's primary Nov2023 research statement discusses unknown
+  exact Mazur constants for p,q>=1 and a counterexample project for
+  p=1<q<2. His current Caltech publication list does not list a separate
+  paper proving our small-exponent asymptotic. These observations are only
+  search context, not a certificate that a small-p theorem is new.
+
+The desired eventual priority statement must distinguish a proved new
+matching LOWER bound / sharp constant asymptotic from an upper rate that
+could be extracted from earlier Schur-multiplier estimates. No source
+has yet been identified stating the exact order (K_(s,alpha))^s~s^-2.

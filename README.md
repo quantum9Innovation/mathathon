@@ -9,7 +9,17 @@ and practical theoretical algorithms with manageable constants and standard
 operations. These remain open. The results below establish narrower arithmetic
 bounds; they do not yet establish the requested general breakthrough.
 
-The latest [hierarchical spectral-approximation paper](docs/hierarchical-absolute-spectral.pdf)
+A new [working paper on cluster-robust Krylov bounds](docs/cluster-robust-krylov.pdf)
+([source](docs/cluster-robust-krylov.tex)) proves condition-number-free
+convergence bounds for standard block Krylov using a positive sliding
+relative b-th spectral gap, up to extra logarithmic factors. It uses ordinary
+matrix operations. Three independent informal mathematical reviews and a
+bounded primary-source comparison are recorded in the
+[verification record](docs/cluster-robust-krylov-proof-checks.txt).
+The generic accuracy dependence remains theta^(-1/2); the general N^2
+matrix-product target is still open.
+
+The earlier [hierarchical spectral-approximation paper](docs/hierarchical-absolute-spectral.pdf)
 ([LaTeX source](docs/hierarchical-absolute-spectral.tex)) proves total time
 **N^(2+o(1))**, including every output entry, for arbitrary fixed factorizations
 with n=p=N, m=N^(α+o(1)), target rank r≤√m, and θ=(m/N)^(5/2), where

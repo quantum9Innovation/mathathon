@@ -1,0 +1,245 @@
+Fresh stochastic / volume-sampling search
+========================================
+2026-11-14. Working research record, stochastic_breakthrough agent.
+
+Status: ACTIVE. No new uniform runtime theorem has been proved. The objective
+is a general useful conventional-arithmetic algorithm, ideally input-plus-
+cubic setup and logarithmic accuracy, or the broader quadratic-output target.
+Nothing in this note completes that objective. Only this note is agent-owned.
+
+Starting interfaces
+-------------------
+M=AB, I=m(n+p). The audited coarse support gives M=Z L B with
+G=Z^T Z approximately I and Q=LBB^T L^T. Near the top squared norm c,
+D_s=sG-GQG/c is positive definite at a safe shift, with minimum eigenvalue
+mu. A symmetric unbiased degree-three raw-row batch estimator has constant
+second moment and O(m^2) action cost (batch m). Generic signed SVRG+APPA
+therefore costs ~I+I^(3/4)m^(1/2)/sqrt(mu). This is ALREADY AUDITED, not new.
+
+The practical literature note's linear mass surrogate and balanced-stack
+lemma do not change that exponent. The raw_partial_Krylov and negative-inertia
+directions have other agents; this search initially isolates variance
+cancellation, volume sampling, inverse-Wishart and conditional regression.
+
+1. Convex component caution and batch tradeoff
+----------------------------------------------
+If Q=sum u_i u_i^T<=I and Y=u_i u_i^T/p_i is an unbiased raw covariance
+sample, I-Y need not be positive semidefinite. A block of b samples only
+reduces typical norm deviations by sqrt(m/b); making every shifted block
+convex at a shift gap mu costs b of order m/mu^2 (and logarithms), unless
+there is an additional construction. A coarse mean proxy does not provide
+a PSD raw-feature representation for its residual.
+
+More generally, if hypothetical components H_i have spectrum in [-h,C]
+and mean D>=mu I, the scalar inequality on [-h,C] gives
+ E H_i^2 <= (C-h)D+Ch I.
+Thus the relevant SVRG condition contains C/mu+Ch/mu^2. Ordinary row
+blocks with h~sqrt(m/b) and cost d=b*m do not improve the product d*h:
+for b>=m, d*h=b^(1/2)m^(3/2)>=m^2. The existing constant-size batch scale
+already minimizes this elementary tradeoff. This is a scoped calculation,
+not an algorithmic lower bound.
+
+2. Exact zero-variance regression phenomenon, and its missing bridge
+--------------------------------------------------------------------
+Volume-rescaled least squares is promising because any sampled full-rank
+regression recovers x EXACTLY when labels satisfy y=A x. This is much
+stronger than mean control: regression error is tied to residual energy,
+and can have 1/epsilon rather than 1/epsilon^2 sample dependence.
+
+For K=t P^{-1}-Q, P=A^TA, one tempting construction is to regress a
+Gaussian label vector y with covariance t I_n-MM^T. Then the covariance
+of the exact regression solution is
+ P^{-1} A^T(t I_n-MM^T)A P^{-1}=tP^{-1}-Q=K.
+This identity is correct, and would turn K into positive regression
+features. But generating y already requires a factor of the unknown PSD
+complement tI-MM^T. At Q=tP^{-1}, generating the coupled cancellation
+requires an isometry between the two factor ranges. Neither follows from
+coarse whitening or raw independent sampling. The identity by itself is
+circular and is not an algorithm.
+
+Independent Gaussian sketches produce Wishart(P) and Wishart(Q), and a
+degrees-of-freedom correction makes the inverse of the first unbiased for
+P^{-1}. That does not make their difference low variance when Q=P^{-1}.
+An exact coupling through a common latent standard Gaussian needs the
+true covariance roots or equivalent regression/isometry operations; a
+full-width such transform costs I*m with ordinary arithmetic.
+
+An orthogonal projection of raw A rows gives a genuine PSD lower Gram
+A^T Pi A, but an O(m)-row random projection captures only O(m/n) of P
+when n>>m. Rescaling it to an OSE loses the raw PSD complement. Thus
+conditioning a Gaussian raw sketch on its row span does not by itself
+produce a cheap small-residual Gaussian covariance.
+
+3. Determinant tilts and the negative-ridge obstacle
+---------------------------------------------------
+For rank-one q_i, det(lambda I-sum_i z_i q_i) is multiaffine in z_i.
+When lambda I-Q>0, all unscaled subset downdates lambda I-Q_S are SPD.
+Bernoulli subset sums of determinants and adjugates give the determinant
+and inverse of lambda I-sum_i p_i q_i. This is an exact algebraic identity,
+but p_i<1 moves away from Q. Rescaling q_i/p_i to preserve Q can make
+subset downdates indefinite. Thus this simple negative-volume analogue
+does not supply a positive inexpensive unbiased inverse sampler at the
+near-critical shift.
+
+Likewise an L-ensemble DPP samples PSD ridge geometry Q(Q+lambda I)^-1.
+The desired complement / negative-ridge geometry has L=Q(I-Q)^-1,
+whose construction requires the very shifted inverse being sought. Fast
+positive-volume samplers cannot be invoked as a free negative-ridge oracle.
+
+4. Recent sample reuse: query counts are not automatically arithmetic
+---------------------------------------------------------------------
+Jin--Karmarkar--Sidford--Wang, Reusing Samples in Variance Reduction,
+ALT 2026, https://proceedings.mlr.press/v313/jin26a.html, gives a broad
+pseudo-independence framework. The primary source explicitly distinguishes
+batch/sample QUERY counts from runtime, and says its general FSM result
+does not automatically yield a worst-case runtime improvement.
+
+Its covariance tradeoff sqrt(alpha/gap) full batch queries and
+~sr(A)/alpha^2 distinct reused row queries is real. Reusing a row still
+requires new dot products at adaptively changing vectors in arithmetic.
+Materializing a fixed quadratic subsolver can avoid repeated dots, but
+constructing its full m-by-m action from k rank-one updates costs k*m^2
+classically (or must supply a better product algorithm). No new factor
+runtime is presently inferred just by charging each distinct row once.
+
+Primary volume sources checked for their exact scope:
+ Derezinski--Warmuth, Reverse Iterative Volume Sampling for Linear
+ Regression, JMLR 2018, https://jmlr.csail.mit.edu/papers/v19/17-781.html.
+ Derezinski--Warmuth--Hsu, Correcting the bias in least squares regression
+ with volume-rescaled sampling, JMLR 2022,
+ https://www.jmlr.org/papers/volume23/19-571/19-571.pdf.
+ Derezinski--Warmuth, Leveraged volume sampling for linear regression,
+ NeurIPS 2018, https://arxiv.org/abs/1802.06749.
+
+Next constructive obligation
+----------------------------
+Find an implementable coupling or a one-sided witness whose random error
+vanishes with the product threshold residual WITHOUT first factoring that
+residual, transforming every raw feature, assuming exact volume weights,
+or paying the hidden repeated arithmetic of reused samples. The current
+parent assignment permits moving beyond stochastic methods if a stronger
+cross-field identity appears. No live shell/tool sessions at this save.
+
+5. A precise antithetic Gaussian test (new check, negative result)
+----------------------------------------------------------------
+Even in dimension one, sharing Gaussian randomness is the WRONG sign for
+cancelling an inverse-Wishart estimate against a Wishart covariance.
+Let (x_l,y_l), l=1,...,s, be independent joint centered Gaussian pairs,
+Var(x)=p, Var(y)=q, correlation rho, s>4. Put
+ U=sum x_l^2/p, V=sum y_l^2/q,
+ Hhat=(s-2)/(p U), Qhat=q V/s.
+Then E Hhat=1/p, E Qhat=q and
+ Cov(Hhat,Qhat)=-2 q rho^2/(p s).
+Indeed E[V|U]=rho^2 U+s(1-rho^2), and
+Cov(1/U,U)=1-s/(s-2)=-2/(s-2).
+At the exact cancellation threshold t=pq,
+ Var(t Hhat-Qhat)
+   =q^2[2/(s-4)+2/s+4 rho^2/s].
+The minimum over Gaussian correlations is attained at rho=0. A common
+Gaussian seed increases this variance rather than suppressing it. This
+does NOT exclude non-Gaussian quantile/volume couplings or matrix-aware
+transport; it prevents invoking antithetic Gaussian coupling without a
+different mechanism.
+
+An exact Gaussian sketch with s=Theta(m) independent rows costs I*s by
+ordinary multiplication. Fast OSE application does not retain the exact
+Wishart distribution. One cannot simultaneously cite fast OSE cost and
+exact Wishart inverse identities without an extra distributional proof.
+
+6. Positive Poisson-volume inverse, and why the negative version changes
+------------------------------------------------------------------------
+There is a clean exact algebraic positive-ridge identity. Let
+ P=sum_i u_i u_i^T, choose probabilities p_i>0, let N~Poisson(gamma),
+and draw i_1,...,i_N independently. Set
+ S=lambda I+sum_{l=1}^N u_{i_l}u_{i_l}^T/(gamma p_{i_l}), lambda>0.
+Poisson factorial moments and rank-one multiaffinity give
+ E det S=det(lambda I+P), E adj S=adj(lambda I+P).
+Under determinant tilting by det S / det(lambda I+P),
+ E_tilt S^{-1}=(lambda I+P)^{-1}.
+All sample matrices are SPD, so the tilt is nonnegative and
+0<S^{-1}<=lambda^{-1}I. In particular its centered second moment obeys
+ E_tilt[(S^{-1}-H)^2] <=lambda^{-1}H-H^2,
+where H=(lambda I+P)^{-1}. This is a useful operator bound, not just an
+entrywise inverse-mean formula. A complete algorithm must still implement
+the determinant tilt with the appropriate known volume/DPP sampler.
+
+Replacing + by - breaks the positivity that makes this a probability law:
+the Poisson number of repeated downdates can exceed the safe total
+covariance even if lambda I-P>0. Restricting to unscaled subsets keeps
+each sample safe, but averages to lambda I-sum p_i u_i u_i^T, rather than
+lambda I-P. Rescaling the selected terms restores the desired mean but
+again can make individual downdates indefinite. This isolates the exact
+probabilistic obligation for a negative-volume proposal.
+
+For fixed-design unregularized volume subsets, the commonly quoted exact
+inverse expectation needs a general-position/support qualification: zero
+determinant, rank-(m-1) subsets can have nonzero adjugates. Regression
+solution unbiasedness is more robust because the adjugate annihilates
+the rank-deficient normal-equation RHS. Do not transfer a regression
+unbiasedness statement to a naked inverse without checking this issue.
+For example A has rows (1,0),(0,1),(1,0), and size-2 volume sampling
+chooses either of the two full-rank pairs, each with Gram I. Thus
+E[(A_S^T A_S)^{-1}]=I, whereas the general-position formula would be
+2(A^TA)^{-1}=diag(1,2). The rank-one pair has zero determinant but a
+nonzero adjugate, exactly the missing term.
+
+7. Positive-ridge Cayley reformulation of the threshold
+------------------------------------------------------
+For SPD P,Q, a,b>0 and t=ab,
+ t P^{-1}-Q>=0 iff a(P+aI)^{-1}+b(Q+bI)^{-1}>=I.
+This follows by adding bI to Q<=ab P^{-1}, inverting, and using
+ b[ab P^{-1}+bI]^{-1}=P(P+aI)^{-1}=I-a(P+aI)^{-1}.
+The corresponding inertia equality follows from inverse-difference
+congruence (or Schur complements), not just a commuting scalar argument.
+
+At a=b=sqrt(t), this is the sum of two Cayley transforms. Each positive
+ridge inverse has bounded positive volume estimators / projector-valued
+representations. However their sum-minus-I is still signed per sample.
+A coupling making every paired sum positive would be a genuine new
+convexification. Its existence follows abstractly when the mean is PSD,
+but sampling it appears to require the unknown complement geometry.
+Taking a tiny and b=t/a scales both signal and optimal batch variance by
+the same factor; it does not by itself improve the signed-SVRG condition.
+
+8. Lorentz-cone barrier bootstrap check
+---------------------------------------
+For index-1 K, -log(-x^T K x) on one negative-cone component has barrier
+parameter 2. This does not imply a cheap raw-factor algorithm. One first
+needs an interior negative witness; for K=diag(-eps,1,...,1), a random
+unit vector enters the negative cone only with probability exponentially
+small in dimension when eps is small. The barrier Hessian is a fixed
+multiple of K plus rank 2, so Newton inverses hide K^{-1}. More broadly,
+even an ellipsoidal barrier of constant parameter can encode an arbitrary
+SPD linear solve. A bootstrap or a new implicit Hessian solver is needed.
+
+The CARE agent has a promising PSD residual certificate for the positive
+part, but no cheap solve yet. Low-rank inverse-free polynomial CARE/sign
+iterations remain block Krylov algorithms, so mere low-rank truncation
+cannot remove the known worst-case accuracy-dependent action count.
+
+9. What the new positive-volume identity does and does not buy
+-------------------------------------------------------------
+The Poisson choice in Section 6 is convenient, not essential. If the
+independent scalar reweightings c_i are nonnegative and E c_i=1, then
+rank-one multiaffinity directly gives
+ E det(lambda I+sum c_i u_i u_i^T)=det(lambda I+P)
+and the same equality for the adjugate. Positive lambda makes every
+sample invertible, avoiding the fixed-design general-position problem.
+
+A negative-volume convexification would need a cheaply generated
+unbiased sampled covariance Qhat satisfying Qhat<=lambda I on every
+outcome. At the boundary Q=lambda I, PSD and unbiasedness force
+Qhat=Q almost surely, since E tr(lambda I-Qhat)=0. This is a useful
+stress test for claims based on raw subset sampling: at a generic tight
+frame the capped estimator cannot retain ordinary sampling noise.
+This observation is not a general complexity lower bound. For example
+exact isotropy can itself be tested with one true randomized probe, so
+an adaptive algorithm could have special equality branches.
+
+The creative open direction is a positive hyperbolic/volume measure on
+LOW-INDEX WITNESSES or CARE residual factors, rather than a positive
+measure on full shifted covariances. It would have to avoid both the
+negative-ridge cap above and the already-known Krylov query barrier by
+using the raw separate factors in a genuine new way. No sampler or
+residual-reducing iteration with the required arithmetic cost is known
+from this investigation.

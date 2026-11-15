@@ -1,0 +1,1053 @@
+Fresh inertia / control-theory search -- 2026-11-14
+=================================================
+Dedicated worker note. Only this file is edited by this worker.
+
+ACTIVE OBJECTIVE
+Pursue a broad, useful theoretical advance with conventional numerical
+operations and manageable degrees/storage. The user's clarified practical
+criterion is theoretical usefulness, not a benchmark. General quadratic
+time and the earlier thin-factor target remain unproved. No result below
+is being advertised as a breakthrough or a new frontier algorithm.
+
+1. Exact one-step Hankel embedding (checked algebra)
+-------------------------------------------------
+For arbitrary raw A(n,m), B(m,p), use the discrete-time system
+
+  x_{j+1}=B u_j,   y_j=A x_j,   state transition F=0.
+
+The only nonzero Markov parameter is AB. Its infinite Hankel operator is
+diag(AB,0,0,...) between past and future sequence spaces. Its nonzero
+Hankel singular values are exactly sigma_j(AB). Its controllability and
+observability Gramians are BB^T and A^T A. These are algebraic identities;
+the Gramians are not supplied to an algorithm at zero cost.
+
+Any stable state-space reduced system of state dimension <=r whose Hankel
+error is <=gamma gives a matrix approximation C=A_r B_r of rank <=r,
+by taking the first Markov block. A block compression of an operator has
+norm at most that operator's norm, so ||AB-C||<=gamma. In particular an
+optimal Hankel-norm approximation would solve the matrix task, even if its
+later Markov parameters are nonzero. This is a genuine sufficient route;
+it does not require the reduced dynamics to remain zero.
+
+A continuous-time embedding is equally exact: state transition F=-I,
+input sqrt(2) B, output sqrt(2) A. The Hankel operator is
+
+  (Hf)(t)=2 e^{-t} AB integral_0^infinity e^{-s} f(s) ds.
+
+Since ||e^{-t}||_L2=1/sqrt(2), its singular values are again those of AB.
+Its two Gramians are BB^T and A^T A. Taking the exponential-mode temporal
+compression of any reduced Hankel operator gives factors of width r,
+with no larger error, and can be computed from reduced-state resolvents.
+The discrete embedding above avoids that extra resolvent entirely.
+
+Primary scope checked from publisher/repository abstracts:
+  K. Glover (1984), All optimal Hankel-norm approximations of linear
+  multivariable systems and their L-infinity error bounds,
+  https://doi.org/10.1080/00207178408933239 .
+The optimal error is the relevant Hankel singular value, but known formulas
+start with balanced realizations / Lyapunov information. The embedding is
+not by itself a raw-factor algorithm. It must bypass this balancing cost.
+
+2. Low-rank Riccati solution exactly encodes the wanted positive space
+------------------------------------------------------------------
+Let H be a real symmetric threshold matrix with at most r POSITIVE
+eigenvalues, e.g. H=Q-t G^{-1}. Consider the zero-cost CARE
+
+  H X+X H-X^2=0.                                           (R1)
+
+For nonsingular H, the unique PSD solution making H-X strictly stable is
+
+  X_*=H+|H|=2H_+,   rank(X_*)<=r,   H-X_*=-|H|.           (R2)
+
+Proof: diagonalization verifies existence. For uniqueness of a stabilizing
+solution X, subtract the two Riccati equations to obtain the homogeneous
+Sylvester equation
+
+  (H-X)(X-X_*)+(X-X_*)(H-X_*)=0.
+
+Both coefficient matrices are stable, so the only solution is zero. This
+proof does not assume that the unknown X commutes with H.
+
+Thus a useful overlooked possibility is a low-rank STABILIZING CARE
+algorithm from raw H-actions. Its target solution intrinsically has rank r
+even when the positive/negative bulk is spectrally irregular. This differs
+from approximating a full inverse or square root, whose bulk is full rank.
+
+Crucial initialization issue: standard low-rank CARE algorithms with
+stable drift and low-rank forcing do not apply automatically. Here the
+forcing is zero and H has r unstable modes. Starting at X=0 returns the
+nonstabilizing zero solution. A stabilizing rank-r initial X would already
+provide almost the wanted dual-subspace certificate.
+
+For X_0=cI with c>||H||, Newton--Kleinman is well-defined and obeys
+
+ (X_j-H)X_{j+1}+X_{j+1}(X_j-H)=X_j^2.                    (R3)
+
+Every iterate commutes with H, and on an H-eigenvalue h the scalar update
+is x_{j+1}=x_j^2/[2(x_j-h)]. It converges to 2 max(h,0); the scalar startup
+is logarithmic in 1/|h| and subsequent convergence is quadratic. However
+the iterates are full rank before truncation, and each Lyapunov solve is
+not a free raw-factor operation. Claiming a logarithmic-pass algorithm
+from this scalar convergence alone would omit the substantive cost.
+
+For h<=0, x_j(h)<=c/2^j, by x_j-h>=x_j. Hence after
+j>=log_2(c/tau), the exact iterate has a rank-r approximation in operator
+norm <=tau, WITHOUT any positive bulk spectral regularity. This is a
+potential compression invariant worth exploiting. It does not establish
+that all earlier full-rank Newton iterates can be computed cheaply.
+
+3. Why nonsymmetric low-rank stabilization is not the final certificate
+---------------------------------------------------------------------
+Generic one-input state feedback can stabilize many unstable modes, unlike
+a symmetric negative update. Thus a cheap nonsymmetric feedback does not
+by itself imply that H has <=r positive eigenvalues, or that H is NSD on
+the Euclidean orthogonal complement of a rank-r space. The norm certificate
+needs symmetric geometry, or a quantitatively controlled metric transfer.
+
+For example a shifted controllability Gramian W may satisfy
+
+  (H+alpha I)W+W(H+alpha I)=g g^T.
+
+If W is SPD, H-g g^T W^{-1} is stable by a Lyapunov identity. Nevertheless
+this rank-one nonsymmetric feedback is possible for a generic H with MANY
+positive eigenvalues. W can be extremely ill-conditioned, and computing
+W^{-1}g from raw factors is uncharged. It cannot replace the inertia proof.
+
+4. A low-rank-forced CARE and a robust residual certificate
+--------------------------------------------------------
+There is more positive algebra than the zero-forcing formulation shows.
+For any E>=0, define
+
+  X_E=H+sqrt(H^2+E).                                      (R4)
+
+It satisfies H X_E+X_E H-X_E^2+E=0 exactly. If H^2+E is positive
+definite, H-X_E=-sqrt(H^2+E) is strictly stable. Moreover
+
+  0 <= X_E-2H_+ <= sqrt(||E||) I.                         (R5)
+
+The square-root operator is monotone, and
+sqrt(H^2+E)<=sqrt(H^2+||E||I)<=|H|+sqrt(||E||)I. Thus random
+low-rank E=alpha^2 Omega Omega^T with alpha||Omega||<=eps preserves
+an intrinsic rank-r tail eps, without spectral regularity of H's bulk.
+
+This square-root update / Riccati relation is NOT claimed new. A directly
+relevant primary source is Shmueli, Drineas and Avron (2023/2024),
+Low-rank updates of matrix square roots,
+https://doi.org/10.1002/nla.2528 . Their algorithmic discussion explicitly
+charges inverse access, including matrices E_base^2+low-rank. It does not
+make an inverse of our threshold H cheap.
+
+The following residual-to-output lemma is a useful checked addition. Its
+priority has NOT been audited. It removes an explicit stabilizing test
+for sufficiently accurate PSD approximate solutions with random forcing.
+
+Lemma R (observable low-rank forcing selects the stabilizing branch).
+Let H=H^T, ||H||<=1, and let U span its ENTIRE strictly-positive
+eigenspace, of dimension q<=r. Let Omega have s columns and suppose
+
+  ||Omega||<=L_Omega,   sigma_min(U^T Omega)>=beta>0.
+
+The q=0 case requires no output space and can be omitted. Let 0<eps<=1,
+alpha=eps/L_Omega, E=alpha^2 Omega Omega^T. Let X>=0 be ANY matrix,
+possibly depending arbitrarily on Omega, for which
+
+  ||R(X)||<=eta,
+  R(X)=H X+X H-X^2+E,
+  eta <= eps^3 beta^2/(100 L_Omega^2).                    (R6)
+
+Then
+
+  ||X-2H_+|| <= 4 eps.                                   (R7)
+
+No eigenvalue gap within the positive or negative spectrum, no lower
+bound on the positive H-eigenvalues, and no separate stability check on
+H-X is assumed. The fixed head rank q<=r is part of this lemma's scope;
+it is not an unrestricted below/above-threshold inertia algorithm.
+
+Proof. Put S=X-H, so R(X)=H^2+E-S^2. A top eigenvector of X shows
+||X||<=1+sqrt(1+||E||+eta)<3, hence ||S||<4.
+Suppose S has a spectral subspace V below -eps, with orthonormal basis V
+and S V=-V T, eps I<T<4I. Write X_V=V^T X V>=0. Compressing the
+residual gives
+
+  V^T R V=V^T X^2 V+X_V T+T X_V+V^T E V.
+
+Thus T X_V+X_V T<=eta I. The inverse of the positive Lyapunov map
+Y->TY+YT preserves PSD order (its integral formula proves this), so
+
+  0<=X_V<=eta/(2eps) I,
+  ||X V||^2<=3eta/(2eps),
+  ||V^T E V||<=7eta/eps.                                 (R8)
+
+The identity H V=V T+X V and Sylvester separation of the nonpositive
+H-block from T>=eps imply
+
+  ||(I-UU^T)V||<=sqrt(3eta/(2eps^3))=:d.                  (R9)
+
+For completeness, the separated Sylvester inverse has norm <=1/eps
+by the semigroup integral; no intrablock gap is used. By (R6),
+d<=beta/(4 L_Omega). Since beta<=L_Omega, this also gives d<=1/4.
+For any unit v in range(V),
+
+  ||Omega^T v||
+    >= beta sqrt(1-d^2)-L_Omega d >= beta/2.
+
+But (R8) gives
+||Omega^T V||<=sqrt(7eta/(alpha^2 eps))<beta/2, a contradiction.
+Therefore S>=-eps I. Its positive part S_+ obeys
+
+  ||S-S_+||<=eps,
+  ||S_+^2-(H^2+E)||<=eps^2+eta.
+
+For PSD A,B, ||sqrt(A)-sqrt(B)||<=sqrt(||A-B||): sandwich A,B by
+their norm difference, use square-root monotonicity and the scalar
+bound sqrt(x+d)-sqrt(x)<=sqrt(d). Consequently
+
+  ||S-sqrt(H^2+E)||<=eps+sqrt(eps^2+eta)<=3eps.
+
+Combine with (R5) to obtain (R7).
+
+Gaussian parameters. For fixed H, U^T Omega is a q-by-s standard
+Gaussian matrix. With s a suitable universal constant times
+r+log(1/delta), the usual net/chi-square estimate gives beta>=sqrt(s)/2
+with high probability. The elementary Markov bound
+L_Omega=sqrt(2ms/delta) suffices for the other event. Hence the requested
+residual eta is only inverse-polynomial in m, eps, 1/delta. Driving such
+a residual needs logarithmic PRECISION factors; this does not yet bound
+the number or raw cost of optimization / rational-iteration steps.
+
+Computable residual: if X=Y Y^T has k columns and E=alpha^2 Omega
+Omega^T, then R(X) has range within span(Y,H Y,Omega), dimension at
+most 2k+s. One raw H action on Y and small QR/core algebra therefore
+compute its norm (or a rigorous norm upper surrogate) with cost
+O(I*k+m*(k+s)^2+(k+s)^3), including all factor actions. This is a real
+certificate access advantage: checking the Riccati residual does not
+require testing stability of H-X or constructing H's dense Gram.
+
+Extraction: (R7) implies that retaining X-eigenvectors with eigenvalues
+>8eps gives at most q<=r columns. On their orthogonal complement,
+v^T H v<=v^T H_+ v<=(v^T X v+4eps||v||^2)/2<=6eps||v||^2.
+A direct physical threshold transfer still needs to be stated with the
+normalized pencil's metric error budget.
+
+5. Primary RADI correction and the remaining solver obligation
+------------------------------------------------------------
+The statement in Section 2 about stabilization is a warning about the
+zero-forcing / Newton setup, not a claim about every low-rank solver.
+Benner, Bujanovic, Kürschner and Saak (2017/2018), RADI: a low-rank
+ADI-type algorithm for large scale algebraic Riccati equations,
+https://pmc.ncbi.nlm.nih.gov/articles/PMC5775986/ , Section 2, starts
+at X_0=0 with PSD low-rank forcing and maintains PSD iterates / residuals
+under its stabilizability/detectability hypotheses. It does not generally
+require a supplied stabilizing initial X. This is relevant to (R4).
+
+For our G=I, full rank of the nonlinear coefficient is not itself a cost
+obstacle: the needed V^T G V is merely V^T V. The actual RADI solve is
+
+  (H-X_j+sigma_j I)^{-1} R_j,
+
+with X_j low rank, so Woodbury reduces it to shifted H-solves plus a
+small core. Far-left real shifts make the raw polynomial solve easy,
+but have convergence depending polynomially on the near-zero gap.
+Near-zero ADI shifts can give rapid rational convergence but reintroduce
+the same unresolved threshold-cancellation inverse. Neither the known
+quadratic precision of doubling nor the low rank of the final solution
+by itself bounds these raw solve costs.
+
+No tool session is running. The active algorithmic obligation is now
+specific: find a method producing a PSD X with the residual in (R6),
+using rank k=polylog(m/eps)*O(r), from raw factor actions at input-linear
+rank cost plus m^3, WITHOUT assuming a near-zero threshold inverse.
+Possible connections: low-rank Riccati optimization with residual
+certification, Hamiltonian structured doubling with a raw positive-factor
+inverse representation, or a solver that exploits the low unstable index
+more directly. No such bound has been established yet.
+
+6. H-sandwiched forcing: a condition-free graph-angle theorem
+----------------------------------------------------------
+This is a stronger new candidate framework than plain random forcing.
+Its algorithmic novelty has not been audited. All identities and bounds
+below are local derivations, not claims imported from a control paper.
+
+Let H=H^T, ||H||<=1, with q<=r positive eigenvalues. Work analytically
+on supp(H); its kernel can be added with zero feedback throughout. Put
+D=|H|>0 and J=sign(H), so H=DJ=JD. Let Omega obey
+
+  ||Omega||<=L,   sigma_min(U_+^T Omega)>=beta>0.
+
+Choose alpha>0 satisfying
+
+  alpha^2 <= beta^2/(4L^4),
+
+and use the WEIGHTED low-rank forcing
+
+  E=alpha^2 H Omega Omega^T H.                            (W1)
+
+Forming its factor alpha H Omega needs only one raw H-block action.
+Define
+
+  S=sqrt(H^2+E),  Delta=S-D,
+  X=H+S,  Y=S-H,  a=alpha^2 L^2,  c=1+a.
+
+Then
+
+  0<=Delta<=(a/2)D,             a<=1/4, c<=5/4,            (W2)
+  Y >= (alpha^2 beta^2/5) D.                              (W3)
+
+Thus the stabilizing and antistabilizing graph spaces are quantitatively
+transverse with an inverse-polynomial bound independent of every H
+eigenvalue ratio and every intra-head or intra-tail gap.
+
+Proof of the useful derivative sandwich. Since E<=aD^2,
+D<=S<=sqrt(1+a)D, proving (W2). Let Z be the PSD solution of
+
+  D Z+Z D=E.
+
+The square-root resolvent representation and W=(D^2+tI)^-1/2 E
+(D^2+tI)^-1/2, 0<=W<=aI, give
+
+  Z/(1+a) <= Delta <= Z.                                 (W4)
+
+Indeed the integrand for Delta is the congruence of W(I+W)^-1,
+whereas the derivative integrand for Z is the congruence of W; their
+Loewner ratio lies between 1/(1+a) and 1 at every positive t.
+
+In a D-eigenbasis, the normalized derivative is
+
+ (D^-1/2 Z D^-1/2)_ij
+   =alpha^2 [sqrt(d_i d_j)/(d_i+d_j)] (J Omega Omega^T J)_ij.
+
+The Cauchy kernel in brackets is PSD, since it is the Gram kernel of
+the functions sqrt(d_i) exp(-d_i t) in L2(0,infinity); its diagonal is
+1/2. Schur-product positivity and Omega_+ Omega_+^T>=beta^2 I yield
+
+  (D^-1/2 Delta D^-1/2)_++ >= A I,
+  A=alpha^2 beta^2/(2c),
+  ||D^-1/2 Delta D^-1/2||<=a/2=:b.
+
+Now Y_rel=D^-1/2 Y D^-1/2=2P_-+Delta_rel. For vectors x,y in
+the positive/negative J-spaces, respectively,
+
+  [x;y]^T Y_rel [x;y] >= A||x||^2-2b||x||||y||+2||y||^2.
+
+Our alpha choice gives b^2<=A/2. Young's inequality therefore bounds
+the RHS below by (A/2)||x||^2+||y||^2 >=(A/2)(||x||^2+||y||^2).
+Since c<=5/4, A/2>=alpha^2 beta^2/5, proving (W3).
+
+In particular, with
+
+  C=(2S)^1/2,   T=C^-1 X C^-1,
+
+we have
+
+  0<=T<= (1-gamma)I,    gamma=alpha^2 beta^2/12.           (W5)
+
+This follows from I-T=C^-1 Y C^-1 and 2S<=2sqrt(c)D.
+
+Accuracy choice. Taking additionally alpha^2<=2eps/L^2 ensures
+||X-2H_+||=||Delta||<=eps. Both alpha and gamma then have only inverse-
+polynomial size in eps,m,1/delta on the elementary Gaussian event in
+Section 4. The construction never needs to apply D, J, S or C; these
+are proof coordinates. Its actual forcing uses only H Omega.
+
+7. Explicit polylogarithmic rational CARE convergence
+---------------------------------------------------
+Consider the Hamiltonian
+
+  Hamiltonian=[[H,I],[E,-H]].
+
+Its two invariant graph bases are [I;-X] and [I;Y], with right action
+-S and S, respectively. For a conjugation-closed list of left-half-plane
+shifts sigma_j, let r be the associated product of Cayley factors. At
+complete conjugate pairs r is real on the real axis and r(-z)=1/r(z).
+Apply these Cayley transforms to the starting graph [I;0], obtaining
+[M;N], and put X_j=-N M^-1. This is the standard Cayley/RADI iterate.
+Under the stated detectability (which follows from the full positive-head
+rank of Omega), these iterates are PSD and bounded above by X; this is
+the usual RADI order property, not a new assertion of monotonicity after
+numerical truncation.
+
+There is a useful exact error formula. Decompose [I;0] into the two
+graph bases, with coefficients (2S)^-1Y and (2S)^-1X. Direct block
+algebra gives
+
+ X-X_j=C r(S) T^(1/2)
+   [I-T+T^(1/2) r(S)^2 T^(1/2)]^-1
+   T^(1/2) r(S) C.                                       (W6)
+
+This form remains valid when T is singular. For invertible T the middle
+three factors may equivalently be written
+[T^-1-I+r(S)^2]^-1. From (W5),
+
+  ||X-X_j|| <= (2/gamma) max_(lambda in spec S)
+                                  lambda |r(lambda)|^2. (W7)
+
+This is an ABSOLUTE-error bound. It does not introduce lambda_min(S).
+
+A simple non-galactic shift schedule suffices. Choose dyadic a-values
+from tau to >=||S||, and for each a use the pair sigma=-a+ia,-a-ia.
+The pair's real Cayley factor is
+
+  r_a(lambda)=((lambda-a)^2+a^2)/((lambda+a)^2+a^2).
+
+It lies in [0,1] for lambda>=0; for a<=lambda<=2a it is <=1/5.
+Thus one full dyadic cycle has magnitude <=1/5 on [tau,||S||], and
+at most 1 everywhere nonnegative. Repeat K cycles to obtain |r|<=rho
+on that interval. Choose tau=gamma*delta_target/8 and
+rho^2=gamma*delta_target/(8 max(1,||S||)). Equation (W7) gives error
+<=delta_target/4 (and hence <=delta_target with room for constants).
+The number of individual shifts is
+
+  O(log^2(1/(gamma delta_target))).                       (W8)
+
+Every actual closed-loop shifted system is H-X_j+sigma I. Its
+Hermitian real coefficient implies inverse norm <=1/|Im sigma|<=1/tau.
+Thus this schedule also supplies a polynomial lower bound on shift
+imaginary parts, not merely an existence theorem for Zolotarev shifts.
+That bound is useful for perturbation-controlled compressed simulation.
+
+This DOES NOT assert that the shifted systems are computationally cheap.
+Woodbury reduces their low-rank feedback to H+sigma I resolvents. For
+our factored-product threshold, those still contain the unresolved
+near-threshold cancellation. No full raw-factor runtime has been proved.
+
+8. Absolute-error rank of every exact RADI iterate
+------------------------------------------------
+The root-exponential rational approximation connection was independently
+identified by the parent during this derivation. It gives a rigorous
+way to bound numerical rank without positive-bulk regularity.
+
+For any 0<zeta<1 and 0<=x<=L0, use
+
+ sqrt(x)=(2/pi) integral_-infinity^infinity
+                         x exp(y)/(exp(2y)+x) dy.
+
+Truncate at |y|=O(log(L0/zeta)) and use a trapezoidal step
+h=Theta(1/log(L0/zeta)). The integrand is a translated sech function;
+its Fourier transform decays as 1/cosh(pi*frequency/2), so Poisson
+summation bounds infinite-trapezoid error exponentially in 1/h,
+uniformly for x in [0,L0]. The two tails are bounded geometrically.
+This gives a positive-weight proper rational approximant of degree
+ell=O(log^2(L0/zeta)), all of whose poles are negative, and uniform
+error <=zeta. A fully explicit coefficient/rounding statement is still
+to be written if this is promoted to a manuscript theorem.
+
+For T0=H^2 and rank(E)=s, each shifted resolvent difference has rank <=s:
+
+ (T0+aI)^-1-(T0+E+aI)^-1
+  =(T0+aI)^-1 E (T0+E+aI)^-1.
+
+Therefore r_ell(T0+E)-r_ell(T0) has rank <=s*ell and approximates
+Delta=sqrt(H^2+E)-|H| within 2zeta. It is PSD for the positive-weight
+Stieltjes quadrature. Explicit low-rank factors follow from Woodbury
+and the s-column solves (H^2+aI)^-1 factor(E). This is constructive
+relative to those resolvents, not a free raw algorithm.
+
+It follows that X=2H_++Delta has a 2zeta approximation of rank
+r+O(s log^2(1/zeta)), without any minimum-eigenvalue assumption.
+Every exact RADI iterate 0<=X_j<=X inherits the SAME numerical-rank
+bound by eigenvalue monotonicity. This genuinely controls intermediate
+rank growth for the exact iterates, rather than inferring it only from
+the final rank-r-plus-eps statement.
+
+Truncating an iterate destroys its exact PSD-residual/order invariant;
+that issue is not being hidden. A valid implementation can instead
+simulate the fixed-shift exact sequence with norm-controlled local
+errors and PSD spectral truncation. The inverse bounds following (W8)
+make a perturbation proof plausible with only polylogarithmic rank
+growth even after very small local tolerances. The full quantitative
+one-step perturbation and total-operation proof remains to be supplied.
+
+9. The original one-step drift bridge remains open
+-------------------------------------------------
+The parent correctly observes that a more fundamental advance would keep
+the original system drift F=0 (or -I), whose shifted solves are trivial,
+and encode the rank-r controller/feedback correction without introducing
+H=Q-tG^-1 as the drift. For F=-I, a naive bounded-real CARE has full-rank
+raw Gramians in both forcing and nonlinear coefficient; writing its
+solution as a simple raw Gram plus rank-r correction is false on an
+arbitrary positive bulk. A legitimate bridge needs an actual paired
+primal-dual/KYP/all-pass representation whose full bulk remains implicit
+while only the controller correction carries small rank.
+
+No such representation with a proved raw-factor construction cost is
+established in this note. This is the next active control-theory search,
+not a claim that the familiar Glover formulas remove the coupling inverse
+(P Q-gamma^2 I)^-1. No external message, commit or publication was made.
+
+10. A bounded filter for relative PSD projection of a signed raw product
+----------------------------------------------------------------------
+The parent identified an actual cheap-resolvent class: an UNSHIFTED
+symmetric signed product S=X J X^T, X tall/raw and J a supplied small
+symmetric core. Imaginary shifts can be preconditioned by a coarse
+positive Gram embedding; the real threshold S-tI still lacks that
+property. The raw-resolvent theorem is being proved by the parent/raw
+worker, not silently assumed proved here. This section supplies a sharp
+filter/range/extraction composition if that theorem holds with all costs.
+
+The candidate target is stronger than additive error eps||S||:
+
+  rank(C)<=r, C>=0, ||C-S_+||<=eps||S_+||,
+  build ~O(input_size*r+m^3),
+
+when S has at most r positive eigenvalues. There is no dependence on
+||S_-||/||S_+||, factor conditioning or a positive spectral gap. The
+width is the positive index, known from the supported small core.
+This is NOT a solution of the original real-threshold AB problem.
+Nor is a frontier novelty claim established: rank-r positive-update
+secular methods are a serious comparator, especially at r=1.
+
+Normalize T=S/v so lambda_max(T_+)<=1/2 and v<=C||S_+|| for an
+absolute C. Section 11 gives a core-only normalization with square
+roots and no magnitude-ratio search. Use the bounded one-sided filter
+
+  f(x)=x_+/(1+x^2),   F=f(T).
+
+Its positive range equals that of S_+, its rank is <=r, its eigenvalues
+lie in [0,2/5], and it vanishes on all nonpositive eigenvalues.
+
+Uniform ALL-REAL rational approximation. The identity
+
+ |x|/(1+x^2)=(2/pi) integral_0^infinity
+                        x^2/[(x^2+t^2)(1+x^2)] dt        (P1)
+
+has low-tail error <=2t_min/pi and high-tail error <=2/(pi t_max),
+uniformly for every real x. After t=exp(y), the integrand is
+
+ [|x|/(2(1+x^2))] sech(y-log|x|),
+
+with the x=0 branch identically zero. Its amplitude is <=1/4.
+Poisson summation and the Fourier transform of sech give exponentially
+small infinite-trapezoid error, uniformly on the ENTIRE real line.
+Truncating t to [Theta(eta),Theta(1/eta)] with step Theta(1/log(1/eta))
+therefore gives a proper rational r_abs of degree O(log^2(1/eta)) with
+only imaginary poles and
+
+  sup_(x real) |r_abs(x)-|x|/(1+x^2)|<=eta.
+
+Then
+
+  f_hat(x)=[x/(1+x^2)+r_abs(x)]/2                         (P2)
+
+approximates f uniformly within eta/2. Also f_hat(0)=0 EXACTLY.
+The poles are +/-i and +/-i t_j. No real threshold solve occurs.
+Crucially the filter is uniformly bounded even if S has arbitrarily
+large negative eigenvalues; approximating x_+ directly on a finite
+interval would introduce an unnecessary negative/positive norm ratio.
+
+Finite algebraic nodes. To avoid treating exp/log as free primitives,
+choose L=ceil(log_2(128/eta)) by repeated halving and the least power
+of two Q with 16Q>=L; compute b=2^(1/Q) with log_2 Q positive square
+roots. Use half-shifted nodes t_j=b^(j+1/2), -QL<=j<=QL. Their omitted
+tails are <=O(2^-L). The analytic step is h=log(2)/Q, and Poisson
+alias error decays as exp(-pi^2 Q/log(2))<2^(-20Q). Since 16Q>=L,
+this is smaller than the required eta budget. The trapezoid weight
+is 2log(2)/(pi Q).
+Approximate this single fixed-constant ratio to relative O(eta) using
+geometric rational series for log(2) and Machin arctangent series for
+pi, in O(log(1/eta)) field operations. Thus coefficient preparation
+also needs only field operations, square roots and comparisons, with
+polylogarithmic accuracy cost. A manuscript statement should fix all
+constants and arithmetic-error allocations explicitly.
+
+Each rational term uses only imaginary resolvents: x/(1+x^2) is the
+average of (x-i)^-1 and (x+i)^-1, while (x^2+t^2)^-1 is their
+antisymmetric difference divided by 2it. Products can use one extra
+fixed resolvent or a partial fraction expansion. Half-shifted nodes
+avoid coincident t=1. Coefficients require only polynomial accuracy
+losses in eta; no exponentially large coefficient has been introduced.
+When applying the rational function by Woodbury, analytically cancel
+its zero-at-zero identity term and return the result in range(X), so
+the algorithm never adds ambient-kernel noise.
+
+Low-rank reconstruction and constants. Let q=rank(S_+)<=r, and draw
+Gaussian Omega with s=O(q+log(1/delta)) columns. In the true supported
+eigenbasis assume ||Omega||<=L_Omega and
+sigma_min(Omega_head)>=beta_Omega. Only the m-dimensional support is
+relevant because f_hat(0)=0. Write chi=L_Omega/beta_Omega, choose
+the function-action error eta, and form Y=f_hat(T)Omega, Q=orth(Y).
+The usual direct identity (not a gap-dependent angle theorem) gives
+
+  ||(I-QQ^T)F|| <= eta*chi.                              (P3)
+
+Indeed F=F Omega Omega_head^dagger U_head^T, and (I-QQ^T)Y=0.
+Apply f_hat a SECOND time to Q and form B=Q^T f_hat(T)Q. Its distance
+to B0=Q^T F Q is at most eta. B0 is PSD, rank<=q and norm<=2/5.
+Clip B eigenvalues into [0,2/5] and retain at most q positive values;
+the resulting Bhat differs from B by at most eta, by Weyl. Therefore
+
+  Fhat=Q Bhat Q^T >=0, rank(Fhat)<=q,
+  ||Fhat-F||<=2eta(chi+1).                               (P4)
+
+Recover the positive part using only the small PSD core:
+
+  psi(z)=[1-sqrt(1-4z^2)]/(2z), psi(0)=0.
+
+For z in [0,2/5], psi(z)=z+z^3+2z^5+5z^7+... has positive Catalan
+coefficients, and psi'(2/5)=25/12. Telescoping powers proves the
+OPERATOR norm Lipschitz bound
+
+  ||psi(A)-psi(B)||<=(25/12)||A-B||
+
+for PSD A,B with norm<=2/5. Since psi(f(x))=x for 0<=x<=1/2,
+
+  ||v psi(Fhat)-S_+|| <=(25/6) v eta(chi+1).              (P5)
+
+If v<=64||S_+||, eta=eps/[300(chi+1)] suffices. Return the factors
+of v psi(Bhat), lifted by Q. The final rank is <=q<=r. There is NO
+unfiltered S-Ritz action after rangefinding, which would allow the
+large negative bulk to contaminate the output.
+
+Gaussian chi is polynomial in m and 1/delta with s=O(q+log(1/delta));
+even a crude Markov/Frobenius norm bound suffices, so the rational
+degree and all solver tolerances remain polylogarithmic in m,1/eps,
+1/delta. If the requested block width reaches the supported dimension,
+the exact core/Gram branch costs at most the same input*block budget.
+
+11. Positive norm normalization using square roots only
+------------------------------------------------------
+An earlier signed-coefficient positive-root bound used general dth
+roots; these are not free in a field/square-root model. The following
+repair avoids both a general-root oracle and a log-magnitude loop.
+This is close to classical Graeffe/root-radii approximation, and no
+novelty is claimed for that ingredient.
+
+Let K be the explicit supported symmetric core of order k<=m, with
+largest positive eigenvalue a>0. Its positive index is first checked
+by exact core inertia. Choose an even power of two q>=log_2 k,
+q=O(log k), and form K^q by O(loglog k) core matrix squarings. It is
+PSD with eigenvalues mu_j^q, where mu_j=|lambda_j(K)| are decreasing.
+Obtain its nonzero elementary coefficients e_j from a cubic core
+characteristic-polynomial routine. Then
+
+  mu_j^q/j <= e_j/e_(j-1) <= (k-j+1)mu_j^q.              (P6)
+
+For the lower bound extend every (j-1)-subset by a missing one of the
+top j indices and count each j-subset at most j times. For the upper
+bound remove the largest-index element from each j-subset; its value
+is <=mu_j^q and every (j-1)-subset has at most k-j+1 extensions.
+
+Taking qth roots needs ONLY log_2 q successive positive square roots:
+
+  a_j=(e_j/e_(j-1))^(1/q) in [mu_j/2,2mu_j].             (P7)
+
+Newton log-concavity implies that the a_j decrease. The predicate
+n_+(K-a_j I/4)>0 is therefore monotone in j. Binary-search its first
+true index j*. If mu_l=a, then a_l<=2a, so the predicate is true by
+l and j*<=l. Consequently
+
+  a/2 <= a_(j*) <4a.
+
+Thus [a_(j*)/4,2a_(j*)] brackets a within factor 8 after O(log k)
+core inertia calls. All costs are ~O(k^3) classically, only square
+roots are used, and there is no dependence on the relative magnitude
+of the negative spectrum. Zero roots are simply omitted after the
+nonzero coefficient support ends.
+
+If S=Z K Z^T with g_lo I<=Z^T Z<=g_hi I, the positive max satisfies
+g_lo*a<=||S_+||<=g_hi*a, by the generalized Rayleigh quotient. Taking
+v=4g_hi*a_(j*) gives 2||S_+||<=v<=16(g_hi/g_lo)||S_+||.
+For coarse ratio g_hi/g_lo<=4 this is the constant 64 used in (P5).
+
+12. Primary-comparison state for the PSD-projection primitive
+------------------------------------------------------------
+Primary sources located so far:
+
+* Clarkson--Woodruff, SODA 2017, Low-Rank PSD Approximation in
+  Input-Sparsity Time, https://kenclarkson.org/psdSoda/p.pdf .
+  Its abstract gives Frobenius-relative rank-k PSD approximation from an
+  explicit matrix with polynomial 1/eps terms. This does not by itself
+  match a signed-factor, positive-part-relative SPECTRAL theorem with
+  logarithmic accuracy, but the full paper needs checking.
+* Approximate Projections onto the Positive Semidefinite Cone Using
+  Randomization, https://arxiv.org/abs/2410.19208 . Its abstract uses
+  randomized low-rank approximation and scaling; the exact scope still
+  needs a full primary read before a comparison claim.
+* Shmueli--Drineas--Avron's low-rank square-root update work is already
+  recorded above. It assumes inverse access; it may supply part of a
+  competing low-rank update composition when the signed J has only r
+  positive directions.
+
+For full column-rank X, n_+(X J X^T)=n_+(J), so a low positive index
+does mean that J's positive component has rank r. Classical secular /
+Birman--Schwinger methods for PSD rank-r updates are therefore a serious
+comparator, not an unrelated special case. Rank one can be solved by a
+scalar secular equation using SPD negative-part resolvents. Whether
+block methods already match the complete O(input*r+m^3) positive-part-
+relative spectral guarantee is unresolved here. No SOTA claim is made.
+
+13. A direct thin-Gram graph contraction for a signed product
+----------------------------------------------------------
+This is a second actual-solver candidate for the unshifted signed-product
+class, with no shifted resolvent. The parent independently checked the
+algebra and small-core reconstruction below. A general dense-core split
+implementation/priority gate is stated at the end, not hidden.
+
+Assume the supplied/processed core is J=diag(D_+,-D_-), with q<=r
+strictly positive diagonal entries b_j in D_+, and nonnegative entries
+a_i in D_- (zero core modes may be included). Let
+
+  S=Z J Z^T, G=Z^T Z=I+E,
+  L_q=1+ceil(log_2(max(1,q))), ||E||<=1/(100 L_q).
+
+Such embedding accuracy needs only polylogarithmically more coarse
+sketch rows than constant distortion. No full tall transform is needed:
+the eigencoordinates of the small core, if available, can be carried as
+core maps and applied to thin blocks only.
+
+Let the positive invariant graph of GJ be V=[I;T]. Introduce the
+WEIGHTED graph W=D_- T D_+^-1. Define
+
+  F(T,W)=E_-+ - E_-- W - T E_++ + T E_+- W.               (G1)
+
+The invariance equation is equivalent to
+
+  D_- T+T D_+=F(T,W) D_+,
+  T=A(F), W=B(F),                                        (G2)
+
+where A,B are the entrywise multipliers
+
+  A_ij=b_j/(a_i+b_j),   B_ij=a_i/(a_i+b_j).
+
+Every denominator is positive, including when a_i=0. Also A+B=1,
+so at a fixed point T+W=F.
+
+Elementary Schur-multiplier bound. Each of A,B has operator-norm
+multiplier norm <=L_q, independently of all a_i,b_j. Order the columns
+by b_j. Each row is monotone in [0,1]. Write it as the integral of its
+0/1 level sets; these masks have a prefix in each row (reverse columns
+for the opposite monotonicity). Decompose every row prefix into dyadic
+intervals. At any fixed dyadic level, the column intervals are disjoint
+and every row participates in at most one rectangle. Thus the associated
+row sets are also disjoint, and the block extraction map has norm <=1.
+There are <=L_q levels. Integration proves the claim.
+
+On the product ball ||T||,||W||<=1/10, ||F||<=1.21||E||. The map
+(T,W)->(A(F),B(F)) therefore maps the ball into itself. In the max norm,
+
+ ||F(T,W)-F(T',W')||
+   <=2.2||E|| max(||T-T'||,||W-W'||),
+
+so its contraction factor is <=2.2 L_q||E||<1/4. Starting at zero,
+O(log(1/eps)) iterations obtain operator error eps. The fixed point is
+the positive graph: continuously scale E from zero, preserving this
+contractive branch; G remains SPD and the inertia of G^(1/2)JG^(1/2)
+does not cross zero on the nonzero support. The q-dimensional branch
+therefore carries precisely all positive eigenvalues.
+
+Per iteration, E_--W and E_+-W require one G action on the q-column
+block [0;W]. E_-+ and E_++ require one initial q-column G action. All
+other products are small/thin. Thus the genuine raw cost is
+O(input_size*q+mq^2) per iteration, with O(mq) graph storage. There is
+no use of an indefinite inverse, and no multiplication by all m raw
+columns in a changing basis.
+
+Reconstruction without a negative-bulk precision loss. Define
+
+  L_phys=[I;-W], Y=Z L_phys,
+  H_head=G_++-G_+-W, K=D_+ H_head.
+
+The identities J[I;T]=L_phys D_+ and (GJ)[I;T]=[I;T]H_headD_+
+give S Y=Y K. Hence, writing G_Y=Y^T Y,
+
+  S_+=Y [K G_Y^-1] Y^T.                                (G3)
+
+The bracket is symmetric PSD. For an approximate Wtilde use
+Ytilde=Z[I;-Wtilde], Ktilde=D_+[G_++-G_+-Wtilde] and
+
+  Btilde=sym(Ktilde (Ytilde^T Ytilde)^-1).
+
+Clip Btilde to PSD and output Ytilde (Btilde)_+ Ytilde^T. All Gram
+matrices of this q-column output are computable with thin raw actions.
+Because ||W||<=1/10 and G near I, all the output Grams and their
+inverses have absolute constant bounds. Formula (G3), ordinary product
+perturbation bounds and Frobenius/small-core clipping therefore give
+error O(poly(q)*||D_+||*||Wtilde-W||). A direct bounded-PSD clipping
+argument may sharpen the poly(q) to a constant; either version needs
+only logarithmically smaller iteration tolerance. Positive congruence
+bounds give ||S_+||=Theta(||D_+||), so this is relative positive-part
+error independent of ||D_-||. In particular, NEVER form Ytilde^T S
+Ytilde: approximate subspace leakage could multiply the huge negative
+bulk. The action Ktilde is the controlled head-only formula above.
+
+Dense-core implementation gate. Whitening an arbitrary raw X generally
+turns its supplied J into a dense indefinite core. Exact orthogonal
+diagonalization is not a field/square-root primitive; naive absolute
+Jacobi accuracy relative to ||J_+|| may hide log(||J_-||/||J_+||).
+Thus the diagonal-core derivation is complete as a conditional solver,
+while a magnitude-free sign-block reduction still needs justification.
+The direct bounded-filter method in Section 10 avoids this split gate.
+
+Potential split repair: tridiagonalize the small core in O(m^3), use
+Graeffe's positive normalization, and selectively bisect ONLY the
+positive interval to absolute tolerance eps*||J_+||/poly(m). Clustered
+block inverse iteration with exact tridiagonal solves should compute
+the positive invariant block at O(m^3 polylog(m/eps)), with the large
+negative spectrum increasing rather than decreasing separation. This
+needs a fully finite proof or a matching primary theorem. Negative
+blocks need not then be diagonalized: tridiagonalization plus r shifted
+SPD tridiagonal solves applies the Sylvester maps within the core budget.
+
+Priority warning. Graph/Riccati invariant-subspace methods are classical.
+Primary references located include Brandts, The Riccati algorithm for
+eigenvalues and invariant subspaces of matrices with inexpensive action,
+LAA358 (2003), https://doi.org/10.1016/S0024-3795(02)00392-0 ; and his
+Computation of Invariant Subspaces of Large and Sparse Matrices,
+https://cubo.ufro.cl/index.php/cubo/article/view/1709 . These describe
+Picard/Newton/Riccati subspace refinement and Sylvester solves. The
+candidate contribution to compare is narrower: positive-Gram embedding,
+the paired weighted T/W contraction with only dimension-logarithmic
+Schur multiplier loss, and the input*r reconstruction avoiding all
+negative-bulk amplification. No novelty is asserted from search alone.
+
+14. What has and has not advanced
+--------------------------------
+There are now several checked mechanisms beyond a plan: a randomized
+stability-free residual certificate; an H-weighted forcing that controls
+Riccati graph conditioning; absolute polylogarithmic exact RADI
+convergence/rank bounds; a bounded whole-line rational filter and inverse
+map for relative PSD projection independent of negative spectral scale;
+and a direct thin-Gram contraction on an explicit sign-split core.
+
+The original arbitrary AB relative spectral task remains unsolved. Its
+real threshold H=Q-tG^-1 cannot simply be fed to the unshifted signed
+solver: its small-positive-index signed factorization is not supplied
+at cheap cost. A wide signed saddle representation has the large latent
+dimension, and compressing it by an uncharged Gram would lose the target.
+The useful-theoretical-advance claim therefore still requires a complete
+costed signed-product theorem and a serious prior-art audit, while a
+broad product breakthrough requires the additional threshold bridge.
+
+15. Closest primary: rational low-rank matrix-function updates
+-----------------------------------------------------------
+The serious comparator is not just a PSD-projection paper. It is
+Beckermann, Cortinovis, Kressner and Schweitzer, Low-rank updates of
+matrix functions II: Rational Krylov methods, SIAM J. Numer. Anal.59
+(2021),1325--1347, https://doi.org/10.1137/20M1362553 ; primary preprint
+https://arxiv.org/pdf/2008.11501 . I read the relevant primary Sections
+3.1--3.2,4.2 and5, rather than inferring the theorem from an abstract.
+
+Their Theorem3.3 proves exactness of the low-rank-update approximation
+for rational functions with the prescribed poles. For Hermitian A and
+D=UU^T, the Hermitian simplification in their Eq4 gives
+
+ r(A+D)-r(A)=Q[r(Q^T(A+D)Q)-r(Q^TAQ)]Q^T,                (U1)
+
+when Q spans the rational Krylov space of A,U containing those poles.
+Their Theorem4.5 gives the familiar four-times rational-approximation
+error under an analyticity assumption. For our continuous bounded f,
+the same FOUR spectral-theorem errors follow directly from (U1), with
+no appeal to analytic continuation across the kink at zero.
+
+Take A=-B<=0 and S=A+UU^T. Both f(A) and f(Q^TAQ) vanish. If r
+approximates f uniformly on the whole real line within eta, then
+
+ ||f(S)-Q f(Q^TSQ)Q^T||<=4eta.                           (U2)
+
+The positive index of Q^TSQ is at most rank(U)<=r, so after the psi
+map the result is rank<=r and approximates S_+. This removes Gaussian
+range conditioning, the chi factor, and the second full filtered action
+from the direct Section10 construction. It uses only negative PSD-base
+resolvents on the r update columns.
+
+Therefore a claim that generic low-rank rational-update geometry is new
+would be false. The potentially new corollary is narrower: the bounded
+whole-line f/psi trick, condition-free positive normalization, precision
+budget, and input-linear raw-factor implementation with an error relative
+to ||S_+|| independent of the entire negative spectral scale. Whether
+this corollary was already explicitly available remains unresolved.
+
+Their Section5 discusses matrix-sign updates, including a squaring
+transformation and spectral-set convergence issues. It does not state
+the complete relative signed-PSD raw-factor theorem considered here.
+This is a scope observation, not a priority certificate.
+
+16. A fully costable classical-update composition (candidate theorem)
+-------------------------------------------------------------------
+This section removes the raw signed-resolvent oracle from the signed-PSD
+theorem by using a negative PSD base and a small positive update. It
+does not remove the real-threshold obstacle in the original AB task.
+
+Input: raw tall X(N,m), supplied symmetric J(m,m), S=X J X^T, and
+positive index q<=r. A coarse OSE gives implicit S=Z K Z^T, supported
+core dimension k<=m, and g_lo I<=G=Z^TZ<=g_hi I with constant ratio.
+The OSE/setup has its usual input-plus-core cost. A raw G action on a
+thin block costs O(input_size*blockwidth+m^2*blockwidth); no full tall
+Z is materialized. The exact supported core inertia supplies q. If q=0,
+return the exact zero PSD projection.
+
+Step1, positive normalization and a well-scaled positive update. Section11
+gives ahat in [a/2,4a], a=||K_+||, using square roots only and ~m^3
+core work. Set v=4g_hi ahat, so
+
+  2||S_+||<=v<=16(g_hi/g_lo)||S_+||<=64||S_+||.
+
+Compute a rank-q PSD core P approximating K_+ within tau in norm, where
+tau=eps*ahat/(1000 sqrt(m)). This is a SMALL explicit-core instance of
+Section10: apply the bounded rational filter to the identity using exact
+core inverses, diagonalize only the resulting bounded matrix to absolute
+accuracy, clip to q positive values, and apply psi. It costs ~m^3 with
+logarithmic precision factors independent of ||K_-||/||K_+||. It does
+not need a raw-input Gram or an exact eigenbasis of K.
+
+Define
+
+  Ncore=P-K+2tau I >=tau I,
+  S'=Z(P-Ncore)Z^T=S-2tau ZZ^T.
+
+Thus n_+(S')<=q and S'=U U^T-B, with U=Z factor(P) and
+B=Z Ncore Z^T>=0. Only U's q columns are physically lifted. Ncore is
+stored as a small matrix and never applied to all raw tall columns.
+The positive update is well scaled:
+
+  ||U||^2<=g_hi(a+tau)=O(||S_+||).
+
+Moreover PSD projection is nonexpansive in Frobenius norm, so
+
+ ||S_+-S'_+||<=||S-S'||_F
+             <=2tau g_hi sqrt(k)=O(eps)||S_+||.          (U3)
+
+The constants above leave a large error-budget margin. Scale S',U,B by
+v so the positive spectrum is <=1/2 and ||U|| is bounded by an absolute
+constant (increase the fixed normalization constant if needed).
+
+Step2, cheap PSD-base resolvents. Let A=-Z N Z^T, N=Ncore/v>0,
+and let z=it be one of the imaginary poles of Section10. For a right
+hand side Zb, its resolvent solution remains in range(Z); writing it
+as Zy reduces the system to
+
+  (G+z N^-1)y=-N^-1 b.                                  (U4)
+
+Set c0=(g_lo+g_hi)/2 and precondition by Pz=c0 I+zN^-1.
+Then ||Pz^-1||<=1/c0 and
+
+ ||Pz^-1(G-c0I)||<=(g_hi-g_lo)/(g_hi+g_lo)=rho0<1.
+
+Fixed Richardson iteration therefore converges geometrically, uniformly
+in t and the spectrum of N. The inverse of Pz is a SMALL known-core
+operation, charged O(m^3) per pole; every Richardson action is a raw
+G action on q columns. Since lambda_min(N)>=tau/v=eps/poly(m), all
+right-hand-side, solution and tolerance bounds have only polynomial
+dependence on m,1/eps. There is no negative spectral magnitude factor.
+
+In exact arithmetic this supplies arbitrarily small ABSOLUTE resolvent
+action errors using logarithmically many raw passes. It is not a theorem
+about floating-point cancellation inside a raw factor action.
+
+Step3, use direct rational-update formulas to avoid an inexact-Krylov
+basis-conditioning gap. A finitely accurate Richardson solve does not
+create the EXACT rational Krylov space in (U1); merely invoking that
+identity on an approximately computed Q would be unjustified.
+Instead use the classical rational-update / Woodbury formula, explicitly
+credited to Bernstein--Van Loan in BCKS's introduction and Section3.3.
+For each pole z,
+
+ Vz=(A-zI)^-1 U, Dz=I+U^T Vz,
+
+ (S'-zI)^-1-(A-zI)^-1=-Vz Dz^-1 Vbarz^*.                (U5)
+
+The crucial inexpensive conditioning bound is
+
+ Dz^-1=I-U^T(S'-zI)^-1U,
+ ||Dz^-1||<=1+||U||^2/|Im z|.                           (U6)
+
+Thus the small feedback core is only polynomially ill conditioned at
+the selected t_min=poly(eps); no eigenvalue of B or S' enters the bound.
+The resulting rational-update matrix has rank at most q times the
+number of poles, and its factors use only the q-column PSD-base solves
+in (U4). The rational function's constant cancels in the difference.
+
+Uniform error budget. Normalize ||U||<=1 for notation and put
+t_min=min |Im z|. If ||Vtilde_z-Vz||<=d for every pole and
+d<=1/[2(1+t_min^-1)], the resolvent-identity inverse perturbation bound
+and (U6) give
+
+ ||Ttilde_z-Tz||<=32(1+t_min^-1)^4 d,
+ Tz=-Vz Dz^-1 Vbarz^*.
+
+Let Wcoef=1+sum|c_z| for the partial-fraction coefficients of r. Choose
+
+ d<=eta/[100 Wcoef (1+t_min^-1)^4].                      (U7)
+
+All poles in Section10 lie between eta/256 and 512/eta in magnitude.
+Half-shifted dyadic nodes have |1-t_j^2|>=Omega(1/Q), so elementary
+partial fractions have Wcoef<=poly(log(1/eta),1/eta). Hence (U7)
+requires only logarithmically many Richardson iterations in m,1/eps.
+Conjugate pairing gives an actual real symmetric represented update.
+
+The exact scalar rational approximation contributes two errors eta:
+r(S')-r(A) is within 2eta of f(S'), because f(A)=0. Inexact updates
+add at most eta by (U7). Thus the represented low-rank matrix R obeys
+||R-f(S')||<=3eta. QR its computed factors and diagonalize only the
+bounded small core. Clip to [0,2/5] and retain at most q positive
+eigenvalues. This changes R by at most 3eta, giving Fhat with
+
+  ||Fhat-f(S')||<=6eta, rank(Fhat)<=q.
+
+Then v psi(Fhat) approximates S'_+ within (25/2)v eta. Taking
+eta=eps/10000 and combining (U3) leaves total error below eps||S_+||,
+with room for small-core Jacobi and scalar-coefficient preparation.
+No unfiltered S'-Ritz action or ill-conditioned rational basis is used.
+
+Total ordinary-arithmetic build cost:
+
+  ~O(input_size*q+m^3),                                 (U8)
+
+where every hidden factor is logarithmic in m,1/eps,1/delta. The number
+of poles and temporary factor columns is O(q log^2(1/eps)), before
+the harmless dimension/accuracy allocations. Orthogonalization costs
+N*O(q^2 polylog), dominated by input_size*q polylog while q<=m;
+if the temporary width reaches m, the full supported core branch fits
+the same polylogarithmic budget. Known-core inverses, all projected
+products and bounded core diagonalizations fit m^3 polylog. Expansion
+of all N^2 entries adds O(N^2 q) if explicitly required.
+
+This is a substantial concrete composition, but its status is still a
+CANDIDATE costed theorem until the parent independently audits the
+setup and finite coefficient/linear-solve budget. It is a corollary of
+strong classical rational-update machinery plus our filter/normalization
+lemmas, not a claim to have invented Woodbury, rational Krylov or
+semidefinite projection. The signed unshifted scope is essential.
+
+17. Final worker-turn verification / handoff
+------------------------------------------
+Latest primary-source check confirmed BCKS Theorem3.3 directly in the
+full preprint, not only a thesis restatement. The Hermitian Eq4, the
+four-error convergence mechanism, and the Section3.3 relation to
+Bernstein--Van Loan all match the use in Sections15--16. The original
+reference is D. S. Bernstein and C. F. Van Loan, Rational matrix functions
+and rank-1 updates, SIAM J. Matrix Anal. Appl.22 (2000),145--154.
+These are genuine close prior algorithms; do not call the generic
+rational-update construction a new eigensolver.
+
+Sanity checks (numerical checks, not proof or hardware benchmarks):
+* Whole-line scalar quadrature over |x| between 1e-40 and 1e40 used
+  29,85,273 nodes for eta=1e-2,1e-4,1e-8. Maximum grid errors were
+  3.82e-5,3.02e-7,3.70e-11, respectively, consistent with the uniform
+  tail/alias proof and moderate degree constants.
+* An eight-dimensional graph example had positive core entries1,.03,
+  six negative magnitudes spanning1e-8 through1e6, and ||G-I||<=.002.
+  Ten paired graph iterations gave dual-graph residual3.5e-18 and
+  relative reconstructed positive-part Frobenius error1.4e-12 against
+  a direct symmetric reference. This checks ordering/reconstruction;
+  it is not a finite-precision theorem.
+
+Essential status: the signed-product relative PSD-projection mechanism
+is concrete and ready for independent proof/cost audit. It is no longer
+merely conditional on an indefinite raw solve: Section16 provides a
+negative-PSD-base implementation through standard rational updates.
+Its potential contribution is a strong norm/accuracy/raw-cost corollary,
+not presently established state-of-the-art priority. The broad arbitrary
+AB relative spectral problem and general quadratic time remain open.
+
+Beyond zero-threshold signed products, the surviving new mechanism is
+the weighted-forcing CARE graph/precision analysis (Sections6--8) plus
+the stability-free residual certificate (Section4). It can handle
+completely irregular critical bulk at the oracle level, but the raw
+near-threshold solve remains unproved. No original-drift F=0/KYP bridge
+was established. A fresh algebraic/partial-spectrum perspective is
+appropriate; further tuning of the signed zero-threshold primitive
+alone should not be presented as solving that main obstacle.
+
+All work stayed in this dedicated note. No background tool process,
+external contact, commit or publication is running or was initiated.

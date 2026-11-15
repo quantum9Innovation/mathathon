@@ -30,6 +30,9 @@ It explicitly charges growing polynomial subtraction, moving-strip
 quadrature, scalar construction and all shifted graph solves. Its
 [verification record](matmul/bounded-spectrum-graph-algorithm-proof-checks.txt)
 contains the complete proof review and reproducible algebra checks.
+The [bounded-graph priority audit](matmul/bounded-graph-priority-audit.txt)
+credits the existing optimal scalar pole-plus-polynomial rates and
+rational matrix-update mechanisms.
 
 The [joint boundary law](matmul/fractional-boundary-crossover.txt) now
 determines the exact compression coefficient when the endpoint ratio
@@ -38,6 +41,9 @@ an exact one-rank region, with matching single-edge path examples.
 The [coefficient plot](matmul/fractional-boundary-crossover.png) shows
 the proved law; the [verification record](matmul/fractional-boundary-crossover-proof-checks.txt)
 records the independent proof reviews and finite algebra checks.
+The [boundary-law priority audit](matmul/fractional-boundary-crossover-priority-audit.txt)
+identifies the tail estimate and terminal cutoff as classical corollaries;
+priority of the full joint law remains unverified.
 
 The [graph connection manuscript](matmul/graph-fractional-updates.pdf)
 ([source](matmul/graph-fractional-updates.tex)) constructs corrections to

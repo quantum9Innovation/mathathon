@@ -71,21 +71,10 @@ theorem gaussian_priorities_pair_ne (n : ℕ) (i j : Fin n) (hij : i ≠ j) :
     ∀ᵐ g ∂gaussianVector n, g i ≠ g j := by
   let v : Fin n → ℝ := Pi.single i 1-Pi.single j 1
   have hv : (1 : ℝ)^2 ≤ ∑ a, (v a)^2 := by
-    have heq : (∑ a, (v a)^2) = 2 := by
-      unfold v
-      rw [Finset.sum_eq_add_sum_diff_singleton (Finset.mem_univ i)]
-      simp only [Pi.sub_apply, Pi.single_eq_same, Pi.single_eq_of_ne hij, sub_zero, one_pow]
-      have : ∑ a ∈ Finset.univ \ {i}, (Pi.single i (1 : ℝ) a-Pi.single j 1 a)^2 = 1 := by
-        rw [Finset.sum_eq_single j]
-        · simp [hij, Ne.symm hij]
-        · intro a ha haj
-          have hai : a ≠ i := by simpa using (Finset.mem_sdiff.mp ha).2
-          simp [Pi.single_eq_of_ne hai, Pi.single_eq_of_ne haj]
-        · simp [hij, Ne.symm hij]
-      rw [this]
-      norm_num
-    rw [heq]
-    norm_num
+    have hi : v i = 1 := by simp [v, Pi.single_apply, hij, Ne.symm hij]
+    have hb := Finset.single_le_sum (fun a (_ : a ∈ Finset.univ) => sq_nonneg (v a))
+      (Finset.mem_univ i)
+    simpa only [hi] using hb
   have hz := gaussianVector_projection_small_ball_of_lower n v 1 0 (by norm_num) (by norm_num) hv
   have hzero : gaussianVector n {g | |∑ a, g a*v a| ≤ 0} = 0 := le_antisymm (by simpa using hz) bot_le
   rw [ae_iff]
@@ -93,8 +82,8 @@ theorem gaussian_priorities_pair_ne (n : ℕ) (i j : Fin n) (hij : i ≠ j) :
   intro g hg
   change ¬g i ≠ g j at hg
   have he : g i = g j := not_not.mp hg
-  simp only [Set.mem_setOf_eq, v, Pi.sub_apply, mul_sub, Finset.sum_sub_distrib,
-    Finset.sum_mul_pi_single, he, sub_self, abs_zero, le_refl]
+  change |∑ a, g a*v a| ≤ 0
+  simp [v, Pi.single_apply, mul_sub, Finset.sum_sub_distrib, he]
 
 theorem gaussian_priorities_injective (n : ℕ) :
     ∀ᵐ g ∂gaussianVector n, Function.Injective g := by

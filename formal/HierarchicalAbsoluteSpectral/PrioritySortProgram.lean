@@ -27,8 +27,8 @@ termination_by xs ys => xs.length+ys.length
 theorem priorityMergeProgram_eval {ι : Type} (v : ι → ℝ) (xs ys : List ι) :
     (priorityMergeProgram v xs ys).eval = xs.merge ys (fun i j => decide (v i≤v j)) := by
   match xs,ys with
-  | [],ys => rfl
-  | x::xs,[] => rfl
+  | [],ys => simp [priorityMergeProgram]
+  | x::xs,[] => simp [priorityMergeProgram]
   | x::xs,y::ys =>
       by_cases h : v x≤v y <;>
         simp [priorityMergeProgram, ArithmeticProgram.eval, List.merge, h,
@@ -41,8 +41,11 @@ theorem priorityMergeProgram_work {ι : Type} (v : ι → ℝ) (xs ys : List ι)
   | [],ys => simp [priorityMergeProgram]
   | x::xs,[] => simp [priorityMergeProgram]
   | x::xs,y::ys =>
-      have h₁ := priorityMergeProgram_work v xs (y::ys)
-      have h₂ := priorityMergeProgram_work v (x::xs) ys
+      have h₁ : (priorityMergeProgram v xs (y::ys)).work≤xs.length+ys.length+1 := by
+        simpa using priorityMergeProgram_work v xs (y::ys)
+      have h₂ : (priorityMergeProgram v (x::xs) ys).work≤xs.length+ys.length+1 := by
+        simpa [Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using
+          priorityMergeProgram_work v (x::xs) ys
       by_cases h : v x≤v y <;>
         simp [priorityMergeProgram, ArithmeticProgram.work, h] <;> omega
 termination_by xs.length+ys.length
@@ -50,8 +53,8 @@ termination_by xs.length+ys.length
 theorem priorityMergeProgram_admissible {ι : Type} (v : ι → ℝ) (xs ys : List ι) :
     (priorityMergeProgram v xs ys).admissible := by
   match xs,ys with
-  | [],ys => trivial
-  | x::xs,[] => trivial
+  | [],ys => simp [priorityMergeProgram]
+  | x::xs,[] => simp [priorityMergeProgram]
   | x::xs,y::ys =>
       by_cases h : v x≤v y <;>
         simp [priorityMergeProgram, ArithmeticProgram.admissible, h,
@@ -73,24 +76,27 @@ decreasing_by all_goals simp; omega
 theorem prioritySortProgram_eval {ι : Type} (v : ι → ℝ) (xs : List ι) :
     (prioritySortProgram v xs).eval = xs.mergeSort (fun i j => decide (v i≤v j)) := by
   match xs with
-  | [] => rfl
-  | [x] => rfl
+  | [] => simp [prioritySortProgram]
+  | [x] => simp [prioritySortProgram]
   | x::y::xs =>
       rw [prioritySortProgram, List.mergeSort]
       simp only [eval_bind, priorityMergeProgram_eval, prioritySortProgram_eval]
-      rfl
+      simp [List.MergeSort.Internal.splitInTwo, List.splitAt_eq]
 termination_by xs.length
 decreasing_by all_goals simp; omega
 
 theorem prioritySortProgram_admissible {ι : Type} (v : ι → ℝ) (xs : List ι) :
     (prioritySortProgram v xs).admissible := by
   match xs with
-  | [] => trivial
-  | [x] => trivial
+  | [] => simp [prioritySortProgram]
+  | [x] => simp [prioritySortProgram]
   | x::y::xs =>
       rw [prioritySortProgram]
-      simp only [admissible_bind, prioritySortProgram_admissible,
-        priorityMergeProgram_admissible, and_self]
+      have hl := prioritySortProgram_admissible v
+        ((x::y::xs).take (((x::y::xs).length+1)/2))
+      have hr := prioritySortProgram_admissible v
+        ((x::y::xs).drop (((x::y::xs).length+1)/2))
+      exact ⟨hl,hr,priorityMergeProgram_admissible _ _ _⟩
 termination_by xs.length
 decreasing_by all_goals simp; omega
 
@@ -120,9 +126,11 @@ theorem prioritySortProgram_work {ι : Type} (v : ι → ℝ) (k : ℕ) :
             List.length_mergeSort, List.length_mergeSort] at hm
           have h₁ := ih l hl
           have h₂ := ih r hr
-          change (prioritySortProgram v l).work+(prioritySortProgram v r).work+
+          rw [prioritySortProgram]
+          simp only [work_bind]
+          change (prioritySortProgram v l).work+((prioritySortProgram v r).work+
             (priorityMergeProgram v (prioritySortProgram v l).eval
-              (prioritySortProgram v r).eval).work ≤ _
+              (prioritySortProgram v r).eval).work) ≤ _
           nlinarith
 
 def priorityRows (n M : ℕ) (g : Fin n → ℝ) : Finset (Fin n) :=

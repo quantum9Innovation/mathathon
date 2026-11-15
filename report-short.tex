@@ -1,0 +1,592 @@
+% The second eigenvalue of random regular graphs: notes to accompany slides.tex
+% Compile from this folder with:  latexmk -pdf report.tex   (or pdflatex report.tex, twice)
+\documentclass[11pt,letterpaper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{lmodern}
+
+\usepackage[margin=1.15in]{geometry}
+\usepackage{microtype}
+\usepackage{booktabs,array}
+\usepackage{enumitem}
+
+\usepackage{xcolor}
+\usepackage{pgfplots}
+\usepgfplotslibrary{groupplots}
+\pgfplotsset{compat=1.16}
+\usepackage[colorlinks=true,linkcolor=ink,citecolor=ink,urlcolor=ink]{hyperref}
+
+\definecolor{ink}{HTML}{1B2A41}
+\definecolor{accent}{HTML}{A23B1E}
+\definecolor{barfill}{HTML}{C9D3DF}
+
+% ---------- figure sizes ----------
+\newcommand{\specw}{5.9cm}
+\newcommand{\spech}{4.6cm}
+\newcommand{\specsep}{0.5cm}
+\newcommand{\nbw}{7.4cm}
+\newcommand{\dyckunit}{5.2mm}
+\newcommand{\shapeunit}{6.2mm}
+\newcommand{\shapesep}{4.6cm}
+\newcommand{\tangleunit}{7mm}
+\newcommand{\dumbunit}{5mm}
+\newcommand{\liftunit}{8mm}
+
+% ---------- theorem environments ----------
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\theoremstyle{definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{definition}[theorem]{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+% ---------- notation ----------
+\DeclareMathOperator{\tr}{tr}
+\newcommand{\edge}{2\sqrt{d-1}}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\one}{\mathbf{1}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\setlist{itemsep=2pt, topsep=4pt}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries The second eigenvalue of random regular graphs\par}
+  \vspace{6pt}
+  {\large Notes on the Alon--Boppana bound, Friedman's theorem and the trace method\par}
+\end{center}
+\vspace{10pt}
+
+\begin{abstract}
+\noindent
+A random $d$-regular graph has all of its non-trivial adjacency eigenvalues in the interval
+$[-\edge-\eps,\ \edge+\eps]$ with high probability, and no large $d$-regular graph can do
+better. These notes explain why $\edge$ is the barrier, why it is hard to prove that random
+graphs reach it, and how the known proofs get around the difficulty. The emphasis is on
+motivation and on the shape of the arguments; proofs are sketched, not given in full.
+\end{abstract}
+
+\part{Local walks reveal global structure}
+\section{Graphs as matrices}
+
+Let $G$ be a graph on $n$ vertices with adjacency matrix $A$. Since $A$ is real and symmetric it
+has real eigenvalues $\lambda_1\ge\lambda_2\ge\dots\ge\lambda_n$ and an orthonormal basis of
+eigenvectors. The link between these eigenvalues and the combinatorics of $G$ is that powers of
+$A$ count walks: the entry $(A^k)_{ij}$ is the number of walks of length $k$ from $i$ to $j$, where
+a walk may repeat vertices and edges. Taking the trace gives the identity on which everything
+below rests,
+\begin{equation}\label{eq:trace}
+  \tr(A^k)\;=\;\sum_{i=1}^{n}\lambda_i^{k}\;=\;\#\{\text{closed walks of length }k\text{ in }G\}.
+\end{equation}
+
+\begin{example}
+The triangle has eigenvalues $2,-1,-1$. Formula \eqref{eq:trace} gives $2^3+(-1)^3+(-1)^3=6$
+closed walks of length~$3$: three starting vertices and two directions.
+\end{example}
+
+Suppose now that $G$ is $d$-regular. Every row of $A$ sums to $d$, so the constant vector $\one$ is
+an eigenvector with eigenvalue $d$. No eigenvalue exceeds $d$ in absolute value, since the number
+of walks of length $k$ from any vertex is exactly $d^k$. Thus $\lambda_1=d$; this eigenvalue is
+called \emph{trivial}, as is $-d$ when $G$ is bipartite. The subject of these notes is the size of
+all the other eigenvalues, and we write
+\[
+  \mu(G)\;=\;\max\{|\lambda_i| : |\lambda_i|<d\}.
+\]
+
+\section{The spectral gap and expansion}
+
+The quantity $d-\lambda_2$ is called the \emph{spectral gap}. It measures how far $G$ is from
+being disconnected, and the reason is the following identity, valid for every vector $x$ indexed
+by the vertices of a $d$-regular graph:
+\begin{equation}\label{eq:dirichlet}
+  d\,\lVert x\rVert^2-x^{\mathsf T}Ax\;=\;\sum_{\{u,v\}\in E}(x_u-x_v)^2 .
+\end{equation}
+The right-hand side measures how much $x$ varies across edges. Two consequences are immediate.
+First, if $Ax=dx$ then the left side vanishes, so $x$ is constant on every connected component:
+the multiplicity of the eigenvalue $d$ is the number of components. Second, since $\lambda_2$ is
+the maximum of the Rayleigh quotient $x^{\mathsf T}Ax/\lVert x\rVert^2$ over $x\perp\one$,
+\begin{equation}\label{eq:gap}
+  d-\lambda_2\;=\;\min_{x\perp\one}\ \frac{\sum_{\{u,v\}\in E}(x_u-x_v)^2}{\sum_u x_u^2}.
+\end{equation}
+The gap is small exactly when some vector that sums to zero barely changes across any edge.
+
+\begin{example}[A dumbbell]
+Take two dense clusters of $n/2$ vertices each, joined by a single edge
+(Figure~\ref{fig:dumbbell}). Let $x$ be $+1$ on one cluster and $-1$ on the other. Only the
+joining edge contributes to the numerator of \eqref{eq:gap}, giving $4$, while the denominator is
+$n$. Hence $d-\lambda_2\le 4/n$.
+\end{example}
+
+\begin{figure}[ht]
+  \centering
+  \input{figures/dumbbell}
+  \caption{A dumbbell: one edge between two clusters forces a spectral gap of at most $4/n$.}
+  \label{fig:dumbbell}
+\end{figure}
+
+The dumbbell argument works for any set of vertices, and it has a converse. Define the
+\emph{edge expansion}
+\[
+  h(G)\;=\;\min_{0<|S|\le n/2}\ \frac{e(S,\bar S)}{|S|},
+\]
+where $e(S,\bar S)$ is the number of edges leaving $S$.
+
+\begin{theorem}[Cheeger's inequality]\label{thm:cheeger}
+For every $d$-regular graph $G$,
+\[
+  \frac{h(G)^2}{2d}\;\le\;d-\lambda_2\;\le\;2\,h(G).
+\]
+\end{theorem}
+
+The upper bound is the dumbbell argument applied to an optimal set $S$. For the lower bound one
+starts from a vector $x$ with small Rayleigh quotient in \eqref{eq:gap}, orders the vertices by
+the value of $x$, and cuts at a well-chosen threshold; an edge crosses the cut only if the
+threshold falls between its two values, which is rare when $x$ varies little across edges.
+
+A family of $d$-regular graphs with $n\to\infty$ is an \emph{expander family} if $h$ stays above
+a positive constant, or equivalently, by Theorem~\ref{thm:cheeger}, if the spectral gap does.
+Expanders are sparse and yet have no bottleneck. The complete graph has no bottleneck but is not
+sparse; the cycle and the complete binary tree are sparse but have $h$ of order $1/n$. Once the
+gap is known to certify expansion, the natural question is how large it can be.
+
+\section{The barrier \texorpdfstring{$\edge$}{2 sqrt(d-1)}}
+
+The answer comes from the infinite $d$-regular tree $T_d$.
+
+\paragraph{Closed walks in the tree.}
+A closed walk of length $2k$ in a tree takes $k$ steps away from its starting vertex and $k$
+steps back. It is determined by two choices (Figure~\ref{fig:dyck}). The first is the pattern of
+away and back steps, which may never have more back steps than away steps so far; the number of
+such patterns is the Catalan number $C_k\sim 4^k/(\sqrt{\pi}\,k^{3/2})$. The second is the branch
+taken at each step away, for which there are at least $d-1$ choices. Each step back is forced,
+because a vertex of a tree has a unique neighbour closer to the start. Up to polynomial factors
+the number of closed walks of length $2k$ from a given vertex is therefore
+\[
+  4^k\,(d-1)^k\;=\;\bigl(\edge\bigr)^{2k}.
+\]
+The factor $2$ is the entropy of when to turn around; the factor $\sqrt{d-1}$ is the choice of
+where to go, square-rooted because only half the steps are free.
+
+\begin{figure}[ht]
+  \centering
+  \input{figures/dyck}
+  \caption{Distance from the starting vertex along a closed walk of length $12$ in a tree. Steps
+  away (red) each have at least $d-1$ continuations; steps back (blue) are forced.}
+  \label{fig:dyck}
+\end{figure}
+
+\begin{theorem}[Alon--Boppana]\label{thm:ab}
+Every $d$-regular graph $G$ on $n$ vertices satisfies $\lambda_2(G)\ge\edge-o_n(1)$.
+\end{theorem}
+
+\begin{proof}[Sketch for $\mu(G)$]
+Fix a vertex of $G$ and unroll $G$ from it into $T_d$, never identifying vertices reached by
+different routes. This is the universal covering map $T_d\to G$. Every closed walk in the tree
+projects to a closed walk in $G$, and distinct tree walks project to distinct walks; cycles in
+$G$ only add further closed walks. By \eqref{eq:trace}, with $\rho=\edge$,
+\[
+  d^{2k}+(n-1)\,\mu^{2k}\;\ge\;\tr(A^{2k})\;\ge\;n\,C_k\,(d-1)^k\;\approx\;n\,\rho^{2k}\,k^{-3/2}.
+\]
+If $k$ is a sufficiently small multiple of $\log n$ then $d^{2k}$ is negligible beside
+$n\rho^{2k}$, and taking $2k$-th roots gives $\mu\ge\rho-o(1)$. A refinement of the argument,
+using test vectors supported on balls, gives the statement for $\lambda_2$ itself.
+\end{proof}
+
+Two features of the argument matter later. It applies to \emph{every} $d$-regular graph, including
+graphs full of short cycles: the tree is the minimum. And it only works for $k=O(\log n)$; for
+larger $k$ the single trivial eigenvalue swamps the count.
+
+\begin{definition}
+A $d$-regular graph is \emph{Ramanujan} if $\mu(G)\le\edge$.
+\end{definition}
+
+\section{Friedman's theorem and the trace method}
+
+\begin{theorem}[Friedman \cite{F}; conjectured by Alon]\label{thm:friedman}
+Fix $d\ge 3$ and $\eps>0$, and let $G$ be a uniformly random $d$-regular graph on $n$ vertices.
+Then
+\[
+  \Pr\Bigl[\max\bigl(\lambda_2(G),\,|\lambda_n(G)|\bigr)\ge\edge+\eps\Bigr]\longrightarrow 0
+  \qquad\text{as } n\to\infty .
+\]
+\end{theorem}
+
+So almost every regular graph is almost Ramanujan. The bulk of the spectrum of a random regular
+graph converges to the Kesten--McKay law, the spectral measure of $T_d$, which has density
+\[
+  \frac{d\,\sqrt{4(d-1)-x^2}}{2\pi\,(d^2-x^2)}\qquad\text{on } [-\edge,\ \edge];
+\]
+see Figure~\ref{fig:spectrum}. Eigenvalues near the edge of this interval are therefore expected.
+The content of Theorem~\ref{thm:friedman} is that no eigenvalue lies outside it.
+
+\begin{figure}[ht]
+  \centering
+  \input{figures/spectrum}
+  \caption{Non-trivial eigenvalues of one random $d$-regular graph on $2000$ vertices (bars),
+  against the Kesten--McKay density (curve). The horizontal axis is rescaled so that the bulk
+  edges $\pm\edge$ coincide across panels.}
+  \label{fig:spectrum}
+\end{figure}
+
+\paragraph{Why long walks are needed.}
+The trace is a sum over all eigenvalues, but the theorem concerns the largest. Suppose one could
+show that $\sum_{i\ge2}\lambda_i^{2k}\le n(\rho+\eps)^{2k}$. Then
+\begin{equation}\label{eq:amplifier}
+  \mu^{2k}\;\le\;\sum_{i\ge 2}\lambda_i^{2k}\;\le\;n\,(\rho+\eps)^{2k}
+  \qquad\Longrightarrow\qquad
+  \mu\;\le\;n^{1/2k}\,(\rho+\eps),
+\end{equation}
+and the factor $n^{1/2k}$ tends to $1$ only if $k\gg\log n$. With $k$ of order $\log n$ it is a
+constant, which is why the first results of this kind were off by a constant factor. Raising to
+a high power acts as an amplifier: it lets one eigenvalue outweigh $n$ others.
+
+This is the reverse of the situation in Theorem~\ref{thm:ab}. There, $k\asymp\log n$ sufficed,
+and walks of that length are shorter than the diameter and see only the tree. For the upper bound
+one needs $k\gg\log n$: the walks wrap around the graph many times, and must be counted to within
+a factor $(1+\eps)^{2k}$.
+
+\paragraph{The trivial eigenvalue.}
+The term $d^{2k}$ must be removed exactly. This is possible because its eigenvector is known: the
+matrix $A-\tfrac dn J$, where $J$ is the all-ones matrix, has the same eigenvalues as $A$ except
+that $d$ is replaced by $0$.
+
+\part{Rare local structures obstruct global bounds}
+\section{Tangles}
+
+\paragraph{Counting by shape.}
+For a random graph one computes $\E\tr(A^{2k})$ as a sum, over all potential closed walks, of the
+probability that the walk is present. Walks are grouped by the \emph{shape} they trace, that is,
+the subgraph formed by the distinct vertices and edges visited. A shape with $v$ vertices and
+$e$ edges can be placed in about $n^v$ ways, and each placement is present with probability of
+order $n^{-e}$, so
+\begin{equation}\label{eq:shape}
+  \E\bigl[\#\text{copies of the shape}\bigr]\;\asymp\;n^{\,v-e}.
+\end{equation}
+Each additional independent cycle costs a factor of $n$ (Figure~\ref{fig:shapes}). Tree-shaped
+walks therefore dominate, contributing about $n\rho^{2k}$, which is why the spectrum of a random
+graph resembles that of the tree. The random model enters the proof only through
+\eqref{eq:shape}.
+
+\begin{figure}[ht]
+  \centering
+  \input{figures/shapes}
+  \caption{Three shapes with five vertices and their expected number of copies in a random
+  regular graph.}
+  \label{fig:shapes}
+\end{figure}
+
+\paragraph{The obstruction.}
+Let $S$ be a fixed graph with $v-e=-c<0$, so that it occurs in $G$ with probability of order
+$n^{-c}$, and suppose its presence forces an eigenvalue $\lambda_S>\rho$. Its contribution to
+$\E\sum_{i\ge2}\lambda_i^{2k}$ is at least of order $n^{-c}\lambda_S^{2k}$, which exceeds the
+target $n\rho^{2k}$ as soon as $k$ is a large multiple of $\log n$. Polynomial rarity cannot
+compensate for exponential amplification. Such subgraphs are called \emph{tangles}. They do not
+contradict Theorem~\ref{thm:friedman}, which only asserts high probability; they show that no
+bound on the expectation can prove it.
+
+\begin{example}[A vertex with $m$ self-loops]\label{ex:loops}
+In the permutation model studied in \cite{F}, a $d$-regular multigraph is built from $d/2$
+independent uniform permutations. A given vertex carries $m$ self-loops with probability
+$n^{-m}$, so some vertex does with probability of order $n^{1-m}$. Non-backtracking walks
+recirculate at such a vertex at rate $h=2m-1$ per step. If $h>\sqrt{d-1}$, consider the vector
+equal to $1$ at the vertex and to $h^{-t}$ at distance $t$ from it, truncated at a large radius.
+It has bounded norm because the decay beats the branching, $(d-1)/h^2<1$, and its Rayleigh
+quotient is close to $h+(d-1)/h$. Since it is supported on a bounded number of vertices, it is
+nearly orthogonal to $\one$, and one obtains \cite[Theorem~2.11]{F}
+\[
+  \lambda_2\;\ge\;h+\frac{d-1}{h}-o(1)\;>\;\edge .
+\]
+The smallest admissible $m$ gives the most likely tangle of this kind, and its probability
+determines the rate in Friedman's theorem: the bound holds with probability
+$1-O(n^{-\tau})$, where $\tau=\lceil(\sqrt{d-1}+1)/2\rceil-1$, and this cannot be improved in
+general.
+\end{example}
+
+\begin{figure}[ht]
+  \centering
+  \input{figures/tangle}
+  \caption{A vertex with three self-loops inside a $d$-regular graph. The surrounding
+  neighbourhood is a tree.}
+  \label{fig:tangle}
+\end{figure}
+
+\section{Selective traces}
+
+The natural remedy is to condition on the absence of tangles. This fails for a technical reason:
+\eqref{eq:shape} relies on the near-independence of edges, and conditioning on a global event
+destroys it. The proofs instead change what is counted, not the probability space.
+
+Define a modified trace that counts only those closed walks which trace no tangle. Friedman
+calls his version the \emph{selective trace}; Bordenave \cite{B} counts \emph{tangle-free} paths.
+Its expectation is taken over all graphs, with no conditioning, so the counting machinery still
+applies. Two observations make this work:
+\begin{itemize}
+  \item on a tangle-free graph every walk qualifies, so the modified trace equals the true trace;
+  \item on a graph containing a tangle the walks circulating inside it are not counted, so the
+        rare event no longer contributes an exponentially large amount.
+\end{itemize}
+The theorem then follows from a union bound over the two ways to fail,
+\[
+  \Pr[\mu\text{ too large}]\;\le\;\Pr[\,G\text{ contains a tangle}\,]\;+\;\Pr[\,\text{modified trace is large}\,].
+\]
+The first term is small by \eqref{eq:shape}, the second by Markov's inequality applied to the
+modified expectation.
+
+What remains difficult is that ``traces no tangle'' is a non-local condition on a walk, which
+makes the modified count much harder to evaluate than the plain one. Together with the exact
+cancellation of the trivial eigenvalue, this accounts for the length of~\cite{F}.
+
+\part{Preserving the useful information}
+\section{Non-backtracking walks}
+
+The factor $2$ in $\edge$ comes entirely from backtracking. A walk is \emph{non-backtracking} if it
+never traverses an edge and then immediately reverses it. From any vertex of a $d$-regular graph
+there are exactly $d(d-1)^{k-1}$ such walks of length $k$, and a tree has no closed ones, so every
+closed non-backtracking walk witnesses a cycle. Friedman's proof already counts these walks,
+under the name \emph{irreducible}.
+
+The \emph{non-backtracking matrix} $B$, also called the Hashimoto matrix, is indexed by the
+$nd$ directed edges of $G$: the entry from $u\to v$ to $v\to w$ is $1$ if $w\ne u$ and $0$
+otherwise. It is not symmetric, so its eigenvalues are complex.
+
+\begin{theorem}[Ihara--Bass formula, $d$-regular case]\label{thm:ib}
+Each eigenvalue $\lambda$ of $A$ gives rise to two eigenvalues $\mu$ of $B$, the roots of
+\[
+  \mu^2-\lambda\mu+(d-1)=0,\qquad\text{equivalently}\qquad\lambda=\mu+\frac{d-1}{\mu},
+\]
+and all remaining eigenvalues of $B$ are $\pm1$.
+\end{theorem}
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+  \toprule
+  Eigenvalue $\lambda$ of $A$ & Eigenvalues $\mu$ of $B$\\
+  \midrule
+  $\lambda=d$ & $d-1$ and $1$\\
+  $|\lambda|<\edge$ & a complex-conjugate pair with $|\mu|=\sqrt{d-1}$\\
+  $\lambda$ slightly above $\edge$ & two real values, one just outside the circle and one just inside\\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+Consequently $G$ is Ramanujan exactly when every non-trivial eigenvalue of $B$ lies on the circle
+of radius $\sqrt{d-1}$ (Figure~\ref{fig:nb}), and Friedman's theorem states that none has modulus
+exceeding $\sqrt{d-1}+\eps$. The same relation explains Example~\ref{ex:loops}: a subgraph whose
+own non-backtracking growth rate $h$ exceeds $\sqrt{d-1}$ lies outside the circle, and
+$\lambda=h+(d-1)/h$ is the eigenvalue of $A$ it produces.
+
+\begin{figure}[ht]
+  \centering
+  \input{figures/nbspectrum}
+  \caption{Eigenvalues of the non-backtracking matrix of a random $4$-regular graph on $150$
+  vertices. The dashed circle has radius $\sqrt3$.}
+  \label{fig:nb}
+\end{figure}
+
+\begin{remark}
+Because the $\mu_i$ are complex, a bound on $\tr(B^k)=\sum_i\mu_i^k$ does not bound
+$\max_i|\mu_i|$: the terms may cancel. Bordenave works instead with the operator norm of $B^k$
+restricted to the complement of the trivial eigenvector.
+\end{remark}
+
+\section{Three proofs compared}
+
+Table~\ref{tab:proofs} summarises three routes to Theorem~\ref{thm:friedman}. They trade
+precision against length. Friedman and Kohler \cite{FK} extend the theorem to random covers of a
+fixed base graph and simplify parts of the original method. Brito, Dumitriu and Harris \cite{BDH}
+apply Bordenave's approach to random bipartite biregular graphs with degrees $d_1,d_2$, where the
+bound becomes $\sqrt{d_1-1}+\sqrt{d_2-1}$. The polynomial method of Chen, Garza-Vargas, Tropp and
+van Handel \cite{CGTV} avoids walk counting beyond the leading term altogether.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{@{}L{0.17\textwidth}L{0.25\textwidth}L{0.24\textwidth}L{0.25\textwidth}@{}}
+  \toprule
+  & Friedman \cite{F} & Bordenave \cite{B} & Polynomial method \cite{CGTV}\\
+  \midrule
+  Object & Counts of closed non-backtracking walks & Operator norm of powers of $B$ & Expected traces of polynomials in $A$\\
+    \addlinespace
+  Tangles & Classified exactly by growth rate against $\sqrt{d-1}$ & Any neighbourhood containing two cycles & Not removed; visible in higher-order terms\\
+    \addlinespace
+  Trivial eigenvalue & Cancelled term by term in a $1/n$ expansion & Edge indicators centred by their mean & Trace is a rational function of $1/n$\\
+    \addlinespace
+  Failure probability & $O(n^{-\tau})$, optimal & $n^{-a}$ for any $a<1$ & Optimal in the permutation model\\
+    \addlinespace
+  Length & About 120 pages & About 20 pages & Short and general\\
+  \bottomrule
+\end{tabular}
+\caption{Three proofs of Friedman's theorem.}
+\label{tab:proofs}
+\end{table}
+
+\subsection{Graph lifts}
+
+\begin{definition}
+Let $H$ be a finite graph and $N\ge1$. An \emph{$N$-lift} of $H$ is a graph with vertex set
+$V(H)\times[N]$, built as follows: for each edge $\{u,v\}$ of $H$ choose a permutation $\pi_{uv}$
+of $[N]$, and join $(u,i)$ to $(v,\pi_{uv}(i))$ for every $i\in[N]$. The set $\{u\}\times[N]$ is
+called the \emph{fibre} over $u$. In a \emph{random} $N$-lift the permutations are independent
+and uniformly distributed.
+\end{definition}
+
+\begin{example}
+The cube is a $2$-lift of the complete graph $K_4$ (Figure~\ref{fig:lift}). Label the vertices of
+the cube by binary triples; the four fibres are the four pairs of antipodal vertices, and each
+vertex has exactly one neighbour in each of the three other fibres.
+\end{example}
+
+\begin{figure}[ht]
+  \centering
+  \input{figures/lift}
+  \caption{The cube as a $2$-lift of $K_4$. Vertices with the same label form a fibre.}
+  \label{fig:lift}
+\end{figure}
+
+Two properties follow at once from the definition. A lift of a $d$-regular graph is $d$-regular.
+And every vertex in the fibre over $u$ has exactly one neighbour in the fibre over each neighbour
+of $u$, and none in any other fibre. Lifts connect to the earlier sections in two ways: the
+permutation model of Example~\ref{ex:loops} is a random lift of a single vertex with $d/2$ loops,
+and the extensions of Friedman's theorem in \cite{FK,B} concern random lifts of a fixed base
+graph.
+
+\section{Numerical illustrations}
+
+The figures come from small simulations in the configuration model, which allows loops and
+multiple edges. They are illustrations at a single size, not evidence for the theorems.
+
+\paragraph{Extreme eigenvalues.}
+Table~\ref{tab:extreme} lists the extreme non-trivial eigenvalues of the three graphs in
+Figure~\ref{fig:spectrum}. All lie within $0.02$ of $\pm\edge$, on either side, as the $\eps$ in
+Theorem~\ref{thm:friedman} allows.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{@{}rrrr@{}}
+  \toprule
+  $d$ & $\edge$ & $\lambda_2$ & $\lambda_n$\\
+  \midrule
+  $3$ & $2.828$ & $2.824$ & $-2.830$\\
+  $6$ & $4.472$ & $4.467$ & $-4.452$\\
+  $16$ & $7.746$ & $7.749$ & $-7.727$\\
+  \bottomrule
+\end{tabular}
+\caption{One random $d$-regular graph on $2000$ vertices for each $d$.}
+\label{tab:extreme}
+\end{table}
+
+\paragraph{A planted tangle.}
+For $d=8$ and $n=2000$, a random graph had $\lambda_2=5.251$, below $2\sqrt7\approx5.292$.
+Planting three self-loops at one vertex, so that $h=5>\sqrt7$, gave $\lambda_2$ between $6.396$
+and $6.398$ in five samples. Example~\ref{ex:loops} predicts $h+(d-1)/h=5+7/5=6.4$.
+
+\paragraph{Non-backtracking spectrum.}
+For the graph of Figure~\ref{fig:nb}, the matrix $B$ is $600\times600$. Its largest eigenvalue is
+$3=d-1$ and the largest non-trivial modulus is $1.7321\approx\sqrt3$, so this sample is
+Ramanujan.
+
+
+\part{Recovering hidden groups from exact counts}
+\section{The recovery algorithm}
+Imagine coloring vertices red or blue so that every vertex has exactly two
+neighbors of its own color and one of the other. Now erase the colors.
+Can the graph reveal them? More generally, recover an unknown partition
+whose vertices have exact numbers of neighbors in each group. The input is
+only the graph and fixed bounds $K,\Delta$ on the group count and degrees.
+Neither the neighbor-count table nor the group sizes are supplied.
+
+\paragraph{Result.}
+For independent uniform simple regular factors within groups and biregular
+factors between groups, the long report~\cite{FullReport} proves complete
+listing in unconditional expected $\widetilde O_{K,\Delta}(n^2)$ bit work,
+expected $\widetilde O_{K,\Delta}(n)$ working bits, and expected $O_{K,\Delta}(n)$
+output bits. Every listed answer is correct. Under the certificate below,
+with probability tending to one every answer merges whole planted groups;
+choosing the answer with the most groups recovers the plant, up to names.
+The number of groups and all degrees are fixed as $n$ grows; class proportions
+are fixed and positive, type support is connected, and counts are exact.
+
+\paragraph{Key insight: solve the exact equations, then certify.}
+For each of the finitely many possible count tables $R$, a membership matrix
+$Y$ must satisfy $AY=YR$. Compute the \emph{complete} solution space over a
+fixed odd finite field, enumerate its candidates, and accept only matrices
+having exactly one $1$ per row, nonempty groups, and the required counts
+over the integers. Modular coincidences cannot produce false answers.
+The crucial runtime step is stronger than saying the kernel is usually small:
+the paper proves $\sup_n\E p^{h_R(A)}<\infty$, where $h_R$ is its dimension.
+This charges even rare graphs with many candidates. A sparse certified
+kernel routine avoids dense cubic elimination.
+
+\paragraph{Assumption that makes recovery possible.}
+Writing $d_{ij}$ for the planted counts, there must exist symmetric weights
+$q_{ij}=q_{ji}$ with $0\le q_{ij}<1/2$ and $\sum_jd_{ij}q_{ij}=1$.
+The algorithm need not know these weights. For every fixed connected simple
+$d$-regular lift template, $d\ge3$, weights $1/d$ certify the condition.
+Minimum degree three by itself is insufficient.
+
+\paragraph{What improves over earlier guarantees.}
+The two-group spectral recovery guarantee of Brito et al.~\cite{RecoveryPrior}
+requires $(a-b)^2>4(a+b-1)$. The cubic example $(a,b)=(2,1)$ is outside
+that range: its group eigenvalue $1$ lies inside the bulk. The exact-equation
+method needs no planted eigengap and handles an unknown bounded count table.
+Algebraic fiber recovery already appears in Kid Krypto and the 2023 IPCC
+analysis~\cite{AlgebraPrior}; the contribution is the proved scope, complete
+certification, and unconditional expected cost. No global fastest-algorithm
+or historical-firstness claim follows. The guarantee assumes noiseless
+counts and gives expected rather than worst-case work.
+
+For all proofs, precise hypotheses, and prior-work comparisons, see
+Part III of the \href{report-long.pdf}{full report}~\cite{FullReport}.
+
+\begin{thebibliography}{99}
+
+\bibitem{F}
+J.~Friedman.
+\newblock A proof of Alon's second eigenvalue conjecture and related problems.
+\newblock \emph{Mem.\ Amer.\ Math.\ Soc.}\ 195 (2008), no.~910.
+\newblock \href{https://arxiv.org/abs/cs/0405020}{arXiv:cs/0405020}.
+
+\bibitem{FK}
+J.~Friedman and D.-E.~Kohler.
+\newblock The relativized second eigenvalue conjecture of Alon.
+\newblock Preprint, 2014. \href{https://arxiv.org/abs/1403.3462}{arXiv:1403.3462}.
+
+\bibitem{B}
+C.~Bordenave.
+\newblock A new proof of Friedman's second eigenvalue theorem and its extension to random lifts.
+\newblock \emph{Ann.\ Sci.\ \'Ec.\ Norm.\ Sup\'er.}\ 53 (2020).
+\newblock \href{https://arxiv.org/abs/1502.04482}{arXiv:1502.04482}.
+
+\bibitem{BDH}
+G.~Brito, I.~Dumitriu and K.~D.~Harris.
+\newblock Spectral gap in random bipartite biregular graphs and applications.
+\newblock \emph{Combin.\ Probab.\ Comput.}\ 31 (2022).
+\newblock \href{https://arxiv.org/abs/1804.07808}{arXiv:1804.07808}.
+
+\bibitem{CGTV}
+C.-F.~Chen, J.~Garza-Vargas, J.~A.~Tropp and R.~van Handel.
+\newblock A new approach to strong convergence.
+\newblock Preprint, 2024. \href{https://arxiv.org/abs/2405.16026}{arXiv:2405.16026}.
+
+
+\bibitem{FullReport}
+A.~Farfan, C.~Shum, and A.~Venkatesh.
+\newblock \emph{Exact constraints in random graphs: from cancellation to certified recovery}.
+\newblock Full research report, November 15, 2026. Part III contains the complete recovery proofs.
+\newblock \href{report-long.pdf}{report-long.pdf}.
+\bibitem{RecoveryPrior}
+G.~Brito, I.~Dumitriu, S.~Ganguly, C.~Hoffman, and L.~V.~Tran.
+\newblock \emph{Recovery and rigidity in a regular stochastic block model}. SODA, 2016.
+\newblock \href{https://arxiv.org/abs/1507.00930}{arXiv:1507.00930}.
+\bibitem{AlgebraPrior}
+D.~J.~Bernstein, J.~Cottaar, and T.~Lange.
+\newblock IPCC, Chapter 3 of \emph{Report on evaluation of KpqC candidates}, 2023.
+\newblock \href{https://math.deweger.net/reports/[2023]KpqC.pdf}{Report}, Section 3.1.
+
+\end{thebibliography}
+
+\end{document}

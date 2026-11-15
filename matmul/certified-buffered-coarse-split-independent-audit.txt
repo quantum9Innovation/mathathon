@@ -1,0 +1,242 @@
+INDEPENDENT AUDIT OF THE CERTIFIED BUFFERED COARSE SPLIT
+======================================================
+
+Verdict: PASS for the conditional exact-arithmetic theorem and the
+band-conditioned near-real solver consequence stated in the source.
+No mathematical repair is required. This is an internal reconstruction,
+not external refereeing, formal verification, novelty certification, or
+a finite-word theorem for raw core inversion.
+
+Reviewed source:
+  matmul/certified-buffered-coarse-split.txt
+  SHA256 6e114f90aba4d736ee17cb97b7c8de2c01232fbf8b0c6bb2b1963e1b6b579ef9.
+
+The initial requested revision had SHA256
+0527a89b9ed724f2395a69d69c494073f3149e9d9c870eca036a34c1fc5851fd.
+The author made one scope clarification during review: the vertical-pole
+constant affine-coupling argument is explicitly restricted to the disk
+|y|<=t/3. I read the current exact source and checked this delta.
+
+I also read near-real-deflated-raw-solves.txt in full to reconstruct the
+Schur perturbation and complete raw-width cost it imports. The source
+paper Shah (2024), arXiv:2408.09880, was opened directly and its model,
+primitive definitions, Algorithm 3, Lemma 4.1 and Theorem 4.2 checked.
+https://arxiv.org/pdf/2408.09880
+
+1. EXACT COARSE TRANSFORM AND CERTIFICATES
+=========================================
+The algebra R=2tK(K^2+t^2I)^-1=2H(I+H^2)^-1, H=tK^-1,
+is valid for every invertible Hermitian K. Both matrices commute and
+are Hermitian. The scalar maxima give ||R||<=1 and ||HR||<=2.
+Forming them uses explicit coarse products/inverses only, with no T
+query. Ill conditioning of those exact core inversions is explicitly
+outside the finite-word claim, rather than hidden in a precision bound.
+
+The two tests use exact squared Frobenius sums of computable coarse
+matrix residuals. They imply operator residuals <=xi and invertibility
+of U. Writing its unitary polar factor W for analysis only gives
+
+  ||U-W||<=xi,
+  ||Lambda||<2,
+  ||R-W Lambda W*||<=6xi.
+
+For the second inequality, ||Lambda|| is bounded by
+(1-xi)^-1(||R||+xi). For the third, expand the two occurrences of U
+and use ||U||<=sqrt(1+xi). Thus all constants used subsequently follow
+from the exact certificates; no correct random trajectory is needed
+after acceptance. The algorithm never computes W.
+
+2. PAID APPROXIMATE DIAGONALIZATION AND ITS MODEL
+================================================
+Shah's Theorem 4.2, printed page 22, states the two needed guarantees:
+backward operator residual <=2 epsilon||A|| and singular values of U
+in [1-epsilon/3,1+epsilon/3]. Its stated precision is logarithmic in
+dimension, inverse accuracy and inverse failure probability, with
+near-matrix-multiplication floating work when the supplied MM/QR
+primitives have that work. A constant failure parameter is permitted.
+
+Algorithm 3, printed page 17, explicitly accepts R0,R>=||A|| and
+guarantees residual <=epsilon(R0+R). Thus using a bounded rounded
+input and R0=R=2 avoids an exact-norm oracle. The proof's recursion
+depth bound still applies: its root bounds are equal, and its stopping
+condition is relative to R0. The arithmetic/precision scales stay
+inverse polynomial in m, just as when the exact norm initializes them.
+
+Rounding R symmetrically to Frobenius error <=xi/100 gives norm <2.
+At requested epsilon_EVD<=xi/(100m), the operator residual times
+sqrt(m), plus the input's Frobenius rounding error, is strictly below
+xi. Likewise
+
+  ||U*U-I||_F<=sqrt(m) max_i|sigma_i(U)^2-1|<xi.
+
+Hence the success event in the primary theorem passes both actual
+certificates. Constants can be decreased further without changing
+the asymptotic precision or work.
+
+I checked the scalar-model paragraph rather than treating Shah's
+sampling/rounding primitives as unit exact-field operations. The primary
+paper's model section explicitly bounds the exponents for its bounded
+input/accuracy regime; its MM/QR use polynomial stability factors.
+Here all requested precisions are inverse polynomial in m, so rounding
+on guarded dyadic ranges, simulation of each floating field operation,
+and each finite-precision random primitive cost polylog(m) exact
+operations/comparisons/bits. The resulting total is m^(omega+o(1)),
+not ordinary quadratic work or an uncharged EVD oracle.
+
+The Gaussian primitive in Shah's Definition 1.4 has a probability-one
+relative coupling. The source properly pays an exceptional event when
+implementing it with finitely many bits. More explicitly, for bounded
+polynomially many calls, exclude tails beyond sqrt(Cb) and Gaussian
+magnitudes below exp(-Cb), with b=Theta(log(m+1)); choose constants
+large enough that their total probability is <1/100. A degree-O(b)
+Taylor approximation to the Gaussian CDF on this range can have
+absolute error exp(-C'b), with C' as large a fixed constant as needed.
+The density there is bounded below by exp(-O(b)), so quantile inversion
+and dyadic sampling supply relative error smaller than Shah's rounding
+scale on the retained event. All work is polynomial in b. A reference
+oracle can agree with these outputs on that event and be replaced by
+valid relative rounded Gaussian values off it. Apply Shah's theorem to
+the reference oracle and subtract the exceptional probability. This
+justifies a fixed acceptance probability greater than one half; it
+does not falsely assert probability-one coupling for a finite sampler.
+
+Independently repeated attempts therefore have constant expected count.
+Guarding operation/range budgets and rejecting failed certificates
+preserves deterministic work per attempt. A logarithmic attempt cap
+gives failure <=delta. The expected and capped-high-probability scopes
+in the source are stated separately and are consistent.
+
+3. GREY-BAND GAP, EXACT QR AND OPERATOR SUBSPACE CONTROL
+=====================================================
+The interval [7/10,3/4] has length 1/20. At most m diagonal values
+split it into at most m+1 gaps. A largest-gap midpoint is at distance
+at least g=1/[40(m+1)] from EVERY diagonal value, including those
+outside the interval. Thus appending endpoints and sorting supplies
+the claimed computable separation even when the interval contains
+no diagonal entries.
+
+The unitary surrogate differs from R by e<=6xi<g/4. Weyl's inequality
+therefore preserves the selected rank k above c. If W_P contains the
+selected columns of the analysis-only W, the cross projection
+X=(I-P_*)W_P satisfies a Sylvester equation. Its ordered spectra
+are separated by at least 2g-e: selected Lambda>=c+g and the R
+complement has spectrum <=c-g+e. The exponential integral formula
+therefore gives the OPERATOR norm bound ||X||<=e/(2g-e), without a
+dimension or Frobenius loss. The ordering of the two spectral sets
+is essential and is present here.
+
+For the actual columns U_P, their smallest singular value is at least
+sqrt(1-xi); their difference from W_P is <=xi. Exact thin QR preserves
+their span. Combining these statements bounds its cross projection
+by theta=16xi/g, with ample slack. Equal-rank orthogonal projections
+then differ in norm by this maximum sine angle. The source correctly
+uses exact QR rather than assuming that its analysis polar factor
+is available algorithmically.
+
+The selected spectrum is positive and satisfies
+2(lambda/t)/(1+(lambda/t)^2)>c>=7/10. The scalar transform equals
+3/5 at lambda/t=1/3 and 3; its selected interval is strictly inside
+[1/3,3]. The rank bound in the statement is consequently valid. This
+does not assume a spectral gap in K; the gap was chosen in the
+candidate diagonal values by an explicit grey-band procedure.
+
+4. FILTERED WEIGHTED LEAKAGE AND SAFE COMPRESSION
+===============================================
+Using A0 alone would not bound K^-1 leakage. The additional Y=R A0
+step is necessary. Its projection onto P_* has smallest singular
+value >=(7/10)sqrt(1-theta^2)>.69, so Y is full column rank.
+An exact QR factor V_P=Y C^-1 has ||C^-1||<=2. Commutation of H,R
+with P_*, together with ||R||<=1 and ||HR||<=2, gives
+
+  ||(I-P_*)V_P||<=2theta,
+  ||(I-P_*)HV_P||<=4theta.
+
+On P_* the Hermitian H is positive with norm <3. Consequently the
+source's block estimates
+
+  ||QHV_P||<=6theta+4theta=10theta,
+  ||V_P*HV_P||<=3+4theta<4
+
+follow even when ||H|| is arbitrarily large. With the given xi,g,
+theta<=3.2e-10 for m>=1, so 10theta<1e-5 by a wide margin.
+Completing the exact orthonormal basis and forming H-blocks uses
+only explicit coarse algebra. No true Gram action is hidden there.
+
+I independently checked the safe-complement residual contradiction.
+For c<=3/4, the complement's H spectrum lies outside
+
+  [(4-sqrt(7))/3,(4+sqrt(7))/3].
+
+Its distance from [1/2,2] exceeds 1/25. An eigenvector v of QHQ
+with eigenvalue in [1/2,2] would have full H residual <=10theta.
+Projecting to I-P_* bounds that projection's norm by 250theta.
+Meanwhile P v=0 and ||P-P_*||<=2theta give ||P_*v||<=2theta.
+The resulting 1<=252theta is impossible. This is a compression
+argument with a residual estimate; it does not substitute approximate
+invariance for exact invariance. Empty selected/complement blocks have
+the usual vacuous interpretation and cause no exceptional eigenbasis
+or inverse requirement.
+
+5. COMPLEX AFFINE PENCIL AND VERTICAL-POLE ERROR CONSTANTS
+========================================================
+The Woodbury identity for M(u)=(1+u)H-T is correct in the supported
+coordinates. On |u|<=1/3 and h outside [1/2,2],
+
+  |(1+u)h-1|>=1/3.
+
+This follows separately for h<=0, 0<h<1/2 and h>2 by the reverse
+triangle inequality. Thus the safe base inverse has norm <=3;
+perturbation by ||D||<=1/8 gives contraction <=3/8 and inverse
+norm <=3/(1-3/8)=24/5. Offblocks obey
+eta+(4/3)*1e-5<1/4. These are valid on the FULL complex disk,
+including its real points. In a complex basis B(u)=A(conj(u))*;
+the source explicitly keeps the two affine coefficient families
+separate instead of applying a false same-u adjoint identity.
+
+For vertical u=iy/t WITHIN the disk, the scalar safe inverse improves
+to <=2 and contraction to <=1/4. Its inverse norm is <=8/3. The
+full M inverse is bounded by 3mu, as in the predecessor raw note.
+I repeated its Schur perturbation with offblock bound a=1/4,
+beta=8/3, g<=3mu and h0=1+a beta=5/3. If delta<=1/mu, then
+g a^2 delta<=3/16<1/2 and the approximate Schur inverse exists.
+The P-error is at most
+
+  delta[2g^2 a^2 h0+2ga]||b||
+     <=(27/8)mu^2 delta||b||.
+
+The Q-error is at most
+
+  delta[1+a g h0]||b||+(beta+delta)a*(P-error)
+    <=(171/32)mu^2 delta||b||.
+
+Their sum is <=(279/32)mu^2 delta||b||<9mu^2 delta||b||.
+Multiplying by ||Z||^2<=9/8 gives normalized physical error less
+than 12mu^2 delta||h||. Thus delta<=epsilon/(32mu^2) is sufficient
+in the inherited regime 0<epsilon<=1; it also implies delta<=1/mu.
+The source's O(log(mu/epsilon)) refinement count follows. No
+offblock tolerance shrinking as y approaches zero is needed.
+
+Outside |y|<t/4 the original fixed-cone raw solver applies, because
+|Im w|/|w|>=1/sqrt(17)>eta. The clarified disk restriction prevents
+using the constant affine-coupling estimates at arbitrarily large
+vertical shifts. The larger |u|<=1/3 analytic disk is retained as a
+margin for the separately proposed shared-series algorithm; that
+algorithm is not claimed merely by this splitting theorem.
+
+6. COST AND COMPLETION BOUNDARY
+==============================
+Every new operation is on explicit coarse m-by-m matrices except the
+one charged true-T block action on P and the already counted thin
+safe refinements. Its selected rank k may equal m. Replacing the old
+C_split by expected m^(omega+o(1)) paid preprocessing is therefore
+legitimate within the predecessor's band-conditioned cost, not a
+proof that the band is small. Unitarily rotating Z preserves the true
+Gram distortion bound and thin raw access; no full-width Z times
+the rotation needs materialization.
+
+The result removes a specific exact-invariant-subspace oracle while
+retaining bounded weighted leakage sufficient for near-real solves.
+It proves neither an arbitrary-factor low-rank multiplication theorem,
+an unrestricted sublinear-band bound, nor stability of exact raw-core
+inversions. Those exclusions are substantive limits correctly kept
+in the source. All requested checks pass for the reviewed hash.

@@ -9,8 +9,8 @@ noncomputable section
 open ArithmeticProgram hiding pure
 open Matrix
 
-inductive NonzeroSearchResult {n : ℕ} (f : Fin n → ℝ) where
-  | found (i : Fin n) (nonzero : f i ≠ 0)
+inductive NonzeroSearchResult {ι : Type} (f : ι → ℝ) where
+  | found (i : ι) (nonzero : f i ≠ 0)
   | zero (all_zero : ∀ i, f i = 0)
 
 def nonzeroSearchProgram : (n : ℕ) → (f : Fin n → ℝ) → ArithmeticProgram (NonzeroSearchResult f)
@@ -54,11 +54,11 @@ theorem nonzeroSearchProgram_admissible (n : ℕ) (f : Fin n → ℝ) :
     · simp only [nonzeroSearchProgram, admissible, dif_neg hl]
 
 def finiteNonzeroSearchProgram {ι : Type} [Fintype ι] (f : ι → ℝ) :
-    ArithmeticProgram ({i : ι // f i ≠ 0} ⊕ (∀ i, f i = 0)) := do
+    ArithmeticProgram (NonzeroSearchResult f) := do
   let result ← nonzeroSearchProgram (Fintype.card ι) (fun i => f ((Fintype.equivFin ι).symm i))
   ArithmeticProgram.pure (match result with
-    | .found i hi => .inl ⟨(Fintype.equivFin ι).symm i,hi⟩
-    | .zero hz => .inr (fun i => by simpa using hz ((Fintype.equivFin ι) i)))
+    | .found i hi => .found ((Fintype.equivFin ι).symm i) hi
+    | .zero hz => .zero (fun i => by simpa using hz ((Fintype.equivFin ι) i)))
 
 theorem finiteNonzeroSearchProgram_work {ι : Type} [Fintype ι] (f : ι → ℝ) :
     (finiteNonzeroSearchProgram f).work ≤ 2*Fintype.card ι := by
@@ -79,20 +79,20 @@ inductive SymmetricPivotChoice {n : ℕ} (D : Core n) where
 def symmetricPivotChoiceProgram {n : ℕ} (D : Core n) : ArithmeticProgram (SymmetricPivotChoice D) := do
   let diagonal ← finiteNonzeroSearchProgram (fun i => D i i)
   match diagonal with
-  | .inl i => ArithmeticProgram.pure (.diagonal i.val i.property)
-  | .inr hz => do
+  | .found i hi => ArithmeticProgram.pure (.diagonal i hi)
+  | .zero hz => do
     let entry ← finiteNonzeroSearchProgram (fun i : Fin n × Fin n => D i.1 i.2)
     ArithmeticProgram.pure (match entry with
-      | .inl ij => .offDiagonal ij.val.1 ij.val.2
-          (by intro he; exact ij.property (by rw [he]; exact hz _)) (hz _) (hz _) ij.property
-      | .inr hall => .zero (by ext i j; exact hall (i,j)))
+      | .found ij hij => .offDiagonal ij.1 ij.2
+          (by intro he; exact hij (by rw [he]; exact hz _)) (hz _) (hz _) hij
+      | .zero hall => .zero (by ext i j; exact hall (i,j)))
 
 theorem symmetricPivotChoiceProgram_admissible {n : ℕ} (D : Core n) :
     (symmetricPivotChoiceProgram D).admissible := by
   simp only [symmetricPivotChoiceProgram, admissible_bind, finiteNonzeroSearchProgram_admissible, true_and]
   cases (finiteNonzeroSearchProgram (fun i => D i i)).eval with
-  | inl i => trivial
-  | inr h => simp only [admissible_bind, finiteNonzeroSearchProgram_admissible, admissible_pure, and_self]
+  | found i hi => trivial
+  | zero h => simp only [admissible_bind, finiteNonzeroSearchProgram_admissible, admissible_pure, and_self]
 
 theorem symmetricPivotChoiceProgram_work {n : ℕ} (D : Core n) :
     (symmetricPivotChoiceProgram D).work ≤ 2*n+2*n*n := by
@@ -101,8 +101,8 @@ theorem symmetricPivotChoiceProgram_work {n : ℕ} (D : Core n) :
   simp only [Fintype.card_fin, Fintype.card_prod] at hd he
   simp only [symmetricPivotChoiceProgram, work_bind]
   cases (finiteNonzeroSearchProgram (fun i => D i i)).eval with
-  | inl i => simp only [work_pure]; omega
-  | inr h => simp only [work_bind, work_pure]; nlinarith
+  | found i hi => simp only [work_pure]; omega
+  | zero h => simp only [work_bind, work_pure]; nlinarith
 
 end
 end HierarchicalAbsoluteSpectral

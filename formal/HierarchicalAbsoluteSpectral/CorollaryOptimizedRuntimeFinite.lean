@@ -47,7 +47,7 @@ def comparatorUniformWorkCap
 def comparatorUniformTotalWorkCap
     (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     (I : FixedProblem N m N r 1) (ζ χ χOut Ck : ℝ) : ℕ :=
-  N*N+mainRandomizedWork I (1+comparatorUniformWorkCap kernels I ζ χ χOut Ck)
+  m*(N+N)+N*N+mainRandomizedWork I (1+comparatorUniformWorkCap kernels I ζ χ χOut Ck)
 
 theorem constantDistortionComparatorProgram_uniform_work
     (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c) (ζ χ χOut Ck : ℝ)
@@ -103,7 +103,7 @@ theorem constantDistortionComparatorProgram_total_work
     (I : FixedProblem N m N r 1) (haccuracy : I.accuracy=comparatorAccuracy)
     (hm : 2 ≤ m) (hr : r ≤ ⌊Real.sqrt (m:ℝ)⌋₊)
     (hraw : (comparatorOuterDegreeCap I+1)*(r+1) ≤ m) (g : MainRandomTape I) :
-    N*N+mainRandomizedWork I (constantDistortionComparatorProgram kernels I g).work ≤
+    m*(N+N)+N*N+mainRandomizedWork I (constantDistortionComparatorProgram kernels I g).work ≤
       comparatorUniformTotalWorkCap kernels I ζ χ χOut Ck := by
   have hh := constantDistortionComparatorProgram_uniform_work kernels ζ χ χOut Ck hζ hχ hχOut hC hEnv
     I haccuracy hm hr hraw g
@@ -117,7 +117,7 @@ theorem exactGramComparatorProgram_total_work
     (I : FixedProblem N m N r 1) (haccuracy : I.accuracy=comparatorAccuracy)
     (hm : 2 ≤ m) (hr : r ≤ ⌊Real.sqrt (m:ℝ)⌋₊)
     (hraw : (comparatorOuterDegreeCap I+1)*(r+1) ≤ m) (g : MainRandomTape I) :
-    N*N+mainRandomizedWork I (exactGramComparatorProgram kernels I g).work ≤
+    m*(N+N)+N*N+mainRandomizedWork I (exactGramComparatorProgram kernels I g).work ≤
       comparatorUniformTotalWorkCap kernels I ζ χ χOut Ck := by
   have hh := exactGramComparatorProgram_uniform_work kernels ζ χ χOut Ck hζ hχ hχOut hC hEnv
     I haccuracy hm hr hraw g

@@ -26,11 +26,12 @@ theorem PreparedFamilyProblem.actual_initial_rows_scale (I : FamilyProblem N m r
   intro S
   have hb := P.actual_sketch_rows_scale I hL D c hD hc hm hmLog hscale hδ g 0
   dsimp only at hb
+  simp only [Fin.val_zero] at hb
   rw [P.normal_initial I hL] at hb
-  norm_num at hb
+  norm_num [div_eq_mul_inv] at hb
   constructor
-  · simpa only [familyCoarseRowCoefficient,mul_assoc,mul_comm,mul_left_comm] using hb.1
-  · simpa only [familyCoarseRowCoefficient,mul_assoc,mul_comm,mul_left_comm] using hb.2
+  · simpa only [S,familyCoarseRowCoefficient,mul_assoc,mul_comm,mul_left_comm] using hb.1
+  · simpa only [S,familyCoarseRowCoefficient,mul_assoc,mul_comm,mul_left_comm] using hb.2
 
 theorem familyPadding_log_bound (I : FamilyProblem N m r) (D : ℝ)
     (hmLog : 1 ≤ Real.log (m : ℝ))

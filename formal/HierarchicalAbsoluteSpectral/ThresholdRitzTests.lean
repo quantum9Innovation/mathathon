@@ -75,7 +75,7 @@ theorem ritzTestsProgram_work_le (inertia : InertiaProgramFamily)
     (cost : ℕ → ℕ) (hInertia : ∀ n D hD, (inertia n D hD).work ≤ cost n)
     (data : KrylovQueryData T Ω q) (j : Fin k) (ε : ℝ) (hε : ε ≤ 1/4) :
     (ritzTestsProgram inertia data j ε hε).work ≤
-      4*data.range.dimension*data.range.dimension+2*cost data.range.dimension+4 := by
+      4*data.range.dimension*data.range.dimension+2*cost data.range.dimension+4*data.range.dimension+4 := by
   unfold ritzTestsProgram
   split_ifs with hj
   · simp only [work_bind, certify_work, lowThresholdProgram_work, work_pure, add_zero]

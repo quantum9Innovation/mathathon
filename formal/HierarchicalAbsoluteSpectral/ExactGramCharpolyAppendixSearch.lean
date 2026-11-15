@@ -1,6 +1,6 @@
 import HierarchicalAbsoluteSpectral.ExactGramCharpolyAppendixSearchCore
 import HierarchicalAbsoluteSpectral.ExactGramCharpolyCost
-import HierarchicalAbsoluteSpectral.ThresholdQueryCost
+import HierarchicalAbsoluteSpectral.ExactGramCharpolyAppendixSearchCount
 
 /-! The original coefficient initializer followed by exact shifted-inertia
 bisection. Every field operation is executed, and failures remain `none`. -/
@@ -39,7 +39,7 @@ def exactGramAppendixSearchGaussianDraws (n : ℕ) (ε : ℝ) (hε : 0 < ε) : �
 def exactGramAppendixEigenvalueQuery (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     (A : Core n) (hA : A.IsHermitian) (j : Fin n)
     (g : Fin (n*n) → ℝ) (t : ℝ) : ArithmeticProgram (Option Bool) := do
-  let out? ← shiftedSingularEigenvalueTestProgram kernels A hA t j g
+  let out? ← exactGramAppendixShiftedEigenvalueTestProgram kernels A hA t j g
   .pure (out?.map (fun out => out.answer))
 
 theorem exactGramAppendixEigenvalueQuery_correct
@@ -49,7 +49,7 @@ theorem exactGramAppendixEigenvalueQuery_correct
     (hb : (exactGramAppendixEigenvalueQuery kernels A hA j g t).eval = some b) :
     b = true ↔ t < orderedEigenvalue A hA j := by
   simp only [exactGramAppendixEigenvalueQuery, eval_bind, eval_pure] at hb
-  cases htest : (shiftedSingularEigenvalueTestProgram kernels A hA t j g).eval with
+  cases htest : (exactGramAppendixShiftedEigenvalueTestProgram kernels A hA t j g).eval with
   | none => simp only [htest, Option.map_none] at hb; cases hb
   | some out =>
       simp only [htest, Option.map_some] at hb
@@ -63,7 +63,7 @@ theorem exactGramAppendixEigenvalueQuery_admissible
     (g : Fin (n*n) → ℝ) (t : ℝ) :
     (exactGramAppendixEigenvalueQuery kernels A hA j g t).admissible := by
   simp only [exactGramAppendixEigenvalueQuery, admissible_bind,
-    shiftedSingularEigenvalueTestProgram_admissible, admissible_pure, and_self]
+    exactGramAppendixShiftedEigenvalueTestProgram_admissible, admissible_pure, and_self]
 
 theorem exactGramAppendixEigenvalueQuery_work_bound
     (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
@@ -75,8 +75,7 @@ theorem exactGramAppendixEigenvalueQuery_work_bound
     ((exactGramAppendixEigenvalueQuery kernels A hA j g t).work : ℝ) ≤
       105*(C+1)*(n : ℝ)^p := by
   simp only [exactGramAppendixEigenvalueQuery, work_bind, work_pure, add_zero]
-  exact shiftedSingularEigenvalueTestProgram_work_bound kernels C p hC hp hK A hA t j
-    (by have hj := j.isLt; omega) g
+  exact exactGramAppendixShiftedEigenvalueTestProgram_work_bound kernels C p hC hp hK A hA t j g
 
 /-- The logarithmic cap is found by literal scalar halving, after executing
 the two operations forming the relative bracket width `n²-1`. -/

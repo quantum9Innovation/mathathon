@@ -31,7 +31,8 @@ def shiftedEigenvalueTestOptionProgram (inertia : OptionalInertiaProgramFamily)
   match out? with
   | none => .pure none
   | some out => do
-    let answer ← (ArithmeticProgram.compare ((j.val+1 : ℕ) : ℝ) (out.positiveCount : ℝ)
+    let positives ← (positiveDiagonalCountProgram out.diagonal).certify
+    let answer ← (ArithmeticProgram.compare ((j.val+1 : ℕ) : ℝ) positives.val
       ArithmeticProgram.pure).certify
     let out' : FiniteCongruenceDiagonal (A-c • (1 : Core k)) :=
       { basis := out.basis
@@ -42,7 +43,9 @@ def shiftedEigenvalueTestOptionProgram (inertia : OptionalInertiaProgramFamily)
         congruence := by rw [← hshift]; exact out.congruence }
     have hb : answer.val = true ↔ j.val < out'.positiveCount := by
       rw [answer.property]
-      simp only [ArithmeticProgram.eval,decide_eq_true_eq,Nat.cast_le,Nat.succ_le_iff]
+      have hp : positives.val=(out.positiveCount:ℝ) :=
+        positives.property.trans out.positiveCountProgram_eval
+      simp only [ArithmeticProgram.eval,hp,decide_eq_true_eq,Nat.cast_le,Nat.succ_le_iff]
       rfl
     .pure (some ⟨answer.val,hb.trans (out'.shifted_eigenvalue_gt_iff A hA c j).symm⟩)
 
@@ -54,12 +57,13 @@ theorem shiftedEigenvalueTestOptionProgram_admissible (inertia : OptionalInertia
     shiftedMatrixProgram_admissible,hInertia,true_and]
   split
   · trivial
-  · simp only [admissible_bind,certify_admissible,ArithmeticProgram.admissible,and_true]
+  · simp only [admissible_bind,certify_admissible,positiveDiagonalCountProgram_admissible,
+      ArithmeticProgram.admissible,true_and,and_true]
 
 theorem shiftedEigenvalueTestOptionProgram_work_le (inertia : OptionalInertiaProgramFamily)
     (cost : ℕ → ℕ) (hInertia : ∀ n D hD, (inertia n D hD).work ≤ cost n)
     (A : Core k) (hA : A.IsHermitian) (c : ℝ) (j : Fin k) :
-    (shiftedEigenvalueTestOptionProgram inertia A hA c j).work ≤ 2*k*k+cost k+1 := by
+    (shiftedEigenvalueTestOptionProgram inertia A hA c j).work ≤ 2*k*k+cost k+2*k+1 := by
   simp only [shiftedEigenvalueTestOptionProgram,work_bind,certify_work,shiftedMatrixProgram_work]
   have hh := hInertia k (shiftedMatrixProgram A c).certify.eval.val
     (by
@@ -68,7 +72,9 @@ theorem shiftedEigenvalueTestOptionProgram_work_le (inertia : OptionalInertiaPro
   split
   · simp only [work_pure]
     omega
-  · simp only [work_bind,certify_work,ArithmeticProgram.work,work_pure,add_zero]
+  · rename_i out hOut
+    have hsign := positiveDiagonalCountProgram_work_le out.diagonal
+    simp only [work_bind,certify_work,ArithmeticProgram.work,work_pure,add_zero]
     omega
 
 def ritzTestsOptionProgram (inertias : Fin 2 → OptionalInertiaProgramFamily)

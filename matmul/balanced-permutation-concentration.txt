@@ -1,0 +1,343 @@
+SPECTRAL CONCENTRATION FOR BALANCED PERMUTATION MULTIPLICATION
+===========================================================
+
+Research derivation, November 2026. This note closes a useful spectral
+concentration bound for the explicit estimator in balanced-permutation-
+amm.txt. It uses classical matrix concentration for a combinatorial
+permutation sum, the exact second-order covariance, and truncation.
+It is not a claim of a new asymptotic AMM or OSE tradeoff. In particular,
+it does not yet exploit the sharp higher mixed moments SG-11/14/16.
+
+1. PRECISE ESTIMATOR AND GUARANTEE
+================================
+Fix dense real A of size n-by-m and B of size m-by-p, chosen before the
+randomness. Let m>=4 and m=sq, with 2<=s<=m. For each of d independent
+uniform balanced partitions of [m] into s buckets of q coordinates, let
+H_c be its s-by-m incidence matrix. Put
+
+  rho=(q-1)/(m-1), gamma=1/(1-rho),
+  J=11^T/m, Pi=I-J,
+  W_c=(H_c^T H_c-rho*11^T)/(1-rho),
+  Wbar=(1/d)sum_c W_c, C=A Wbar B.
+
+Thus E W_c=I and W_c1=1 exactly. Each W_c is PSD of rank s, and
+rank Wbar<=min(m,1+d(s-1)). The rank-one constant channel can be shared.
+The sparse bucket incidence H_c is unsigned. Its exact Gram factor has
+a deterministic dense mean correction, so this is a sparse-plus-low-rank
+implicit sketch, NOT a matrix with d literal nonzeros per column and
+NOT a purely nonnegative subspace embedding.
+
+Let r>=max(1,sr(A),sr(B)), where sr(X)=||X||_F^2/||X||^2 and zero
+factors are handled by returning zero. Take 0<epsilon,delta<1 and assume
+
+  s-1 >= r/epsilon.                                      (1)
+
+There is a universal constant C_0 such that choosing
+
+  d = ceil(C_0 epsilon^-1 log^3(C_0(2s+n+p)/(delta epsilon))) (2)
+
+gives
+
+  Pr{||C-AB|| > epsilon ||A|| ||B||} <=delta.             (3)
+
+One entirely explicit conservative choice in the proof is C_0=2^20.
+The implicit sufficient inequality (17) below is much less wasteful
+and can be used instead of the conservative closed formula.
+
+For s=ceil(1+r/epsilon), the output width is
+
+  O(r epsilon^-2 log^3((r+n+p)/(delta epsilon))).          (4)
+
+Factor construction, including all factor entries, takes
+
+  O(d m(n+p)+d s(n+p)),                                  (5)
+
+and naive explicit expansion adds O(np[1+d(s-1)]). The arithmetic
+consists of bucket sums, deterministic centering and scaling, and the
+final factor product. Randomness is d independent uniform permutations.
+There are no independent random entry signs. General matrix-multiplication
+algorithms can replace the final naive product if appropriate.
+
+The divisibility condition is removable by appending zero columns/rows
+to ambient dimension M=s*ceil(m/s)<m+s when s<m. Norms and stable ranks
+of the padded A,B are unchanged. Run the theorem at M. When s>=m,
+return the exact factorization A,B instead. Thus neither divisibility
+nor a prime ambient dimension forces an asymptotic dimension loss.
+
+For an r-dimensional fixed subspace, apply the theorem with A=U^T,
+B=U for an orthonormal basis U. Its Gram guarantee is an epsilon-OSE
+with the same row count (4) and implicit application cost. The actual
+matrix is sparse plus a rank-one correction. No standard sparse-OSE
+nonzero-count claim follows from the application-time statement.
+
+An ordinary O(N^2) fixed-stable-rank regime
+------------------------------------------
+There is a simpler one-color theorem, without the logarithmic dimensions
+in (2). For fixed r>=max(1,sr(A),sr(B)) and 0<epsilon,delta<1, choose
+
+  s=ceil(1+3(r^2+2r)/(epsilon^2 delta)), d=1.             (4a)
+
+Use zero padding or the identity fallback as described above. Then the
+same estimator satisfies (3). Its width is at most s, construction is
+O(m(n+p)+s(n+p)) after at most doubling the ambient input dimension,
+and explicit expansion costs O(nps). Consequently for n=p=N, m<=N,
+and fixed r,epsilon,delta, total ordinary arithmetic is O(N^2), including
+every output entry. The input matrices can have full algebraic rank;
+the promise is bounded stable rank, not exact low rank.
+
+Proof. Normalize ||A||=||B||=1. Taking the trace of the exact covariance
+identity (7) and discarding its negative term gives
+
+  E||A T B||_F^2
+   <= a||A_0 B_0||_F^2+b||A_0||_F^2||B_0||_F^2
+   <= a r+b r^2
+   <=[4r+3r^2]/(s-1)
+   <=3(r^2+2r)/(s-1).                                   (4b)
+
+The coefficient bounds a<=4/(s-1), b<=3/(s-1) are established in
+Section 2. Markov's inequality and ||X||<=||X||_F prove (3) with (4a).
+If s>=m, the exact identity fallback has width m<=s, is always accurate,
+and preserves all displayed costs. Otherwise the padded ambient M is
+less than 2m, with A,B norms and stable ranks unchanged.
+
+This is an additional bounded-stable-rank absolute-error case. It does
+not establish error (1+theta)sigma_(r+1)(AB) for arbitrary factors or
+accuracy relative to ||AB|| under cancellation. Classical stable-rank
+AMM already supplies comparable or stronger tradeoffs. No asymptotic
+state-of-the-art improvement is claimed for this corollary.
+
+2. MATRIX COVARIANCE, INCLUDING THE NEGATIVE CORRECTION
+====================================================
+Write T=W-I. Then T is symmetric, T1=0 and T_ii=0. Let
+
+  c=(m-s)/(s-1), v=c/m,
+  u=-v/(m-2), w=2v/[(m-2)(m-3)],
+  a=v-2u+2w, b=v-2u+w, kappa=2(v-4u+3w).
+
+The covariance of two off-diagonal T entries is v for equal unordered
+pairs, u if the pairs share one vertex, and w for disjoint pairs.
+These identities follow from permutation symmetry, E T^2=c Pi,
+and T1=0, as derived in balanced-permutation-amm.txt.
+
+For any symmetric G with G1=0, direct summation of the three overlap
+classes gives the exact covariance map
+
+  E[T G T]=a G+b tr(G)Pi-kappa Pi diag(G)Pi.              (6)
+
+For completeness, the diagonal entry of its left side is
+
+  (v-u)tr(G)+(-v+2u)G_ii.
+
+For i!=j the corresponding entry is
+
+  (v-2u+2w)G_ij+(u-w)[tr(G)-2G_ii-2G_jj].
+
+These two entrywise formulas are equivalent to (6), using G1=0 and
+the displayed relations among v,u,w. Thus (6) is not inferred merely
+from a trace or Frobenius second moment.
+
+Normalize ||A||=||B||=1 for the proof, and put A_0=A Pi, B_0=Pi B.
+The error of one color is X=A T B=A_0 T B_0. In particular EX=0.
+Since A_0 1=0 and 1^T B_0=0, (6) gives
+
+  E[XX^T]
+   =a(A_0B_0)(A_0B_0)^T+b||B_0||_F^2 A_0A_0^T
+        -kappa A_0 diag(B_0B_0^T) A_0^T,                 (7)
+
+and the analogous transposed identity for E[X^T X]. The last term is
+negative semidefinite, since kappa>=0. Also
+
+  b = c(m-1)/[m(m-3)] <=3/(s-1),
+  a = b[1+2/((m-1)(m-2))] <= (4/3)b.
+
+Because ||A_0||,||B_0||<=1 and ||A_0||_F^2,||B_0||_F^2<=r,
+both covariance matrices in (7) are bounded above by V I, where
+
+  V=3(r+2)/(s-1).                                      (8)
+
+Under (1), V<=9epsilon. This operator variance bound, rather than its
+trace, is what avoids the rank-squared second-moment width.
+
+3. A PERMUTATION BERNSTEIN BOUND FOR THE BUCKET FACTORS
+====================================================
+We invoke the following primary-source statement, without changing its
+assumptions or introducing independent permutation entries:
+
+Mackey--Jordan--Chen--Farrell--Tropp, Matrix concentration inequalities
+via the method of exchangeable pairs, Ann. Probab.42(2014),906--945.
+https://lmackey.github.io/papers/matstein-aop14.pdf
+Corollary10.3, printed p933 (PDF p28), says: for a deterministic Hermitian
+array F_ij with sum_ij F_ij=0, ||F_ij||<=R, and uniform permutation pi,
+
+  Pr{lambda_max(sum_i F_(i,pi(i)))>=t}
+   <=D exp[-t^2/(12 sigma^2+4sqrt(2)Rt)],
+  sigma^2=||(1/m)sum_ij F_ij^2||,                         (9)
+
+where D is the Hermitian matrix dimension. The complete primary PDF
+and the statement were inspected, including its proof setup in Section10.
+
+Let U be any m-by-r' matrix satisfying U^T1=0, ||U||<=1 and
+||U||_F^2<=r. It need not have orthonormal columns. For a fixed balanced
+bucket assignment b(j), put a_j=e_(b(j))-1_s/s. If u_i^T is row i of U,
+form the rectangular array a_j u_i^T and its self-adjoint dilation.
+All dilated entries have norm at most ||a_j||||u_i||<=1. Their total
+sum is zero. The permuted sum is exactly the dilation of H U, because
+sum_i u_i=0. Moreover
+
+  (1/m)sum_ij dilation(a_j u_i^T)^2
+   =diag( (||U||_F^2/s)(I_s-J_s),
+               (1-1/s)U^T U).
+
+When s>=r, the variance parameter in (9) is at most one. Since
+12+64sqrt(2)z <=128z for z>=1, (9) implies the convenient bound
+
+  Pr{||H U||>=16z} <=(s+r')exp(-2z), z>=1.              (10)
+
+Indeed 256z^2/(12+64sqrt(2)z)>=2z. Dilation converts its largest
+eigenvalue to the rectangular norm, so no extra factor of two is needed.
+
+Apply (10) to U=A_0^T and U=B_0. Their column dimensions are n and p,
+their spectral norms are at most one, and their squared Frobenius
+norms are at most r. Although these column dimensions can be large,
+the variance parameter uses their Frobenius norm, not column rank.
+Writing D=2s+n+p, a union bound shows that with failure at most
+D exp(-2z), both ||A_0 H^T|| and ||H B_0|| are at most16z.
+Since gamma<=2 and X=gamma A_0 H^T H B_0-A_0B_0,
+
+  Pr{||X||>513z^2} <=D exp(-2z), z>=1.                  (11)
+
+The bound has no ambient factor m/s. It also has no assumed entrywise
+incoherence. Its logarithmic dimensional factor is allowed to depend
+on the physical output dimensions n,p.
+
+4. TRUNCATION WITHOUT A HIDDEN AMBIENT-DIMENSION BIAS
+==================================================
+Fix a candidate integer d>=1 and set
+
+  h=log(8192 D d/(delta epsilon)), R=513h^2.             (12)
+
+Here h>=1. For each independent color let X_c=A T_c B and define
+Y_c=X_c 1_(||X_c||<=R), B_trim=E Y_c. Truncation is an analysis device;
+the algorithm returns the ORIGINAL, untruncated average C.
+
+Equation (11) and the tail-integral identity give
+
+  ||B_trim|| <=E[||X||1_(||X||>R)]
+   <=513D exp(-2h)(h^2+h+1/2)
+   <=1283D h^2 exp(-2h)
+   <=1283D exp(-h) <=delta epsilon/(4d).                (13)
+
+For the penultimate inequality use h^2 exp(-h)<=1 for h>=1.
+The tail integral is computed by substituting t=513z^2:
+int_R^infinity Pr(||X||>t)dt
+ <=1026D int_h^infinity z exp(-2z)dz
+ =513D exp(-2h)(h+1/2).
+The additional R Pr(||X||>R) gives the first h^2 term in (13).
+
+Also a union bound over the d colors gives
+
+  Pr{some X_c is truncated} <=dD exp(-2h)<=delta/4.      (14)
+
+Use self-adjoint dilations, and center Z_c=Y_c-B_trim. The resulting
+independent Hermitian matrices have mean zero, norm at most 2R, and
+variance bounded by V I. Indeed, after dilation,
+
+  E[(Y-EY)^2]=E Y^2-(EY)^2 <=E Y^2<=E X^2<=V I.       (15)
+
+This Loewner argument is the reason truncation does not introduce an
+extra variance factor. It does not assume the untruncated X is symmetric.
+
+Corollary5.2 in the same primary PDF, printed p922 (PDF p17), gives
+matrix Bernstein with denominator 3sigma^2+2Rt. Applying it to the
+d centered dilations, with t=d epsilon/2, yields
+
+  Pr{||(1/d)sum_c Z_c||>epsilon/2}
+   <=(n+p)exp[-d epsilon^2/(12V+8R epsilon)].           (16)
+
+Consequently it suffices that
+
+  d >=[12V/epsilon^2+4104h^2/epsilon]
+                    log(4(n+p)/delta).                (17)
+
+On the complement of the two bad events in (14),(16), the original
+average satisfies
+||(1/d)sum X_c||<=epsilon/2+||B_trim||<epsilon.
+Its total failure is at most delta/2, hence at most delta. Scaling A,B
+back proves (3). Neither trimming nor norms of realized sketches need
+to be computed by the algorithm.
+
+5. AN EXPLICIT DEGREE CHOICE, PADDING AND APPLICATION COST
+=======================================================
+Assume (1), let C_0=2^20, and put
+
+  L=log(C_0 D/(delta epsilon)),
+  d=ceil(C_0 epsilon^-1 L^3).
+
+Since D>=1 and epsilon,delta<1, L>=log C_0>13.8 and
+d<=2C_0 epsilon^-1 L^3. Therefore
+
+  log d <=log(2C_0)+log(1/epsilon)+3log L<3L,
+  h=log(8192D/(delta epsilon))+log d<4L,
+  log(4(n+p)/delta)<=L.
+
+Together with V<=9epsilon, the right side of (17) is at most
+epsilon^-1(108+65664 L^2)L, which is below
+C_0 epsilon^-1 L^3. Thus the explicit d satisfies the sufficient
+concentration inequality. The constants deliberately favor a fully
+checkable elementary proof; (17) gives a sharper actual parameter test.
+Comparisons, repeated multiplication/doubling and fixed-constant series
+can choose the integer parameters without unit-cost transcendental
+primitives. This scalar overhead is absorbed by the displayed bounds.
+
+Choose s=ceil(1+r/epsilon). If s<m but s does not divide m, append zeros
+to M=s ceil(m/s). Then m<=M<m+s<=2m. Stable ranks and operator norms
+of A,B are unchanged by this padding. The proof uses M in place of m
+and physical n,p unchanged. If s>=m, use W=I and return A,B exactly.
+In that branch m<=1+r/epsilon, which is also within the row bound (4).
+
+The Gram representation Wbar=J+(lambda/d)sum_c Pi_(H_c) shares the
+constant channel once. A fixed Householder reflection in bucket space
+removes the redundant centered bucket row per color, giving a factor
+with exactly 1+d(s-1) rows, unless capped by the identity fallback.
+Applying the reflection is a vector dot product plus rank-one update,
+O(s) arithmetic per input/output column. Bucket sums cost one addition
+per input entry per color. This proves (5) with no hidden dense row
+orthogonalization, and counts all factors and explicit-output costs.
+
+The actual Gram factor has dense entries from the common mean correction.
+Only its incidence part has one bucket assignment per color and input.
+Calling the complete S a d-sparse-per-column embedding would be false.
+
+6. RELATION TO THE ORIGINAL GOAL AND EXISTING RESULTS
+==================================================
+This is a proved concentration guarantee for the actual balanced
+permutation estimator. It is stronger than its previous Frobenius/
+Markov baseline and gives a stable-rank spectral AMM guarantee with
+polylogarithmic confidence overhead. It is an absolute product error
+epsilon||A||||B||, not a (1+theta)sigma_(r+1)(AB) low-rank guarantee.
+No relative-product conclusion follows for arbitrarily cancelling A,B.
+
+The construction is oblivious and requires a supplied stable-rank upper
+bound to choose s, or a separate estimator for that parameter. The theorem
+does not obtain a new stable-rank bound merely by using an optimistic r.
+
+The dimension/accuracy tradeoff r epsilon^-2 times logarithms and the
+epsilon^-1 application-degree dependence are familiar from signed
+sparse embeddings and AMM. The possible contribution is this concrete
+balanced-permutation, sparse-plus-rank-one construction and its exact
+variance/cancellation analysis. No global state-of-the-art improvement
+or historical novelty is certified by this derivation. A comparison with
+the actual assumptions and guarantees of OSNAP, modern SparseStack, and
+stable-rank AMM is still required before any priority claim.
+
+The imported SG-11/14/16 exact mixed envelopes remain relevant if one
+seeks sharper logarithms, constants or dependency behavior than these
+classical concentration inequalities provide. This proof does not
+claim to have summed their full sharp high-order trace expansion.
+
+Primary concentration source (complete PDF inspected):
+L. Mackey, M. I. Jordan, R. Y. Chen, B. Farrell, J. A. Tropp (2014),
+Matrix concentration inequalities via the method of exchangeable pairs,
+Annals of Probability42,906--945, DOI10.1214/13-AOP892.
+https://lmackey.github.io/papers/matstein-aop14.pdf
+Corollary10.3, printed p933; Corollary5.2, printed p922.

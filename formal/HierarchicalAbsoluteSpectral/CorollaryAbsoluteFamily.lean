@@ -38,7 +38,7 @@ def AbsoluteFamilyProblem.seed (I : AbsoluteFamilyProblem N m) : FamilyProblem N
   delta_positive := div_pos I.delta_positive (by positivity)
   delta_lt_one := by
     apply (div_lt_iff₀ (by positivity : 0 < (m:ℝ)+1)).mpr
-    linarith [I.delta_lt_one,Nat.cast_nonneg m]
+    linarith [I.delta_lt_one,(Nat.cast_nonneg m : (0:ℝ) ≤ m)]
 
 def AbsoluteFamilyProblem.theta (I : AbsoluteFamilyProblem N m) : ℝ := I.seed.theta
 
@@ -159,8 +159,11 @@ theorem absolute_family_error_without_supplied_rank
     obtain ⟨hw,he⟩ := hE g hg
     rw [absoluteFamilyProgram_eval]
     refine ⟨hw.trans (Nat.mul_le_mul_left 2 I.internal_slackRank_le),?_⟩
-    simpa only [AbsoluteFamilyProblem.fixed,AbsoluteFamilyProblem.absoluteFromPrepared,FixedProblem.absoluteProblem,
-      I.seed.prepared.input_left,I.seed.prepared.input_right] using he
+    have hA : I.fixed.A=I.A := I.seed.prepared.input_left
+    have hB : I.fixed.B=I.B := I.seed.prepared.input_right
+    change ‖I.fixed.A*I.fixed.B-(absoluteAlgorithmProgram kernels I.fixed g).eval.result.product‖ ≤ I.tolerance at he
+    rw [hA,hB] at he
+    exact he
 
 end
 end HierarchicalAbsoluteSpectral

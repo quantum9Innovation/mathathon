@@ -20,7 +20,7 @@ variable {n m p r L : ℕ}
 are included even for zero products and empty returned bases. -/
 def comparatorTotalWork (I : FixedProblem n m p r L)
     (program : ArithmeticProgram (FixedRankOutput n p r)) : ℕ :=
-  n*p+mainRandomizedWork I program.work
+  m*(n+p)+n*p+mainRandomizedWork I program.work
 
 theorem preparedConstantComparatorProgram_error_probability
     (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
@@ -34,8 +34,7 @@ theorem preparedConstantComparatorProgram_error_probability
         (1+theta)*tailSingularValue (A*B) r} ≥ 1-delta := by
   let I := comparatorProblem A B theta delta hmn hmp hr hrm htheta hdelta hdelta1
   have hp := constantDistortionComparatorProgram_error_probability kernels I
-  apply hp.trans
-  apply measureReal_mono
+  refine hp.trans (measureReal_mono ?_)
   intro g hg
   have he := (preparedConstantComparatorProgram_specification kernels A B theta delta hmn hmp hr hrm htheta hdelta hdelta1 g).1
   change ‖A*B-(preparedConstantComparatorProgram kernels A B theta delta hmn hmp hr hrm htheta hdelta hdelta1 g).eval.product‖ ≤ _
@@ -57,8 +56,7 @@ theorem preparedGramComparatorProgram_error_probability
         (1+theta)*tailSingularValue (A*B) r} ≥ 1-delta := by
   let I := comparatorProblem A B theta delta hmn hmp hr hrm htheta hdelta hdelta1
   have hp := exactGramComparatorProgram_error_probability kernels I
-  apply hp.trans
-  apply measureReal_mono
+  refine hp.trans (measureReal_mono ?_)
   intro g hg
   have he := (preparedGramComparatorProgram_specification kernels A B theta delta hmn hmp hr hrm htheta hdelta hdelta1 g).1
   change ‖A*B-(preparedGramComparatorProgram kernels A B theta delta hmn hmp hr hrm htheta hdelta hdelta1 g).eval.product‖ ≤ _

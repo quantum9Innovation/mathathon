@@ -58,6 +58,10 @@ including a uniform random-regular-host guarantee for bounded additions.
 The imported [spectral-gap project](spectral-gap/README.md) is now available.
 The [cross-project assessment](matmul/matrix-graph-bridge-state.txt) records
 the concentration proof and the remaining stronger multiplication target.
+The [Gaussian cone-span obstruction](matmul/gaussian-cone-span-obstruction.txt)
+shows that fresh random starts alone do not justify a proposed robust
+far-cone filtering route; its [verification record](matmul/gaussian-cone-span-proof-checks.txt)
+states the restricted model and independent proof checks.
 An [unbiased balanced permutation sketch](matmul/balanced-permutation-amm.txt)
 now has exact covariance formulas and a complete reduction of its trace
 moments to that project's mixed-cell bounds. The new concentration proof

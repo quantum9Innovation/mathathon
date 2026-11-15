@@ -1,7 +1,8 @@
 import HierarchicalAbsoluteSpectral
 
-/- Run `lake env lean Audit.lean` to inspect the exact exported statement
-and the foundational axioms used by its proof and the principal lemmas. -/
+/- Foundational algebraic and construction lemmas.
+Run `lake env lean MainClosedAudit.lean` for the original-input main theorem
+statements and their complete transitive axiom closures. -/
 
 #check HierarchicalAbsoluteSpectral.hierarchical_spectral_error
 #print HierarchicalAbsoluteSpectral.tailSingularValue

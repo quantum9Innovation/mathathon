@@ -55,6 +55,8 @@ def main() -> int:
     parser.add_argument("--jobs", type=int, default=2)
     parser.add_argument("--all-local", action="store_true", help="also check unexported local modules")
     parser.add_argument("--no-audit", action="store_true")
+    parser.add_argument("--resume-log", type=Path,
+                        help="revalidate successful modules from an interrupted verification log")
     args = parser.parse_args()
     if args.jobs < 1:
         parser.error("--jobs must be positive")
@@ -97,7 +99,8 @@ def main() -> int:
 
     for name in graph:
         source = without_comments(sources[name].read_text())
-        forbidden = re.search(r"\b(?:sorry|admit|native_decide)\b|^\s*(?:unsafe\s+)?axiom\s", source, re.M)
+        forbidden = re.search(r"\b(?:sorry|admit|native_decide|sorryAx|skipKernelTC)\b|"
+                              r"^\s*(?:unsafe\s+|axiom\s)", source, re.M)
         if forbidden:
             raise SystemExit(f"unpermitted proof escape in {sources[name]}: {forbidden.group(0)!r}")
 
@@ -116,6 +119,23 @@ def main() -> int:
     failed: set[str] = set()
     running: dict[concurrent.futures.Future, str] = {}
     print(f"Checking {len(graph)} proof modules with {args.jobs} compiler slots", flush=True)
+    if args.resume_log:
+        candidates = set(re.findall(r"^OK \d+/\d+ ([\w.]+)$",
+                                    args.resume_log.read_text(), re.M)) & set(graph)
+        # A previous success is only reused after Lake rehashes its entire
+        # dependency closure and confirms every artifact is current.
+        if candidates:
+            cache_log = logs / "ResumeValidation.log"
+            with cache_log.open("w") as output:
+                checked_cache = subprocess.run(
+                    [lake, "--rehash", "--no-build", "-q", "build", *sorted(candidates)],
+                    cwd=ROOT, env=environment, stdout=output, stderr=subprocess.STDOUT)
+            if checked_cache.returncode == 0:
+                done.update(candidates)
+                pending.difference_update(candidates)
+                print(f"Revalidated {len(done)} current modules from {args.resume_log}", flush=True)
+            else:
+                print(f"Previous cache is stale; rebuilding in dependency order ({cache_log})", flush=True)
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as pool:
         while pending or running:
             blocked = {name for name in pending if any(dep in failed for dep in graph[name])}
@@ -141,6 +161,18 @@ def main() -> int:
                     print(f"OK {len(done)}/{len(graph)} {name}", flush=True)
     if failed or pending:
         print(f"Verified {len(done)}; failed or blocked {len(failed | pending)}", flush=True)
+        return 1
+
+    # This final collective check catches a source/dependency edit that
+    # happened while a long verification run was in progress.
+    freshness = logs / "FinalFreshness.log"
+    with freshness.open("w") as output:
+        checked_freshness = subprocess.run(
+            [lake, "--rehash", "--no-build", "-q", "build", *sorted(graph)],
+            cwd=ROOT, env=environment, stdout=output, stderr=subprocess.STDOUT)
+    if checked_freshness.returncode:
+        print(f"Final source freshness check failed: {freshness}\n"
+              f"{freshness.read_text()[-12000:]}", flush=True)
         return 1
 
     if not args.no_audit:

@@ -215,7 +215,11 @@ Supporting material includes [ridge-filter proofs](matmul/ridge-filters.pdf),
 [the reported AI research runs](matmul/research-run-evidence.txt).
 
 A further [mathematical review and practical assessment](matmul/hierarchical-mathematical-review.txt)
-checks the hierarchy paper. The [Lean 4 development and coverage map](formal/VERIFICATION.txt)
-prove its deterministic matrix reductions, carried lift, conditional spectral-error
-theorem, and cost cancellations. The randomized certificate construction and full
-runtime theorem remain unformalized. Build the checked library with `cd formal && lake build`.
+checks the hierarchy paper. Its [Lean 4 verification](formal/VERIFICATION.txt) now
+proves the original-input main results, all corollaries and the exact-Gram appendix,
+including randomized success probabilities, full arithmetic costs and output entries.
+The [theorem map](formal/THEOREM_MAP.txt) identifies the exact statements; all 702
+local/supporting modules and 22 endpoint axiom audits pass. Reproduce the full check
+with `cd formal && python3 verify.py --jobs 2 --all-local`.
+The [practical examples](matmul/hierarchical-formal-significance.txt) explain the
+literal constants and the scope of the exact-real arithmetic model.

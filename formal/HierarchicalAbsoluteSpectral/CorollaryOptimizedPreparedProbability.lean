@@ -1,6 +1,7 @@
 import HierarchicalAbsoluteSpectral.CorollaryOptimizedPrepared
 import HierarchicalAbsoluteSpectral.CorollaryOptimizedProbability
 import HierarchicalAbsoluteSpectral.BaseMainTapeCost
+import HierarchicalAbsoluteSpectral.MainExplicitOutputCost
 
 /-! Original-input relative-error theorems for both capped, prepared
 comparators.  The all-outcome result type carries explicit factors and their
@@ -20,7 +21,7 @@ variable {n m p r L : ℕ}
 are included even for zero products and empty returned bases. -/
 def comparatorTotalWork (I : FixedProblem n m p r L)
     (program : ArithmeticProgram (FixedRankOutput n p r)) : ℕ :=
-  m*(n+p)+n*p+mainRandomizedWork I program.work
+  m*(n+p)+program.eval.entryCount+mainRandomizedWork I program.work
 
 theorem preparedConstantComparatorProgram_error_probability
     (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)

@@ -33,7 +33,7 @@ def comparatorDimensionThetaProgram (m N : ℕ) : ArithmeticProgram ℝ := do
 theorem comparatorDimensionThetaProgram_admissible (m N : ℕ) (hN : 0 < N) :
     (comparatorDimensionThetaProgram m N).admissible := by
   simp only [comparatorDimensionThetaProgram,admissible_bind,admissible_div,eval_div,
-    admissible_mul,eval_mul,admissible_sqrt,admissible_pure,true_and,and_true]
+    admissible_mul,eval_mul,admissible_sqrt,true_and,and_true]
   exact ⟨by exact_mod_cast hN.ne',div_nonneg (Nat.cast_nonneg _) (Nat.cast_nonneg _)⟩
 
 def comparatorProblemForFamily (I : FamilyProblem N m r) : FixedProblem N m N r 1 :=

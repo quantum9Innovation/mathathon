@@ -15,7 +15,7 @@ open ArithmeticProgram hiding pure
 variable {N m r : ℕ}
 
 def comparatorMetadataWorkCap (I : FixedProblem N m N r 1) : ℕ :=
-  N*N+2*r*m+I.queryCap*I.repetitions*((r+1)*m+2*m*m)+
+  N*N+2*m*N+2*r*m+I.queryCap*I.repetitions*((r+1)*m+2*m*m)+
     4+3*I.queryCap+2*I.repetitions+29+5
 
 def comparatorNumericRestCap (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
@@ -48,7 +48,7 @@ theorem comparator_metadata_numeric (I : FixedProblem N m N r 1)
     nlinarith only [hh]
   have hUV : U*ell ≤ V := by
     have h1 : U*ell ≤ U*ell*(N:ℝ) := le_mul_of_one_le_right (by positivity) hN
-    have h2 := le_self_pow₀ hUN (by norm_num : 1 ≤ 2)
+    have h2 := le_self_pow₀ hUN (by norm_num : (2:ℕ) ≠ 0)
     dsimp [V]
     nlinarith only [h1,h2]
   have hNV : (N:ℝ)^2 ≤ V := by
@@ -56,6 +56,10 @@ theorem comparator_metadata_numeric (I : FixedProblem N m N r 1)
     dsimp [V]
     nlinarith only [hh]
   have hmmV : (m:ℝ)^2 ≤ V := (pow_le_pow_left₀ (Nat.cast_nonneg m) hNm 2).trans hNV
+  have hreads : ((2*m*N:ℕ):ℝ) ≤ 2*V := by
+    have hh := mul_le_mul_of_nonneg_right hNm (Nat.cast_nonneg N)
+    push_cast
+    nlinarith only [hh,hNV]
   have hTV : (I.queryCap:ℝ) ≤ V := hcap.trans hUV
   have hRV : (I.repetitions:ℝ) ≤ V := hrep.trans hUV
   have hbody : (r+1)*m+2*m*m ≤ 4*m*m := by
@@ -63,7 +67,8 @@ theorem comparator_metadata_numeric (I : FixedProblem N m N r 1)
     have h2 : 1 ≤ m := I.rank_positive.trans I.rank_le_core
     nlinarith
   have hbodyR : (((r+1)*m+2*m*m:ℕ):ℝ) ≤ 4*(m:ℝ)^2 := by
-    exact_mod_cast hbody
+    simpa only [Nat.cast_add,Nat.cast_mul,Nat.cast_one,Nat.cast_ofNat,pow_two,mul_assoc] using
+      (Nat.cast_le.mpr hbody : (((r+1)*m+2*m*m:ℕ):ℝ) ≤ ((4*m*m:ℕ):ℝ))
   have hqr := mul_le_mul hcap hrep (Nat.cast_nonneg _) (by positivity : 0 ≤ U*ell)
   have hdraws := mul_le_mul hqr hbodyR (Nat.cast_nonneg _) (by positivity : 0 ≤ U*ell*(U*ell))
   have hsize := mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (Nat.cast_nonneg m) hNm 2)
@@ -73,23 +78,25 @@ theorem comparator_metadata_numeric (I : FixedProblem N m N r 1)
     nlinarith only [hdraws,hsize]
   have hinit : ((2*r*m:ℕ):ℝ) ≤ 2*V := by
     have hh := Nat.mul_le_mul_right m (Nat.mul_le_mul_left 2 I.rank_le_core)
-    have hhR : ((2*r*m:ℕ):ℝ) ≤ 2*(m:ℝ)^2 := by exact_mod_cast hh
+    have hhR : ((2*r*m:ℕ):ℝ) ≤ 2*(m:ℝ)^2 := by
+      simpa only [Nat.cast_mul,Nat.cast_ofNat,pow_two,mul_assoc] using
+        (Nat.cast_le.mpr hh : ((2*r*m:ℕ):ℝ) ≤ ((2*m*m:ℕ):ℝ))
     nlinarith only [hhR,hmmV]
   unfold comparatorMetadataWorkCap
   push_cast
-  push_cast at hdraws' hinit
-  dsimp [V] at hV1 hNV hTV hRV hdraws' hinit ⊢
-  nlinarith only [hV1,hNV,hTV,hRV,hdraws',hinit]
+  push_cast at hdraws' hinit hreads
+  dsimp [V] at hV1 hNV hTV hRV hdraws' hinit hreads ⊢
+  nlinarith only [hV1,hNV,hTV,hRV,hdraws',hinit,hreads]
 
 theorem comparator_total_of_body (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     (I : FixedProblem N m N r 1) (body core : ℕ)
     (hbody : body ≤ 4+3*I.queryCap+2*I.repetitions+29+
       4*sketchFormationCap N m I.sketchFailure+2*comparatorGramRowWorkCap kernels m N+
         psdGramCost kernels m+2*kernelEnvelope kernels m+core) :
-    m*(N+N)+N*N+mainRandomizedWork I (5+body) ≤ comparatorNumericRestCap kernels I+core := by
+    2*m*(N+N)+N*N+mainRandomizedWork I (5+body) ≤ comparatorNumericRestCap kernels I+core := by
   rw [mainRandomizedWork_eq]
   unfold comparatorNumericRestCap comparatorMetadataWorkCap twoLevelInitialSketchWorkCap
-  have hi : m*(N+N)=2*m*N := by ring
+  have hi : 2*m*(N+N)=2*m*N+2*m*N := by ring
   rw [hi]
   omega
 
@@ -118,13 +125,13 @@ theorem comparator_numeric_rest_bound
   have hβ : 0 < I.sketchFailure := mainSketchFailure_positive I
   have hβ1 : I.sketchFailure ≤ 1 := by
     have hh := I.delta_lt_one
-    change I.delta/(20*((1:ℝ)+1)) ≤ 1
+    norm_num [FixedProblem.sketchFailure]
     linarith
   have hβlog : Real.log (1/I.sketchFailure) ≤ (c+40)*ell := by
     have he : Real.log (1/I.sketchFailure)=Real.log 40+Real.log (1/I.delta) := by
       unfold FixedProblem.sketchFailure
       norm_num
-      rw [one_div,Real.log_inv,Real.log_div I.delta_positive.ne' (by norm_num),one_div,Real.log_inv]
+      rw [Real.log_div (by norm_num) I.delta_positive.ne']
       ring
     have h40 : Real.log (40:ℝ) ≤ 39 := by
       have hh := Real.log_le_sub_one_of_pos (by norm_num : (0:ℝ) < 40)

@@ -1,0 +1,95 @@
+CONDITIONAL NEAR-REAL RAW SOLVER: VERIFICATION RECORD
+====================================================
+
+Full derivation:
+  near-real-deflated-raw-solves.txt
+Current source SHA256:
+  f95546c83fc9eb658e7fd6ac549f1fe2e566488f12e3da085ba27485228215e5
+
+The exact input model is S=ZKZ^T with T=Z^TZ satisfying
+||T-I||<=eta<=1/8, and thin exact raw-factor actions for Z and Z^T.
+The supported core K is real symmetric and invertible. In addition,
+SUPPLY an exact orthogonal invariant split K=diag(K_P,K_Q) with
+spec(K_Q) outside [t/2,2t], t>0. Let k=dim(P). The cost C_split
+of producing a certified split is explicit, not a free eigensystem.
+Approximate invariant splits need a separate perturbation theorem.
+
+For q supplied poles w_j=t+i*y_j and supplied right-hand sides, put
+mu=max |w_j|/|y_j| and r=q(k+1). For 1<=r<=m, normalized physical
+actions w_j(S-w_j I)^(-1)h_j have error <=epsilon||h_j|| after
+O(log(2mu/epsilon)) batched raw iterations. The proved work is
+
+  C_split + ~O(m^omega)
+  + O(Nm*r^(omega-2)*log(2mu/epsilon))
+  + O(q*m*k^2 + q*k^omega).
+
+The first raw T-action on the k coarse-band columns, all coupling
+columns per pole, small-core setup/inversions and final lifts are
+charged. If P fills the supported core, that first action reveals its
+whole Gram. There is no categorical claim that every supported Gram
+is avoided. All omega substitutions use the multiplication primitive
+assumed in the research direction, and prove no new exponent bound.
+
+Root reconstruction
+-------------------
+Root independently read every section and reconstructed the safe-block
+contraction, Schur perturbation constants and all displayed cost terms.
+For M(w)=wK^(-1)-T and F(w)=wK_Q^(-1)-T_QQ, the coarse safe inverse
+has norm <=2. Its Richardson contraction is <=2eta<=1/4, uniformly
+as the pole approaches the real axis. Only the k-by-k Schur inverse
+can grow; the full supported Hermitian resolvent bounds its norm by
+2|w|/((1-eta)|y|). Safe inverse accuracy delta yields supported error
+<=4mu^2*delta and normalized physical error <=5mu^2*delta.
+Thus delta<=epsilon/(10mu^2) requires only logarithmically many
+iterations. This is a uniform operator argument, not a claim that
+individual noisy shifted outputs define a common backward matrix.
+
+The core transformations use the established batched Frobenius resolver
+in raw-factor-fresh-search.txt, with differently shifted columns handled
+in the same batch. Its source SHA256 is
+  61c5fa973bc32cd6151d64f5ba3078f096bcf8c94a135f5df1b7fcc14f6494a8.
+Its primary preprocessing reference is Neiger--Pernet--Villard (2024),
+Corollary 5.2; the source records the exact transformation cost/model.
+
+Independent review
+------------------
+The matrix_frontier agent derived the note. A separate bounded_algorithm
+review is recorded in near-real-deflated-raw-solves-independent-audit.txt.
+Result: PASS at source f95546c83fc9eb658e7fd6ac549f1fe2e566488f12e3da085ba27485228215e5.
+The retained independent-audit SHA256 is
+  fed2825c144c63bf4db1059bbfacc73fe515fb916bf3bf424f19974ffdecaa43.
+The review requested two scope clarifications, both applied before
+the current hash: log(2mu/epsilon) retains a constant iteration count
+when mu/epsilon approaches one, and querying all supported band columns
+can reveal the whole supported Gram. Neither changes the block proof.
+These are informal internal checks, not formal or external review.
+
+Reproducible diagnostics
+------------------------
+  scripts/check_near_real_deflated_solves.py
+    d60953a9f6c25eab57be5fcf5d65393cb035cc09cd37951f172048063e753491
+  near-real-deflated-raw-solves-checks.txt
+    63ae947a2471928d8fc2c92c69764ddc7b779616bf37353422f19ef5426ba1a1
+
+NumPy 2.5.3, seed 2026111509. All assertions PASS in 48 dense cases,
+m=8,16,32 and imaginary parts 1,.1,.01,.001. Root read the retained
+script and independently reran it; output matched byte for byte.
+Largest safe multiplier norm: 1.55603, below two.
+Largest contraction norm: 0.11440, below one quarter.
+Largest Schur inverse / analytic bound: 0.44780.
+Largest normalized physical error / requested epsilon: 2.855e-6.
+Largest relative physical Woodbury identity error: 6.080e-13.
+The Neumann check explicitly allows a floating-point roundoff floor.
+These tests corroborate finite algebra, not a certified split routine,
+asymptotic runtime or finite-precision stability theorem.
+
+Consequences and limits
+-----------------------
+This conditional lemma uses data-dependent raw coupling information and
+therefore supplies a possible route outside the fixed-start far-cone
+span restriction. Its useful dimension condition is q(k+1)<=~sqrt(m)
+at the original exponents, AND C_split must fit the same budget.
+No universal bound on k is proved: it can be Theta(m). Threshold
+selection, a sharp final filter and rank-one extraction remain outside
+this resolver. No historical novelty for Schur complements or deflation
+is claimed. The arbitrary-factor quadratic-time goal remains ACTIVE.

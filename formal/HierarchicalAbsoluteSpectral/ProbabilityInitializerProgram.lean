@@ -134,6 +134,7 @@ def gaussianInitializerProgram {k r : ℕ}
     rw [P.property, ArithmeticKernel.program_eval, hq]
   have hB : B.val = initializerResidual T out.basis := by
     rw [B.property, blockSubProgram_eval, hP]
+    rfl
   ArithmeticProgram.pure {
     raw := Y.val
     raw_eq := Y.property.trans (ArithmeticKernel.program_eval _ _ _)
@@ -157,14 +158,38 @@ theorem gaussianInitializerProgram_admissible {k r : ℕ}
     initializerBracketProgram_admissible _ _ (initializerRatio_pos k β hk hβ).ne',
     admissible_pure, and_self]
 
+theorem gaussianInitializerProgram_work_le {k r : ℕ}
+    (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
+    (T : Core k) (Ξ : Matrix (Fin k) (Fin r) ℝ) (β : ℝ)
+    (hk : 1 ≤ k) (hr : r ≤ k) :
+    (gaussianInitializerProgram kernels T Ξ β).work ≤
+      5*kernelEnvelope kernels k+psdGramCost kernels r+3*k*k+k+10 := by
+  let Y := ((kernels k k r).program T Ξ).certify.eval.val
+  let out := (orthogonalRangeProgram kernels Y).eval
+  have hd : out.dimension ≤ r := out.dimension_le_cols
+  have hY := kernelEnvelope_le kernels k k k r le_rfl le_rfl hr (by omega)
+  have hq := kernelEnvelope_le kernels k out.dimension k k (hd.trans hr) le_rfl le_rfl (by omega)
+  have hP := kernelEnvelope_le kernels k k out.dimension k le_rfl (hd.trans hr) le_rfl (by omega)
+  have hRange := orthogonalRangeProgram_work_le kernels Y hk hr
+  simp only [gaussianInitializerProgram, work_bind, certify_work, certify_eval, ArithmeticKernel.program_work,
+    blockSubProgram_work, matrixFrobeniusProgram_work, initializerRatioProgram_work, work_pure, add_zero]
+  change (kernels k k r).cost+((orthogonalRangeProgram kernels Y).work+
+    ((kernels out.dimension k k).cost+((kernels k out.dimension k).cost+
+      (k*k+((2*k*k+k+1)+(7+(initializerBracketProgram _ _).work)))))) ≤ _
+  have hb := initializerBracketProgram_work
+    (matrixFrobeniusProgram (blockSubProgram T
+      ((kernels k out.dimension k).program out.basis
+        ((kernels out.dimension k k).program out.basisᵀ T).eval).eval).eval).eval
+    (initializerRatioProgram k β).eval
+  nlinarith
+
 theorem InitializerComputation.exact_rank {k r : ℕ} {T : Core k}
     {Ξ : Matrix (Fin k) (Fin r) ℝ} {β : ℝ} (out : InitializerComputation T Ξ β)
     (h : out.result = .exact) : T.rank ≤ r := by
   have ht : out.value ≤ 0 := by
     rw [out.result_eq] at h
     split_ifs at h with ht
-    · exact ht
-    · contradiction
+    exact ht
   have hz : initializerValue T out.range.basis = 0 := by
     rw [out.value_eq] at ht
     exact le_antisymm ht (matrixFrobeniusValue_nonneg _)

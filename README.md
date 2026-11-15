@@ -9,6 +9,24 @@ and practical theoretical algorithms with manageable constants and standard
 operations. These remain open. The results below establish narrower arithmetic
 bounds; they do not yet establish the requested general breakthrough.
 
+A [working paper on exact fractional matrix constants](docs/sharp-fractional-holder.pdf)
+([source](docs/sharp-fractional-holder.tex)) derives the exact leading
+small-exponent constants for positive powers, absolute powers, and polar
+matrix maps. The full-line power coefficient is exactly four times the
+positive-matrix coefficient. It also derives sharp worst-case compression
+rank constants. The actual manuscript passed an independent mathematical
+audit; see the [verification record](docs/sharp-holder-proof-checks.txt).
+Classical scalar rates and compression methods are credited. Novelty of
+the precise matrix limits remains under review.
+
+The [square-root-update construction](docs/nongalactic-wildcard-search.txt)
+gives conventional arithmetic cost ~O(Nmr+m^3) for a factor of a correction
+to sqrt(XX^T), at additive error epsilon*||U|| and rank
+O(r log^2(r/epsilon)). Its [state-of-the-art comparison](docs/sqrt-update-sota-audit.txt)
+finds a possible gain over explicit Gram construction, with substantial
+risk that existing methods already imply the complete bound. No global
+state-of-the-art or novelty claim is made.
+
 A new [working paper on cluster-robust Krylov bounds](docs/cluster-robust-krylov.pdf)
 ([source](docs/cluster-robust-krylov.tex)) proves condition-number-free
 convergence bounds for standard block Krylov using a positive sliding

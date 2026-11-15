@@ -1,0 +1,387 @@
+INDEPENDENT INTERNAL AUDIT: FAUST--FAWZI CONJECTURE CANDIDATES
+===========================================================
+Reviewer: /root/faust_fawzi_independent_referee
+Date: 2026-11-15 UTC
+
+Source audited:
+  docs/faust-fawzi-search.txt
+  SHA256 43da7c33c480cc9c0615354387c5ba43944f91c3b84176b7069467775071f11f
+
+Primary sources opened independently in this audit:
+  O. Faust and H. Fawzi, Rational approximations of operator monotone
+  and operator convex functions, arXiv:2305.12405v1 (2023), especially
+  equation (10), Theorem 4 and Conjectures 1--2:
+  https://arxiv.org/pdf/2305.12405
+
+  K. Tanaka, T. Okayama and M. Sugihara, An optimal approximation formula
+  for functions with singularities, arXiv:1610.06844v1 (2016), Definition
+  2.5 and Theorem 2.6 (also Theorem 4.2):
+  https://arxiv.org/pdf/1610.06844
+  Journal of Approximation Theory 234 (2018), 82--107.
+  https://doi.org/10.1016/j.jat.2018.06.004
+
+VERDICT
+-------
+PASS for the core existence proofs of BOTH complete conjectures, with
+the exact displayed root-exponential exponent and a fixed prefactor.
+The preferred single global quadrature construction is valid, including
+the endpoint parameters a=1 and b=2. No use of a nonexistent degree-2m
+moment is needed. The old split proof is consistent with this verdict,
+but the preferred global proof was the principal object of this audit.
+
+The proof is conditional only on the correctly quoted classical
+modified-Ganelius product theorem. All other key steps were checked
+directly below. This is an independent internal mathematical review,
+not a formal verification or external human peer review.
+
+The exact-real interpolation coefficient computation and the explicit
+SDP representations also pass at their stated, limited scope. A full
+numerical stability or bit-complexity theorem was NOT audited here.
+Neither the core proof nor this audit certifies novelty as of 2026.
+
+Two minor presentation corrections are listed in section 10. Neither
+affects the two conjectures or the main global quadrature proof.
+
+1. MATCH WITH THE ACTUAL PUBLISHED CONJECTURES
+---------------------------------------------
+The positive-parameter target is 1<=a<b<=2 and
+
+  epsilon_m <= C_(a,b) exp[-2*pi*sqrt(a*(b-a)*m/b)],
+
+where epsilon_m is the best relative error for f_a against f_b among
+the allowed positive m-kernel sums. This matches FF Conjecture 1,
+including its fixed prefactor. The negative-parameter statement is
+obtained with a=1-alpha, b=1-beta, where -1<=beta<alpha<=0.
+
+FF Conjecture 2 asks for a type [m/m] rational approximation to x^alpha
+on (0,1], weighted relative to x^beta, with -1<=beta<alpha<0. Writing
+c=-alpha and d=-beta gives 0<c<d<=1. The candidate's positive lower
+approximation of type [m-1/m] is stronger than the required rational
+degree restriction and has the required error exp[-2*pi*sqrt((d-c)*m)].
+
+The source statements establish upper bounds. Neither FF's conjectures
+nor the candidate proof assert the sharp fixed multiplicative constant
+or a matching exact asymptotic equivalent.
+
+2. CLASSICAL PRODUCT INGREDIENT: CORRECT NORMALIZATION
+-----------------------------------------------------
+TOS Definition 2.5 supplies n positive nodes in (0,1). Their Theorem 2.6
+states, for fixed 0<r<1,
+
+  sup_(0<=s<=1) s^r |prod_(j=1)^n (s-a_j)/(s+a_j)|
+       <= A_r exp[-pi*sqrt(r*n)],
+
+with A_r independent of n. There is no extra doubling of n in this
+formula. The candidate uses r_-=a/4 in [1/4,1/2), and r_+=(b-a)/4 in
+(0,1/4], so Theorem 2.6 already covers every parameter used. For
+Conjecture 2, r=(d-c)/4 lies in (0,1/4).
+
+Squaring the product bound gives exponent -2*pi*sqrt(r*n). The two
+occurrences of that squared bound in the error comparison produce the
+full exponent. All Ganelius constants remain fixed for fixed a,b (or
+c,d); no uniformity as the parameters approach each other is claimed.
+
+The explicit node formula in the note agrees with Definition 2.5.
+Its small-n exceptions can be avoided by using it only after a fixed
+parameter-dependent threshold, then absorbing finitely many cases.
+
+3. GAUSSIAN QUADRATURE WITH MOMENTS ONLY THROUGH 2m-1
+---------------------------------------------------
+The preferred Conjecture 1 construction defines
+
+  rho(t)=t^a/(1+t)^2,
+  Omega(t)=t(t+1) prod_(low)(t+a_j)^2 prod_(high)(t+1/b_j)^2,
+  m=n_-+n_++1,
+  dnu=rho(t)dt/Omega(t).
+
+Omega has degree 2m. At zero dnu has density comparable to t^(a-1),
+and at infinity to t^(a-2m-2). Hence the moments through degree 2m-1
+are finite for 1<=a<2. The degree-2m moment generally diverges.
+
+The following construction needs no such last moment:
+
+  (i) Solve for a monic polynomial q_m of degree m orthogonal to
+      degrees 0,...,m-1. Its moment matrix uses degrees at most 2m-2;
+      the right-hand side uses degrees at most 2m-1. The matrix is
+      positive definite because nu has a strictly positive density
+      on (0,infinity).
+
+ (ii) q_m has exactly m distinct roots in (0,infinity). If its positive
+      sign-changing roots numbered k<m, their product p_k would make
+      q_m*p_k have one fixed nonzero sign on (0,infinity), and degree
+      at most 2m-1. Its finite integral would contradict orthogonality.
+      This also excludes complex roots, negative roots, multiple roots
+      and roots at the endpoint, since all m degrees are exhausted by
+      the m distinct positive sign changes.
+
+(iii) Let ell_i be the degree-m-1 Lagrange polynomial of a root t_i,
+      and A_i=integral ell_i dnu. For a polynomial P of degree at most
+      2m-1, division P=q_m*s+r, deg s<=m-1, deg r<=m-1, proves exactness
+      of the rule sum A_i P(t_i). Applying exactness to ell_i^2 shows
+      A_i=integral ell_i^2 dnu>0.
+
+Thus an ordinary positive m-node Gaussian rule exists with exactly the
+finite moment data available. No integral of q_m^2 without an additional
+denominator is used anywhere in the argument.
+
+4. MULTIPOINT ERROR IDENTITY AND VARIATIONAL COMPARISON
+------------------------------------------------------
+For x>0 put S_nu(x)=integral dnu(t)/(x+t). Since
+
+  [q_m(t)^2-q_m(-x)^2]/(t+x)
+
+is a polynomial of degree 2m-1, Gaussian exactness gives
+
+  S_nu(x)-sum_i A_i/(x+t_i)
+    = integral q_m(t)^2/(x+t) dnu(t) / q_m(-x)^2.       (E)
+
+This integral is finite, even though integral q_m^2 dnu can diverge:
+its tail uses only the finite degree-2m-1 moment. Also q_m(-x)!=0.
+
+For any polynomial p of degree at most m with p(-x)=1, write
+
+  p(t)-q_m(t)/q_m(-x)=(t+x)s(t), deg s<=m-1.
+
+The cross term in integral p(t)^2/(x+t)dnu(t) vanishes by orthogonality.
+The remaining added term is nonnegative. Thus q_m/q_m(-x) minimizes
+this weighted integral over all such p. Every cross term is finite.
+
+Polynomial division of [Omega(t)-Omega(-x)]/(t+x), whose degree is
+2m-1, followed by (E), yields the candidate's exact GE identity for
+H_a and R_m. If Omega(-x) is negative, take its absolute value before
+using the variational comparison; the note does this correctly.
+
+For completeness, the Stieltjes identity for H_a can itself be checked
+without another approximation theorem. Differentiate twice in x the
+kernel (x-1)^2/(x+t). Its second derivative is 2(t+1)^2/(x+t)^3.
+Multiplication by rho and integration therefore gives x^(a-2) after
+the beta integral and the candidate's K_a normalization. The value
+and first derivative at x=1 vanish, exactly as for f_a. For a=1 the
+same calculation uses K_1=1. This proves the displayed representation.
+
+5. GLOBAL FACTORIZATION AND THE TWO UNIFORM WEIGHTED BOUNDS
+----------------------------------------------------------
+Let B(t) be the combined low-node product and reciprocal high-node
+product, with irrelevant signs removed. Use
+
+  q0(t)=(t-1) prod_(low)(t-a_j) prod_(high)(t-1/b_j),
+
+which has degree m. Direct cancellation gives
+
+  |Omega(-x)|/q0(-x)^2
+     = x|x-1| B(x)^2/(x+1)^2,
+
+  q0(t)^2/Omega(t)
+     = (t-1)^2 B(t)^2/[t(t+1)].
+
+This proves GLOBAL exactly as displayed in the candidate note. In
+particular, the actual sign of H_a-R_m is the sign of x-1, apart from
+the double interpolation zeros. This does not jeopardize positivity
+of the residues, which follows from the positive Gaussian weights.
+
+Write gamma=b-a and
+
+  D_-=A_(a/4)^2 exp[-pi*sqrt(a*n_-)],
+  D_+=A_(gamma/4)^2 exp[-pi*sqrt(gamma*n_+)].
+
+The product estimate gives B(s)^2<=D_- s^(-a/2) for s<=1 and
+B(s)^2<=D_+ s^(gamma/2) for s>=1. The unused factor of the combined
+product has absolute value at most one in each range.
+
+For x<=1, the outside GLOBAL factor is at most x. Splitting its
+integral at t=1 gives the two terms
+
+  D_-^2 x^(1-a/2) integral_0^1 t^(a/2-1)/(x+t)dt,
+
+  D_-D_+ x^(1-a/2) integral_1^infinity
+                        t^(a-2+gamma/2)/(x+t)dt.
+
+The first is at most D_-^2*pi/sin(pi*a/2). In the second use x+t>=t,
+x^(1-a/2)<=1, and p=2-(a+b)/2>0 to get D_-D_+/p. All convergence
+conditions hold at a=1,b=2 as well as throughout the open range.
+
+For x>=1, the outside GLOBAL factor is at most one. The low integral
+is bounded by 2/(a*x). After division by H_b(x)>=x^(b-2)/2, its
+remaining x power is 1-(a+b)/2<0. The high integral is bounded by
+pi*x^(-p)/sin(pi*p), with 0<p=2-(a+b)/2<1. Its remaining x power
+after division by H_b is exactly zero. This proves RIGHT.
+
+The weight inequality used here is elementary:
+
+  H_b(x)=integral_0^1 (1-u)[1+u(x-1)]^(b-2)du
+       >= (1/2) min(1,x^(b-2)).
+
+It holds also for b=2, where H_b=1/2 exactly. Thus the proof does
+not invoke FF's best-approximant characterization at an excluded
+endpoint. LEFT and RIGHT imply FIN with a constant depending only
+on a,b and no polynomial factor in the node counts.
+
+6. NODE COUNT, ALL-m STATEMENT, KERNEL FORM AND INVOLUTION
+--------------------------------------------------------
+Choosing
+
+  n_-=ceil[L^2/(4*pi^2*a)],
+  n_+=ceil[L^2/(4*pi^2*gamma)]
+
+makes D_-^2, D_-D_+ and D_+^2 each at most a fixed multiple of e^(-L).
+The total node count satisfies
+
+  m <= b*L^2/[4*pi^2*a*gamma]+3.
+
+For every sufficiently large prescribed integer m, use instead
+n_-=floor[gamma*(m-1)/b], n_+=m-1-n_-. Both a*n_- and gamma*n_+
+equal a*gamma*m/b plus a uniformly bounded error. The difference of
+the corresponding square roots is bounded, and tends to zero.
+Consequently FIN has the exact requested exponent with a fixed
+prefactor for every sufficiently large m. For the finitely many
+remaining m, the zero allowed-kernel approximation has finite relative
+error: H_a/H_b is bounded at zero, one and infinity. Increasing the
+fixed constant handles these cases. FF permits zero weights.
+
+Set T_i=1/(1+t_i) and u_i=K_a*A_i*Omega(t_i)/(1+t_i). The T_i are
+distinct and strictly between zero and one; every u_i is positive.
+Multiplication by (x-1)^2 gives exactly the allowed kernel family,
+with a double zero at one. GE also gives H_a(1)=R_m(1)=1/2, so the
+second derivative agrees there as claimed.
+
+Finally, f_alpha(x)=x*f_(1-alpha)(1/x). Applying this identity to the
+rational kernels sends T to 1-T without changing its positive weight.
+The relative error is preserved after the substitution x to 1/x.
+This proves the full negative-parameter part of Conjecture 1,
+including alpha=0 and beta=-1 when those endpoints are admissible.
+
+7. CONJECTURE 2: GLOBAL PROOF AND FIXED PREFACTOR
+------------------------------------------------
+For 0<c<d<=1 set gamma=d-c and
+
+  Omega(t)=(1+t)^(2k) prod_(j=1)^n(t+a_j)^2,
+  M=n+k,
+  dnu(t)=t^(-c)dt/Omega(t).
+
+The moments through degree 2M-1 are finite at both endpoints, so the
+same finite-moment Gaussian argument applies. All rescaled residues
+are positive. Omega(-x)>=0, and (E) proves 0<=R_M(x)<=x^(-c) for all
+x>0. The competitor q0=prod(t-a_j), of degree n<=M, is legitimate
+in the same variational minimum.
+
+With D=A_(gamma/4)^2 exp[-pi*sqrt(gamma*n)], the low-t part is bounded
+by D^2*pi/sin(pi*(c+d)/2). The beta integral is finite since
+0<(c+d)/2<1, even when d=1. In the high-t part use B(t)^2<=1,
+(1+t)^(-2k)<=2^(-2k), and (x+t)^(-1)<=t^(-1). The remaining integral
+is 1/c, and the remaining factor x^((c+d)/2)<=1. This gives exactly
+C2GLOBAL, including its D*2^(-2k) cross term.
+
+For n=ceil[L^2/(4*pi^2*gamma)] and k=max(1,ceil[L/(4*log 2)]), both
+error terms are O(e^(-L)) and
+
+  M <= L^2/(4*pi^2*gamma)+L/(4*log 2)+O(1).
+
+For large M choose L as the positive root of A L^2+B L+C0=M, with
+fixed rounding bound C0. Then
+
+  L=2*pi*sqrt(gamma*M)-O_(c,d)(1).
+
+Thus inversion introduces only a fixed prefactor, with no unbounded
+subleading loss in the exponent. Padding by zero weights, or selecting
+a lower positive rule with the desired number of nodes, gives every
+integer budget. The older split proof independently reaches the same
+rate by reserving O(sqrt(M)) tail nodes; its count arithmetic is also
+consistent with a fixed prefactor.
+
+8. EXACT-REAL PREPARATION: WHAT IS AND IS NOT PROVED
+--------------------------------------------------
+GE supplies the Conjecture 1 interpolation data at 0 once, 1 once,
+and the low and reciprocal high positive nodes twice each. There are
+2m data counted with multiplicities. The value at zero follows also
+by exactness on Omega(t)/t; the value at one by exactness on
+Omega(t)/(t+1). These are polynomials of degree 2m-1.
+
+The resulting rational function has type [m-1/m], exactly m distinct
+negative poles and nonzero residues, so its numerator and denominator
+are coprime and the denominator has degree exactly m. The coefficient
+interpolation equations with a monic denominator have a unique solution.
+To justify uniqueness even against algebraic solutions with a denominator
+zero at an interpolation node, cross-multiply with the true solution:
+the difference polynomial has degree at most 2m-1 and 2m zeros with
+multiplicity, so it vanishes identically; coprimality and monic
+normalization then give the identical coefficient pair.
+
+Thus dense elimination costs O(m^3) arithmetic after O(m) elementary
+power/log evaluations and O(m^2) coefficient assembly/storage. The
+Ganelius nodes themselves use O(m) elementary exp/sqrt evaluations.
+Coincident interpolation nodes can be interpreted with higher Hermite
+data, as the note says. Conjecture 2 uses the same argument, with a
+2k-fold interpolation condition at one and only elementary power data.
+
+Pole and residue extraction is a further degree-m real-root problem.
+The note explicitly charges it separately. Therefore the honest claim
+is an O(m^3) coefficient computation plus elementary function evaluations
+and root extraction, not a bare O(m^3) field-arithmetic bound for all
+numerical SDP coefficients. The exact positive existence theorem is
+independent of any implementation of those last operations.
+
+The appended conservative bit-cost argument is outside this audit's
+PASS verdict. Its compactification identity and weight transformation
+were checked algebraically and are correct; its full error budget,
+quadrature implementation and certified root extraction still deserve
+a separate numerical-analysis review before a bit-complexity theorem.
+
+9. EXPLICIT SDP CONSEQUENCES
+----------------------------
+The scalar 2-by-2 Schur blocks are exact because their top-left entries
+are positive for x>0. Summing their positive weighted bottom-right
+entries yields precisely the epigraph of the allowed rational sum.
+
+For positive definite A,B the matrix-perspective formula follows by
+substituting C=B^(-1/2)AB^(-1/2) and applying congruence by B^(1/2).
+Each term is
+
+  (A-B)[(1-T_i)B+T_i A]^(-1)(A-B).
+
+Its 2n-by-2n Schur block is exact. Applying scalar functional calculus
+to the relative error and then congruence gives the stated two-sided
+Loewner error relative to the perspective of f_b.
+
+For the Petz divergence let Delta=L_rho R_sigma^(-1), whose two positive
+operators commute. Write v=vec(rho-sigma). The kernel divergence is
+
+  v^*[T_i I tensor rho+(1-T_i) sigma^transpose tensor I]^(-1)v.
+
+This can be verified either in the common left/right eigenbasis or by
+moving the factors R_sigma^(1/2) through the commuting operators. Its
+Schur epigraph has size n^2+1, affine top-left block and affine v, as
+claimed. For trace-one density matrices the relative f_2 divergence is
+
+  (1/2)[Tr(rho^2 sigma^(-1))-1].
+
+Hence the Umegaki error bound and the leading node count
+log^2(1/epsilon)/(2*pi^2) follow. The note correctly makes no SDP
+optimization runtime claim from this block count. It also correctly
+separates these explicit n^2+1 blocks from the smaller quantum block
+representation attributed in FF to a then-forthcoming work.
+
+10. MINOR PRESENTATION CORRECTIONS AND SCOPE
+-------------------------------------------
+(a) The introductory source discussion says only 0<r<1/4 is needed.
+    This is stale after the Conjecture 1 extension: r_-=a/4 can approach
+    1/2. Replace it by 0<r<1/2. TOS Theorem 2.6 still applies, so no
+    proof step changes.
+
+(b) The initial stronger Conjecture 2 statement requires all residues
+    strictly positive, but its finite-small-M paragraph allows R_M=0.
+    FF itself permits general rational approximants, so the conjecture
+    is unaffected. To preserve the stronger strict-positivity statement,
+    use the M-node Gaussian construction for
+
+      dnu=t^(-c)(1+t)^(-2M)dt
+
+    at those finitely many M, without Ganelius nodes. The same error
+    identity gives a strictly positive global lower approximation;
+    its weighted error on (0,1] is at most one. Enlarging C handles
+    every such finite case while retaining M distinct positive poles.
+
+No mathematical repair is required for the main single-global-rule
+proof. The two conjecture resolutions survive this independent audit.
+Priority, external review, and any claim of broader significance remain
+separate tasks. In particular this does not establish omega=2, a general
+quadratic matrix algorithm, or a new runtime theorem for SDP solving.

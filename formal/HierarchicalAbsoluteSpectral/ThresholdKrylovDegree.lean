@@ -72,14 +72,16 @@ theorem krylovDegreeProgram_specification (k : ℕ) (U β ε : ℝ) (hk : 1 ≤ 
     (krylovDegreeProgram k U β ε hk hU hβ hβ' hε hε').work =
       4*krylovDegree k U β ε hk hU hβ hβ' hε hε'+15 ∧
     (krylovDegreeProgram k U β ε hk hU hβ hβ' hε hε').admissible := by
-  simp only [krylovDegreeProgram, eval_bind, work_bind, admissible_bind, certify_eval,
-    certify_work, certify_admissible, gaussianCaptureRadiusProgram_eval,
+  simp only [krylovDegreeProgram, eval_bind, work_bind, admissible_bind,
+    certify_work, certify_admissible]
+  simp only [certify_eval]
+  simp only [eval_bind, gaussianCaptureRadiusProgram_eval,
     gaussianCaptureRadiusProgram_work, gaussianCaptureRadiusProgram_admissible _ _ _ hβ.ne',
     eval_div, eval_mul, admissible_div, admissible_mul, work_div, work_mul,
     true_and, OfNat.ofNat_ne_zero, ne_eq, not_false_eq_true, hε.ne']
   have hh := strongDegreeProgram_specification (ε/100) (10*gaussianCaptureRadius k U β/ε)
     (by positivity) (by linarith) (krylovDegree_target_ge_one k U β ε hk hU hβ hβ' hε hε')
-  exact ⟨hh.1, by rw [hh.2.1]; omega, hh.2.2⟩
+  exact ⟨hh.1, by rw [hh.2.1]; simp only [krylovDegree]; omega, hh.2.2⟩
 
 end
 end HierarchicalAbsoluteSpectral

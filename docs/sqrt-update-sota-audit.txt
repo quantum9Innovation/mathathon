@@ -1,0 +1,428 @@
+SQUARE-ROOT UPDATE: NOVELTY AND STATE-OF-THE-ART AUDIT
+====================================================
+Audit date: 2026-11-14/15. Owner: sqrt_update_sota.
+Scope: docs/nongalactic-wildcard-search.txt, Sections 1--6.
+This file is an internal technical comparison, not a priority certificate.
+No external communication, publication, repository commit, or job was made.
+
+VERDICT
+-------
+The proposed end-to-end theorem is a credible precise algorithmic statement
+that is not stated in any primary algorithm paper inspected in this audit.
+That bounded finding DOES NOT establish that it is new, nor that it improves
+the best algorithm obtainable by composing known results.
+
+Almost all of its mechanisms have clear antecedents: fractional-power
+resolvent integrals and root-exponential low-rank approximability; rational
+matrix-function updates; positive shifted inverses; Woodbury; and randomized
+sketch-and-precondition solvers. An even Neumann truncation giving a
+one-sided inverse error is elementary polynomial algebra. The current
+evidence supports a useful synthesis and possibly a publishable theorem in
+a specialist numerical-linear-algebra/algorithms paper. It does not support
+calling the mechanism seminal or a general dense square-root breakthrough.
+
+The plausible contribution to isolate is the complete RAW-FACTOR complexity
+and output theorem: an actual PSD factor for the PRINCIPAL correction,
+additive error on the update's Holder scale, singular endpoints allowed,
+and only dimension/accuracy/failure logarithms in the arithmetic count.
+The separate sharp lower bound and exact compression constant may provide
+much stronger novelty than this algorithmic assembly. Their priority is
+outside this file's scope.
+
+One correction is essential when describing prior work: BCKS2021 Algorithm 3
+does NOT algorithmically need a supplied base square root. It computes the
+correction using A, the perturbation factors, and shifted solves. The
+absence of a base-root input distinguishes this construction from the
+Riccati formulation of SDA2023/2024, not from all matrix-function update
+algorithms.
+
+Likewise, positivity of the mathematical approximant is not exclusive to
+the candidate. In the Hermitian PSD-update specialization, BCKS2021 Eq.(4)
+has the core sqrt(Q^THQ+Q^TUU^TQ)-sqrt(Q^THQ), which is already PSD by
+operator monotonicity. The direct positive node factors are a convenient
+way to realize the candidate in its restricted arithmetic model; they are
+not the first positive square-root correction approximation.
+
+1. THE EXACT CLAIM AND THE MODEL
+-------------------------------
+Input: X in R^(N x m), U in R^(N x r), 1<=r<=m<=N; eps,delta in (0,1).
+Set H=XX^T and
+
+  Delta=(H+UU^T)^(1/2)-H^(1/2).
+
+Output: a real N-by-K matrix Z with K=O(r log^2(r/eps)) and
+
+  ||ZZ^T-Delta||_2 <= eps ||U||_2
+
+with probability at least 1-delta. Claimed conventional arithmetic:
+
+  ~O(Nmr+m^3),
+
+where only logarithms of dimensions, 1/eps, 1/delta are suppressed.
+There is no dependence on a positive spectral gap, nonzero condition
+number, ||H||/||UU^T||, or a precomputed root/eigenbasis. Arithmetic and
+positive scalar square roots are exact; no finite-word stability theorem
+is asserted. Forming a dense N-by-N answer additionally costs O(N^2 K).
+
+This is a factor of Delta, which is PSD by operator monotonicity. It is
+neither a Cholesky factor of H+UU^T nor a low-rank approximation to its
+entire principal square root. If the old root is not already available,
+computing Z alone does not make application of the entire new root cheap.
+
+The normalization is weaker than eps||Delta||_2. For example, with a very
+large scalar base H=cI, ||Delta|| can be far below ||U||. Returning zero
+then satisfies the stated tolerance. This does not invalidate the theorem;
+it determines which comparisons and applications are relevant.
+
+2. PRIMARY SOURCES AND WHAT WAS ACTUALLY CHECKED
+----------------------------------------------
+[BKS75] Birman, Koplienko, Solomyak, Estimates of the spectrum of a
+difference of fractional powers of selfadjoint operators, 1975, pp.3--10.
+Record: https://www.mathnet.ru/eng/ivm6330
+Original: https://www.mathnet.ru/php/getFT.phtml?jrnid=ivm&option_lang=eng&paperid=6330&what=fullt
+
+Freshly inspected the original Section 3, Lemma 3, (3.2), (3.9)--(3.13),
+and the preceding integral formula (2.3). The rank-m^2 approximant in
+(3.10) has error C exp(-c m); constants are independent of A,B and the
+lower integration endpoint after scaling. The construction uses spectral
+projectors of B. It is not a raw-factor operation-count theorem or the
+proposed positive quadrature implementation. Truncating the small-t
+piece gives the uniform rank-one root-exponential upper consequence.
+Thus logarithm-squared rank existence is old; applying the proof to a
+rank-r integrand gives the corresponding block extension. This last
+extension is an inference from its proof, not an explicitly named theorem.
+
+[BV00] Daniel S. Bernstein, Charles F. Van Loan, Rational matrix functions
+and rank-1 updates, SIMAX 22(1), 145--154 (2000), Theorem 3 and Algorithm 1.
+https://bpb-us-e1.wpmucdn.com/blogs.cornell.edu/dist/c/9924/files/2021/10/fRank1.pdf
+https://doi.org/10.1137/S0895479898333636
+
+Read the full ten-page article. Rational degree-q updates have rank at
+most q. Its advertised O(qN^2) update count assumes the old rational
+matrix function and an appropriate denominator factorization are already
+available. Those costs cannot be omitted in a raw-input comparison.
+
+[BKS18] Beckermann, Kressner, Schweitzer, Low-rank updates of matrix
+functions, SIMAX 39(1), 539--565 (2018); preprint July 2017.
+https://arxiv.org/pdf/1707.03045
+https://doi.org/10.1137/17M1140108
+
+Inspected algorithms, cost accounting, exactness, and convergence sections,
+including Section 2.1 and its explicit O(Ns^2) orthogonalization and O(s^3)
+core costs for rank one. It projects the correction using polynomial
+Krylov spaces. An earlier quadrature-plus-Sherman--Morrison approach is
+already discussed in its Introduction. It offers no printed raw-factor,
+update-scale, condition-independent logarithmic-accuracy theorem matching
+the candidate. Its bounds should not be read as iteration lower bounds.
+
+[BCKS21] Beckermann, Cortinovis, Kressner, Schweitzer, Low-rank updates
+of matrix functions II: Rational Krylov methods, SINUM 59(3),1325--1347
+(2021); preprint August 2020.
+https://arxiv.org/pdf/2008.11501
+https://doi.org/10.1137/20M1362553
+
+Read Algorithms 1--3, Theorems 3.3,3.5,4.5,4.6, and Example 4.8. The
+algorithm uses shifted solves, not f(A) as numerical input. Theorem 4.5
+bounds the spectral error by four times a rational uniform-approximation
+error on a set containing both spectra. Example 4.8 treats square root
+through z times an inverse-square-root Markov function and pays a spectral
+endpoint factor. Section 3.3 explicitly identifies rational-function
+replacement plus generalized Sherman--Morrison as an alternative.
+
+[SDA24] Shmueli, Drineas, Avron, Low-rank updates of matrix square roots,
+NLAA 31(1),e2528 (2024), first published August 9,2023.
+https://doi.org/10.1002/nla.2528
+Final article: https://par.nsf.gov/servlets/purl/10443098
+Preprint v3: https://arxiv.org/pdf/2201.13156
+
+Read the final article, especially Problem 1, Theorem 1, Corollary 1,
+Algorithm 1, Sections 2.2,5.1,5.5,7. It returns a PSD correction factor
+and is direct relevant prior art. Theorems assume SPD endpoints; decay is
+relative to correction singular values with a conditioning parameter.
+The displayed Riccati cost assumes O(1) trust-region iterations at each
+rank increase and root/inverse-root actions. Residual-to-forward-error
+bounds are supplied; a uniform logarithmic-eps runtime is not proved.
+Final Theorem 1 is preprint Theorem 3, and final Corollary 1 is preprint
+Corollary 7. The experiments explicitly do not report running times.
+
+[FHL23] Fasi, Higham, Liu, Computing the square root of a low-rank
+perturbation of the scaled identity matrix, SIMAX44(1),156--174 (2023).
+https://eprints.maths.manchester.ac.uk/2842/1/fhl22.pdf
+https://doi.org/10.1137/22M1471559
+
+Read the formula and cost sections. For alpha I+UV*, they obtain an exact
+rank-r correction using an r-by-r root, including singular V*U. This is
+stronger than approximation in that special base case. It does not solve
+the arbitrary-base problem. Retaining its formula as correction factors
+gives O(Nr^2+r^3) work, apart from small-root accuracy; this factor-only
+cost is our inference. Its Table4.1 charges dense output too, adding
+O(N^2r). It must not be misquoted as a printed factor-only runtime.
+
+[NN13] Nelson, Nguyen, OSNAP: Faster numerical linear algebra algorithms
+via sparser subspace embeddings, FOCS 2013, Theorem 9.
+https://arxiv.org/pdf/1211.1002
+
+Inspected the full embedding statement, including delta. It supplies a
+constant-distortion sketch with O(m log^8(m/delta)) rows and
+O(log^3(m/delta)) nonzeros per column, for fixed distortion. Applying it
+and forming its m-by-m Gram costs ~O(Nm+m^3), using ordinary arithmetic.
+There is no new embedding theorem in the candidate.
+
+[MSM14] Meng, Saunders, Mahoney, LSRN, SISC 36(2),C95--C118 (2014).
+https://web.stanford.edu/group/SOL/papers/lsrn-sisc-2014.pdf
+https://doi.org/10.1137/120866580
+
+Read Algorithms 1--3, Theorems 4.4--4.5, Sections 4.4 and 5. Predictable
+logarithmic-accuracy convergence independent of the original conditioning,
+including rank deficiency and Tikhonov regularization, is established.
+LSRN's dense Gaussian sketch itself costs O(Nm^2), not ~O(Nm).
+Its literal preprocessing therefore does not match the candidate for
+r<<m. Sparse/fast OSE substitution is the established route to the
+candidate's cheaper preprocessing. LSRN alone is not a matching theorem.
+
+[PK23] Persson, Kressner, Randomized low-rank approximation of monotone
+matrix functions, SIMAX 44(2),894--918 (2023).
+https://arxiv.org/pdf/2209.11023
+https://doi.org/10.1137/22M1523923
+
+Read Algorithm 1, Theorem 3.12 and Section 3.4.3. funNystrom applies f
+to a Nystrom approximation of one PSD matrix using its actions only;
+it does not require f(A) actions. It covers singular matrices and gives
+operator-norm and other norm guarantees. The spectral-norm theorem is an
+expectation bound with a noted route to deviation bounds. Its target is
+the entire f(A), not the difference of two roots.
+
+[PMM25] Persson, Meyer, Musco, Algorithm-agnostic low-rank approximation
+of operator monotone matrix functions, SIMAX 46(1),1--21 (2025).
+https://arxiv.org/pdf/2311.14023
+https://doi.org/10.1137/23M1619435
+
+Read Theorems 1.1--1.2, Corollary 1.3, and Theorem 2.7 of the July2024
+preprint. Near-optimality for an approximation of A transfers to f(A).
+The spectral-norm transfer is condition-free but depends on the best
+rank-k error of f(A). It is not a low-rank-update theorem for two large,
+nearly equal roots.
+
+[PCM26] Persson, Chen, Musco, Randomized block-Krylov subspace methods
+for low-rank approximation of matrix functions, LAA741,32--65,July15,2026.
+https://arxiv.org/pdf/2502.01888
+https://doi.org/10.1016/j.laa.2026.03.029
+
+Read the latest arXiv v2 (November26,2025), Algorithms 1--4, Section 3
+error theorems and cost discussion. It analyzes Krylov-aware approximation
+of f(A) for symmetric A. Algorithm 4 uses d=(s+t)ell matrix-vector
+products and O(Nd^2) additional orthogonalization, plus a d-dimensional
+matrix-function calculation. Its strongest general statements are
+Frobenius-norm bounds involving polynomial approximation and spectral
+information. This recent primary source does not state the candidate
+principal-correction guarantee. A new scalar function of H alone cannot
+represent Delta for arbitrary noncommuting U.
+
+[P20] Pleiss et al., Fast Matrix Square Roots with Applications to
+Gaussian Processes and Bayesian Optimization, NeurIPS2020, Theorem 1
+and Section 3.4.
+https://proceedings.neurips.cc/paper/2020/file/fcf55a303b71b84d326fb1d06e332a26-Paper.pdf
+
+Inspected the quadrature, shifted-solve theorem and preconditioning
+discussion. This computes root/inverse-root actions. The theorem depends
+on kappa. Its preconditioned output is equivalent up to an orthogonal
+rotation, which is suitable for sampling but cannot simply be subtracted
+from a second principal-root action to obtain Delta. It is not a matching
+correction-factor theorem.
+
+3. COMPARISON TABLE, WITH PREPROCESSING INCLUDED
+------------------------------------------------
+Notation: r=input update rank; K=output or projected width; s=number of
+Krylov/quadrature stages. T_H=O(Nm) for one action of H through X.
+All displayed costs use conventional products. Iterative/core-function
+costs in published numerical methods have their own accuracy conventions;
+their ordinary O(K^3) core count is not silently an exact real+sqrt root
+oracle. Dense output is excluded in every factor-returning row.
+
+Method | Input/preprocessing | Object and accuracy | Rank/conditioning | Full raw arithmetic or limitation
+-------|---------------------|---------------------|-------------------|----------------------------------
+Candidate Sections1--6 | X,U; OSE and sketched Gram ~Nm+m^3 | Principal Delta; spectral error eps||U|| | K=O(r log^2(r/eps)); singular; no gap/kappa/base-to-update ratio | ~Nmr+m^3; dense expansion extra N^2K
+Exact-Gram baseline (derived below) | X,U; form X^TX at Nm^2 | SAME principal Delta, norm, PSD factor and rank guarantee | SAME gap/scale independence | ~Nm^2+m^3; this is a concrete comparison implementation, not a claimed best prior bound
+BKS75 | Arbitrary PSD endpoints and finite-rank difference; proof uses spectral projectors | Principal fractional-power difference; root-exponential rank upper | Log-squared rank order already follows; no positive spectral gap | No full raw-factor runtime given; existence is not an arithmetic algorithm
+BV00 | Old rational function plus denominator factorization already supplied | Exact update of degree-s rational function | Rank <=s for rank-one perturbation | Advertised O(sN^2) excludes prerequisite matrix-function/factorization preparation
+BKS18 | H actions, U; no base-root input used | Principal function correction; polynomial-approximation spectral bound | K<=sr; no update-scale log-eps bound in inspected statements | O(sNmr+NK^2+K^3) with full orthogonalization, before specifying eps-dependent s
+BCKS21 | Shifted H solves, U; no base-root input used | Principal correction; <=4 times best uniform rational-function error on enclosing spectral set | K<=sr; printed square-root bound involves endpoints | Direct raw solves: O(Nm^2+s(m^3+Nmr)+NK^2+K^3); randomized preconditioning can improve these solves as in the candidate
+SDA24 | Root and inverse-root actions; their construction must be charged | Principal PSD correction; residual-based spectral/Frobenius forward bounds | K is a chosen parameter; decay is correction-relative and kappa-dependent; SPD theorems | Conditional O((T_root+T_invroot)K^2+NK^4) PLUS root/oracle preprocessing; no unconditional eps-to-runtime theorem
+FHL23 | Scaled-identity base alpha I and raw U,V | Exact principal-root correction through small root | Rank <=r; special base | O(Nr^2+r^3) correction-factor arithmetic plus small-root accuracy; already faster in this special case
+PK23 / PMM25 | One PSD matrix through H actions; no root input | Whole f(H) LRA; norm guarantees depend on f(H)'s rank-k tail | May require K>=m even when Delta has rank1 | For q subspace passes: O(qNmK+qNK^2+K^3); not a guarantee for low-rank Delta obtained by subtracting two roots
+PCM26 | Symmetric H actions; random block and d total Krylov vectors | Whole f(H) LRA, primarily Frobenius guarantees | Polynomial/spectral terms, not candidate update-scale rank theorem | O(Nmd+Nd^2+d^3), d=(s+t)ell, including projection/core work; no same-target runtime follows as stated
+
+The BCKS direct-solve row is ONE implementation from raw X, not a lower
+bound on BCKS. In fact, using the candidate's OSE and approximate inverse
+polynomials supplies the same ~Nmr+m^3 shifted-solve infrastructure to
+existing rational-update approaches. The remaining issue is a uniform
+error analysis on the UPDATE scale; that analysis must be compared to the
+classical integral literature. An oracle-versus-raw cost comparison alone
+does not establish a new algorithmic regime.
+
+4. A PROVABLE CONCRETE BASELINE AND THE ACTUAL SPEEDUP
+----------------------------------------------------
+The following is our derivation, using exact small-core solves. It gives
+a valid comparator under precisely the same model and error target.
+
+1. Form G=X^TX, W=X^TU: O(Nm^2+Nmr).
+2. Use the candidate's q=O(log^2(r/eps)) positive quadrature poles/weights.
+3. At each t, Cholesky-factor G+tI; compute
+
+     V=t^(-1)[U-X(G+tI)^(-1)W],
+     S=I+U^TV,
+     D=VS^(-1)V^T.
+
+   Return concatenated sqrt(weight)*V*chol(S)^(-T) factors.
+4. The same quadrature proof gives the exact same target and width.
+
+Every resolvent is exact. Per pole the ordinary cost is
+O(m^3+m^2r+Nmr+Nr^2+r^3), so the full cost is
+
+  O(Nm^2+q[m^3+Nmr]) = ~O(Nm^2+m^3).
+
+Thus the candidate replaces the long-dimension Gram cost Nm^2 by Nmr.
+This improvement is mathematically proved relative to this baseline, with
+no claimed lower bound on all previous methods. The nonsuppressed ratio is
+
+  (Nm^2+m^3)/(Nmr+m^3).
+
+Its maximal order is m/r. When Nr >=~ m^2 the candidate approaches the
+Nmr-dominated regime and can gain order m/r. When N=Theta(m), both counts
+are cubic in m. With m=N the candidate is ~O(N^3), not a subcubic dense
+square-root algorithm. With r=m there is no order improvement. These facts
+must remain visible in any broad statement of importance.
+
+If an eigendecomposition or a suitable exact thin basis for H has already
+been computed, shifted resolvent actions can be applied cheaply without
+the candidate's randomized iteration. The candidate's benefit is a
+FROM-SCRATCH guarantee for raw factors, not a lower bound on amortized
+update work after arbitrary preprocessing.
+
+For a diagonal base, direct diagonal resolvents give the same quadrature
+construction in ~O(Nr^2+r^3), without a sketch or m^3 core. This is a useful
+corollary, but quadrature-plus-Woodbury is established machinery. No
+priority claim for that corollary is justified by this audit.
+
+5. WHY SOME APPARENT COMPETITORS DO NOT IMMEDIATELY MATCH
+--------------------------------------------------------
+(a) Approximating both roots separately does not preserve the update's
+small rank. Take H=I_N and U=u of rank1. Delta has rank1 exactly, while
+each root has N singular values at least1. Approximating either root in
+spectral norm below1 needs rankN. Therefore a whole-function randomized
+LRA theorem cannot simply be invoked twice with K=polylog(1/eps).
+This is our elementary example, not a limitation claimed by those papers.
+
+(b) A covariance factor can be updated trivially by concatenating [X,U].
+That factor satisfies LL^T=H+UU^T but does not give the principal-root
+correction. Cholesky up-/downdates and SVD tracking often concern this
+different output and must be labeled accordingly.
+
+(c) The candidate cannot be compared to a correction-relative guarantee
+as if the normalizations were interchangeable. A finite rigorous
+obstruction to dimension-independent relative-rank bounds is available.
+For any n, set d_i=R^i (i=0,...,n-1), P=diag(d_i), H=P^2,
+u_i=sqrt(2d_i), and U=sqrt(tau)u. Let L solve PL+LP=uu^T. Then
+
+  L_ij=2sqrt(d_i d_j)/(d_i+d_j), L_ii=1,
+  sum_(j!=i) |L_ij| <=4/(sqrt(R)-1).
+
+Choose R>=289, so 3I/4 <= L <=5I/4. For
+D_tau=(P^2+tau uu^T)^(1/2)-P, the Riccati identity gives
+
+  tau L-D_tau = integral_0^infinity e^(-sP) D_tau^2 e^(-sP) ds >=0.
+
+Consequently ||D_tau||<=5tau/4 and
+
+  ||tau L-D_tau|| <= ||D_tau||^2/2 <=25tau^2/32.
+
+For tau=1/10, lambda_min(D_tau)>=0.0671875 and
+lambda_max(D_tau)<=0.125, hence lambda_min/||D_tau||>=0.5375.
+Every rank<n approximation therefore has relative spectral error >1/2.
+The update rank is1, the base is SPD, and n is arbitrary. The candidate's
+eps||U|| tolerance can be much larger here, so there is no contradiction.
+This proves that removing conditioning at a fixed relative correction
+error would require a genuinely different qualification.
+
+(d) Existing rational approximation can already tolerate a zero endpoint
+when approximation is normalized by a large full spectral scale; the
+stronger issue here is uniformity in the ratio between the base and the
+update scales. Do not describe every rational method as requiring an
+inverse of H or a nonzero gap. Those are properties of specific methods
+and bounds, not the entire class.
+
+6. THE STANDARD-COMPOSITION NOVELTY HAZARD
+-----------------------------------------
+Here is the short route a knowledgeable referee can reconstruct:
+
+* Fractional powers have the Stieltjes resolvent-difference integral.
+  Its tails are controlled by min(1/t,||UU^T||/t^2). Analytic trapezoid/sinc
+  quadrature yields logarithm-squared nodes independent of the base.
+* Each node is a rank-r PSD Woodbury correction.
+* A constant-distortion OSE gives a Gram proxy G0. Adding tI preserves
+  the same spectral equivalence for EVERY positive shift t.
+* A standard preconditioned polynomial approximates (G+tI)^(-1) in
+  O(log(1/eta)) iterations independent of the original conditioning.
+* Choosing its degree even gives Q* - Q_l >=0. The Woodbury physical
+  inverse then has a PSD error with norm at most eta/t.
+* A crude node perturbation estimate and eta=poly(eps/r) complete the
+  same raw-factor arithmetic count.
+
+No single inspected paper states this exact package. However, the package
+is assembled from old tools, and most of the above deductions are short.
+The burden is therefore to demonstrate a nonroutine theorem or a genuinely
+uncovered application regime, not to assert novelty from a missing search
+hit. The rank-order upper bound cannot serve that role because of BKS75.
+An elementary one-sided Neumann lemma alone also does not seem sufficient.
+
+The candidate's Section 5 does supply a useful explicit missing detail:
+operator-norm propagation through low-rank Woodbury factors with small
+quadrature shifts. In combination with the positivity construction it
+closes the end-to-end proof. Whether that closure constitutes enough
+novelty for a standalone algorithm paper remains a judgment question;
+the current evidence does not justify promising that it does.
+
+7. OPEN AUDIT ITEMS AND DEFENSIBLE PRESENTATION
+----------------------------------------------
+Recommended precise description:
+
+  "A fully costed randomized construction of a PSD factor for a
+   square-root correction from raw rectangular factors, with additive
+   update-scale spectral error and no spectral conditioning parameter.
+   It combines classical resolvent compression with randomized
+   preconditioning. The rank dependence has classical upper-bound
+   antecedents; the exact raw-factor theorem's priority remains under
+   review."
+
+Do not claim "the first low-rank square-root update," "first logarithmic
+accuracy," "first condition-free low-rank upper," "faster than SOTA" in
+general, "optimal running time," or "stable in floating point."
+
+Remaining substantive questions:
+
+1. Has the same end-to-end raw-factor/update-scale theorem been stated in
+   a paper not located here, or is it a short explicit corollary already
+   recognized in the matrix-function/randomized-solver literature?
+2. Can the sharper worst-case rank lower theorem and exact leading
+   compression constant be transferred to an actual constructive factor
+   algorithm with controlled raw costs? Current Sections1--6 only prove
+   O(log^2), not the optimal leading coefficient.
+3. Is there a useful downstream application that specifically needs the
+   principal correction at eps||U|| error? Sampling alone often needs only
+   a rotated covariance factor, for which cheaper old methods suffice.
+4. Can a stable finite-word implementation keep the same practical
+   complexity? The expression t^(-1)(U-XQX^TU) can involve cancellation.
+   This is outside the current exact-arithmetic claim, not a discovered
+   logical defect in that claim.
+5. Are the actual polylogarithmic constants modest? The cited OSNAP
+   theorem has log^8 row overhead. A full asymptotic conventional count
+   does not by itself imply a practical timing advantage.
+
+Searches covered old rational updates, 2017/2018 polynomial updates,
+2020/2021 rational updates, 2023/2024 square-root Riccati algorithms,
+scaled-identity formulas, randomized matrix-function LRA through a
+July2026 journal paper, and standard randomized preconditioning. A
+2025 Oxford thesis on Lanczos/quadrature updates and 2026 sketched
+matrix-function-action papers also surfaced, but were not used as
+evidence for a same-target theorem. No global exhaustive-priority claim
+can be supported by this finite audit.

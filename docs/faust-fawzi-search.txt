@@ -1,0 +1,879 @@
+Faust--Fawzi conjecture search and candidate full proof
+====================================================
+2026-11-14. Working proof, pending independent audit and priority review.
+This file is owned by the Faust--Fawzi search worker.
+PREFERRED construction is the last section, "One global quadrature".
+It has only a bounded node overhead and elementary scalar interpolation
+data. The preceding split constructions remain as independent routes.
+
+Candidate result: full Conjecture 2, including its fixed prefactor
+----------------------------------------------------------------
+Let 0<c<d<=1 and gamma=d-c. There is C(c,d)<infinity such that, for
+every integer M>=1, there is a positive Stieltjes rational function
+
+  R_M(x)=sum_{j=1}^M w_j/(x+t_j),  w_j>0, t_j>0,
+
+with R_M(x)<=x^{-c} for all x>0 and
+
+  sup_{0<x<=1} x^d [x^{-c}-R_M(x)]
+       <= C(c,d) exp[-2*pi*sqrt(gamma*M)].                    (C2)
+
+The poles can be taken distinct; zero weights/padding can handle small
+M. In particular, R_M has type [M-1/M], so this implies the exact full
+Conjecture 2 of Faust--Fawzi2023 under alpha=-c, beta=-d. This is a
+fixed multiplicative constant at the endpoint exponent, not merely
+a logarithmic-rate statement.
+
+Primary sources already inspected
+--------------------------------
+FF: Oisin Faust and Hamza Fawzi, Rational approximations of operator
+monotone and operator convex functions, arXiv:2305.12405v1 (2023),
+https://arxiv.org/pdf/2305.12405 . Conjecture 2 is on printed p14.
+Their paragraph immediately before it says that this suffices for
+their Conjecture 1. Their Theorem11/Corollary2 supplies positivity
+for weighted best approximants when the endpoint hypotheses hold.
+The beta=2 case is excluded from Corollary2, requiring its own check.
+
+TOS: Ken'ichiro Tanaka, Tomoaki Okayama, Masaaki Sugihara, An optimal
+approximation formula for functions with singularities,
+arXiv:1610.06844v1 (2016), Journal of Approximation Theory234 (2018),
+82--107, DOI10.1016/j.jat.2018.06.004,
+https://arxiv.org/pdf/1610.06844 . Definition2.5 gives explicit
+modified Ganelius nodes. Theorem2.6 proves the product estimate for
+0<r<1 (attributed to Jang--Haber2001 Lemma1). Theorem4.2 and AppendixB
+extend/prove it for all r>0. Every use below satisfies 0<r<1/2.
+
+Pek95: A. A. Pekarskii, Best uniform rational approximations of Markov
+functions, Algebra i Analiz7(2) (1995),121--132,
+https://www.mathnet.ru/eng/aa551 . Lemma1 gives the standard multipoint
+Pade error formula; Lemma2 gives the comparison principle used below.
+The proof below includes that comparison, so it does not depend on a
+translation or hidden theorem hypothesis.
+
+Proof ingredient 1: Ganelius product (classical)
+-----------------------------------------------
+For each fixed r>0 and all sufficiently large n, there are explicit
+a_1,...,a_n in (0,1) such that, for
+
+  B_n(s)=prod_{j=1}^n (s-a_j)/(s+a_j),
+
+  sup_{0<=s<=1} s^r |B_n(s)| <= A_r exp[-pi*sqrt(r*n)].       (G)
+
+A_r is independent of n. The finitely many smaller n can be absorbed
+into A_r. We use r=gamma/4. If desired, the explicit formula is TOS
+Definition2.5: n0=n-ceil((pi/4)*sqrt(n*r)), phi(u)=exp(pi*sqrt(u/r));
+a_j=phi(j-1)/phi(n0) for1<=j<=n0; a_(n0+1)=phi(n0-1/2)/phi(n0);
+a_j=1-(j-n0-1)/[5(n-n0-1)] for n0+2<=j<=n. Use only large n with
+n0>3 and n-n0-1>0, as in TOS AppendixB.
+
+Proof ingredient 2: double-node multipoint Gaussian error
+--------------------------------------------------------
+Let rho be a finite positive measure on [0,1], with infinite support,
+and set
+
+  g(x)=integral_[0,1] d rho(t)/(x+t), x>0.
+  Omega(t)=prod_j(t+a_j)^2,
+  d nu(t)=d rho(t)/Omega(t).
+
+Take the n-node Gaussian quadrature for nu, with nodes t_i in(0,1)
+and weights A_i>0, and define
+
+  r_n(x)=sum_i A_i Omega(t_i)/(x+t_i).
+
+It is a positive Stieltjes rational function of type[n-1/n], agrees
+with g and g' at every a_j, and is globally a lower bound for g.
+
+Indeed, Omega(t)-Omega(-x) is divisible by t+x, and the quotient has
+degree2n-1, so Gaussian exactness yields
+
+  g(x)-r_n(x)=Omega(-x)[S_nu(x)-Gauss_n(S_nu)(x)].
+
+Let q_n be the monic degree-n orthogonal polynomial for nu. The usual
+Gaussian Cauchy-transform identity gives
+
+ S_nu(x)-Gauss_n(S_nu)(x)
+     = [q_n(-x)]^{-2} integral q_n(t)^2/(x+t) d nu(t).        (E)
+
+For completeness, multiply the integrand by q_n(t)^2 and use Gaussian
+exactness on [q_n(t)^2-q_n(-x)^2]/(t+x), a polynomial of degree2n-1;
+the Gaussian samples q_n(t_i)^2 all vanish. This proves(E), including
+its positive sign.
+
+The polynomial q_n(t)/q_n(-x) minimizes
+
+   integral p(t)^2/(x+t) d nu(t)
+
+over all polynomials deg p<=n with p(-x)=1: the difference of any
+competitor from q_n/q_n(-x) has the form(t+x)s(t), deg s<=n-1;
+the cross term vanishes by orthogonality. Select competitor
+
+  p(t)=prod_j(t-a_j)/prod_j(-x-a_j).
+
+Combining with(E) gives the central double-product bound
+
+  0<=g(x)-r_n(x)
+       <= B_n(x)^2 integral_[0,1] B_n(t)^2/(x+t) d rho(t).   (DP)
+
+There are TWO occurrences of the Ganelius product. Bounding only
+the one at x loses the factor sqrt(2) and misses the conjecture.
+
+Apply(DP) to the singular part
+--------------------------------
+For 0<c<d<=1, gamma=d-c, set r=gamma/4 and
+
+  g_c(x)=integral_0^1 t^{-c}/(x+t)dt.
+
+This is a finite positive Markov measure because c<1. By(G),
+
+  B_n(s)^2 <= A_r^2 exp[-2*pi*sqrt(r*n)] s^{-2r}.
+
+Therefore, for 0<x<=1,
+
+ x^d(g_c-r_n)(x)
+  <= A_r^4 exp[-4*pi*sqrt(r*n)]
+       x^{d-2r} integral_0^1 t^{-c-2r}/(x+t)dt
+  <= A_r^4 [pi/sin(pi*(c+2r))]
+       exp[-4*pi*sqrt(r*n)] x^{d-c-4r}
+  = C_0(c,d) exp[-2*pi*sqrt(gamma*n)].                      (S)
+
+Here p=c+2r=(c+d)/2 lies STRICTLY between0and1 even when d=1,
+so integral_0^infty t^{-p}/(x+t)dt=pi*x^{-p}/sin(pi*p) is valid.
+The identity d-c-4r=0 is why the quarter-weight r=gamma/4 works.
+
+Treat the analytic tail with positive quadrature
+------------------------------------------------
+The Stieltjes representation of the full negative power is
+
+  x^{-c}=kappa_c[g_c(x)+h_c(x)],
+  kappa_c=sin(pi*c)/pi>0,
+  h_c(x)=integral_1^infty t^{-c}/(x+t)dt
+        =integral_0^1 s^{c-1}/(1+x*s)ds.
+
+Let H_k(x) be the k-point Gaussian quadrature for the measure
+s^{c-1}ds on[0,1]. It is a positive Stieltjes rational sum with poles
+strictly below-1, and is a global lower bound to h_c for x>0.
+For 0<=x<=1 expand1/(1+x*s) around s=1/2. Its ratio has magnitude
+
+  |x(s-1/2)/(1+x/2)|<=1/3.
+
+Truncation after degree2k-1 has uniform remainder<=3/2*3^{-2k}.
+Both the measure and its quadrature weights have total mass1/c.
+Gaussian exactness therefore gives
+
+  0<=h_c(x)-H_k(x)<= (3/c)*3^{-2k}, 0<=x<=1.               (A)
+
+This inequality also follows from standard Gauss-Jacobi theory; the
+Taylor argument makes the constant and degree accounting explicit.
+
+Fixed-prefactor degree accounting
+---------------------------------
+For total budget M choose
+
+  k=ceil(pi*sqrt(gamma*M)/log3), n=M-k,
+
+for all sufficiently large M that n>=1. Set
+
+  R_M=kappa_c(r_n+H_k).
+
+It has M positive poles and type[M-1/M]; the low poles lie in(-1,0),
+the high poles in(-infty,-1), so there is no overlap. Equations(S,A)
+give
+
+ sup x^d[x^{-c}-R_M(x)]
+  <=kappa_c[C_0 exp(-2*pi*sqrt(gamma*n))
+                   +(3/c)exp(-2*pi*sqrt(gamma*M))].
+
+As k<=pi*sqrt(gamma*M)/log3+1,
+
+ sqrt(M)-sqrt(n)=k/[sqrt(M)+sqrt(n)]
+              <=pi*sqrt(gamma)/log3+1.
+
+Thus this is at most a fixed C(c,d)*exp[-2*pi*sqrt(gamma*M)].
+For the finitely many smaller M, use the M-node Gaussian rule for
+t^{-c}(1+t)^{-2M}dt and rescale its positive weights by(1+t_i)^{2M}.
+It has M distinct positive poles, is a global positive lower bound,
+and has weighted error<=1 on(0,1]. Increase C for these finite cases.
+This proves(C2), provided the displayed
+classical product theorem is accepted. Every other step is proved
+above without asymptotic remainders.
+
+What remains before claiming a complete algorithmic breakthrough
+---------------------------------------------------------------
+1. Independent audit of(DP), the exponent arithmetic, and the all-M
+   degree accounting. This has been sent to the coordinator.
+2. Complete/direct Conjecture1 transfer, especially a=1 and b=2,
+   preserving the double Hermite zero at x=1 and positive SDP kernels.
+   FF explicitly says Conjecture2 is sufficient, but a stated
+   implication should be checked or independently proved.
+3. Account for scalar preprocessing and finite-precision quadrature
+   construction. The exact-real construction is explicit but this file
+   does not yet claim a certified bit bound or numerical conditioning.
+4. Primary current literature audit: so far no resolution was found,
+   which does NOT certify novelty. The main ingredients(G,E) are
+   classical. The candidate new step is their twice-weighted use(DP,S)
+   for the published negative-power weighted conjecture.
+
+Direct positive construction for FULL Conjecture 1
+=================================================
+Candidate derivation added2026-11-14. Still pending independent audit.
+This bypasses the stated Conjecture2 implication and proves positivity
+and the double zero at1 directly, including a=1 and b=2.
+
+Fix1<=a<b<=2, write gamma=b-a and kappa=a*gamma/b. Let
+
+ H_a(x)=f_a(x)/(x-1)^2
+       =K_a integral_0^infty t^a/[(1+t)^2(x+t)]dt,           (H)
+ K_a=sin(pi*(a-1))/[pi*a*(a-1)] for a>1, K_1=1.
+
+The formula extends at x=1 continuously and is FF's representation
+after a simple change of variables. Since a<b<=2, always a<2, so
+K_a>0 and both tails converge. Split(H) as
+
+ H_a(x)/K_a=G_-(x)+G_+(x),
+ G_-(x)=integral_0^1 t^a/[(1+t)^2(x+t)]dt,
+ G_+(x)=integral_0^1 s^{1-a}/[(1+s)^2(1+x*s)]ds.
+
+Uniform elementary lower bound on the relative weight
+-----------------------------------------------------
+Because f_b''(x)=x^{b-2},
+
+ H_b(x)=integral_0^1 (1-u)[1+u(x-1)]^{b-2}du
+       >=(1/2)*min(1,x^{b-2}) for ALL x>0.                (W)
+
+This includes b=2 with equality H_2=1/2. Thus no excluded endpoint
+case in FF Theorem11 is needed.
+
+Generalized quadrature bound with extra moment conditions
+--------------------------------------------------------
+Let rho(t)dt be a positive density on[0,1]. Choose n positive
+Ganelius nodes a_j and let
+
+ Omega(t)=t^ell prod_{j=1}^n(t+a_j)^2, ell=0 or1.
+
+Assume nu(dt)=rho(t)dt/Omega(t) is finite. Take m=n+k Gaussian
+nodes for nu, where k>=1. Define the positive rational quadrature
+
+ Q(x)=sum_{i=1}^m A_i Omega(t_i)/(x+t_i).
+
+The degree condition2n+ell-1<=2m-1 holds. The same Gaussian Cauchy
+error identity and Christoffel minimum as above apply. Test with
+
+ p(t)=[prod_j(t-a_j)](t-1/2)^k
+                 /{[prod_j(-x-a_j)](-x-1/2)^k}.
+
+This proves
+
+ |integral rho(t)/(x+t)dt-Q(x)|
+ <= x^ell B_n(x)^2 integral_0^1 B_n(t)^2
+       [(t-1/2)/(x+1/2)]^{2k} rho(t)t^{-ell}/(x+t)dt.      (GX)
+
+In particular, the extra ratio is <=1 for x>0,t in[0,1], and is
+at most(2x+1)^{-2k}. The error sign is(-1)^ell: ell=0 is a lower
+approximation, ell=1 an upper approximation, but all weights remain
+strictly positive in both cases.
+
+Low part: one interpolation at0, Ganelius exponent a/4
+-----------------------------------------------------
+Apply(GX) to rho(t)=t^a/(1+t)^2 with ell=1 and r=a/4. The divided
+measure has density t^{a-1}/[(1+t)^2 prod(t+a_j)^2], finite even
+at a=1. Let n=n_- and use k>=1 extra Gaussian nodes.
+For0<x<=1, discard the extra ratio and use(G) twice:
+
+ |G_-(x)-Q_-(x)|
+ <= A_(a/4)^4 exp[-2*pi*sqrt(a*n_-)]
+        x^{1-a/2} integral_0^1 t^{a/2-1}/(x+t)dt
+ <= [A_(a/4)^4*pi/sin(pi*a/2)]
+        exp[-2*pi*sqrt(a*n_-)].                          (L1)
+
+The beta integral is finite because0<a/2<1. The factor x from the
+single endpoint interpolation is essential to cancel the power of x.
+
+Forx>=1, discard both B factors, retain the extra ratio, and use
+x/(x+t)<=1:
+
+ |G_-(x)-Q_-(x)| <= (1/a)(2x+1)^{-2k}.
+
+Since2x+1>=3*sqrt(x) forx>=1 and k>=1>=2-b, (W) gives
+
+ |G_-(x)-Q_-(x)|/H_b(x) <= (2/a)*3^{-2k}, x>=1.          (L2)
+
+Forx<=1, division by H_b costs at most2 in(L1).
+
+High part: weighted negative-power Ganelius exponent gamma/4
+------------------------------------------------------------
+Letz=1/x, c=a-1>=0, d=b-1<=1. Then
+
+ G_+(x)=z*g(z),
+ g(z)=integral_0^1 s^{-c}/[(1+s)^2(z+s)]ds.
+
+Apply(GX) with ell=0, rho(s)=s^{-c}/(1+s)^2, r=gamma/4,
+n=n_+, again with k>=1 extra Gaussian nodes. The measure is finite
+becausec<1. For0<z<=1, the twice-weighted argument(S) applies also
+when c=0, since p=c+gamma/2=(a+b-2)/2 lies strictly between0and1:
+
+ z^{b-1}|g(z)-Q_+(z)|
+ <= [A_(gamma/4)^4*pi/sin(pi*(a+b-2)/2)]
+       exp[-2*pi*sqrt(gamma*n_+)].                       (U1)
+
+Forx>=1, (W) says H_b(x)>=(1/2)z^{2-b}. Therefore the error of
+the rational function z*Q_+(z) relative to H_b is <=2 times(U1).
+
+Forz>=1 (equivalently x<=1), retain the extra ratio in(GX):
+
+ z|g(z)-Q_+(z)| <= [1/(2-a)](2z+1)^{-2k}.
+
+Using H_b(x)>=1/2 forx<=1 gives
+
+ |G_+(x)-z*Q_+(z)|/H_b(x) <= [2/(2-a)]3^{-2k}.           (U2)
+
+Positive kernel form and Hermite constraints
+-------------------------------------------
+Set
+
+ fhat(x)=K_a (x-1)^2 [Q_-(x)+x^{-1}Q_+(x^{-1})].
+
+The first quadrature gives terms v_i/(x+t_i), with v_i>0,
+t_i in(0,1). These become allowed FF kernels with node
+T_i=1/(1+t_i) in(1/2,1) and weight K_a*v_i/(1+t_i)>0.
+The second quadrature gives v_i/(1+x*s_i), with v_i>0,
+s_i in(0,1). These become allowed FF kernels with node
+T_i=s_i/(1+s_i) in(0,1/2) and weight K_a*v_i/(1+s_i)>0.
+All nodes lie strictly inside[0,1], and the two groups do not overlap.
+The factor(x-1)^2 enforces fhat(1)=fhat'(1)=0 exactly.
+
+Combining(L1,L2,U1,U2) proves, with finite constants depending only
+on a,b,
+
+ sup_{x>0} |f_a(x)-fhat(x)|/f_b(x)
+ <= C_- exp[-2*pi*sqrt(a*n_-)]
+     +C_+ exp[-2*pi*sqrt(gamma*n_+)]
+     +2*K_a[1/a+1/(2-a)]3^{-2k}.                        (ERR)
+
+Total node count is m=n_-+n_++2k.
+
+Sharp quadratic node count with LINEAR overhead
+------------------------------------------------
+For a requested exponent L>0 choose
+
+ n_-=ceil[L^2/(4*pi^2*a)],
+ n_+=ceil[L^2/(4*pi^2*gamma)],
+ k=max(1,ceil[L/(2*log3)]).
+
+Then(ERR)<=C(a,b)*exp(-L), and
+
+ m(L)<= b*L^2/[4*pi^2*a*(b-a)] + L/log3 + O(1).           (COUNT)
+
+The implicit O(1) is a bounded rounding term, independent of L.
+Its inversion gives a FIXED prefactor at the exact exponent:
+
+ epsilon^[m]_(a,b)
+    <= C'(a,b) exp[-2*pi*sqrt(a*(b-a)*m/b)]
+
+for every integer m>=1, after enlarging C' for finitely many small
+m. For example, solving A L^2+B L+C0=m with
+A=b/[4*pi^2*a*(b-a)], B=1/log3 gives
+
+ L=2*pi*sqrt(a*(b-a)*m/b)-2*pi^2*a*(b-a)/(b*log3)+O(m^-1/2),
+
+and the bounded shift is absorbed into C'. No strip-width limit or
+unbounded subleading exponent is used.
+
+For a=1,b=2 specifically,
+
+ m(L)<=L^2/(2*pi^2)+L/log3+O(1),
+ epsilon^[m]_(1,2)<=C exp[-pi*sqrt(2*m)].
+
+This is the exact full conjectured exponent for the SDP application,
+with positive weights and the double Hermite zero already enforced.
+
+The negative-parameter half of Conjecture1 follows exactly from
+f_alpha(x)=x*f_(1-alpha)(1/x). Under this involution an allowed kernel
+with node T maps to the same allowed kernel with node1-T and unchanged
+weight. Apply the established positive-parameter case with
+a=1-alpha,b=1-beta for-1<=beta<alpha<=0. This gives exponent
+2*pi*sqrt[(1-alpha)*(alpha-beta)*m/(1-beta)] and covers alpha=0.
+
+Remaining gates after direct construction
+------------------------------------------
+The main mathematical gate is now independent audit of(GX),(ERR) and
+the classical product theorem invocation, plus priority review. The
+direct construction resolves the previous endpoint/Hermite obstacle
+if these checks survive. Need still give an honest scalar preparation
+cost (at least exact-real algebraic operations with explicit moment
+or special-function evaluation costs) before calling it a completely
+costed algorithm. No bit-complexity or stable floating-point claim is
+currently being made.
+
+One global quadrature: bounded overhead and elementary preprocessing
+===================================================================
+This is the preferred, sharper candidate proof. It replaces the
+two separately constructed compact quadratures by ONE quadrature on
+(0,infinity). In particular it needs no analytic-tail node reserve.
+
+Set gamma=b-a, kappa=a*gamma/b, fix integer n_-,n_+>=1, and let
+
+  m=n_-+n_++1.
+
+Take Ganelius nodes a_j in(0,1), j=1..n_-, with parameter r_-=a/4;
+and Ganelius nodes b_j in(0,1), j=1..n_+, with parameter r_+=gamma/4.
+Define
+
+ B_-(s)=prod_j(s-a_j)/(s+a_j),
+ B_+(s)=prod_j(s-b_j)/(s+b_j),
+ B(s)=B_-(s)*B_+(1/s),
+ D_-=A_(a/4)^2 exp[-pi*sqrt(a*n_-)],
+ D_+=A_(gamma/4)^2 exp[-pi*sqrt(gamma*n_+)].
+
+The irrelevant sign in B_+(1/s) can be dropped. For every s>0,
+|B(s)|<=1. Moreover the classical product theorem gives
+
+ B(s)^2<=D_-*s^{-a/2} for0<s<=1,
+ B(s)^2<=D_+*s^{gamma/2} for1<=s<infinity.                 (ENV)
+
+The single positive modified measure
+-------------------------------------
+Let rho(t)=t^a/(1+t)^2 and
+
+ Omega(t)=t(t+1) prod_j(t+a_j)^2 prod_j(t+1/b_j)^2,
+ nu(dt)=rho(t)dt/Omega(t).
+
+Omega has degree2m and is strictly positive for t>0. At zero,
+nu has density asymptotic to a positive constant times t^{a-1},
+which is integrable for a>=1. At infinity it has density asymptotic
+to t^{a-2m-2}. Thus ALL moments through degree2m-1 are finite,
+because the last moment behaves as t^{a-3} and a<2.
+
+It is not necessary for the degree2m moment to be finite. The
+following elementary Gaussian construction uses only2m-1 moments.
+Solve for the monic polynomial q_m of degree m satisfying
+
+ integral q_m(t)t^j dnu(t)=0, j=0,...,m-1.
+
+The m-by-m moment matrix is positive definite, so q_m exists and
+is unique. It has m distinct roots t_i in(0,infinity): otherwise,
+multiplying q_m by the product of its fewer than m sign-changing
+positive roots gives a polynomial of degree<=2m-1 of one nonzero
+sign on the support, contradicting orthogonality. Let ell_i be its
+degree m-1 Lagrange polynomials and set A_i=integral ell_i dnu.
+Polynomial division by q_m proves Gaussian exactness through degree
+2m-1, and A_i=integral ell_i^2 dnu>0 proves positive weights.
+
+Define the actual approximant of H_a by
+
+ R_m(x)=K_a sum_{i=1}^m A_i Omega(t_i)/(x+t_i).            (R)
+
+It has m distinct negative poles and strictly positive residues.
+
+Exact error identity and the special test polynomial
+-----------------------------------------------------
+Polynomial division of Omega(t)-Omega(-x) by t+x, followed by the
+Gaussian identity(E), gives
+
+ [H_a(x)-R_m(x)]/K_a
+   =Omega(-x)/q_m(-x)^2
+               integral q_m(t)^2/(x+t) dnu(t).            (GE)
+
+All integrals are finite. Although integral q_m(t)^2 dnu(t) may
+diverge, integral q_m(t)^2/(x+t)dnu(t) uses at most the finite
+degree2m-1 moment. The Christoffel minimum argument remains valid:
+its cross term is integral q_m(t)s(t)dnu(t), deg s<=m-1.
+
+Use the degree-m test polynomial
+
+ q0(t)=(t-1) prod_j(t-a_j) prod_j(t-1/b_j).
+
+The two ratios simplify as
+
+ |Omega(-x)|/q0(-x)^2
+   = [x*|x-1|/(x+1)^2] * B(x)^2,
+
+ q0(t)^2/Omega(t)
+   = [(t-1)^2/(t(t+1))] * B(t)^2.
+
+Thus(GE) and Christoffel minimization prove the key global bound
+
+ |H_a(x)-R_m(x)|/K_a
+ <= [x*|x-1|/(x+1)^2] B(x)^2
+       integral_0^infinity B(t)^2
+            t^{a-1}(t-1)^2/[(1+t)^3(x+t)]dt.             (GLOBAL)
+
+Everything in this estimate is positive. The actual error has sign
+sign(x-1), since Omega(-x)=x(x-1) times a square. In particular
+R_m interpolates H_a at x=1.
+
+Uniform bound for x<=1
+----------------------
+For x<=1 the outside factor is at most x. For t<=1 the integrand
+apart from B(t)^2 is at most t^{a-1}/(x+t); for t>=1 it is at most
+t^{a-2}/(x+t). Apply(ENV) to x and to the two pieces of the integral:
+
+ |H_a-R_m|/K_a
+ <=D_-^2 x^{1-a/2} integral_0^1 t^{a/2-1}/(x+t)dt
+   +D_-D_+ x^{1-a/2}
+                   integral_1^infinity t^{a-2+gamma/2}/(x+t)dt
+ <=D_-^2 *pi/sin(pi*a/2)
+   +D_-D_+ /[2-a-gamma/2].                              (LEFT)
+
+The denominator2-a-gamma/2=2-(a+b)/2 is positive because a<b<=2.
+Also1-a/2>0. The first beta integral is valid because0<a/2<1.
+Use(W), H_b>=1/2 here, to get the same relative estimate times2K_a.
+
+Uniform bound for x>=1
+----------------------
+The outside factor is at most1. Apply(ENV) to x and split at t=1:
+
+ |H_a-R_m|/K_a
+ <=D_-D_+ x^{gamma/2} integral_0^1 t^{a/2-1}/(x+t)dt
+   +D_+^2 x^{gamma/2}
+                   integral_1^infinity t^{a-2+gamma/2}/(x+t)dt.
+
+For the first term, use1/(x+t)<=1/x and integral_0^1 t^{a/2-1}dt=2/a.
+Divide by(W), H_b>=x^{b-2}/2: its remaining x power is
+gamma/2-1+2-b=1-(a+b)/2<0, hence it is bounded by1.
+
+For the second term put p=2-a-gamma/2=2-(a+b)/2, which lies in(0,1).
+The beta integral over(0,infinity) gives pi*x^{-p}/sin(pi*p).
+Its x power after division byH_b is gamma/2-p+2-b=0. Therefore
+
+ |H_a(x)-R_m(x)|/H_b(x)
+ <=2*K_a[(2/a)D_-D_+ +(pi/sin(pi*p))D_+^2], x>=1.         (RIGHT)
+
+Together(LEFT,RIGHT) prove
+
+ sup_{x>0} |H_a(x)-R_m(x)|/H_b(x)
+       <=C(a,b)[D_-^2+D_-D_++D_+^2].                    (FIN)
+
+All constants are fixed, independent of n_-,n_+ and m.
+
+Node count and exact conjectured bound
+---------------------------------------
+For target exponent L>0 choose
+
+ n_-=ceil[L^2/(4*pi^2*a)],
+ n_+=ceil[L^2/(4*pi^2*gamma)].
+
+Then each term on the RHS of(FIN) is at most a fixed constant times
+exp(-L). Since m=n_-+n_++1,
+
+ m<= L^2/[4*pi^2*kappa]+3.                               (BESTCOUNT)
+
+For each large integer m one may instead allocate
+n_-=floor[gamma*(m-1)/b], n_+=m-1-n_-.
+Both a*n_- and gamma*n_+ equal kappa*m+O_(a,b)(1), and the cross
+exponent is their mean. Thus directly
+
+ epsilon^[m]_(a,b) <= C(a,b)*exp[-2*pi*sqrt(kappa*m)]
+
+for all m>=1 after enlarging C over finitely many small m. This is
+the FULL exact fixed-prefactor Conjecture1 in its positive and,
+by the involution already given, negative parameter ranges.
+
+Allowed positive rational quadrature
+-------------------------------------
+From(R), set T_i=1/(1+t_i) in(0,1),
+u_i=K_a A_i Omega(t_i)/(1+t_i)>0. Then
+
+ fhat_m(x)=(x-1)^2 R_m(x)
+           =sum_i u_i (x-1)^2/[1+T_i(x-1)].
+
+The denominator roots are distinct, so the T_i are distinct and can
+be sorted. The factor(x-1)^2 gives exact double Hermite constraints
+at1; indeed the construction also matches H_a(1)=1/2, so fhat''(1)=1.
+
+Elementary scalar preprocessing, with costs explicitly separated
+------------------------------------------------------------------
+R_m is the unique type[m-1/m] rational Hermite interpolant of H_a at
+the following total2m data:
+
+   x=0 once, x=1 once,
+   x=a_j twice for all low Ganelius nodes,
+   x=1/b_j twice for all high Ganelius nodes.
+
+At zero H_a(0)=1/a and at1 H_a(1)=1/2. All other values/first
+derivatives are explicit from x^a, or x*log(x) whena=1. Repeated
+Ganelius nodes, if any, mean the corresponding higher Hermite data.
+
+The interpolation statement follows directly from(GE), with the
+zero at x=0 also justified by Gaussian exactness on Omega(t)/t,
+and the zero at1 by exactness on Omega(t)/(t+1), both polynomials
+of degree2m-1. For distinct positive nodes the other zeros are double.
+Uniqueness follows because the difference numerator of two type
+[m-1/m] rationals has degree<=2m-1 but at least2m zeros counted with
+multiplicity. Both denominators have no nonnegative roots.
+
+Consequently, construction can proceed without moment integration:
+form the2m linear interpolation equations for numerator and monic
+denominator coefficients and solve by dense elimination. This costs
+O(m^3) scalar arithmetic operations, O(m^2) storage, and O(m)
+elementary power/log evaluations for distinct nodes. Obtain the m
+positive t_i as the negatives of the denominator roots, and the
+positive residues as P(-t_i)/Q'(-t_i). Node/residue extraction is a
+degree-m real-root problem, explicitly charged separately; it is
+not assumed free. The theorem proves exact positivity of that result.
+
+This is an exact-real arithmetic preprocessing bound. A certified
+finite-precision root extraction/conditioning analysis has not yet
+been completed here, so no bit-complexity or stable machine-precision
+claim is made. The mathematical theorem and node count do not depend
+on choosing this particular numerical implementation.
+
+Explicit SDP consequences, with the quantum block-size caveat
+============================================================
+Scalar epigraph: introduce scalars y_i, require tau>=sum u_i*y_i and
+
+  [[1+T_i(x-1), x-1], [x-1,y_i]] >=0
+
+for each of the m nodes. Thus exactly m PSD blocks of size2 and m
+auxiliary scalars represent tau>=fhat_m(x), x>0.
+
+Matrix perspective: for positive definite n-by-n Hermitian A,B, set
+P_f(A,B)=B^(1/2) f(B^(-1/2) A B^(-1/2)) B^(1/2).
+Its rational approximation is
+
+ P_fhat(A,B)=sum_i u_i(A-B)[(1-T_i)B+T_i A]^{-1}(A-B).
+
+Introduce Hermitian Y_i and require T>=sum_i u_i Y_i together with
+
+ [[(1-T_i)B+T_i A, A-B], [A-B,Y_i]] >=0.
+
+This is an explicit representation with exactly m PSD blocks of
+size2n. Functional calculus and congruence give the certified matrix
+inequalities -epsilon P_fb <= P_fa-P_fhat <= epsilon P_fb.
+This claim is independently proved from the scalar theorem.
+
+Petz quantum f-divergence / Umegaki relative entropy: on the n^2
+dimensional Hilbert--Schmidt space let L_rho(Z)=rho*Z,
+R_sigma(Z)=Z*sigma, and b=vec(rho-sigma). Each allowed kernel has
+
+ S_fT(rho||sigma)
+  = b^* [T I tensor rho+(1-T) sigma^transpose tensor I]^{-1} b.
+
+This follows by diagonalizing rho and sigma on the left and right;
+its summands are |<u_i,v_j>|^2*(rho_i-sigma_j)^2 /
+[(1-T)*sigma_j+T*rho_i]. Therefore the epigraph of S_fhat has m
+Schur-complement blocks of size(n^2+1), with the displayed affine
+top-left matrix, off-diagonal b, and a scalar bottom-right y_i,
+plus tau>=sum u_i y_i. This supplies an explicit, polynomial-size
+SDP without needing an unpublished representation theorem.
+
+For a=1,b=2 and density matrices of trace1, scalar functional
+calculus for the relative modular operator gives
+
+ |D(rho||sigma)-S_fhat(rho||sigma)|
+  <=(epsilon/2)[Tr(rho^2 sigma^{-1})-1].
+
+For target scalar error epsilon, the proven construction gives
+m<=log^2(C/epsilon)/(2*pi^2)+3, with fixed C, rather than the
+log^2(1/epsilon)/pi^2 leading node count implied by FF's Theorem4.
+The actual end-to-end SDP solution cost depends on n and on the
+chosen solver; the theorem is an explicit approximation-size result,
+not a claim of quadratic-time quantum entropy optimization.
+
+IMPORTANT PRIMARY-SOURCE LIMITATION: FF Theorem5 states a smaller
+O(m)-block representation with each block of size2n for Umegaki D,
+but explicitly offers it without proof, citing forthcoming Fawzi2023
+"Smaller semidefinite approximations of quantum f-divergences".
+Its author publication page inspected2026-11-14 still does not list
+that title. The n^2+1 block representation above is fully derived;
+the 2n block Umegaki consequence may be quoted as FF's stated theorem
+with attribution, but is not independently proved in this note.
+
+Small numerical check of GLOBAL (not a proof)
+---------------------------------------------
+2026-11-14, direct JavaScript in tools, ordinary double arithmetic.
+For n_-=n_+=1 choose low interpolation node0.2 and high node4,
+in addition to interpolation at0,1, so m=3. Solving the6-by-6
+Hermite linear system gave, for a=1,b=2,
+
+ poles: -0.0937658600, -0.9448054485, -9.3567504774;
+ residues: 0.0218138774, 0.4823382952, 2.4032065223.
+
+For a=1.3,b=1.8 it gave
+
+ poles: -0.1412025126, -1.2857358198, -15.3930576837;
+ residues: 0.0149490272, 0.4644246242, 4.6509854919.
+
+On61 logarithmically spaced evaluation points from exp(-10) to
+exp(10), ignoring the exact x=1 zero, numerical integration of the
+RHS of(GLOBAL) gave zero violations. Maximum actual error / GLOBAL
+bound was0.959867 and0.971722, respectively. These chosen nodes
+check the structural inequality, not the asymptotic Ganelius rate.
+
+Bounded current priority check
+-------------------------------
+FF arXiv record inspected2026-11-14 remains v1 only. Faust's primary
+December2023 Cambridge thesis, "Convex Relaxations: Beyond
+Polynomials, Splitting Methods and Average Case Analysis", still
+states these as Conjectures3.1 and3.2 on printed pp85--86:
+https://api.repository.cam.ac.uk/server/api/core/bitstreams/95b542c8-984c-45ca-bfee-e90bcad55a73/content
+Hamza Fawzi's current primary publications page calls the joint
+rational-approximation paper a preprint:
+https://www.damtp.cam.ac.uk/user/hf323/publications.html .
+Targeted searches for the exact conjectures, weighted negative powers,
+and Faust/Fawzi/Ganelius did not locate a primary resolution. This is
+a bounded search, not certification of novelty or exhaustive priority.
+
+One global quadrature also gives elementary preparation for Conjecture2
+=====================================================================
+The first Conjecture2 proof above split the Markov integral and used
+an analytic-tail quadrature. This variant keeps one global quadrature
+and uses only values/derivatives of x^{-c} as interpolation data.
+
+Fix0<c<d<=1, gamma=d-c, r=gamma/4, and take n Ganelius nodes a_j.
+LetM=n+k and
+
+  Omega(t)=(1+t)^{2k} prod_j(t+a_j)^2,
+  nu(dt)=t^{-c}dt/Omega(t).
+
+The moments through2M-1 are finite: the last tail is t^{-c-1} and
+the zero endpoint is t^{-c}. Take its M-node Gaussian quadrature
+and rescale weights by Omega(t_i), as before. After multiplying by
+K_c=sin(pi*c)/pi this is a positive Stieltjes rational R_M, and
+0<=R_M(x)<=x^{-c} for allx>0 because Omega(-x)>=0.
+
+Test Christoffel minimization with q0(t)=prod_j(t-a_j), degree n<=M.
+For0<x<=1 this yields
+
+ x^d[x^{-c}-R_M(x)]/K_c
+ <=x^d(1-x)^{2k} B_n(x)^2
+         integral_0^infinity B_n(t)^2 t^{-c}/[(1+t)^{2k}(x+t)]dt.
+
+Put D=A_r^2 exp[-pi*sqrt(gamma*n)]. On(0,1], B_n(s)^2<=D*s^{-gamma/2}.
+Splitting the last integral at1, its first part is bounded as before
+byD^2*pi/sin(pi*(c+d)/2). In the second part, discard B_n(t)^2<=1,
+use(1+t)^{-2k}<=2^{-2k},1/(x+t)<=1/t, and x^{(c+d)/2}<=1. Thus
+
+ sup_{0<x<=1} x^d[x^{-c}-R_M(x)]
+  <=K_c[D^2*pi/sin(pi*(c+d)/2) +(D/c)2^{-2k}].            (C2GLOBAL)
+
+For target exponentL choose
+
+ n=ceil[L^2/(4*pi^2*gamma)],
+ k=max(1,ceil[L/(4*log2)]).
+
+Then(C2GLOBAL)<=C(c,d)e^{-L}, with
+
+ M<=L^2/(4*pi^2*gamma)+L/(4*log2)+O(1).
+
+This again proves the FULL fixed-prefactor Conjecture2, with an
+explicit positive lower approximant of type[M-1/M]. It is the
+Hermite interpolant of x^{-c} at each a_j twice and at1 with
+multiplicity2k. These2M data use only elementary powers and their
+derivatives. Dense scalar preparation costsO(M^3) arithmetic and
+O(M^2) storage plus the charged degree-M pole extraction, as in the
+preferred Conjecture1 construction.
+
+Conservative finite-precision preparation route (separate audit needed)
+=====================================================================
+This section gives a polynomial bound rather than claiming that the
+monomial Hermite system is stable at machine precision. Its matrix
+perturbation constants should receive an independent numerical-analysis
+audit before presenting a polished bit-complexity theorem.
+
+For the preferred global Conjecture1 construction, normalize
+
+ Omega(t)=t(t+1) prod_j[(t+c_j)/(1+c_j)]^2,
+
+where the m-1 numbers c_j are the low a_j and reciprocal high1/b_j.
+This scalar normalization does not change the resulting quadrature.
+Set s=t/(1+t) and
+
+ eta(ds)=(1-s)^[-(2m-1)] nu(dt),
+ D(s)=prod_j[(s+c_j(1-s))/(1+c_j)]^2.
+
+An exact change of variables yields
+
+ eta(ds)=s^{a-1}(1-s)^{1-a}ds/D(s), s in(0,1).            (ETA)
+
+The transformed m Gaussian nodes are s_i=t_i/(1+t_i). If B_i are
+the Gaussian weights for eta, then the original weights are
+A_i=B_i(1-s_i)^{2m-1}. The actual positive pole residues in H_a are
+
+ v_i=K_a B_i s_i D(s_i)/(1-s_i).                          (RES)
+
+Indeed, transforming any polynomial of degree<=2m-1 in t gives a
+polynomial of that degree in s after multiplication by(1-s)^{2m-1};
+this proves both directions of the quadrature correspondence.
+
+For fixed a,b, explicit Ganelius nodes have |log c_j|<=C_(a,b)*sqrt(m).
+Each factor(s+c_j(1-s))/(1+c_j) lies between
+min(1,c_j)/(1+c_j) and1. Therefore
+
+ exp[-C_(a,b)m^{3/2}]<=D(s)<=1, 0<=s<=1.
+
+Thus eta lies between the fixed Jacobi weight
+w_a(s)=s^{a-1}(1-s)^{1-a} and exp[C m^{3/2}]w_a(s). Both Jacobi
+exponents exceed-1. All moments and the total mass are bounded by
+exp[C m^{3/2}], while the m-by-m monomial Gram matrix H0 has
+lambda_min(H0)>=exp[-C'm]. To see the latter bound, restrict the
+integral to[1/4,3/4], where w_a is bounded below, and use shifted
+Legendre polynomials to bound coefficient norm by C^m times L2 norm.
+The harmless powers of m can be absorbed into C'^m. The same lower
+bound holds for H1=integral s*v(s)v(s)^T deta(s) and H0-H1, with
+v(s)=(1,s,...,s^{m-1})^T.
+
+Consequences:
+  * Every s_i and1-s_i is at least exp[-C m^{3/2}], by the generalized
+    Rayleigh quotients for H1,H0 and H0-H1,H0.
+  * Every B_i>=lambda_min(H0)/m>=exp[-C'm], using the Christoffel
+    identity B_i=1/[v(s_i)^T H0^{-1}v(s_i)].
+  * Every pair of nodes is separated by exp[-C m^{3/2}]. Indeed, if
+    V has columns v(s_i), then H0=V diag(B_i)V^T, B_i<=eta([0,1]),
+    so sigma_min(V)>=sqrt(lambda_min(H0)/eta([0,1])). Since
+    ||v(s_i)-v(s_j)||<=m^{3/2}|s_i-s_j| and also is at least
+    sqrt(2)*sigma_min(V), the stated gap follows.
+
+Consequently standard Cholesky plus symmetric generalized-eigenvalue
+perturbation bounds imply that moments accurate to
+
+  P=C_(a,b)m^{3/2}+C_(a,b)L+O(log m) bits
+
+suffice for relative pole/residue errors O(exp(-L)), with positivity
+preserved by interval certification. The endpoint gaps control the
+map t=s/(1-s); (RES) and the root gap control weights and residues.
+This is a conservative bound, not an optimized condition estimate.
+
+One can compute these moments with polynomial work. Under the
+logistic map s=exp(y)/(1+exp(y)), the2m moment integrands extend to
+any fixed strip |Im y|<=d<pi. On, for example, d=pi/4 their envelope
+is bounded by
+
+ exp[C m^{3/2}] min(exp(a*y),exp(-(2-a)*y)), y real,
+
+uniformly for moment degree0,...,2m-1. This follows factor by factor
+from |exp(y+iv)+c|>=cos(d/2)(exp(y)+c), including the rational D.
+The usual trapezoid strip bound plus tail truncation gives P-bit
+absolute moment accuracy with
+
+ N=O_(a,b)((P+m^{3/2})^2)
+
+real samples. Evaluating all2m moments and all denominator factors
+at these samples costs O(m*N) P-bit scalar operations, plus N
+elementary exponential/power evaluations. Gaussian recovery costs
+O(m^3) scalar linear algebra plus polynomial-precision symmetric
+eigenvalue work. Thus there is a fully polynomial preparation route
+in m and L; for m=O(L^2) its conservative sample arithmetic count is
+O(m^4+mL^2). Elementary function bit costs are to be charged in the
+usual way for fixed polynomial-time-computable a,b.
+
+Finally, relative perturbation of positive poles and residues by eta
+changes their Stieltjes sum by at most O(eta) times that positive sum,
+uniformly for ALL x>0. Since H_a/H_b is bounded (finite endpoint
+limits and continuity), and R_m/H_b is bounded by the established
+approximation theorem, eta=O(exp(-L)) preserves the target relative
+error after a fixed factor. It preserves the positive SDP structure.
+
+The preferred O(m^3) elementary Hermite route may be much faster in
+practice; this conservative moment route supplies a way to charge
+certification and high precision rather than treating pole extraction
+or exact Gaussian quadrature as free.
+
+Internal referee corrections2026-11-15UTC
+----------------------------------------
+The independently audited source hash before these two textual fixes
+was43da7c33c480cc9c0615354387c5ba43944f91c3b84176b7069467775071f11f.
+Corrected the stale r<1/4 introductory restriction to r<1/2 and replaced
+the zero small-M fallback by a strictly positive Gaussian construction.
+No main global proof was changed. The independent review record is
+docs/faust-fawzi-independent-audit.txt. The revised note hash is to be
+reported separately so this file need not contain its own hash.

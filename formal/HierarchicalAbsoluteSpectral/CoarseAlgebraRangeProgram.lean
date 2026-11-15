@@ -43,6 +43,15 @@ theorem orthogonalRangeProgram_correct (kernels : ∀ a b c : ℕ, ArithmeticKer
     (orthogonalRangeProgram kernels Y).eval.dimension_le_rows,
     (orthogonalRangeProgram kernels Y).eval.dimension_le_cols⟩
 
+theorem orthogonalRangeProgram_basis_in_range (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
+    (Y : Matrix (Fin m) (Fin w) ℝ) :
+    ∃ V : Matrix (Fin w) (Fin (orthogonalRangeProgram kernels Y).eval.dimension) ℝ,
+      (orthogonalRangeProgram kernels Y).eval.basis = Y*V := by
+  unfold orthogonalRangeProgram
+  rw [eval_bind,eval_bind,eval_bind,eval_pure]
+  dsimp only [OrthogonalRange.replaceBasis, rangeFromPSDGramOfEq]
+  exact ⟨_, (certify_eval _).trans (ArithmeticKernel.program_eval _ _ _)⟩
+
 theorem OrthogonalRange.projection_exact {Y : Matrix (Fin m) (Fin w) ℝ} (out : OrthogonalRange Y) :
     out.basis*out.basisᵀ*Y = Y := by
   calc

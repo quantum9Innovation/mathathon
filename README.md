@@ -223,3 +223,61 @@ local/supporting modules and 22 endpoint axiom audits pass. Reproduce the full c
 with `cd formal && python3 verify.py --jobs 2 --all-local`.
 The [practical examples](matmul/hierarchical-formal-significance.txt) explain the
 literal constants and the scope of the exact-real arithmetic model.
+
+## Hierarchical spectral theorem statements and Lean verification
+
+The formalization in [formal/](formal/) corresponds to
+[hierarchical-absolute-spectral.pdf](matmul/hierarchical-absolute-spectral.pdf).
+Start with the following declarations; each linked file contains the theorem
+statement and its Lean proof. All names are in the `HierarchicalAbsoluteSpectral`
+namespace.
+
+| Manuscript result | Lean declaration | Source |
+| --- | --- | --- |
+| Fixed-depth tradeoff | `fixed_depth_from_feasible_kernel_polylog` | [MainFeasibleKernel.lean](formal/HierarchicalAbsoluteSpectral/MainFeasibleKernel.lean) |
+| Growing-depth family, including total runtime | `growingDepthProgram_family_theorem` | [MainFamilyProgramFinal.lean](formal/HierarchicalAbsoluteSpectral/MainFamilyProgramFinal.lean) |
+| Optimized comparison corollary | `optimized_paper_corollary` | [CorollaryOptimizedFinal.lean](formal/HierarchicalAbsoluteSpectral/CorollaryOptimizedFinal.lean) |
+| Absolute error without a supplied rank | `absoluteFamilyProgram_paper_corollary` | [CorollaryAbsoluteFamilyFinal.lean](formal/HierarchicalAbsoluteSpectral/CorollaryAbsoluteFamilyFinal.lean) |
+| Two-level specialization | `two_level_specialization` | [CorollaryTwoLevel.lean](formal/HierarchicalAbsoluteSpectral/CorollaryTwoLevel.lean) |
+| Exact-Gram appendix algorithm | `exists_fast_exactGramAppendixComparator` | [ExactGramCharpolyAppendixCost.lean](formal/HierarchicalAbsoluteSpectral/ExactGramCharpolyAppendixCost.lean) |
+| Polynomial degree lower bound | `polynomial_inverse_congruence_natDegree_lower` | [PolynomialDegreeLower.lean](formal/HierarchicalAbsoluteSpectral/PolynomialDegreeLower.lean) |
+
+Read [FixedProblem](formal/HierarchicalAbsoluteSpectral/MainProblem.lean) and
+[FamilyProblem](formal/HierarchicalAbsoluteSpectral/MainFamilyProgramParameters.lean)
+to inspect the original matrix, dimension, rank, accuracy and confidence assumptions.
+The fixed-depth theorem also takes verified matrix-multiplication circuits and their
+feasible cost bound. Its conclusion includes the actual factors, `C = U * V`, rank,
+success probability and total work. Lean's `tailSingularValue (A * B) r` uses zero-based
+indexing and is the manuscript's `sigma_(r+1)(AB)`; the matrix norm is the spectral norm.
+The [complete theorem map](formal/THEOREM_MAP.txt) also identifies the supporting
+lemmas, the absolute-error uniform cap and the appendix's simplified cost bound.
+
+With Elan, Python 3 and a working C toolchain installed, run from the repository root:
+
+```bash
+cd formal
+elan toolchain install leanprover/lean4:v4.31.0
+lake exe cache get
+python3 verify.py --jobs 2 --all-local
+```
+
+[lean-toolchain](formal/lean-toolchain) pins Lean **4.31.0**; the
+[Lake configuration](formal/lakefile.toml) and [manifest](formal/lake-manifest.json)
+pin mathlib and its dependencies. The verifier checks local and supporting proof
+modules in dependency order, checks the final source/dependency hashes, and audits
+the transitive axioms of the public results. At the current revision, a successful
+run reports **22 endpoint axiom audits** and finishes with
+`Verified all 702 proof modules`.
+
+To display the exact theorem types, original-input structures and axiom lists for
+inspection after building, run:
+
+```bash
+lake env lean MainClosedAudit.lean
+```
+
+This [audit file](formal/MainClosedAudit.lean) uses `#check`, `#print` and
+`#print axioms`; the full verifier already runs it. The allowed foundational axioms
+are `propext`, `Classical.choice` and `Quot.sound`. Proof admissions and additional
+axioms are rejected. See the [verification guide](formal/VERIFICATION.txt) for the
+exact scope and verified implementation choices.

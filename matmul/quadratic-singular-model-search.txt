@@ -15,7 +15,7 @@ raw-factor-fresh-search.txt, partial-spectrum-fresh-search.txt, the exact
 q-state Lemma 6.1 in fractional-channel-classification.tex, and the raw
 inverse/update construction in sharp-matrix-function-updates.tex.
 
-Two precise new tests explain why the q-state existence result does not
+Three precise new tests explain why the q-state existence result does not
 currently remove the sharp-filter precision cost:
 
  (i) ALL normalized rational features with poles in a fixed cone about the
@@ -26,11 +26,18 @@ currently remove the sharp-filter precision cost:
 
  (ii) There are two POSITIVE probability measures on O(sqrt(m)) states,
       matching Theta(sqrt(m)) moments, whose normalized cone-resolvent
-      values AND BOTH feature Grams differ by exp(-Theta(sqrt(m))). One
+      values AND BOTH feature Grams differ by at most
+      exp(-Omega(sqrt(m))). One
       measure has no eigenvalue above 1; the other has a single state at
       1+2/m with mass Theta(1/m), and a common state at 1. Thus positivity,
       Herglotz consistency, small model dimension, and natural head mass
       do not imply stable recovery of the spectral edge.
+
+ (iii) Section 8 gives a direct rank-one-output version: two well-conditioned
+       SPD operators have exponentially close one-start cone actions and
+       IDENTICAL exact scalar/Gram data, yet no common rank-one output
+       attains error 1+1/m for both. The model's physical lifting can be
+       exponentially unstable even when its singular spectrum is exact.
 
 These are obstructions to a robust inference step from approximate
 off-axis data, NOT lower bounds for all raw-factor algorithms, randomized
@@ -103,7 +110,7 @@ the same estimates. Adding normalized scalar samples or either feature
 Gram does not restore directions removed by this near low-rank property.
 
 For q=Theta(sqrt(m)), robust Gram whitening against unrestricted absolute
-feature errors therefore has an exp(Theta(sqrt(m))) condition scale.
+feature errors therefore has condition at least exp(Omega(sqrt(m))).
 The claim is about a uniform perturbation bound; it does not assert that
 every particular approximation error realizes the worst direction.
 
@@ -199,7 +206,9 @@ These formulas permit all pole configurations, exact conjugates, and
 repeated Gram factors; they do not divide by differences between poles.
 For Q observed columns, operator norm of the Gram difference is at most
 Q times the entrywise bound (4.2). For Q polynomial in m this is still
-exp(-Theta(sqrt(m))). Known scalar rescalings recover the unnormalized
+at most exp(-Omega(sqrt(m))). These are upper bounds on the differences,
+not matching pointwise rates; individual poles can give zero difference.
+Known scalar rescalings recover the unnormalized
 resolvent conventions; the statements use comparable feature norms.
 
 Both sets of data come from actual positive measures and are therefore
@@ -234,15 +243,19 @@ information or exponentially accurate source data.
 Suppose a proposed bridge obtains q=Theta(sqrt(m)) far-cone features using
 the audited raw Richardson construction and then promises a spectral-edge
 accurate positive finite model uniformly under its certified absolute
-action errors. Sections 3--5 force source accuracy exp(-Theta(sqrt(m)))
-for such a robust promise. Positivity alone cannot replace that budget
-by m^(-O(1)). The known source arithmetic is
+action errors. Sections 3--5 require a source precision logarithm
+log(1/eps)=Omega(sqrt(m)) for such a robust promise. They do not give
+a matching characterization of the optimal radius for each example.
+Positivity alone cannot replace that precision budget by O(log m).
+The known source arithmetic is
   ~O(I q^(omega-2) log(q/eps)+m^omega).
 At I=Theta(Nm)=Theta(m^(17/8)), omega=9/4, q=Theta(sqrt(m)),
 the raw block factor before its precision logarithm is m^(9/4).
-The forced sqrt(m) precision logarithm raises this bound to m^(11/4),
-before the smaller explicit N^2=m^(9/4) output cost. Conventional
-arithmetic has the analogous additional sqrt(m) iteration factor.
+Instantiating THIS ROUTE'S source bound at eps=exp(-K sqrt(m)), for
+fixed K>0, gives an m^(11/4) cost bound before the smaller explicit
+N^2=m^(9/4) output cost. This substitution does not by itself complete
+the LRA bridge. Conventional arithmetic has the analogous additional
+sqrt(m) iteration factor in the cited source bound.
 
 This is a failure of the stated robust black-box bridge, not an arithmetic
 lower bound. Exact arithmetic may exploit structure of a correlated
@@ -272,8 +285,9 @@ or general matrix-multiplication exponent follows from this note.
 8. DIRECT ONE-START ROBUST-ORACLE LRA OBSTRUCTION
 
 The edge example strengthens to rank-one approximation. The scope is
-one supplied starting vector and approximate resolvent actions. No raw-
-factor lower bound or independently Gaussian-start lower bound is claimed.
+one fixed supplied starting vector and approximate resolvent actions,
+whose bounded errors may be correlated or adversarial. No raw-factor
+lower bound or independently Gaussian-start lower bound is claimed.
 
 THEOREM. Fix c in (0,1]. For all sufficiently large m there exist real
 SPD m-by-m S_0,S_1,S_2 and a common unit h such that:
@@ -289,10 +303,20 @@ SPD m-by-m S_0,S_1,S_2 and a common unit h such that:
   (c) NO rank-at-most-one C, including nonsymmetric C, satisfies both
         ||S_1-C||<=1+1/m,              ||S_2-C||<=1+1/m.
 
-An oracle returning exact S_0 actions is therefore admissible for either
-S_1 or S_2 at the accuracy in (b). A randomized reconstruction from these
-one-start data has success probability at most 1/2 on at least one input.
-The common returned data are exactly positive/Herglotz-consistent.
+For a common oracle that ALSO matches exact TRUE scalar/Gram extras,
+return exact S_1 actions for BOTH hidden inputs S_1,S_2. Their action
+distance is at most twice the radius in (b), absorbed by reducing
+kappa_c for sufficiently large m. The true extras of S_1 and S_2 are
+identical, so this entire common transcript is exactly positive/Herglotz-
+consistent with S_1 and matches the exact extras of both inputs.
+A randomized reconstruction receiving only these one-start data has
+success probability at most 1/2 on at least one of the two fixed inputs.
+
+Alternatively, exact S_0 actions together with S_0-derived scalar/Gram
+extras give a common positive transcript at the radius in (b). Those
+extras are exponentially close to the true S_1/S_2 extras, and generally
+are not equal to them. The two oracle versions are distinct. Both allow
+coherent biased errors; repeated-query averaging need not reduce them.
 
 PROOF. Write a=c/4, b=sqrt(a)/1000, d=floor(b sqrt(m)), theta=1/m, and
 xi=1+4theta. Repeat Section 3 at xi, now x_*=1+8/(a m). Let mu_R be
@@ -378,6 +402,10 @@ same moments through 2d, so they have the same first d powers at h.
 Consequently, for j=1,2,
   ||H_z(S_j)h-H_z(S_0)h||<=(8/3)4^(-d-1).
 The scalar/Gram estimate follows from Section 4. This proves (b).
+The triangle inequality bounds the S_1/S_2 action distance by twice
+this radius, proving admissibility of the exact-S_1 common oracle even
+when the exact true scalar/Gram extras are supplied. Its output law is
+the same on both hidden inputs, including under adaptive cone queries.
 
 For any rank-at-most-one C there is a unit
   x in span{v_1,v_2} intersect ker(C).
@@ -415,8 +443,13 @@ The quadrature and orthogonal-polynomial ingredients are classical:
 
 Every decisive bound is proved above. No novelty claim is made for
 analytic-continuation instability, rational Krylov conditioning, or
-classical quadrature. Section 8's direct LRA construction has been
-self-checked but has not yet received an independent proof audit.
+classical quadrature. The complete source, including Section 8, passed
+an independent mathematical audit at SHA256
+  f5d88f44f1c09f12b7fca3c8d93d668859b90b04fece79d9c4c8c9e78729b006.
+See quadratic-singular-model-independent-audit.txt. Its two statement
+clarifications are incorporated here: exponential differences are upper
+bounds, and the common oracle with exact true extras uses S_1 responses.
+No substantive mathematical change was needed after that review.
 No numerical diagnostic is used as proof. A direct floating-point
 construction check at d=2,4,8,12, a=1/4, b=.0005, m=(d/b)^2 found:
   beta/theta = .2222204, .3199981, .3950598, .4260335;

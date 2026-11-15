@@ -31,15 +31,19 @@ theorem shiftedSingularEigenvalueTestProgram_work_bound
     simpa only [Real.rpow_two] using Real.rpow_le_rpow_of_exponent_le hk1 hp
   have hkp0 : 0≤(k:ℝ)^p := Real.rpow_nonneg (by positivity) p
   have hkp1 : 1≤(k:ℝ)^p := by nlinarith
+  have hkk : (k:ℝ)≤(k:ℝ)^2 := by nlinarith
   dsimp only [D] at hinertia
   simp only [shiftedSingularEigenvalueTestProgram,shiftedEigenvalueTestOptionProgram,
     work_bind,certify_work,shiftedMatrixProgram_work,Nat.cast_add,Nat.cast_mul,Nat.cast_ofNat]
   split
   · simp only [work_pure,Nat.cast_zero]
     nlinarith
-  · simp only [work_bind,certify_work,ArithmeticProgram.work,work_pure,Nat.cast_add,
+  · rename_i out hOut
+    have hsign : ((positiveDiagonalCountProgram out.diagonal).work:ℝ)≤2*(k:ℝ) := by
+      exact_mod_cast positiveDiagonalCountProgram_work_le out.diagonal
+    simp only [work_bind,certify_work,ArithmeticProgram.work,work_pure,Nat.cast_add,
       Nat.cast_zero,Nat.cast_one]
-    nlinarith
+    nlinarith [mul_nonneg hC.le hkp0]
 
 theorem fixedRitzTestsProgram_work_bound
     (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)

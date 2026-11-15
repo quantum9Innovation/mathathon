@@ -1,0 +1,341 @@
+CONSTRUCTIVE SHARP FRACTIONAL GRAPH UPDATES WITH BOUNDED ENDPOINTS
+================================================================
+
+Working theorem and proof, 2026-11-15 UTC. Independent root reconstruction
+passed; see bounded-spectrum-graph-algorithm-independent-audit.txt.
+This note supplies a charged sparse algorithm for the improved leading
+width in bounded-spectrum-fractional-counts.txt. Polynomial subtraction
+and rational matrix-function updates are established mechanisms. No new
+scalar approximation rate or historical-priority claim is asserted.
+
+1. INPUT, GUARANTEE, AND COST
+============================
+Fix 0<alpha<1 and R>1. Let K,K' be graph conductance Laplacians on N
+vertices with a common positive diagonal mass matrix H, held fixed.
+Write A=H^-1/2 K H^-1/2 and B=H^-1/2 K' H^-1/2. Suppose k>=1 distinct
+edge conductances are increased by positive amounts d_e, and promise
+
+  max(||A||,||B||)<=R||E||, E=B-A.                       (1)
+
+Let M be the number of edges in their union. For epsilon,delta in (0,1),
+there is an algorithm returning real general factors P,Q with
+
+  Pr{||PQ^T-(B^alpha-A^alpha)||<=epsilon||E||^alpha}
+       >=1-delta,                                       (2)
+
+in expected ~O_(alpha,R)((M+N)k) arithmetic, including every factor entry.
+For each fixed k, uniformly over graph size, spectra and masses, its
+width is at most
+
+  [k/(4 pi^2 alpha)+o_(alpha,R,k)(1)]log^2(1/epsilon).   (3)
+
+More explicitly, with L=log(1/epsilon)+O_(alpha,R)(log(2k)), width is
+
+  k L^2/(4 pi^2 alpha)+O_(alpha,R)(k L^(15/8)).          (4)
+
+The leading coefficient is optimal on this graph class: the matching
+lower already holds for k edge increases on a connected mass-weighted
+path, by bounded-spectrum-fractional-counts.txt, Section6. Optimality
+concerns output width, not runtime. The returned general factors need
+not give an exactly symmetric product. Straight symmetrization doubles
+width and is not assigned the sharp coefficient in this note.
+
+The output is the function correction and requires no base matrix
+function. Dense expansion adds O(N^2*width) arithmetic. At alpha=1/2,
+the algorithm uses field operations, comparisons, positive scalar square
+roots and discrete randomness. At general alpha the node-dependent
+scalar powers are supplied/charged as in sharp-matrix-function-updates.tex.
+No finite-word stability or deterministic runtime cap is claimed.
+
+2. INTRINSIC NORMALIZATION AND THE EXACT SUBTRACTION
+==================================================
+As in sharp-graph-fractional-updates.txt, set
+
+  U_e=sqrt(d_e)H^-1/2(e_u-e_v), E=UU^T,
+  a=||E||_F, b=||U||_F^2=tr(E), chi=b/a.
+
+Sparse edge arithmetic computes a,b in O(M+N+k) work, and
+
+  ||E||<=a<=sqrt(k)||E||, 1<=chi<=sqrt(k).              (5)
+
+Zero E is returned exactly. Otherwise take T=R*a. By (1), both A and B
+have spectrum in [0,T]. Put C_A=I-A/T, C_B=I-B/T, so 0<=C_A,C_B<=I.
+
+For an integer p>=2 and t off the negative real axis, the finite geometric
+identity gives
+
+ (A+tI)^-1
+  =sum_(j=0)^(p-1) T^j C_A^j/(t+T)^(j+1)
+     +[T/(t+T)]^p C_A^p(A+tI)^-1.                    (6)
+
+The same holds for B. Let
+
+  D_t=(A+tI)^-1-(B+tI)^-1,
+  D_t^(p)=D_t-sum_(j=1)^(p-1)
+                T^j(C_A^j-C_B^j)/(t+T)^(j+1).         (7)
+
+The j=0 terms cancel. Equivalently D_t^(p) is the difference of the two
+last terms in (6). The original fractional-power integral therefore is
+
+ B^alpha-A^alpha
+   =T^alpha sum_(j=1)^(p-1) beta_j(C_A^j-C_B^j)
+        +c_alpha int_0^infinity t^alpha D_t^(p)dt,     (8)
+
+where c_alpha=sin(pi*alpha)/pi and
+
+  beta_1=alpha,
+  beta_(j+1)=beta_j(j-alpha)/(j+1).                    (9)
+
+Indeed c_alpha*int_0^infinity t^alpha/(t+T)^(j+1)dt
+= beta_j*T^(alpha-j), for j>=1. This scalar beta-integral identity
+also follows from the binomial expansion (1-z)^alpha=1-sum beta_j z^j.
+The finite polynomial is computed by recurrence (9), not a gamma oracle.
+
+3. WHY THERE IS NO FACTOR-p LOSS IN OUTPUT WIDTH
+================================================
+Let a_nu>=0 and s_nu>0 be logarithmic quadrature coefficients/nodes for
+the remainder, and put t_nu=T*s_nu,
+
+  omega_nu=a_nu*c_alpha*t_nu^(alpha+1),
+  delta_j=beta_j-sum_nu
+            a_nu*c_alpha*s_nu^(alpha+1)/(1+s_nu)^(j+1).
+
+Substitution of (7) in the quadrature for (8) gives EXACTLY
+
+ F= sum_nu omega_nu D_(t_nu)
+      +T^alpha sum_(j=1)^(p-1) delta_j(C_A^j-C_B^j).   (10)
+
+Thus there are q ORIGINAL rank-k resolvent nodes, plus ONE polynomial
+difference of degree p-1. It is unnecessary to represent every remainder
+node separately by p update blocks, which would incorrectly charge kpq.
+
+Since C_A-C_B=E/T, telescoping gives a rank-k(p-1) factor for the
+polynomial in (10). Explicitly put, for 0<=l<=p-2,
+
+  V_l=C_A^l U,
+  Z_l=sum_(j=l+1)^(p-1) delta_j C_B^(j-1-l)U.
+
+Its value is
+
+  T^(alpha-1)sum_(l=0)^(p-2)V_l Z_l^T.                (11)
+
+Generate V forward and Z backward by Z_(p-1)=0 and
+Z_l=delta_(l+1)U+C_B Z_(l+1). This costs O((M+N)kp) sparse arithmetic
+and O(Nkp) factor storage. Computing all delta_j costs O(pq) scalar
+operations from powers of (1+s_nu)^-1. The beta_j require O(p) work.
+
+The rank-k node is D_t=V_t W_t^T, with
+V_t=(A+tI)^-1 U and W_t=(B+tI)^-1 U. The shifted actions use the
+SDD systems K+tH and K'+tH, exactly as in the existing graph algorithm.
+
+4. A VARIABLE-SLOPE STRIP ENVELOPE
+=================================
+Use t=T*exp(y), and divide the logarithmic remainder integrand by T^alpha:
+
+  F_p(y)=c_alpha*T^(-alpha)*t^(alpha+1) D_t^(p).
+
+For |Im y|<=d<pi, the sector inequality
+|lambda+t|>=cos(d/2)(lambda+|t|) for lambda>=0 implies, via (6),
+
+  ||F_p(x+i theta)||
+   <=C_alpha*cos(d/2)^(-(p+1))*exp(-g_p(x)),
+
+  g_p(x)=alpha*(-x) for x<=0,
+         (p-alpha)*x for x>=0.                         (12)
+
+Here C_alpha is independent of p, dimensions, graph data and spectra.
+For example bound each C_A^p and C_B^p by one, each resolvent by
+1/(|t|cos(d/2)), and |T/(t+T)| by
+1/[cos(d/2)(1+exp(x))]. The two real asymptotic slopes in (12) follow.
+
+On the real line the envelope prefactor is independent of p, and the
+real logarithmic derivative has a bound C_alpha(p+2)*exp(-g_p(x)).
+Differentiate t^(alpha+1), the scalar (t+T)^-p, and the endpoint
+resolvent separately. Each logarithmic derivative changes the real-line
+bound by at most alpha+1, p, or one. This derivative bound is sufficient
+for actual scalar-node rounding below.
+
+5. UNIFORM MOVING-STRIP QUADRATURE FOR GROWING p
+===============================================
+This section gives the needed uniform-in-p account, instead of invoking
+a fixed-slope O-constant while p grows. For sufficiently large L, let p
+be the least power of two with p^8>=L. Thus
+
+  L^(1/8)<=p<2L^(1/8).                                 (13)
+
+It is found by integer doubling and comparisons. Put ell=L^(3/4), and
+take d=pi_minus-L^(-1/4), where pi_minus<=pi is the certified lower
+approximation from the existing constructive scalar routine, to error
+exp(-C L). Then d>pi/2 for sufficiently large L.
+
+Use intervals I_j=[j*ell,(j+1)*ell] and the entire Gaussian windows
+
+  phi_j(z)=pi^(-1/2)int_(I_j)exp(-(z-u)^2)du.
+
+They sum to one on the real line. Retain windows meeting
+
+  [-(L+ell)/alpha, (L+ell)/(p-alpha)].                  (14)
+
+For each window put m_j=min_(I_j)g_p and
+Q_j=max(ell,L-m_j+3ell), h_j=2*pi_minus*d/Q_j. Keep the lattice points
+x=n*h_j in I_j+[-B,B], with B=4sqrt(L+1). The ideal coefficient is
+a=h_j*phi_j(x), nonnegative.
+
+Here are explicit error controls. Since g_p has Lipschitz constant at
+most p, convolution against a Gaussian costs at most exp(p^2/4):
+
+  int exp(-g_p(x))*exp(-(x-u)^2)dx
+       <=2sqrt(pi)exp(-g_p(u)+p^2/4).
+
+Using (12) on the strip boundary adds cos(d/2)^(-(p+1))*exp(d^2).
+The logarithm of the complete envelope prefactor is consequently
+
+  O_alpha(p log(L+1)+p^2+1)=o(ell).                    (15)
+
+For large enough L this is at most ell/4, after absorbing fixed constants.
+All thresholds here are computable from the displayed elementary bounds.
+For smaller requested L, increase it to a fixed threshold depending only
+on alpha. This does not alter the asymptotic coefficient or introduce
+input spectral parameters.
+
+Omitted windows have m_j>=L+ell; their summed integrals are bounded by
+poly(L)*exp(-L-ell+o(ell)). For retained windows, the ordinary strip
+trapezoid error is at most a fixed factor times
+ell*exp(-m_j-Q_j+o(ell)). Since m_j+Q_j>=L+3ell and there are
+O_alpha(L/ell+1) windows, these errors sum to at most
+poly(L)*exp(-L-3ell+o(ell)). Gaussian lattice tails outside the enlarged
+intervals are at most poly(L)*exp(-2L). Thus the total normalized error
+is O_alpha(exp(-L)), with only a fixed additive budget shift in L.
+
+For completeness, the node count is also uniform in p. On each linear
+tail, replacing the integral of (L-g_p)_+ by interval minima costs
+O_alpha(L*ell+p*ell^2). The exact integral is
+
+  int (L-g_p(x))_+ dx = (L^2/2)(1/alpha+1/(p-alpha)).   (16)
+
+The 3ell buffer in Q_j costs O_alpha(L*ell+ell^2). Enlarging the
+windows adds at most
+O_alpha(sqrt(L)*(L^2/ell+p*ell)), and integer rounding adds O_alpha(L/ell+1).
+Substitution of ell=L^(3/4) and (13), followed by
+1/(pi_minus*d)=1/pi^2+O(L^(-1/4)), proves
+
+  q <= L^2/(4pi^2)*(1/alpha+1/(p-alpha))
+                 +O_alpha(L^(7/4))
+    <=L^2/(4pi^2 alpha)+O_alpha(L^(15/8)).             (17)
+
+Every retained |x| is O_alpha(L), the total interval length is O_alpha(L),
+and h_j<1. The Gaussian lattice-sum estimate from the existing scalar
+construction gives sum a_nu=O_alpha(L+1), uniformly in p.
+
+6. ACTUAL SCALAR OPERATIONS AND NODE ERRORS
+==========================================
+The positive polynomial-square Gaussian-window implementation in
+sharp-matrix-function-updates.tex, Lemma constructive, applies with the
+following explicit uniform bounds. The number of windows and nodes is
+polynomial in L. Clip window integrals to [-4sqrt(L+1),4sqrt(L+1)],
+approximate exp(-w^2/2) by its Taylor polynomial of degree O(L), square
+that polynomial, and integrate its polynomial primitive at the clipped
+endpoints. The quadrature weights are nonnegative because they are
+integrals of polynomial squares. The
+same Taylor remainder calculation gives absolute weight error
+O(exp(-16L)), after a fixed increase of the degree constant.
+
+The actual positive nodes approximate exp(x) with logarithmic error
+exp(-C L), by scaled Taylor approximation and repeated squaring, as in
+that lemma. The real-line derivative bound after (12) grows only
+polynomially in L. Together with the O(L) coefficient mass, these scalar
+errors contribute O(exp(-L)) normalized error. All scalar construction
+work is polynomial in L (the cited direct implementation is O(L^3)).
+No Gaussian, exponential, gamma, or best-rational-approximation oracle
+is invoked. Pi, log2 and c_alpha are fixed constants approximated by
+convergent series to the budgeted precision. At alpha=1/2 the required
+node powers are obtained by square roots.
+
+Approximate each original D_t node by cross factors Vhat_t What_t^T.
+Columnwise relative energy error eta gives the already proved estimate
+
+  ||Vhat_t What_t^T-D_t||<=3 eta b/t^2.                 (18)
+
+Although the REMAINDER has been quadratured, (10) uses only these original
+nodes and the explicit polynomial compensation. Consequently the total
+node error is at most
+
+  3c_alpha*eta*b*T^(alpha-1)
+                         sum_nu a_nu*s_nu^(alpha-1)
+   <=C_alpha*eta*chi*a^alpha*(L+1)*exp(C_alpha L).       (19)
+
+Here T=Ra, alpha<1 and R>1. All actual log-nodes have magnitude O_alpha(L).
+Set eta to a sufficiently small dyadic number with
+log(1/eta)=O_alpha(L+log(2k)), computably by halving, so (19) is at most
+a^alpha*exp(-L). This does not depend on a graph gap, mass ratio or
+endpoint conditioning. The implemented small scalar constants and
+polynomial compensation coefficients receive the same fixed error budget.
+For j>=1, the real coefficient integrand
+s^(alpha+1)/(1+s)^(j+1) is uniformly bounded, so sum a_nu=O(L)
+also bounds the scalar coefficient sensitivity by a polynomial in L.
+
+Choose L by repeated halving so
+
+  exp(-L)<=epsilon/[C_(alpha,R)(k+1)],
+  L=log(1/epsilon)+O_(alpha,R)(log(2k)).                (20)
+
+The quadrature error is O(T^alpha exp(-L)), node and scalar errors are
+of the same order, and a^alpha<=k^(alpha/2)||E||^alpha. Hence (20),
+with a large enough fixed constant, gives the target error (2).
+
+7. FULL GRAPH WORK, PROBABILITY, AND SHARPNESS
+============================================
+There are 2kq shifted column solves, q rank-k node factors, and one
+polynomial factor of width k(p-1). The total width is therefore
+k(q+p-1), which gives (4) and (3). Sparse forward and backward powers
+for (11) cost O((M+N)kp), including their factor entries. Node factors
+cost O(Nkq) to write. Scalar compensation costs O(pq) and the window
+construction is polynomial in L. Both p and q are polynomial in
+log(1/epsilon), and log(1/eta) has the same type of bound, so these terms fit
+expected ~O_(alpha,R)((M+N)k).
+
+Apply the existing shifted-SDD energy solver to K+tH and K'+tH. Its
+expected-time guarantee is the one audited in sharp-graph-fractional-
+updates.txt. For arbitrary confidence, independently repeat constant-
+success solves and select a candidate by median pairwise system-energy
+distance, as proved in graph-fractional-solver-audit.txt. Allocate failure
+delta/(2kq) to each column solve and use a union bound. The algorithm
+does not need its approximate solve maps to be linear or symmetric.
+
+Finally, bounded-spectrum-fractional-counts.txt proves a matching
+universal PSD lower, already on connected mass-weighted paths with k
+positive conductance increases satisfying (1). Its normalization is
+exactly ||E||=1. No rank below the strict singular count can meet the
+operator-norm error on those fixed examples, regardless of randomization.
+Thus the actual construction, not only existence of a rational approximant,
+attains the optimal leading width under (1). The generic unbounded-endpoint
+constant k/[4pi^2 alpha(1-alpha)] is not being reused for this class.
+
+The source ingredients include classical polynomial/rational updates and
+Gaussian localization. In particular pole-plus-polynomial scalar
+approximation has substantial prior literature. This note concerns the
+charged graph realization, uniform growing-subtraction accounting and
+the matching restricted matrix/graph width theorem. Historical novelty
+and finite-precision stability remain separate questions.
+
+8. REPRODUCIBLE ALGEBRA CORROBORATION
+====================================
+scripts/check_bounded_spectrum_graph_algorithm.py and retained output
+bounded-spectrum-graph-algorithm-checks.txt check six positive common-mass
+graph update pairs. Their known common graph kernel is removed only for
+stable dense diagnostics. A dense norm computation chooses a safe T only
+inside that diagnostic; the actual algorithm uses the supplied promise
+and sparse scale T=R*a, as in Section2.
+
+There are 96 finite-geometric-identity trials and 72 collected-quadrature
+trials at alpha=0.3,0.5,0.7 and p=2,3,4,8. The polynomial Horner factors,
+global rank-collection identity, and actual fractional correction all
+pass. Maximum scaled geometric identity error was 2.59e-15, maximum
+polynomial-factor discrepancy 6.84e-17, and maximum collected-rule
+discrepancy 2.56e-16. Uniform-grid quadrature error was below 0.000127
+times the requested T^alpha*exp(-L) budget.
+
+These computations check signs and noncommutative factor order. They do
+not implement or numerically verify the optimized Gaussian node rule,
+its asymptotic leading coefficient, or the sparse shifted-solver backend.
+Those claims rest on the analytic proof and the audited component inputs.

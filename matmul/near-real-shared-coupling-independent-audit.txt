@@ -1,0 +1,202 @@
+INDEPENDENT AUDIT OF SHARED NEAR-REAL COUPLING SERIES
+===================================================
+
+Reviewer: matrix_frontier agent, separately from bounded_algorithm.
+Date: 2026-11-15 UTC.
+Full reviewed source:
+  near-real-shared-coupling-series.txt
+  SHA256 28dd59d9afcb95e838d903d61010bfd51e7b7b3f40c2c8f9500a6ac748775023
+
+Finding: PASS of the supplied-certified-split resolver, its affine complex
+couplings, q+kJ raw batching, shared Schur products and reconstruction,
+error estimates, far-pole fallback and stated arithmetic. No mathematical
+repair was required. Combining it with the separately reviewed actual
+coarse-split construction removes the former split oracle at the same
+stated band-conditioned budget, as described in Section 6 below.
+
+This is an internal independent mathematical reconstruction, not external
+peer review, formal verification, a historical-priority certificate or
+a floating-point implementation theorem. It does not prove a sharp final
+LRA filter, the arbitrary-factor rank-one target or a universal small-band
+bound.
+
+1. SAFE DISK, AFFINE COUPLINGS AND PARAMETER BUDGET
+-------------------------------------------------
+For B=tK^-1 and the certified safe compression spectrum outside [1/2,2],
+the coarse inverse ((1+u)B_QQ-I)^-1 has norm <=3 on |u|<=1/3. The
+three scalar cases in the source give this directly, including negative
+coarse eigenvalues. Hence the true-metric defect contracts by <=3/8,
+and ||F(u)^-1||<=24/5 throughout this analytic disk. On the vertical
+line, the stronger coarse bound two and contraction <=1/4 hold.
+
+The couplings are Gamma(u)=T_PQ-(1+u)B_PQ and
+Lambda(u)=T_QP-(1+u)B_QP. Their norms are at most 5/24<1/4 on the
+outer disk. For a complex basis the correct relation is
+Lambda(u)=Gamma(conj(u))*, not the pointwise adjoint Gamma(u)*.
+The source consistently preserves this distinction. It therefore
+maintains analyticity for coefficient computation and Cauchy estimates.
+
+The integers L,J are actually found by multiplication and comparisons.
+Their conditions (3/5)^L,(3/4)^J<=delta/100 are more than enough for
+both pointwise and formal-series errors, with
+delta=epsilon/(100mu^2). No logarithm oracle or spectral-ratio iteration
+count is hidden.
+
+2. SHARED SERIES ACCURACY AND DISTINCT RHS APPROXIMANTS
+------------------------------------------------------
+The formal Richardson process starts from zero and truncates modulo u^J.
+Every inverse series has an invertible constant term. Consequently its
+computed coefficients are exactly the first J coefficients of the actual
+L-step analytic operator action R_L(u)Lambda(u), not a surrogate Krylov
+sequence with an unproved relation to that function.
+
+The outer inverse norm and contraction give uniform coupling norm
+and iteration-error bounds on |u|=1/3. Cauchy coefficient estimates
+evaluated at |u|<=1/4 have geometric ratio <=3/4. Summing the truncated
+iteration errors and the exact-function Taylor tail gives the displayed
+(96/5)zeta[(3/8)^L+(3/4)^J] bound, which is <=zeta*delta.
+Pointwise safe solves separately give RHS error <=delta||b||.
+
+The proof correctly does NOT assume those two approximations arise from
+one common approximate inverse operator. It uses only their separate
+norm bounds, and uses the same U_hat in the Schur core and reconstruction.
+This distinction is essential when the coupling coefficients are shared
+but right-hand sides are solved at their actual poles.
+
+3. SCHUR PERTURBATION AND NORMALIZED PHYSICAL ERROR
+--------------------------------------------------
+The true full supported inverse has norm <=3mu; its P,P block is the
+inverse of the exact Schur core. The approximate coupling induces Schur
+error <=zeta^2*delta. Since delta<=1/mu, inversion is valid and its
+perturbation is <=2g^2*zeta^2*delta. With zeta=1/4 and beta=8/3,
+the P error is <=(27/8)mu^2*delta||b||.
+
+The separately approximated RHS contributes delta||b|| to Q. The
+coupling error contributes zeta*delta||v_P||, while the P-solution
+error is multiplied by at most zeta(beta+delta). These are exactly
+the source's Q-error terms. Summing both block bounds gives
+(279/32)mu^2*delta||b||<9mu^2*delta||b||. The exact physical identity
+and ||Z||^2<=9/8 then give error <11mu^2*delta||h||, below epsilon||h||.
+No symmetry or common-backward-operator property of the approximants
+is needed. Exact small inversions remain explicit, with finite-word
+conditioning excluded.
+
+4. THE q+kJ WIDTH IS A REAL BATCHING GAIN
+----------------------------------------
+The explicit coarse preconditioner is
+A0(u)=(I+uT0)^-1 A00, with A00=(B_QQ-I)^-1 and T0=I+A00.
+Its single Frobenius normal form, including its transformation, uses
+Neiger--Pernet--Villard Corollary 5.2. The primary theorem was checked
+directly at https://arxiv.org/html/2402.07345v2#S5.SS1; it includes the
+transformation in O(m^omega(loglog m)^2) field operations.
+
+I independently reconstructed the companion-series arithmetic. For a
+size-d companion block, its last coordinate is one shifted sum of the
+d input-coordinate polynomials divided by a scalar polynomial with
+constant coefficient one. Constructing that shifted sum costs O(dJ):
+if d>=J only the final J coordinates contribute, and J^2<=dJ; if d<J,
+there are d shifts of length J. Fast scalar inversion/convolutions and
+the remaining d row shift/add recurrences cost soft-O(dkJ) for k RHS.
+Summing block sizes gives soft-O(mkJ). This does not perform J separate
+dense powers or dense matrix-vector actions.
+
+The two dense Frobenius basis changes batch all kJ coefficient columns.
+Pointwise preconditioners use the same preparation, batching the supplied
+q RHS columns. Their combined true D_QQ applications are one raw action
+on at most q+kJ columns per iteration. Separate near and far coarse
+preconditioner maps require only a constant number of batched transforms.
+The initial true T-action on P, the physical RHS projection and final
+physical lift fit this same width bound. Later sequential adaptive RHS
+queries are correctly excluded from retroactive batching.
+
+The pointwise guarantee implies Frobenius-relative block accuracy by
+summing column errors. The separate epsilon/sqrt(q) adjustment for a
+spectral action guarantee on a prescribed orthonormal input basis is
+correct and prevents an unwarranted spectral-block claim.
+
+5. SHARED POSTPROCESSING AND FAR POLES
+-------------------------------------
+The Schur polynomial coefficients W_a=Gamma0*C_a+Gamma1*C_(a-1)
+are computed once. The source retains a=J, including the terminal term
+Gamma1*C_(J-1), so the affine multiplication has no degree off-by-one
+loss. This costs O(Jmk^2); q evaluations cost O(qJk^2), followed by
+the stated q small inversions. The right-side Gamma actions cost O(mkq).
+
+The Q reconstruction sums C_a times all scaled P-solution columns,
+costing O(Jmkq). It does not materialize q separate m-by-k coupling
+matrices or repeat the O(mk^2) Schur product for every pole. Avoiding
+that old O(qmk^2) term is necessary when q and k both scale as sqrt(m).
+
+For far poles |y|>=t/4, mu<=sqrt(17). The full coarse preconditioner
+norm is <=mu and contraction <=sqrt(17)/8<3/5. Its true inverse norm
+is bounded by sqrt(17)/(1-sqrt(17)/8)<9, so the source's supported
+9(3/5)^L and physical 11(3/5)^L constants hold. One additional full-core
+Frobenius preparation suffices. Far columns share raw block products
+with the near/series columns. If every pole is far, the split and
+coupling series can be omitted.
+
+The claimed postprocessing terms are therefore exactly
+Jmk^2+qJk^2+Jmkq+qk^omega, without an uncharged qmk^2 operation.
+Small empty blocks can be skipped under the ordinary empty-matrix
+convention; the analysis covers k=0 or an empty safe block as appropriate.
+
+6. COMBINED CONSEQUENCE WITH THE ACTUAL COARSE SPLIT
+---------------------------------------------------
+The separately reconstructed certified-buffered-coarse-split.txt,
+SHA256 6e114f90aba4d736ee17cb97b7c8de2c01232fbf8b0c6bb2b1963e1b6b579ef9,
+constructs the required basis from the explicit K at expected
+m^(omega+o(1)) arithmetic cost, and supplies ||B_PQ||<=10^(-5)<1/16.
+Its safe compressed spectrum meets the present hypotheses. Its rank
+obeys the actual buffered coarse count
+
+  k<=#{lambda in spec(K): t/3<=lambda<=3t}.
+
+Thus, after that proof is accepted, C_split is replaced by a charged
+construction. The composed result requires an actual small coarse band,
+not an exact supplied eigensystem. For q,k<=soft-O(sqrt(m)), polynomial
+mu and epsilon^-1, R=q+kJ<=soft-O(sqrt(m)). The four postprocessing
+terms are respectively soft-O(m^2), soft-O(m^(3/2)), soft-O(m^2),
+and soft-O(m^((omega+1)/2)). With N=m^(9/8) and the stated feasible
+omega=9/4 convention, raw work and core preparation fit soft-O(m^(9/4)),
+including every normalized resolver-output column. This is a genuine
+larger-band resolver consequence at the original exponent budget.
+
+All poles share the real center t and their RHS columns are batched.
+The conclusion is not an unrestricted online-query theorem. If the
+buffered band has k=Theta(m), true-band queries and supported bulk work
+can still cost the larger full-Gram scale. The stated coarse K=tI metric
+examples correctly disprove universal low-rank metric-defect compression
+from a constant-distortion promise alone; they are not lower bounds
+for arbitrary raw-input algorithms. No LRA wrapper follows from the
+resolver statement without a sharp filter, threshold and extraction.
+
+7. RETAINED DIAGNOSTIC REPRODUCED
+--------------------------------
+I read and reran scripts/check_shared_coupling_series.py:
+  SHA256 9fc03b2e94605ac15feea4dc2d446f3961ab28c72b71656a094b4df1c6088607.
+Its output matches shared-coupling-series-checks.txt byte for byte:
+  SHA256 f54fa677f2a110408139afcc2d133eec5f49800aae22021eccd3721a9c136155.
+
+The seed 2026111511 experiment checks six metrics, 48 near and 18 far
+poles, and 96 outer-disk boundary points, with complex block-unitary
+coordinates. All assertions pass. Maximum shared Schur identity error
+is 1.84e-18; maximum shared reconstruction discrepancy is 6.10e-15;
+maximum physical identity relative error is 2.82e-13. The difference
+between the analytic lower coupling and the erroneous pointwise adjoint
+is deliberately nonzero (5.00e-5).
+
+The diagnostic's dense coefficient recurrence corroborates algebra,
+affine ordering, reconstruction and error bounds. It does not implement
+or benchmark the fast Frobenius/companion backend or the certified split.
+Those runtime claims rest on the mathematical reconstruction above.
+No unresolved repair remains at the stated scope.
+
+Coordinator publication note
+----------------------------
+Current source SHA256:
+  913f2e86b3b27bb4c0e9882c7ad29845e2bca6e2d2d553ce3d5bedb40243628a
+Only the opening review-status sentence and two record references differ
+from the reviewed 28dd59d9... copy. Root checked that reversing those
+editorial changes recovers the exact reviewed hash. No mathematical
+section changed. This note is by root and does not extend the reviewer's
+findings.

@@ -1,0 +1,156 @@
+JOINT-BOUNDARY GRAPH FACTOR ALGEBRA: INDEPENDENT AUDIT
+=====================================================
+
+Review date: 2026-11-15 UTC. Result: PASS at the final script hash below.
+The reviewer independently reconstructed the identities, reran the final
+diagnostic, and derived the finite terminal rank-one corollary. This is
+an internal independent review, not external peer review.
+
+Reviewed script:
+  scripts/check_joint_boundary_graph_algorithm.py
+  SHA256 fd78b2652297f01e47b9084d53bc6edacd370099ab66d825742cbb0bfb9c4aab
+
+The reviewed mathematical dependency for the projected nuclear tail is
+  matmul/fractional-boundary-crossover.txt, Section 2,
+  SHA256 5ccc045499c62133172039dcb611a9f41636ad052fc5bebd5f924754acf542e5.
+
+1. NONSYMMETRIC RANK-2p RESTORATION
+===================================
+Let U have orthonormal columns, at most p in number, and put P=UU^T,
+Q=I-P. For any real matrix Dtilde=XY^T, define
+
+  V=Dtilde U=X(Y^T U),
+  Z=Q Dtilde^T U=QY(X^T U),
+  L=(V,U), R=(U,Z).
+
+Then the exact algebraic identity is
+
+  LR^T=Dtilde P+P Dtilde Q=Dtilde-Q Dtilde Q.             (1)
+
+The transpose in Z is essential for a nonsymmetric Dtilde. The script
+uses exactly these factors and explicitly adds a nonsymmetric error to
+its auxiliary fractional correction. Their width is at most 2p.
+
+If ||Dtilde-D||<=delta, then (1) differs from D-QDQ by at most 2delta:
+apply the triangle inequality to (Dtilde-D)P+P(Dtilde-D)Q. In particular
+the script's budget 3delta is valid. Combining these factors with any
+approximation to QDQ adds their two error bounds, exactly as tested.
+No symmetric or linear approximate solve map is required for this
+factor identity after X,Y have been constructed.
+
+2. THE FINITE COMMON-MASS GRAPH INPUTS
+======================================
+Each test starts with a connected positive-conductance path and a
+positive diagonal mass matrix M. Its common kernel in symmetric
+mass-normalized coordinates is span(sqrt(M)1). Restricting to its
+orthogonal complement is only a dense diagnostic convenience.
+
+The initial path Laplacian is scaled by a positive scalar so that the
+reduced A has norm 0.4h. The update vector is the mass-normalized
+incidence column of an existing path edge, restricted to the same
+kernel complement and normalized to norm one. Increasing that edge's
+conductance realizes precisely ww^T. Thus B=A+ww^T has norm at most
+1+0.4h<1+h. The vertex masses are identical before and after each
+update. The construction is a genuine finite graph pair; scaling A
+means scaling its original conductances.
+
+For t>0, the resolvent identity gives
+
+  (A+tI)^(-1)-(B+tI)^(-1)
+    =(A+tI)^(-1)w w^T(B+tI)^(-1).
+
+After t=exp(x), the fractional integral has positive weight
+(sin(pi alpha)/pi)exp((alpha+1)x)dx. The script uses this correct
+weight on its ordinary logarithmic grid, with separate left and right
+factors. Its use of a uniform grid does not verify an optimized
+Gaussian localization theorem or a sparse shifted-SDD solver.
+
+3. FINITE TERMINAL RANK-ONE COROLLARY
+=====================================
+Fix 0<alpha<1 and suppose
+
+  A>=0, B=A+ww^T<=(1+h)I, ||w||=1,
+  0<epsilon<=1/2, h^alpha<=epsilon/2,
+  ||Dtilde-D||<=delta<=epsilon/100,
+  D=B^alpha-A^alpha.
+
+Dtilde may be nonsymmetric. The inequalities involving its error and
+h^alpha are promises; the construction below does not need to decide
+them from an exact norm or fractional-power oracle.
+
+For completeness tr(D)<=1 has an elementary finite-dimensional proof.
+For eta>0 let A_eta=A+eta I and g_eta(s)=tr(A_eta+sww^T)^alpha. Then
+
+  g_eta'(s)=alpha w^T(A_eta+sww^T)^(alpha-1)w
+           <=alpha(eta+s)^(alpha-1).
+
+Indeed A_eta+sww^T>=eta I+sww^T, and x^(-(1-alpha)) is operator
+monotone decreasing on positive definite matrices. Integrating for
+0<=s<=1 and then taking eta down to zero gives tr(D)<=1.
+Since D>=0, consequently 0<=D<=I.
+
+Set y=Dw and d=w^TDw. From w^TAw<=h, scalar Jensen, and B>=ww^T,
+
+  d=w^TB^alpha w-w^TA^alpha w
+    >=1-(w^TAw)^alpha>=1-h^alpha>=3/4.                   (2)
+
+The exact Schur rank-one correction F=yy^T/d satisfies
+
+  0<=D-F, ||D-F||_*<=h^alpha,                            (3)
+
+by the reviewed projected trace bound and its Schur-complement argument.
+In addition ||y||<=1 and ||y||^2<=d since 0<=D<=I.
+
+The actual construction is
+
+  yhat=Dtilde w, dhat=w^Tyhat, Fhat=yhat yhat^T/dhat.      (4)
+
+We have ||yhat-y||<=delta, |dhat-d|<=delta, and delta<=1/200.
+Thus dhat>=3/4-delta>1/2, so (4) is a well-defined positive
+rank-at-most-one matrix. Also ||yhat||<=1+delta. Therefore
+
+  ||Fhat-F||
+   <=[(||yhat||+||y||)delta]/dhat
+       +||y||^2 |dhat-d|/(d*dhat)
+   <=(3+delta)delta/(3/4-delta)
+   <5delta<=10delta.                                    (5)
+
+Combining (3) and (5) gives, in particular, the requested budget
+
+  ||D-Fhat||<=h^alpha+10delta
+             <=epsilon/2+epsilon/10<epsilon.             (6)
+
+If Dtilde=XY^T is already supplied with q columns, yhat=X(Y^Tw)
+uses O(nq) arithmetic and the scalar dhat uses O(n). Returning factors
+yhat/dhat and yhat represents Fhat without an additional square root.
+These are costs for this final extraction only; they say nothing about
+the cost of obtaining the promised auxiliary factors or error bound.
+At alpha=1/2, the endpoint promise can also be checked from nonnegative
+input h by h<=epsilon^2/4. No analogous exact test at an arbitrary alpha
+is presumed by this corollary.
+
+4. REPRODUCIBLE DIAGNOSTIC RESULT
+=================================
+The final script was independently rerun using
+  /nix/store/1427kf578lbwwzsvnr95kxpj9klwzk03-python3-3.14.8-env/bin/python
+with NumPy 2.5.3 and seed 2026111512. It passes all stated assertions:
+
+  common-mass graph pairs                         16
+  rank-2p restoration cases                      144
+  terminal rank-one cases                         32
+  largest factor identity error       1.7387476954169005e-15
+  largest auxiliary uniform-grid error 3.890568082148487e-09
+  largest restoration error/(3delta)   0.3397179269214099
+  largest terminal error/epsilon       0.01419645337019326
+
+The initial script used noise_scale=1e-5 without checking the terminal
+delta<=epsilon/100 premise. Two finite cases exceeded that premise by
+less than 0.013 percent, although their direct final errors passed. The
+author reduced noise_scale to 5e-6 and inserted the explicit premise
+assertion. The final hash reviewed here includes that repair and all
+cases were rerun. No mathematical factor identity required repair.
+
+These checks establish finite algebra and error-budget consistency.
+They do not constitute numerical proof of optimized Gaussian node
+counts, a sparse solver runtime, finite-word stability, a general
+Krylov lower bound, or a matrix multiplication exponent.

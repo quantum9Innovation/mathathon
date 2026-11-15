@@ -1,0 +1,11 @@
+import HierarchicalAbsoluteSpectral.CorollaryAbsoluteFamilyFinal
+
+/-! Kernel-level closure checks for the absolute corollary's unconditional
+probability, same-event family runtime, and finite fallback endpoints. -/
+#print axioms HierarchicalAbsoluteSpectral.absolute_error_without_supplied_rank
+#print axioms HierarchicalAbsoluteSpectral.prepared_absolute_error_without_supplied_rank
+#print axioms HierarchicalAbsoluteSpectral.absolute_family_explicit_error_width_and_runtime_event
+#print axioms HierarchicalAbsoluteSpectral.absoluteFamilyProgram_sequence_log_bound
+#print axioms HierarchicalAbsoluteSpectral.absoluteFamilyProgram_quadratic_runtime
+#print axioms HierarchicalAbsoluteSpectral.absoluteFamilyProgram_paper_corollary
+#print axioms HierarchicalAbsoluteSpectral.absoluteFamilyProgram_all_outcome_cap

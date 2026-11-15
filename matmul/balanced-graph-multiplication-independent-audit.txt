@@ -1,0 +1,138 @@
+INDEPENDENT REVIEW OF THE ACTUAL BALANCED GRAPH MULTIPLICATION PAPER
+==================================================================
+
+Reviewer: separate Codex research agent, November 2026.
+This is an informal independent mathematical reconstruction, not human
+peer review or a formal-verification certificate. No priority or global
+state-of-the-art conclusion follows from a proof review.
+
+Actual final source read in full:
+  matmul/balanced-graph-multiplication.tex
+  SHA256 b9a0242dcfd75e2d6d44a2ad6aad5165146cb887ccd56bfb93e8cafabda9d075
+Final PDF hash checked:
+  ac56e02b6ee56b897538c0205332593347adfaa5dfc68c3be85267ac1233324d
+
+Finding: PASS of the actual-copy mathematical statements, proofs,
+explicit pseudocode, arithmetic costs and qualifications. All theorem
+claims agree with the separately reviewed concentration note at source
+SHA6fa07f135e35aa0d92a6a1b62b38fff026786070b8d687d1254ede0e1b7c8227.
+The pseudocode is an added explicit realization of the proved one-color
+factor formula, not an additional mathematical hypothesis or guarantee.
+
+1. CONSTRUCTION AND ITS REPRESENTATION
+====================================
+The source defines W=gamma(H^T H-rho 11^T) for a uniformly permuted
+balanced partition. It correctly proves EW=I and W1=1, the orthogonal
+projection representation W=J+lambda P_H, and the s-row Gram factor
+S=[sqrt(gamma)Pi_s+q^-1/2 J_s]H. The full map generally has negative
+dense entries from deterministic mean subtraction. The abstract,
+theorem discussion, arithmetic section and final comparison all state
+this distinction. No literal d-nonzero-per-column claim or purely
+nonnegative OSE claim is made.
+
+Independent colors share the constant channel once. The displayed
+S_* has 1+d(s-1) rows and S_*^T S_*=Wbar. The coefficient
+sqrt(gamma/d) follows from lambda/q=gamma. The fixed Householder
+reflection removes one identically zero row without a dense small-core
+factorization or uncharged orthogonalization.
+
+2. COMPLETE PROOF OF THE SPECTRAL THEOREM
+=======================================
+The full covariance map was checked independently in the preceding
+note audit and again matched against Lemma 2.1 of the actual source.
+Its three overlap classes, diagonal formula, off-diagonal formula,
+coefficients a,b,kappa and negative PSD correction are correct.
+The one-color rectangular error X=A_0 T B_0 is centered. Both block
+variances are bounded by V=3(r+2)/(s-1)<=9epsilon under the supplied
+stable-rank and s hypotheses. The source uses the OPERATOR variance,
+not an incorrectly substituted Frobenius trace.
+
+The self-adjoint dilation is defined and used with the correct block
+dimensions. The deterministic array F_ij=D(a_j u_i^T) has total sum zero,
+entry norms at most one, and variance exactly
+diag((||U||_F^2/s)Pi_s,(1-1/s)U^T U). The permuted sum equals HU
+in distribution under the same uniform permutation model. Corollary
+10.3 of the cited primary Mackey et al. paper therefore applies with
+no independent-entry assumption. The constants 16z, 513z^2 and
+D=2s+n+p in the two input-factor and one-error tail bounds agree with
+the separately audited note.
+
+The tail-integral bias estimate, union probability for all d colors,
+and centered truncated variance proof are valid. In particular the
+final source explicitly defines hat(X)=D(X), hat(Y)=D(Y), and uses
+these Hermitian matrices in the variance-square formula. The independent
+matrix Bernstein denominator gives exactly 12V+8 R epsilon, yielding
+the stated sufficient degree inequality. The untrimmed average is what
+the algorithm returns, so no realized norm or trimming oracle is hidden.
+
+The explicit C_0=2^20 calculation is correct, including ceiling slack,
+L>13.8, log d<3L, h<4L, and the comparison to the implicit degree test.
+The final failure bound is at most delta/2 and hence the advertised
+delta. Input scaling is restored correctly. OSE follows by taking
+A=U^T,B=U, not by assuming all matrices have algebraic rank r.
+
+3. THE FIXED-STABLE-RANK O(N^2) COROLLARY
+=======================================
+The source gives a separate one-color proof. Taking the covariance
+trace and dropping its negative PSD term gives
+
+  E||ATB||_F^2<=a||A_0B_0||_F^2
+               +b||A_0||_F^2||B_0||_F^2
+              <=ar+br^2<=(4r+3r^2)/(s-1)
+              <=3(r^2+2r)/(s-1).
+
+Thus the displayed s choice and Markov's inequality give the required
+epsilon||A||||B|| operator error at failure delta. The conclusion
+includes full algebraic rank with bounded stable rank, but assumes
+r,epsilon,delta are FIXED for the ordinary O(N^2) total-cost statement.
+It is explicitly not a relative-product error under cancellation or a
+(1+theta)sigma_(k+1)(AB) arbitrary-factor guarantee.
+
+The pseudocode was checked separately: its two assignments multiply
+the bucketed inputs by F=sqrt(gamma)Pi_s+q^-1/2 J_s on their bucket
+coordinates. Therefore XY=(AH^T)F^2(HB)=AWB exactly. The repeated bucket
+mean is computed once, so there is no hidden s-by-s multiplication.
+The identity branch can form AB by ordinary multiplication, costing
+O(np m)<=O(np s) because that branch has m<=s. It is not a free exact
+matrix-product oracle.
+
+4. PADDING, FULL OUTPUT AND ARITHMETIC MODEL
+==========================================
+When s<m and divisibility fails, zero padding to M=s ceil(m/s)<2m
+preserves the exact product and both stable ranks and norms. The proof
+then uses M. The identity fallback handles s>=m and small dimensions,
+with width at most s. Choosing identity when m is smaller than the
+proposed shared-channel width is also a sound optional optimization.
+
+Bucket aggregation O(dm(n+p)), centering/Householder O(ds(n+p)), factor
+storage O(ell(n+p)), and output expansion O(np ell) count every factor
+and output entry. For the one-color constant-parameter branch with
+n=p=N,m<=N this is O(N^2) ordinary arithmetic. Parameter selection is
+qualified by logarithmic scalar approximation cost and the numerical
+model is exact real arithmetic. No finite-word stability, measured
+performance, or reduced random-bit complexity is asserted.
+
+5. REVIEWED REPAIR AND COMPARISON SCOPE
+=====================================
+The initial actual source at SHAc0feaa28e333159a41b8dff6cb100f6c82b79bb913e1c7749f2d74c4301a9915
+used the expression E[(Y-EY)^2] after saying "after dilation", even
+though Y had been defined as rectangular. The mathematical intention
+was correct, but the literal expression was ill-typed for n!=p.
+The reviewer requested explicit hats for D(X),D(Y). The final copy
+makes that local type clarification. No theorem was weakened. The
+added one-color pseudocode was also read and verified as above.
+
+The primary Mackey et al. Corollaries 5.2 and 10.3 were independently
+checked against the published full PDF in the note audit. CNW 2016
+and the September 2026 SparseStack statement were also inspected in
+their primary papers. Their advertised stable-rank/OSE parameter bounds
+are at least comparable and generally stronger. The actual manuscript
+correctly credits that fact and makes no asymptotic improvement claim.
+This review does not independently verify the entire SparseStack proof
+or its reported formal artifact.
+
+The paper closes the concrete balanced-partition estimator's previously
+missing concentration proof. It does not yet use the sharper SG-11/14/16
+higher mixed-cell extrema to improve the logarithms or original AMM
+target. The claimed theorem, its usefulness as a verified construction,
+and the remaining research boundary are distinguished correctly.

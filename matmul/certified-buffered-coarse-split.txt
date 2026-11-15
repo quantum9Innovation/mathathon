@@ -1,0 +1,281 @@
+CERTIFIED BUFFERED COARSE SPLITS WITHOUT AN EXACT EIGENBASIS ORACLE
+=================================================================
+
+Working deduction, 2026-11-15 UTC. This removes the supplied-exact-split
+condition from near-real-deflated-raw-solves.txt. It uses an existing
+fast approximate Hermitian diagonalization theorem on a bounded explicit
+coarse transform, followed by a weighted leakage correction. It does NOT
+bound the dimension of a general coarse spectral band, prove the original
+arbitrary-factor LRA target, or assert finite-word stability of the raw
+core inversions. Historical priority is not asserted.
+
+1. THE PREPROCESSING THEOREM
+----------------------------
+As in the raw-factor notes, let
+
+  S=Z K Z*, T=Z*Z=I+D, ||D||<=eta<=1/8,              (1)
+
+where K is an explicit m-by-m Hermitian coarse core and Z,Z* have thin
+raw-factor access. K is invertible after the already described orthogonal
+support reduction; zero coarse eigenvalues contribute zero to S. Fix t>0.
+The original real input can acquire a complex orthonormal coordinate
+basis below; complex arithmetic has constant real-arithmetic cost.
+
+There is a randomized, certifying preprocessing procedure using expected
+m^(omega+o(1)) exact-real arithmetic, comparisons, positive square roots
+and discrete randomness which produces an explicit orthonormal basis
+[V_P,V_Q]. In these coordinates put H=t K^-1 and block it into P,Q.
+The following conclusions hold for every ACCEPTED output:
+
+  k:=dim(P) <= #{lambda in spec(K): t/3<=lambda<=3t},
+  ||H_QP||<=10^(-5), ||H_PP||<4,
+  spec(H_QQ) intersect [1/2,2] is empty.               (2)
+
+The expected number of preprocessing attempts is bounded by a constant.
+Alternatively cap the attempts at O(log(1/delta)); the failure probability
+is then at most delta and the work gains that logarithmic factor.
+All matrices used to certify the approximate diagonalization are explicit
+m-by-m COARSE matrices. No true dense T is computed or certified.
+
+The arithmetic bound has no log(||K||/t), log(||K^-1||t), spectral-gap
+or raw-factor conditioning parameter. This uses the existing exact-field
+model for forming and inverting explicit cores. End-to-end finite-word
+precision for those potentially ill-conditioned inversions is excluded.
+
+2. A BOUNDED TRANSFORM AND A CHECKABLE APPROXIMATE EVD
+----------------------------------------------------
+Form, using explicit small-core matrix arithmetic,
+
+  R=2tK(K^2+t^2 I)^-1=2H(I+H^2)^-1.                 (3)
+
+It is Hermitian, commutes with H, and ||R||<=1. Also
+
+  ||H R||=||2t^2(K^2+t^2 I)^-1||<=2.                (4)
+
+These identities are exact. The bounded transform prevents an accuracy
+request proportional to t/||K|| in the approximate diagonalization.
+
+Put xi=1/[10^12(m+1)^2]. Obtain candidate U,Lambda, Lambda real diagonal,
+and ACCEPT it only if the exact, computable Frobenius tests give
+
+  ||R-U Lambda U*||_F<=xi,
+  ||U*U-I||_F<=xi.                                   (5)
+
+Both tests cost O(m^omega) arithmetic, including their matrix products;
+the sums of squared entries and their square roots are explicit.
+
+The primary algorithm supplying candidates is Rikhav Shah,
+Fast Hermitian Diagonalization with Nearly Optimal Precision (2024):
+  https://arxiv.org/pdf/2408.09880
+Theorem 4.2, printed p22, gives backward error <=2epsilon||A|| and
+singular values of U in [1-epsilon/3,1+epsilon/3], with the stated
+near-matrix-multiplication operation count and logarithmic precision.
+Algorithm 3, printed p17, explicitly accepts initial/window upper bounds
+R0,R>=||A||; its residual guarantee is epsilon(R0+R). Thus an unknown
+exact norm is not needed here: round R symmetrically to Frobenius error
+<=xi/100, use R0=R_window=2, constant failure parameter, and request
+epsilon_EVD<=xi/(100m). The two certificates (5) then pass on the
+published success event. The requested accuracy is inverse polynomial
+in m, so Theorem 4.2 uses O(log(m+1)) precision bits and
+m^(omega+o(1)) floating point operations. Implementation of its scalar
+rounding and random primitives in the present model is charged in
+Section 6; they are not free oracles.
+
+For ANALYSIS only, let W be the unitary polar factor of U. Certificate
+(5) implies ||U-W||<=xi and ||Lambda||<=2. Hence
+
+  R0_hat=W Lambda W*, ||R-R0_hat||<=6xi=:e.           (6)
+
+No polar decomposition or inverse matrix square root is used by the
+algorithm. W is only a proof device for interpreting (5).
+
+3. A COMPUTED GREY-BAND GAP AND THE SELECTED SUBSPACE
+----------------------------------------------------
+Sort the entries of Lambda in [7/10,3/4], append the two endpoints,
+and choose the midpoint c of the largest consecutive gap. The gap has
+length at least 1/[20(m+1)], so
+
+  7/10<=c<=3/4,
+  dist(c,spec(Lambda))>=g:=1/[40(m+1)].                (7)
+
+The endpoints are included in selecting the gap even when the list is
+empty. Sorting costs O(m log(m+1)); midpoint selection uses arithmetic
+and comparisons only. Since e<g/4, R has no eigenvalue at c, and the
+number k of diagonal entries greater than c equals rank(P_*), where
+P_* is the exact spectral projection 1_(c,infinity)(R), used only in
+the analysis. Let A0 be an exact orthonormal basis of the selected
+columns of U, computed by a thin Gram/Cholesky QR. Then
+
+  ||(I-P_*)A0||<=theta:=16xi/g<10^(-6).              (8)
+
+Here is an elementary separation argument, so no exact spectral
+projector routine is being invoked. The selected columns of W have
+diagonal values >=c+g, whereas R on range(I-P_*) has eigenvalues
+<=c-g+e, by (6) and eigenvalue perturbation. Their cross projection
+solves a Sylvester equation with right-hand side norm <=e. The integral
+formula for that equation, with its ordered Hermitian spectra, bounds
+the cross projection by e/(2g-e). The selected columns of U differ
+from those of W by <=xi and have singular values >=sqrt(1-xi).
+Exact QR changes their span by zero. These facts give (8), with slack.
+Equal-rank orthogonal projections have norm difference equal to the
+largest such cross-projection norm.
+
+Finally, P_* selects positive lambda of K for which
+2(lambda/t)/(1+(lambda/t)^2)>c>=7/10. This interval is contained in
+[1/3,3], because the bounded transform equals 3/5 at 1/3 and 3.
+Consequently k has the genuine buffered coarse-band bound in (2).
+No gap in the original K or in the unknown true operator is assumed.
+
+4. ONE BOUNDED FILTER CONTROLS WEIGHTED LEAKAGE
+----------------------------------------------
+Merely using A0 as the final basis is insufficient: very small coarse
+eigenvalues can amplify its tiny leakage under K^-1. Instead form
+
+  Y=R A0, and take an EXACT orthonormal basis V_P of range(Y).          (9)
+
+On P_* the transform R is positive and >=c>=7/10. Equation (8)
+therefore gives sigma_min(Y)>=.69. Writing V_P=Y C^-1 for its thin
+QR factor, ||C^-1||<=2. Equations (3),(4),(8) imply
+
+  ||(I-P_*)V_P||<=2theta,
+  ||(I-P_*)H V_P||<=4theta.                           (10)
+
+The second bound is the important one: H R is bounded even if H itself
+has arbitrarily large norm. On P_*, H is positive and has norm <3,
+since its eigenvalues solve 2h/(1+h^2)>7/10. Complete V_P to an exact
+unitary basis and write P=V_P V_P*, Q=I-P. Equal ranks and (10) give
+||P-P_*||<=2theta. It follows that
+
+  ||Q H V_P||<=||Q P_* H P_* V_P||+||(I-P_*)H V_P||
+              <=6theta+4theta=10theta,
+  ||V_P*H V_P||<=3+4theta<4.                          (11)
+
+All operations in (9), the unitary completion and the explicit H-block
+formation use only small-core arithmetic, QR/Cholesky, comparisons and
+square roots in O(m^omega) arithmetic up to the existing fixed exponent
+slack. Exact generic eigenvectors are never computed.
+
+The safe-complement spectral assertion in (2) needs care because the
+split is not invariant. Suppose a unit vector v in Q satisfied
+QHQ v=lambda v with lambda in [1/2,2]. Equation (11) gives
+||(H-lambda I)v||<=10theta. On I-P_*, the spectrum of H is outside
+
+  [(4-sqrt(7))/3, (4+sqrt(7))/3],
+
+because c<=3/4. Its distance from [1/2,2] is therefore >1/25.
+Projecting the residual yields ||(I-P_*)v||<=250theta. Meanwhile
+||P_*v||<=||P_*-P||<=2theta, contradicting 1<=252theta.
+Thus no such lambda exists. This proves the safe-complement claim
+without treating approximate invariance as exact invariance.
+
+5. THE RESULTING AFFINE SCHUR PENCIL AND NEAR-REAL SOLVES
+-------------------------------------------------------
+After the computed unitary coordinate change, continue to denote the
+implicit factor by Z and its true Gram by T=I+D. For w=t(1+u),
+
+  M(u)=(1+u)H-T,
+  w(S-wI)^-1 h=-h-Z M(u)^-1 Z*h.                     (12)
+
+Let
+
+  F(u)=(1+u)H_QQ-T_QQ,
+  A(u)=T_PQ-(1+u)H_PQ,
+  B(u)=T_QP-(1+u)H_QP.
+
+On the complex disk |u|<=1/3, (2) implies
+
+  ||[(1+u)H_QQ-I]^-1||<=3,
+  ||[(1+u)H_QQ-I]^-1 D_QQ||<=3/8,
+  ||F(u)^-1||<=24/5,
+  ||A(u)||,||B(u)||<=eta+(4/3)10^(-5)<1/4.            (13)
+
+The scalar denominator proof of the first bound separates h<=0,
+0<h<1/2, and h>2. These bounds are uniform on the whole disk, including
+its real points. The only small-block inverse that may be badly
+conditioned is the Schur complement
+
+  C(u)=(1+u)H_PP-T_PP-A(u)F(u)^-1 B(u).               (14)
+
+One true thin T-action on P reveals the unknown T_PP,T_QP; it costs k
+raw columns and is charged. H_PP,H_PQ,H_QQ are all explicit coarse data.
+The offblocks A,B are affine in u. In a complex basis B(u) is NOT
+A(u)* at complex u; rather B(u)=A(conj(u))*. Analytic series must keep
+the two affine coefficient families separate.
+
+For actual vertical poles u=i y/t within this disk, |y|<=t/3,
+the stronger safe inverse bound is
+2 and Richardson contraction <=1/4. The full inverse norm remains
+<=2mu/(1-eta)<=3mu, where mu=|w|/|Im w|, as in the earlier raw note.
+Using ||A||,||B||<=1/4 in its Schur perturbation argument gives supported
+solution error <9mu^2 delta||Z*h|| and normalized physical error
+<12mu^2 delta||h||. Hence delta<=epsilon/(32mu^2) suffices, with
+O(log(mu/epsilon)) refinement iterations. The offblock residual is
+tolerated explicitly; it is not required to shrink proportionally to y.
+
+Thus the former q(k+1)-width deflated algorithm becomes an actual
+coarse-input algorithm at the same stated band-conditioned cost, with
+the former C_split replaced by the charged preprocessing above.
+The disk bounds and affine couplings (13) also permit a shared Taylor
+construction of F(u)^-1 B(u); such pole sharing is a separate algorithmic
+step and is not inferred merely from the split proof.
+
+Poles with |Im w|>=t/4 already satisfy the fixed-cone bound
+|Im w|/|w|>=1/sqrt(17)>eta and can use the original raw resolver.
+Therefore the disk |u|<=1/4 contains every genuinely new near-real case;
+the larger disk in (13) provides an analytic margin for shared series.
+
+6. SCALAR PRECISION, RANDOMNESS AND CERTIFICATION ARE CHARGED
+-----------------------------------------------------------
+Forming (3) uses exact small-core inverses and products; these operations
+can be ill conditioned numerically but have the stated exact-arithmetic
+cost. Every entry of the resulting Hermitian R is bounded by one. It
+can be rounded symmetrically to the required inverse-polynomial absolute
+accuracy using O(log(m+1)) dyadic comparisons per entry. No scan through
+the magnitude range of K is used in this rounding.
+
+Shah's floating point algorithm is simulated at b=O(log(m+1)) bits.
+Its bounded-input analysis has only polynomially bounded intermediate
+values/exponents at the requested inverse-polynomial accuracy. A rounded
+field operation can therefore be implemented with polynomially many
+in b exact scalar operations/comparisons on dyadic grids. This adds
+polylogarithmic arithmetic overhead, rather than a free rounding oracle.
+
+The published theorem assumes approximate uniform and Gaussian sample
+primitives. Uniform samples to b bits use O(b) fair random bits. Gaussian
+samples can be supplied with poly(b) scalar work as follows: truncate
+at sqrt(Cb), approximate the Gaussian CDF on that interval by integrating
+a degree-O(b) Taylor polynomial for exp(-x^2/2), and invert the CDF on a
+dyadic grid by bisection. Increase fixed constants so the CDF and inverse
+errors are sufficiently smaller than the requested rounding scale.
+Couple to exact quantile samples. Gaussian tails and magnitudes below
+an inverse polynomial can each be excluded at inverse-polynomial failure
+cost; on their complement the inverse-CDF error is small enough for the
+relative coupling in Shah's Normal definition. There are polynomially
+many calls per attempt, so choose the fixed precision constants to make
+their total exceptional probability <1/100. Pi and all scalar Taylor
+coefficients are computed to O(b) bits by convergent rational series.
+No continuous random-real, Gaussian, logarithm or exponential oracle is
+being assumed to have unit exact-field cost.
+
+With constant Shah failure parameter and these charged primitive errors,
+one attempt passes (5) with a fixed probability greater than one half.
+Any accepted candidate is valid by its exact certificates, irrespective
+of the random trajectory. Repeating independent attempts therefore has
+constant expected count; capped repetition gives the stated confidence.
+Undefined arithmetic or a violated guarded operation bound rejects an
+attempt. These guards do not reject the published success trajectories.
+
+7. WHAT HAS AND HAS NOT CHANGED
+-------------------------------
+The exact-split oracle and its uncharged algebraic eigenvectors have been
+removed. The known coarse core now supplies a buffered, explicitly
+computed split with sufficiently small weighted residual, valid uniformly
+as the pole approaches the real axis. All true-T access remains thin.
+
+The dimension k is still a real condition on the coarse spectrum. A
+well-conditioned core with all positive eigenvalues near t has k=m.
+Neither the supplied-core structure nor the approximate diagonalization
+proves a universal sublinear band bound. Near-real inversion with a small
+buffered band is now constructive; the arbitrary-factor LRA gate remains
+open when the band is large, and a sharp final filter and extraction are
+additional obligations.

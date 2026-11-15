@@ -1,0 +1,329 @@
+NEAR-REAL RAW SOLVES WITH SHARED COUPLING SERIES
+==============================================
+
+Working construction, 2026-11-15 UTC. Independent proof review: PASS.
+See near-real-shared-coupling-independent-audit.txt and the verification
+record for exact reviewed hashes, model and scope.
+This note replaces the qk pole-by-band width in the deflated raw resolver
+by q+kJ, J=O(log(2mu/epsilon)), by sharing analytic coupling coefficients.
+Schur products are shared too; evaluating q separate m-by-k couplings
+would lose a substantive part of the gain. The construction remains
+conditional on a supplied certified coarse split. It does not settle
+the arbitrary-factor rank-one LRA target or the large-band k=Theta(m)
+case, and does not assert novelty for Taylor series or Schur complements.
+
+1. MODEL, CERTIFIED SPLIT, AND RESULT
+------------------------------------
+
+Use the raw-factor model of near-real-deflated-raw-solves.txt and
+raw-factor-fresh-search.txt. The supported coordinates satisfy
+
+  S=Z K Z^*, T=Z^* Z=I+D, ||D||<=eta<=1/8,             (1)
+
+where K is explicit, Hermitian and invertible after zero-core support
+removal. Only thin raw products apply Z,Z^*,T. The physical raw factor
+has size N-by-m, N>=m, I_X=Nm. The supported core has dimension <=m.
+Complex unitary changes of coarse coordinates are allowed; the physical
+input may still be real. All complexity is exact arithmetic.
+
+Fix t>0, put B=tK^-1, and SUPPLY an orthogonal/unitary P,Q coordinate
+split with dim(P)=k and the following certificates:
+
+  spec(B_QQ) subset (-infinity,1/2) union (2,infinity),
+  ||B_PQ||=||B_QP||<=1/16.                             (2)
+
+The cost C_split of constructing/certifying this basis is separate.
+There is no free exact eigenvector oracle. An exact invariant split of
+K containing every eigenvalue in [t/2,2t] satisfies (2) with B_PQ=0.
+The conditions also admit a sufficiently accurate coarse-only split;
+no such split construction is imported without its own review.
+
+Supply q poles w_j=t+i y_j, y_j!=0, and q physical right-hand sides h_j.
+Let mu=max_j |w_j|/|y_j|>=1 and 0<epsilon<=1. Set
+
+  delta=epsilon/(100mu^2).
+
+Integers L,J>=1 can be chosen with L,J=O(log(2mu/epsilon)) so that
+
+  (3/5)^L<=delta/100, (3/4)^J<=delta/100.              (3)
+
+Repeated multiplication and comparisons construct them without a log
+oracle. With R=q+kJ<=m, the algorithm approximates each normalized action
+w_j(S-w_jI)^-1h_j to error <=epsilon||h_j|| at total cost
+
+ C_split + ~O(m^omega)
+   + O(I_X R^(omega-2)*L)
+   + O(mk^2 J+qk^2 J+mkq J+qk^omega).                (4)
+
+Here omega>2 is a feasible multiplication exponent, with the same
+elementary blocking convention as the imported raw resolver. No true
+Gram is assumed supplied. The required k band columns are queried and
+charged; if P fills the supported core these are its entire Gram.
+All q pole/RHS pairs must be available together at every raw block action.
+
+The guarantee is per column, hence also Frobenius-relative for the block
+of RHS vectors. For a spectral action guarantee on an orthonormal
+q-dimensional input basis, use epsilon/sqrt(q), adding only logarithms.
+This is not an unconditional spectral-block assertion from independent
+per-column bounds. The sole randomness may be the already conditioned
+coarse event; the construction below is deterministic on that event.
+
+At the original exponents N=m^(9/8), omega=9/4, polynomial mu and
+epsilon^-1, and q,k<=~sqrt(m), all terms in (4) fit ~O(m^(9/4)), provided
+C_split does. With q=~sqrt(m), the old q(k+1) width required k=~O(1);
+the present width admits k up to ~sqrt(m). These exponent comparisons
+retain the source's feasible-omega convention; they do not prove a new
+matrix multiplication exponent or a final LRA extraction theorem.
+
+2. SAFE ANALYTIC DISK AND AFFINE COUPLINGS
+-----------------------------------------
+
+Write u=(w-t)/t and
+
+  M(u)=(1+u)B-T,
+  F(u)=(1+u)B_QQ-T_QQ,
+  Gamma(u)=T_PQ-(1+u)B_PQ,
+  Lambda(u)=T_QP-(1+u)B_QP.
+
+Then M has off-diagonal blocks -Gamma(u),-Lambda(u). Both couplings
+are affine. For complex u, Lambda(u)=Gamma(conj(u))^*, rather than
+Gamma(u)^*. Using the wrong pointwise adjoint would destroy analyticity.
+Since ||T_PQ||<=eta and (2) holds, on |u|<=1/3,
+
+  ||Gamma(u)||,||Lambda(u)||
+       <=1/8+(4/3)/16=5/24<zeta:=1/4.                (5)
+
+Let A0(u)=((1+u)B_QQ-I)^-1. For every real lambda outside [1/2,2],
+the scalar inverse has modulus <=3 on |u|<=1/3. If lambda<=0 the
+bound is <=1. For 0<lambda<1/2 use
+|1-(1+u)lambda|>=1-(4/3)lambda>=1/3; for lambda>2 use
+|(1+u)lambda-1|>=(2/3)lambda-1>=1/3. Thus
+
+  ||A0(u)||<=3, ||A0(u)D_QQ||<=3/8,
+  ||F(u)^-1||<=3/(1-3/8)=24/5=:beta_H.              (6)
+
+These are uniform ANALYTIC-disk bounds, independent of k, dimensions,
+coarse eigenvalue magnitudes and the pole's distance from the real axis.
+On the vertical line Re u=0 the sharper pointwise estimates are
+
+  ||A0(u)||<=2, ||F(u)^-1||<=8/3=:beta.              (7)
+
+The finite Richardson operator
+
+  R_L(u)=sum_(a=0)^(L-1)[A0(u)D_QQ]^a A0(u)
+
+is analytic on the disk and obeys
+
+  ||R_L(u)-F(u)^-1||<=beta_H*(3/8)^L.                (8)
+
+The same fixed L is used for all coupling coefficients. This operator
+identity, not an RHS-dependent stopping rule, justifies the coefficient
+error bound below.
+
+3. SHARED TAYLOR COUPLINGS AND THEIR OPERATOR ACCURACY
+----------------------------------------------------
+
+For the near poles |y_j|<=t/4, compute the first J Taylor coefficients
+C_0,...,C_(J-1) at u=0 of the matrix function
+
+  U_L(u)=R_L(u)Lambda(u),
+  U_hat(u)=sum_(a=0)^(J-1) C_a u^a.                   (9)
+
+Each C_a has (dim Q)-by-k shape. This is kJ coefficient columns total,
+independent of q. Use formal-series Richardson from zero, with affine
+RHS Lambda(u), truncating after degree J-1 at every operation. All
+coarse inverse series have nonzero constant denominators. The procedure
+therefore produces EXACTLY the first J coefficients of U_L, rather than
+an unrelated approximation to them.
+
+Let U(u)=F(u)^-1 Lambda(u). On |u|<=1/3, ||U||<=beta_H*zeta and
+||U_L-U||<=beta_H*zeta*(3/8)^L. Cauchy's coefficient bound, evaluated
+at |u_j|<=1/4, has geometric ratio at most 3/4. Consequently
+
+ ||U_hat(u_j)-U(u_j)||
+   <=(96/5)*zeta*[(3/8)^L+(3/4)^J]<=zeta*delta.       (10)
+
+Independently, pointwise safe Richardson on each supplied b_Q,j gives
+r_hat_j approximating r_j=F(u_j)^-1 b_Q,j with error
+
+  ||r_hat_j-r_j||<=beta*(1/4)^L||b_Q,j||
+                   <=delta||b_j||.                  (11)
+
+Condition (3) is more than sufficient for (10),(11). The coefficient
+approximation and RHS actions need not arise from one common R_hat.
+The proof requires only (10),(11), and uses the SAME U_hat in both
+the Schur core and the Q reconstruction.
+
+4. SMALL SCHUR CORES AND THE FULL PHYSICAL ERROR
+-----------------------------------------------
+
+Put b_j=Z^*h_j. Exact elimination at a near pole gives
+
+ C_j=(1+u_j)B_PP-T_PP-Gamma(u_j)U(u_j),
+ v_P,j=C_j^-1[b_P,j+Gamma(u_j)r_j],
+ v_Q,j=r_j+U(u_j)v_P,j.                               (12)
+
+Define C_hat and v_hat by replacing U with U_hat and r with r_hat
+in (12), and invert each computed k-by-k C_hat exactly. The required
+true T_PP and T_QP are obtained with one raw T-action on the k P
+coordinate columns, before the series/RHS iteration begins.
+
+As in the imported resolver, with H=T^(1/2)KT^(1/2) used only for proof,
+||M(u_j)^-1||<=2mu/(1-eta)<=3mu=:g. Its P,P block is C_j^-1.
+By (10), ||C_hat-C||<=zeta^2*delta, and
+g*zeta^2*delta<=3/16 since delta<=1/mu. Thus C_hat is invertible,
+||C_hat^-1||<=2g, and its inverse perturbation is at most
+2g^2*zeta^2*delta. Set h0=1+zeta*beta<=5/3. Equations (10),(11) give
+
+ ||v_hat_P-v_P||
+    <=delta[2g^2*zeta^2*h0+2g*zeta]||b||
+    <=(27/8)*mu^2*delta||b||.
+
+For the Q block,
+
+ ||v_hat_Q-v_Q||
+    <=delta[1+zeta*g*h0]||b||
+        +zeta*(beta+delta)||v_hat_P-v_P||.
+
+With delta<=1, the sum of these block bounds is at most
+(279/32)*mu^2*delta||b||<9mu^2*delta||b||. Finally the exact identity
+
+  w(S-wI)^-1h=-h-Z M(u)^-1 Z^*h                       (13)
+
+and ||Z||^2<=9/8 give physical error <11mu^2*delta||h||, safely below
+epsilon||h|| under the chosen delta. This estimate permits complex
+unitary coordinates and the two different approximations in (10),(11).
+No finite-word stability of the small inverse is asserted.
+
+5. ACTUAL FAST COARSE SERIES ACTIONS
+------------------------------------
+
+The following detail is essential: applying a dense T0 separately to
+each coefficient would not establish the claimed block complexity.
+Let
+
+  A00=(B_QQ-I)^-1, T0=A00 B_QQ=I+A00.
+
+These are explicit coarse matrices prepared in ~O(m^omega), and
+
+  A0(u)=(I+uT0)^-1 A00.                              (14)
+
+Compute ONE Frobenius form T0=P0 C P0^-1, including its transformation,
+using Neiger--Pernet--Villard, ISSAC 2024, Corollary 5.2:
+https://arxiv.org/html/2402.07345v2#S5.SS1
+The primary theorem gives O(m^omega*(loglog m)^2) field operations.
+Fuse P0^-1 A00 in the preprocessing. This is an explicit COARSE core,
+not the true T or a free eigenbasis.
+
+For an arbitrary k-column polynomial RHS W(u) modulo u^J, transform
+its kJ coefficient columns by P0^-1 A00, solve
+
+  (I+u C)Y(u)=W_tilde(u) mod u^J,
+
+and transform the kJ columns back by P0. A size-d companion block is
+solved by the same rational-series recurrence as raw-factor-fresh-
+search.txt, Section 10.2, with variable -u in place of its t. Its last
+coordinate is a shifted sum of the d input-coordinate polynomials
+divided by one scalar polynomial of constant coefficient one. Invert
+that scalar series once per block. Fast scalar convolutions for k RHS
+columns and the remaining shift/add recurrences cost ~O(dkJ).
+Summing companion sizes costs ~O(mkJ). Both dense transformations cost
+O(m^2*(kJ)^(omega-2)), not J separate dense matrix-vector actions.
+
+The pointwise A0(u_j) actions on the q near RHS columns use the SAME
+Frobenius preparation, with different scalar u_j in each companion
+recurrence. Every required division exists by the safe vertical-line
+bound. Their scalar work is O(mq), and their dense transformations
+batch across q columns.
+
+All true D_QQ actions, on kJ coefficient columns and q current RHS
+columns, are one thin raw T-action followed by projection and identity
+subtraction. The total raw width per iteration is at most R=q+kJ.
+The input affine coefficients and every column in a current iteration
+are already available. This is not retroactive batching of later
+adaptive RHS queries. The number of iterations is L, independent of J.
+
+6. SHARED SCHUR PRODUCTS; NO HIDDEN qmk^2 TERM
+----------------------------------------------
+
+Write Gamma(u)=Gamma0+u*Gamma1. Precompute the k-by-k coefficients
+
+  W_a=Gamma0*C_a+Gamma1*C_(a-1), 0<=a<=J,
+  C_(-1)=C_J=0.                                     (15)
+
+This costs O(mk^2 J) even with ordinary multiplication. Each Schur
+correction Gamma(u_j)U_hat(u_j) is evaluated from these W_a by Horner
+in O(k^2 J), so all q cores cost O(qk^2 J), followed by O(qk^omega)
+small inversions. Computing Gamma(u_j)r_hat_j costs O(mkq).
+
+After all v_hat_P,j are available, reconstruct the coupling term in
+all Q outputs as
+
+  sum_(a=0)^(J-1) C_a [u_j^a v_hat_P,j]_(j=1,...,q).  (16)
+
+This costs O(mkq J) and stores only coefficient width kJ and output
+width q. It never materializes q separate (dim Q)-by-k U_hat matrices.
+This shared polynomial evaluation is necessary: using the old
+O(qmk^2) Schur preparation would fail at q,k of order sqrt(m).
+
+7. FAR POLES AND TOTAL COST
+---------------------------
+
+For |y_j|>=t/4, the full coarse preconditioner
+((1+u_j)B-I)^-1 has norm <=mu_j<=sqrt(17). Its defect contraction is
+at most sqrt(17)/8<3/5, without using a band split. Its full inverse
+error is at most 9*(3/5)^L, giving normalized physical error at most
+11*(3/5)^L||h_j||. The choice (3) is ample. This is the ordinary
+far-cone raw Richardson proof, now with an explicit constant cutoff.
+
+A Frobenius form of the full explicit B supplies these differently
+shifted preconditioners in one additional ~O(m^omega) setup. It is a
+constant number of shared preparations, not q preparations. Pointwise
+companion solves cost O(m) per column; dense basis maps and raw T
+actions batch with the near-pole columns. Hence arbitrary supplied
+poles with the common real center t are covered. If all poles are far,
+the split and all coupling-series work may be omitted entirely.
+
+The initial band queries, initial Z^*h_j, final Z lifts and dense
+coarse changes of basis fit the raw width term in (4), since k+q<=R
+and N>=m. Scalar companion work is ~O(mR) per iteration and is also
+dominated. Equations (15),(16) give precisely the remaining coarse
+terms in (4), including all output columns. The Frobenius routine's
+temporary storage is charged by its arithmetic bound; no stronger
+in-place preprocessing claim is made. Thin working buffers have width
+R plus explicit coarse/split data and polynomial/small-core matrices.
+
+If q,k<=~sqrt(m), the four postprocessing terms in (4) are respectively
+~O(m^2), ~O(m^(3/2)), ~O(m^2), and ~O(m^((omega+1)/2)). At omega=9/4
+the last exponent is 13/8. With R<=~sqrt(m), the original raw term is
+~m^(17/8)*m^(1/8)=~m^(9/4). This proves the claimed larger-band regime.
+
+8. THE LARGE-BAND ORIGINAL TARGET IS STILL OPEN
+-----------------------------------------------
+
+The result removes the multiplicative qk pole cost; it does not remove
+the initial k true-band queries or solve a general k-by-k true Schur
+bulk without obtaining it. If k=Theta(m), the present width/fallback
+still has full-Gram-scale raw work ~I_X*m^(omega-2), exponent 19/8 at
+the original N=m^(9/8), rather than the target 18/8. A different
+structure or algorithm is required for that case.
+
+For example take coarse K=tI and T=I+D, ||D||<=eta. The entire coarse
+space is in the band. The naive coarse Richardson multiplier is
+D/(i y/t), with norm eta*t/|y|, so it cannot yield a near-real constant
+contraction. Moreover D can have a positive fraction of its singular
+values >=eta/2: use a dense orthogonal conjugate of a grid across
+[-eta,eta]. Any rank smaller than that fraction leaves operator error
+>=eta/2. Low-rank metric-defect compression at inverse-polynomial
+target accuracy therefore has no uniform sublinear-rank guarantee.
+Such metrics are legitimate: choose Z with Z^*Z=T and pad to any N>=m.
+These examples reject those specific shortcuts, not general raw-input
+algorithms or the original LRA objective.
+
+The remaining target is still rank-one product LRA at theta=1/m,
+N=m^(9/8), including an actual stable filter and final extraction.
+The present construction is a positive new resolver step for moderate
+coarse-band dimension; a certified inexpensive split and an unrestricted
+large-band mechanism remain separate obligations. Classical Frobenius,
+formal-series, Cauchy and Schur tools are credited inputs. Historical
+priority and finite-word stability remain unverified.

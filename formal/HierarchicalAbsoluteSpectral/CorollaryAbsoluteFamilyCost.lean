@@ -8,6 +8,7 @@ set_option maxHeartbeats 1000000
 set_option backward.isDefEq.respectTransparency false
 noncomputable section
 open Matrix MeasureTheory
+open scoped Matrix.Norms.L2Operator
 variable {N m : ℕ}
 
 theorem absolute_failure_allocation_inverse_polynomial (m : ℕ) (δ c : ℝ)
@@ -67,8 +68,11 @@ theorem absolute_family_error_width_and_runtime_event
   rw [absoluteFamilyProgram_eval]
   rw [preparedAbsoluteAlgorithmProgram_eval] at hw he
   refine ⟨hw.trans (Nat.mul_le_mul_left 2 I.internal_slackRank_le),?_,?_⟩
-  · simpa only [AbsoluteFamilyProblem.fixed,AbsoluteFamilyProblem.absoluteFromPrepared,FixedProblem.absoluteProblem,
-      I.seed.prepared.input_left,I.seed.prepared.input_right] using he
+  · have hA : I.fixed.A=I.A := I.seed.prepared.input_left
+    have hB : I.fixed.B=I.B := I.seed.prepared.input_right
+    change ‖I.fixed.A*I.fixed.B-(absoluteAlgorithmProgram kernels I.fixed g).eval.result.product‖ ≤ I.tolerance at he
+    rw [hA,hB] at he
+    exact he
   · intro hs
     rw [absoluteFamilyTotalWork_eq]
     exact Nat.add_le_add_left (ht (I.internal_slackRank_le.trans hs)) _

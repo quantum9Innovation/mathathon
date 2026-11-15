@@ -1,0 +1,218 @@
+INDEPENDENT AUDIT OF BALANCED-PERMUTATION SPECTRAL CONCENTRATION
+=============================================================
+
+Reviewer: a separate Codex research agent, November 2026.
+Actual full source read:
+  matmul/balanced-permutation-concentration.txt
+  SHA256 49f5a667957bd5a8e28cc8ce6a7867819da106e68fd07941e278b5b4a9c7707e
+
+Finding: PASS of the explicit spectral AMM theorem, its OSE consequence,
+parameter choices, truncation argument, matrix variance calculation, and
+complete factor/output arithmetic under the stated hypotheses. No
+mathematical repair is required for this source. This is an informal
+independent proof reconstruction, not external peer review or a formal
+verification certificate. Historical novelty and state-of-the-art status
+are not established.
+
+FINAL SINGLE-COLOR DELTA REVIEW
+  Final source SHA256
+    6fa07f135e35aa0d92a6a1b62b38fff026786070b8d687d1254ede0e1b7c8227
+  The only change from the source first audited above is the inserted
+  section "An ordinary O(N^2) fixed-stable-rank regime". Removing that
+  complete insertion exactly recovers the preceding SHA49f5a667... .
+  The reviewer independently checked its trace bound:
+    E||ATB||_F^2<=a||A_0B_0||_F^2+b||A_0||_F^2||B_0||_F^2
+                <=a r+b r^2<=(4r+3r^2)/(s-1).
+  It is bounded by 3(r^2+2r)/(s-1), so the proposed one-color s in
+  (4a) and Markov's inequality imply failure at most delta for
+  epsilon||A||||B|| operator error. Padding preserves factor norms,
+  and the identity fallback is exact with width no larger than s.
+  At n=p=N,m<=N and fixed r,epsilon,delta, both construction and every
+  output entry therefore cost O(N^2) ordinary arithmetic. The theorem
+  allows full algebraic rank but assumes bounded stable rank. It is not
+  a new bound under arbitrary cancellation or a relative low-rank
+  product guarantee. The source explicitly credits comparable or
+  stronger classical stable-rank AMM. PASS extends to this final source.
+
+1. STATEMENT, MODEL, AND SCOPE
+=============================
+The source constructs the actual averaged balanced-partition estimator
+C=A Wbar B. It proves absolute spectral error epsilon||A||||B|| with
+failure at most delta for supplied r>=max(1,sr(A),sr(B)). It does not
+claim relative low-rank product error (1+theta)sigma_(k+1)(AB).
+
+The row count is O(r epsilon^-2 log^3((r+n+p)/(delta epsilon))) and the
+number of partition colors is O(epsilon^-1 log^3). Each incidence H_c
+has one unsigned bucket assignment per input coordinate. However the
+actual Gram factor has a deterministic dense centering correction.
+The source correctly calls this sparse plus rank one, and does not
+assert literal d-sparsity or a purely nonnegative embedding matrix.
+
+All factors are fixed before the randomness. The supplied stable-rank
+bound is a real hypothesis, not a free input norm oracle or an optimistic
+choice that could be substituted without verification. Zero factors
+return zero. Exact arithmetic, comparisons, square-root scaling and
+uniform random permutations suffice for the described implementation.
+
+2. EXACT VARIANCE MAP AND STABLE-RANK DEPENDENCE
+=============================================
+The full map (6) was independently derived, rather than inferred from
+its trace. For symmetric G with G1=0 and v,u,w as in the source,
+
+  E[T G T]=aG+b tr(G)Pi-kappa Pi diag(G)Pi,
+  a=v-2u+2w, b=v-2u+w, kappa=2(v-4u+3w).
+
+The diagonal and off-diagonal formulas in Section 2 agree with the
+three overlap classes of permutation-invariant entry covariances.
+This identity is also independently proved and exhaustively checked in
+balanced-variance-and-birthday.txt and its exact-check script.
+
+Centering A_0=A Pi and B_0=Pi B does not increase operator or Frobenius
+norms, and X=A T B=A_0 T B_0 has mean zero. Applying the map to BB^T
+and A^T A gives both block variances, with a negative PSD leverage
+correction. The upper bounds used in the source are sound:
+
+  b<=3/(s-1), a<=4b/3,
+  ||E XX^T||,||E X^T X||<=3(r+2)/(s-1)=V.
+
+The supplied s-1>=r/epsilon and r>=1 give V<=9epsilon. The variance
+does not contain the erroneous ambient m/s loss, nor a rank-squared
+trace substituted for an operator bound.
+
+3. PRIMARY COMBINATORIAL CONCENTRATION INPUT
+==========================================
+The reviewer independently opened the complete published primary PDF:
+
+L. Mackey, M. I. Jordan, R. Y. Chen, B. Farrell, J. A. Tropp (2014),
+Matrix concentration inequalities via the method of exchangeable pairs,
+Annals of Probability 42, 906--945, DOI 10.1214/13-AOP892.
+  https://tropp.caltech.edu/papers/MJCFT14-Matrix-Concentration.pdf
+
+Corollary 10.3 on printed page 933 (PDF page 28) has exactly the
+deterministic Hermitian-array hypothesis sum_ij F_ij=0, uniform norm
+bound R, variance ||m^-1 sum_ij F_ij^2||, and upper-tail denominator
+12 sigma^2+4sqrt(2)Rt. Section 10.2 constructs the permutation Stein
+pair, confirming that this is a dependent permutation sum, not a claim
+of independent matrix entries.
+
+For the source's a_j=e_(b(j))-1_s/s and the rows u_i of U, the dilation
+array of a_j u_i^T has norm at most one and total sum zero. Its variance
+is exactly
+
+  diag((||U||_F^2/s)(I_s-J_s),(1-1/s)U^T U).
+
+This follows from sum_j a_j a_j^T=q(I_s-J_s) and
+sum_j||a_j||^2=m(1-1/s). Thus it is bounded by identity when s>=r.
+The permuted sum is the dilation of H U because sum_i u_i=0.
+Its largest eigenvalue equals the rectangular operator norm, so a
+second tail or an extra factor two is not needed.
+
+At t=16z, z>=1, the exponent satisfies
+256z^2/(12+64sqrt(2)z)>=2z. Applying this to A_0^T and B_0 and taking
+a union bound yields the source's D=2s+n+p and tail
+
+  Pr{||X||>513z^2}<=D exp(-2z).
+
+Here gamma<=2 follows from s>=2, and
+||gamma A_0H^THB_0-A_0B_0||<=512z^2+1<=513z^2.
+No entry incoherence or independent signs are assumed.
+
+4. TRUNCATION BIAS, VARIANCE, AND THE FINAL TAIL
+==============================================
+With h=log(8192Dd/(delta epsilon)) and R=513h^2, the exact tail integral
+plus R Pr(||X||>R) gives
+
+  E[||X||1_(||X||>R)]
+   <=513D exp(-2h)(h^2+h+1/2)
+   <=1283D h^2 exp(-2h)
+   <=delta epsilon/(4d).
+
+The source's use of h^2 exp(-h)<=1 is valid for h>=1. This is a norm
+bias bound independent of the ambient deterministic sketch range.
+The probability that any of the d samples is trimmed is at most
+dD exp(-2h)<=delta/4.
+
+After self-adjoint dilation, Y=X1_good satisfies
+E[(Y-EY)^2]=EY^2-(EY)^2<=EY^2<=EX^2. This is a valid Loewner identity
+for Hermitian dilations, including nonsymmetric rectangular X before
+dilation. Thus trimming and recentering preserve variance at most V
+and give summand norm at most 2R.
+
+The same primary PDF's Corollary 5.2 on printed page 922 (PDF page 17)
+gives independent mean-zero matrix Bernstein with denominator
+3 sigma^2+2Rt. Substitution of sigma^2<=dV, R_summand=2R, and
+t=d epsilon/2 gives precisely
+
+  (n+p) exp[-d epsilon^2/(12V+8R epsilon)].
+
+The sufficient degree inequality (17) therefore makes this at most
+delta/4. Adding the trimming event and the bias bound proves the
+claimed original UNTRIMMED estimator guarantee. The algorithm never
+needs to compute realized norms, trim samples, or estimate the bias.
+
+5. EXPLICIT CONSTANTS, PADDING, AND COMPLETE COST
+===============================================
+The C_0=2^20 proof is conservative but correct. For
+L=log(C_0D/(delta epsilon)), one has L>13.8,
+d<=2C_0 epsilon^-1 L^3, log d<3L, h<4L, and
+log(4(n+p)/delta)<=L. Therefore the sufficient RHS (17) is at most
+
+  epsilon^-1(108+65664L^2)L < C_0 epsilon^-1 L^3.
+
+The ceiling in d only increases the available degree. The hypotheses
+0<epsilon,delta<1 keep every logarithm positive. Integer parameter
+selection can be done by comparisons and conservative scalar series
+without a unit-cost logarithm or floor oracle.
+
+For s=ceil(1+r/epsilon), s-1>=r/epsilon as required. If s<m but m is
+not divisible by s, zero padding to M=s ceil(m/s)<m+s<2m leaves the
+factor norms and stable ranks unchanged. The proof then uses M, and
+the physical output dimensions remain n,p. If s>=m, exact factors A,B
+are an admissible fallback with width m<=s=O(r/epsilon), within the
+displayed row bound.
+
+Each color is applied by bucket sums plus mean correction. A fixed
+Householder reflection on s bucket coordinates removes the redundant
+centered row in O(s) work per data column. Sharing the constant channel
+therefore gives width 1+d(s-1), without a dense s-by-s transform or
+hidden orthogonalization. The stated factor cost O(dm(n+p)+ds(n+p))
+and explicit expansion O(np[1+d(s-1)]) count all factor entries and
+output arithmetic. The theorem is not a fixed-rank N^2 theorem with
+logarithms omitted.
+
+6. PRIMARY PRIOR-ART COMPARISON AND REMAINING OBJECTIVE
+====================================================
+Cohen--Nelson--Woodruff, Optimal approximate matrix product in terms of
+stable rank, ICALP 2016, arXiv:1507.02268v3, already establishes spectral
+AMM at epsilon||A||||B|| with optimal stable-rank row scaling, including
+O(r/epsilon^2) rows for suitable oblivious maps and black-box transfer
+from OSE moment guarantees. The primary abstract, theorem/application
+discussion and definitions were inspected:
+  https://arxiv.org/pdf/1507.02268
+  https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ICALP.2016.11
+Consequently this note's stable-rank dependence or absolute AMM error
+guarantee cannot itself be claimed new or asymptotically superior.
+
+Diar Heidary, SparseStack Is an Optimal Oblivious Subspace Embedding,
+arXiv:2609.02978v2, September 2026, states in Theorem 1.1 an OSE with
+optimal rows O((r+log(1/delta))/epsilon^2) and
+O(log(r/delta)/epsilon) literal nonzeros per column. The full primary
+PDF's construction, statement, assumptions and scope were inspected:
+  https://arxiv.org/pdf/2609.02978
+  https://arxiv.org/abs/2609.02978
+Its matrix stacks fully independent signed CountSketch blocks, with
+independent bucket choices and Rademacher signs. This is a different
+distribution from uniform balanced unsigned partitions with a common
+centering channel. Its stated row and sparsity bounds are stronger than
+the present log-cubed bounds. This audit does not independently verify
+that paper's entire proof or its reported Lean artifact. Its explicit
+primary theorem nevertheless rules out presenting the present parameter
+tradeoff as an unqualified new state-of-the-art bound.
+
+The current work proves a useful construction-specific concentration
+theorem and removes a real gap from the prior balanced-sketch candidate.
+Its exact covariance and lack of independent random signs distinguish
+its distribution. No historical firstness of this precise distribution
+or proof is certified. Further novelty needs an actual guarantee or
+cost improvement beyond matched existing results. In particular the
+SG-11/14/16 sharp high-order weighted pattern sum remains unproved here.

@@ -9,6 +9,51 @@ and practical theoretical algorithms with manageable constants and standard
 operations. The results below establish narrower theorems and algorithms;
 the requested general breakthrough remains open.
 
+The [balanced graph multiplication paper](matmul/balanced-graph-multiplication.pdf)
+([source](matmul/balanced-graph-multiplication.tex)) now proves spectral
+concentration for the permutation sketch. It gives ordinary **O(N^2)**
+total arithmetic for fixed stable ranks, accuracy, and confidence, including
+every output entry, with error epsilon*||A||*||B||. Its high-confidence
+variant has width ~O(r/epsilon^2) using unsigned balanced bucket sums and
+deterministic mean correction. The [verification record](matmul/balanced-graph-multiplication-proof-checks.txt)
+covers the actual-source independent audit and reproducible checks.
+Classical methods already achieve comparable or stronger row/error bounds.
+
+The [bounded-spectrum refinement](matmul/bounded-spectrum-fractional-counts.txt)
+proves exact leading fractional compression coefficients r/(4*pi^2*alpha)
+for endpoint/update norm ratio R>1, and (r-1)/(4*pi^2*alpha) at R=1.
+Its [independent review](matmul/bounded-spectrum-fractional-independent-audit.txt)
+also checks the finite rank discontinuity and connected-path transfer.
+The [constructive bounded-spectrum graph algorithm](matmul/bounded-spectrum-graph-algorithm.txt)
+now attains that sharper leading width at expected nearly linear cost.
+It explicitly charges growing polynomial subtraction, moving-strip
+quadrature, scalar construction and all shifted graph solves. Its
+[verification record](matmul/bounded-spectrum-graph-algorithm-proof-checks.txt)
+contains the complete proof review and reproducible algebra checks.
+The [bounded-graph priority audit](matmul/bounded-graph-priority-audit.txt)
+credits the existing optimal scalar pole-plus-polynomial rates and
+rational matrix-update mechanisms.
+
+The [joint boundary law](matmul/fractional-boundary-crossover.txt) now
+determines the exact compression coefficient when the endpoint ratio
+approaches one as the tolerance decreases. It proves two transitions and
+an exact one-rank region, with matching single-edge path examples.
+The [coefficient plot](matmul/fractional-boundary-crossover.png) shows
+the proved law; the [verification record](matmul/fractional-boundary-crossover-proof-checks.txt)
+records the independent proof reviews and finite algebra checks.
+The [boundary-law priority audit](matmul/fractional-boundary-crossover-priority-audit.txt)
+identifies the tail estimate and terminal cutoff as classical corollaries;
+priority of the full joint law remains unverified.
+
+The [constructive boundary algorithm](matmul/constructive-boundary-crossover-graph-algorithm.txt)
+attains that leading width at expected nearly linear thin-factor cost,
+and returns a rank-one correction strictly beyond the terminal transition.
+Its [verification record](matmul/constructive-boundary-crossover-proof-checks.txt)
+includes independent source and factor-algebra reviews.
+The [rank-r corollaries](matmul/fractional-boundary-rank-r.txt) show how
+the transition depends on the update spectrum, with matching connected
+weighted-path examples and a separate [proof review](matmul/fractional-boundary-rank-r-proof-checks.txt).
+
 The [graph connection manuscript](matmul/graph-fractional-updates.pdf)
 ([source](matmul/graph-fractional-updates.tex)) constructs corrections to
 fractional graph Laplacians after k edge changes in expected
@@ -26,12 +71,17 @@ The [spectral-gap corollary](matmul/expander-polynomial-updates.txt) gives
 width O(k log(1/epsilon)) and ordinary sparse construction on expanders,
 including a uniform random-regular-host guarantee for bounded additions.
 The imported [spectral-gap project](spectral-gap/README.md) is now available.
-Its sharp permutation moments have not yet yielded an improved multiplication
-sketch, as recorded in the [cross-project assessment](matmul/matrix-graph-bridge-state.txt).
+The [cross-project assessment](matmul/matrix-graph-bridge-state.txt) records
+the concentration proof and the remaining stronger multiplication target.
+The [Gaussian cone-span obstruction](matmul/gaussian-cone-span-obstruction.txt)
+shows that fresh random starts alone do not justify a proposed robust
+far-cone filtering route; its [verification record](matmul/gaussian-cone-span-proof-checks.txt)
+states the restricted model and independent proof checks.
 An [unbiased balanced permutation sketch](matmul/balanced-permutation-amm.txt)
 now has exact covariance formulas and a complete reduction of its trace
-moments to that project's mixed-cell bounds. The improved concentration
-bound remains open.
+moments to that project's mixed-cell bounds. The new concentration proof
+uses the exact covariance and classical permutation Bernstein inequalities;
+sharper use of the higher mixed moments remains open.
 
 A [working paper on exact fractional matrix constants](matmul/sharp-fractional-holder.pdf)
 ([source](matmul/sharp-fractional-holder.tex)) derives the exact leading
@@ -60,6 +110,15 @@ The [verification record](matmul/positive-rational-proof-checks.txt) covers
 the actual source, all endpoint cases, arithmetic scope, and explicit SDP
 representations. No later resolution was found in a bounded search;
 priority and external verification remain open.
+
+The quantum section derives small PSD-block representations and two-sided
+optimization certificates. A reproducible
+[interval certificate](matmul/quantum-product-certificate.py) proves that an
+ideal 25-pole construction uses 50 lower or 51 upper blocks of order 2N,
+with bracket width below 5e-7 times the Petz chi-squared divergence.
+The [independent quantum audit](matmul/quantum-small-block-independent-audit.txt)
+separates this guarantee from numerical coefficient preparation and SDP
+solver runtime. The small-block principle has classical antecedents.
 
 The [square-root-update construction](matmul/nongalactic-wildcard-search.txt)
 gives conventional arithmetic cost ~O(Nmr+m^3) for a factor of a correction
@@ -165,7 +224,69 @@ Supporting material includes [ridge-filter proofs](matmul/ridge-filters.pdf),
 [the reported AI research runs](matmul/research-run-evidence.txt).
 
 A further [mathematical review and practical assessment](matmul/hierarchical-mathematical-review.txt)
-checks the hierarchy paper. The [Lean 4 development and coverage map](formal/VERIFICATION.txt)
-prove its deterministic matrix reductions, carried lift, conditional spectral-error
-theorem, and cost cancellations. The randomized certificate construction and full
-runtime theorem remain unformalized. Build the checked library with `cd formal && lake build`.
+checks the hierarchy paper. Its [Lean 4 verification](formal/VERIFICATION.txt) now
+proves the original-input main results, all corollaries and the exact-Gram appendix,
+including randomized success probabilities, full arithmetic costs and output entries.
+The [theorem map](formal/THEOREM_MAP.txt) identifies the exact statements; all 702
+local/supporting modules and 22 endpoint axiom audits pass. Reproduce the full check
+with `cd formal && python3 verify.py --jobs 2 --all-local`.
+The [practical examples](matmul/hierarchical-formal-significance.txt) explain the
+literal constants and the scope of the exact-real arithmetic model.
+
+## Hierarchical spectral theorem statements and Lean verification
+
+The formalization in [formal/](formal/) corresponds to
+[hierarchical-absolute-spectral.pdf](matmul/hierarchical-absolute-spectral.pdf).
+Start with the following declarations; each linked file contains the theorem
+statement and its Lean proof. All names are in the `HierarchicalAbsoluteSpectral`
+namespace.
+
+| Manuscript result | Lean declaration | Source |
+| --- | --- | --- |
+| Fixed-depth tradeoff | `fixed_depth_from_feasible_kernel_polylog` | [MainFeasibleKernel.lean](formal/HierarchicalAbsoluteSpectral/MainFeasibleKernel.lean) |
+| Growing-depth family, including total runtime | `growingDepthProgram_family_theorem` | [MainFamilyProgramFinal.lean](formal/HierarchicalAbsoluteSpectral/MainFamilyProgramFinal.lean) |
+| Optimized comparison corollary | `optimized_paper_corollary` | [CorollaryOptimizedFinal.lean](formal/HierarchicalAbsoluteSpectral/CorollaryOptimizedFinal.lean) |
+| Absolute error without a supplied rank | `absoluteFamilyProgram_paper_corollary` | [CorollaryAbsoluteFamilyFinal.lean](formal/HierarchicalAbsoluteSpectral/CorollaryAbsoluteFamilyFinal.lean) |
+| Two-level specialization | `two_level_specialization` | [CorollaryTwoLevel.lean](formal/HierarchicalAbsoluteSpectral/CorollaryTwoLevel.lean) |
+| Exact-Gram appendix algorithm | `exists_fast_exactGramAppendixComparator` | [ExactGramCharpolyAppendixCost.lean](formal/HierarchicalAbsoluteSpectral/ExactGramCharpolyAppendixCost.lean) |
+| Polynomial degree lower bound | `polynomial_inverse_congruence_natDegree_lower` | [PolynomialDegreeLower.lean](formal/HierarchicalAbsoluteSpectral/PolynomialDegreeLower.lean) |
+
+Read [FixedProblem](formal/HierarchicalAbsoluteSpectral/MainProblem.lean) and
+[FamilyProblem](formal/HierarchicalAbsoluteSpectral/MainFamilyProgramParameters.lean)
+to inspect the original matrix, dimension, rank, accuracy and confidence assumptions.
+The fixed-depth theorem also takes verified matrix-multiplication circuits and their
+feasible cost bound. Its conclusion includes the actual factors, `C = U * V`, rank,
+success probability and total work. Lean's `tailSingularValue (A * B) r` uses zero-based
+indexing and is the manuscript's `sigma_(r+1)(AB)`; the matrix norm is the spectral norm.
+The [complete theorem map](formal/THEOREM_MAP.txt) also identifies the supporting
+lemmas, the absolute-error uniform cap and the appendix's simplified cost bound.
+
+With Elan, Python 3 and a working C toolchain installed, run from the repository root:
+
+```bash
+cd formal
+elan toolchain install leanprover/lean4:v4.31.0
+lake exe cache get
+python3 verify.py --jobs 2 --all-local
+```
+
+[lean-toolchain](formal/lean-toolchain) pins Lean **4.31.0**; the
+[Lake configuration](formal/lakefile.toml) and [manifest](formal/lake-manifest.json)
+pin mathlib and its dependencies. The verifier checks local and supporting proof
+modules in dependency order, checks the final source/dependency hashes, and audits
+the transitive axioms of the public results. At the current revision, a successful
+run reports **22 endpoint axiom audits** and finishes with
+`Verified all 702 proof modules`.
+
+To display the exact theorem types, original-input structures and axiom lists for
+inspection after building, run:
+
+```bash
+lake env lean MainClosedAudit.lean
+```
+
+This [audit file](formal/MainClosedAudit.lean) uses `#check`, `#print` and
+`#print axioms`; the full verifier already runs it. The allowed foundational axioms
+are `propext`, `Classical.choice` and `Quot.sound`. Proof admissions and additional
+axioms are rejected. See the [verification guide](formal/VERIFICATION.txt) for the
+exact scope and verified implementation choices.

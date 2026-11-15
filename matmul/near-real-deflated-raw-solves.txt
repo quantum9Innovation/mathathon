@@ -1,0 +1,236 @@
+NEAR-REAL RAW SOLVES THROUGH A SMALL COARSE SPECTRAL BAND
+=======================================================
+
+Working deduction, 2026-11-15 UTC. This is a conditional positive
+construction, not an arbitrary-factor LRA theorem or a novelty claim
+for Schur complements / deflation. It gives a precise escape from the
+fixed-start far-cone span obstruction. The price is explicit: a supplied
+coarse invariant split and q(k+1) batched columns for q poles, where k is
+the coarse spectral-band dimension. Neither is silently free.
+
+1. INPUT AND THE CLAIM THAT IS ACTUALLY PROVED
+=============================================
+Use the supported coarse coordinates from raw-factor-fresh-search.txt:
+
+  S=Z K Z^T,       T=Z^T Z=I+D,       ||D||<=eta<=1/8.       (1)
+
+K is an explicit real symmetric small core. Z and Z^T are available only
+through thin raw-factor products; the true dense T is not supplied.
+For example Z=X L^dagger and K=L J L^T on the common support, after
+an OSE of X. All statements below are conditional on that coarse event.
+
+Zero eigenvalues of K may first be removed: choose an orthonormal basis
+V of range(K), replace Z by ZV and K by V^T K V. This uses only the
+explicit small core, preserves (1), and leaves S unchanged. Thus assume
+K is invertible. Orthogonal support reduction is ordinary rank-revealing
+linear algebra; it does not require an eigendecomposition of the true T.
+
+Fix t>0. In addition, SUPPLY an orthogonal invariant decomposition
+
+  K=diag(K_P,K_Q),       dim(P)=k,
+  spec(K_Q) subset (-infinity,t/2) union (2t,infinity).    (2)
+
+Here the first interval includes all negative eigenvalues. Equivalently
+P contains every coarse eigenvector with eigenvalue in [t/2,2t]; it may
+contain more. The cost C_split of producing a certified split is charged
+separately. In particular (2) is not a free exact-eigenvector oracle for
+a general explicit core. Coordinate changes in (2) are folded into Z.
+
+For q supplied poles w_j=t+i y_j, y_j!=0, and supplied right-hand sides
+h_j, put mu=max_j |w_j|/|y_j|>=1. All q normalized actions
+
+  w_j (S-w_j I)^-1 h_j
+
+can be approximated to error epsilon||h_j||, 0<epsilon<=1, using
+O(log(2mu/epsilon)) batched raw iterations of width r=q(k+1), plus the
+small-core algebra in Section 5. Contraction is independent of y_j.
+
+The scalar pole may approach the real axis polynomially fast. This
+construction uses raw queries on the data-dependent entire subspace P
+and its couplings; its responses need not remain in any short Krylov
+span of the original Gaussian start block.
+
+2. THE SAFE BLOCK HAS A UNIFORM CONTRACTION
+==========================================
+Write w=t+i y and introduce the dimensionless supported pencil
+
+  M(w)=w K^-1-T.
+
+Woodbury gives the exact physical identity
+
+  w(S-wI)^-1 h=-h-Z M(w)^-1 Z^T h.                      (3)
+
+In the split (2), let A=T_PQ=T_QP^T. Then ||A||<=eta and
+
+  M(w)=[ w K_P^-1-T_PP,       -A       ]
+       [       -A^T,          F(w)     ],
+  F(w)=w K_Q^-1-T_QQ.
+
+The explicit coarse safe inverse is
+
+  A_0(w)=(w K_Q^-1-I)^-1=K_Q(wI-K_Q)^-1.
+
+For every real lambda outside [t/2,2t],
+
+  |lambda/(w-lambda)|<=2.
+
+For lambda<0 this ratio is at most one; for 0<lambda<t/2 it is
+at most one; and for lambda>2t it is at most two. Consequently
+
+  ||A_0(w)||<=2,
+  ||A_0(w) D_QQ||<=rho:=2eta<=1/4,
+  ||F(w)^-1||<=beta:=2/(1-2eta)<=8/3.                  (4)
+
+These bounds hold uniformly as |y| tends to zero. For a prescribed
+right-hand-side block b, the finite Neumann/Richardson operator
+
+  R_L(w)=sum_(ell=0)^(L-1) [A_0(w)D_QQ]^ell A_0(w)
+
+therefore obeys the OPERATOR estimate
+
+  ||R_L(w)-F(w)^-1||<=beta rho^L=:delta.                (5)
+
+Applying D_QQ requires one thin action of T, followed by projections
+and subtraction of the identity. It does not form T_QQ. If eta=0,
+the inverse is simply A_0 and no refinement is needed.
+
+3. ALL REMAINING ILL CONDITIONING IS IN A k-BY-k SCHUR CORE
+=========================================================
+One true T-action on the k coordinate vectors of P reveals T_PP and
+T_QP. These are the k supplied coarse-band columns. If P spans the whole
+supported core, they are the whole supported Gram, and that work is
+charged. Let b=Z^T h and
+R=F(w)^-1. Exact block elimination gives
+
+  C(w)=wK_P^-1-T_PP-A R A^T,
+  u_P=C(w)^-1 [b_P+A R b_Q],
+  u_Q=R b_Q+R A^T u_P,                                 (6)
+
+where u=M(w)^-1 b. Thus each pole needs the safe solve on b_Q and on
+the k columns of A^T. This is the source of width q(k+1).
+
+The small inverse can be large, but its size has a clean bound. Put
+H=T^(1/2) K T^(1/2), a Hermitian matrix used only in the proof. Then
+
+  M(w)^-1=T^(-1/2) H(wI-H)^-1 T^(-1/2),
+  ||M(w)^-1||<=2|w|/((1-eta)|y|)=:g<=3mu.              (7)
+
+Here |lambda/(w-lambda)|<=1+|w|/|y|<=2|w|/|y|.
+The P,P block of M(w)^-1 is C(w)^-1, so ||C(w)^-1||<=g.
+
+Replace each occurrence of R in (6) by R_L, including in the Schur
+core, and invert that computed k-by-k core exactly. Call the result
+u_hat. If delta<=1/mu, the computed Schur core is invertible and
+
+  ||u_hat-u||<=4mu^2 delta ||b||.                       (8)
+
+For completeness, with beta<=8/3, g<=3mu and eta<=1/8, put
+h_0=1+eta beta<=4/3. The Schur perturbation is at most eta^2 delta,
+and g eta^2 delta<=3/64. The inverse perturbation bound is
+2g^2 eta^2 delta. Hence
+
+  ||u_hat_P-u_P||
+    <=delta[2g^2 eta^2 h_0+2g eta]||b||
+    <=(9/8)mu^2 delta ||b||.
+
+The Q-block error is bounded by
+
+  delta[1+eta g h_0]||b||
+    +(beta+delta)eta ||u_hat_P-u_P||.
+
+Since delta<=1, the sum of both block norms is less than
+4mu^2 delta||b||, proving (8). This bound uses an ordinary triangle
+inequality, so also bounds their Euclidean combined norm.
+
+Finally ||Z||^2<=1+eta. Equations (3),(8) imply normalized physical
+error at most 5mu^2 delta||h||. It suffices to choose
+
+  beta rho^L<=epsilon/(10mu^2).                         (9)
+
+Thus L=O(log(2mu/epsilon)). Dependence on the distance to the real axis
+appears in a precision logarithm, rather than in a 1/|y| contraction
+factor. No finite-word stability guarantee for the exact small inversions
+is asserted here.
+
+4. IMPLEMENTATION OF THE SAFE COARSE PRECONDITIONERS
+===================================================
+The split need not diagonalize K_Q. Its explicit Frobenius normal form
+with transformation can be prepared once in ~O(m^omega) field operations,
+as in raw-factor-fresh-search.txt Section 5. The transformed companion
+recurrences apply K_Q(wI-K_Q)^-1 to differently shifted columns in
+one batch, without q dense inversions. Nonreal w avoids every real
+eigenvalue of K_Q. K_P^-1 is a supplied-core inverse of size k.
+
+The primary preprocessing ingredient is Neiger--Pernet--Villard,
+Computing Krylov iterates in the time of matrix multiplication,
+ISSAC 2024, Corollary 5.2:
+  https://arxiv.org/html/2402.07345v2#S5.SS1
+
+All q pole/right-hand-side pairs must be available together when each
+raw block action is performed. A later adaptive query is not retroactively
+included in this batch. The spectral split P itself may depend on the
+coarse sketch; it does not depend on an original Gaussian RHS seed.
+
+5. COST, SCOPE, AND THE ORIGINAL HARD GATE
+========================================
+Let the physical raw factor have size N-by-m, I_X=Nm, N>=m, and suppose
+1<=r=q(k+1)<=m. Under the same elementary blocking convention as the raw
+resolver, the construction costs
+
+  C_split + ~O(m^omega)
+    + O(I_X r^(omega-2) log(2mu/epsilon))
+    + O(q m k^2 + q k^omega).                           (10)
+
+The first true T-action on P, initial Z^T h_j actions and final physical
+lifts fit the displayed raw width term. The q Schur products can use
+ordinary O(mk^2) multiplication; each small inverse uses O(k^omega).
+Only the k coarse-band columns of T are queried explicitly; if that
+band fills the supported core, they reveal its whole Gram. The thin
+buffers have width r, plus the explicit coarse/split data and q small
+Schur cores. All such queries and storage are charged in (10).
+
+At the original exponents N=m^(9/8), omega=9/4, the non-setup terms in
+(10) are within ~O(m^(9/4)) whenever r<=~sqrt(m), mu and epsilon^-1 are
+polynomial in m. This is CONDITIONAL on C_split fitting that budget.
+Producing exact invariant subspaces of a general core by field arithmetic
+is not supplied by the statement; an approximate certified split requires
+its own error analysis. Fast approximate Hermitian diagonalization is
+available in the literature, but substituting it into (2) is not done
+silently here. A relevant primary reference is Rikhav Shah, Fast Hermitian
+Diagonalization with Nearly Optimal Precision, 2024:
+  https://arxiv.org/abs/2408.09880
+
+The central remaining dimension gate is equally explicit. There is no
+universal bound k<=~sqrt(m)/q. Even the well-conditioned diagonal matrices
+in gaussian-cone-span-obstruction.txt have essentially their entire
+positive spectrum in [t/2,2t] at t=1, so their natural k is m. Their
+coarse metric can happen to be exact, which makes solves easy for a
+different reason; the band-count condition itself still supplies no
+worst-case compression. One cannot replace k by the number of true
+eigenvalues above t: a large cluster immediately below t also enters P.
+
+This gives a precise useful alternative to fixed far-cone filtering:
+near-real inversion can be reduced to a raw-access Schur core supported
+on a coarse spectral band. To solve the arbitrary-factor original gate,
+one must additionally avoid the qk width when that band is large, exploit
+special metric structure in it, or prove another sufficient condition.
+Threshold selection, a sharp final filter, and rank-one extraction are
+not claimed by this resolver alone.
+
+6. RETAINED FINITE DIAGNOSTIC RECORD
+===================================
+A NumPy 2.5.3 diagnostic was run with seed 2026111509, dimensions
+m=8,16,32, four independent trials per dimension, and y=1,.1,.01,.001.
+Each trial used a random SPD metric with ||T-I||=1/8 and coarse positive
+and negative eigenvalues over six orders of magnitude. Forty-eight cases
+compared the Neumann inverse, Schur formula and normalized physical action
+with direct dense inverses. Recorded maxima were:
+
+  safe coarse multiplier norm:                  1.5560290591483574
+  actual safe contraction norm:                 0.11439429755395875
+  Schur inverse norm / bound in (7):             0.4477965674225128
+  normalized action error / requested 1e-3:      2.8544839100101536e-6
+
+These are finite algebra diagnostics, not proof of the asymptotic runtime,
+an exact split algorithm, or a finite-precision theorem. The proof of
+(4)--(10), including their scope restrictions, is the substantive result.

@@ -1,0 +1,220 @@
+AN EXPLICIT RELATIVE-TAIL OBSTRUCTION FOR DIRECT BALANCED AMM
+===========================================================
+
+This note concerns exactly the estimator C=A Wbar B in
+balanced-permutation-amm.txt and balanced-graph-multiplication.tex.
+It identifies an algebraic obstruction that stronger scalar permutation
+moments cannot remove. It is not a lower bound for all AMM algorithms,
+adaptive sketches, preconditioned methods, or low-rank approximation.
+The zero-tail obstruction for generic oblivious sketches is classical
+in spirit; historical priority for the explicit construction is not
+asserted.
+
+1. FIXED SKETCH PARAMETERS AND THE CLAIM
+======================================
+Fix integers m=sq, s>=2, q>=2, d>=1, and assume
+
+  ell:=1+d(s-1)<m.                                      (1)
+
+Let H_1,...,H_d be arbitrary balanced partition incidence matrices,
+each having s buckets of size q. The partitions may be drawn randomly,
+independently or dependently, or selected by any distribution that
+does not change the estimator below. Define
+
+  p=(q-1)/(m-1),
+  W_c=(H_c^T H_c-p11^T)/(1-p),
+  Wbar=d^-1 sum_c W_c, Tbar=Wbar-I.
+
+There is ONE explicitly constructed deterministic unit vector x with
+x^T1=0, depending only on m,s,q,d, such that for EVERY possible d-tuple
+of these partitions,
+
+  |x^T Tbar x|>=mu>0.                                  (2)
+
+An explicit positive mu appears in (9) below. In particular x is
+chosen before the partitions are drawn and does not depend on them.
+
+For every N>=m, theta>0, and desired stable-rank bound R>1, there are
+fixed full-column-rank A in R^(N by m) and full-row-rank B in
+R^(m by N) such that
+
+  ||A||=||B||=1, sr(A),sr(B)<=R,
+  sigma_1(AB)=1, sigma_2(AB)>0,
+
+but the direct balanced estimator ALWAYS violates
+
+  ||A Wbar B-AB|| <=(1+theta)sigma_2(AB).                (3)
+
+Thus the probability of success in (3) is ZERO under every distribution
+on the stated sketches. The product nevertheless has an explicit
+rank-one approximation of error exactly sigma_2(AB). The obstruction
+therefore concerns the direct estimator rather than the attainable
+rank of an answer.
+
+2. WHY EVERY COMPRESSED REALIZATION IS A NONZERO QUADRATIC FORM
+=============================================================
+The exact identities in balanced-permutation-amm.txt give
+
+  W_c=J+lambda P_c,
+  J=11^T/m, lambda=(m-1)/(s-1),
+
+where P_c is an orthogonal rank-(s-1) projection supported on 1-perp.
+Consequently
+
+  rank Wbar<=1+d(s-1)=ell<m.
+
+Therefore Tbar!=0 for EVERY realization. Moreover
+
+  Tbar=Tbar^T, Tbar_ii=0, Tbar1=0.                       (4)
+
+For i!=j let K_ij in {0,...,d} count colors in which i,j collide.
+The exact entry formula is
+
+  Tbar_ij=[(m-1)K_ij-d(q-1)]/[d(m-q)].                  (5)
+
+Write n_ij=(m-1)K_ij-d(q-1). These are integers, not all zero, and
+
+  |n_ij|<=d(m-1)=:C_0.                                 (6)
+
+The entry identity follows by averaging H_c^T H_c and substituting
+1-p=(m-q)/(m-1). The bound (6) is deliberately loose; it is sufficient
+for a uniform construction independent of the partitions.
+
+3. ONE EXPLICIT VECTOR SEPARATES ALL REALIZATIONS
+================================================
+Let X=C_0+2 be an integer, and number coordinates i=0,...,m-1. Define
+
+  z_i=X^(2^i), z_0bar=m^-1 sum_i z_i,
+  zc=z-z_0bar*1, x=zc/||zc||.                            (7)
+
+The entries of z are distinct, so zc!=0 and x is a well-defined
+zero-sum unit vector. Since Tbar1=0,
+
+  x^T Tbar x = z^T Tbar z/||zc||^2
+   =2/[d(m-q)||zc||^2] sum_(i<j) n_ij X^(2^i+2^j).     (8)
+
+All integers 2^i+2^j for i<j are different: their binary expansions
+have exactly the two indicated nonzero positions. Thus the polynomial
+R(t)=sum_(i<j)n_ij t^(2^i+2^j) is not identically zero when Tbar!=0.
+Every coefficient has absolute value at most C_0. Let D be its largest
+nonzero exponent. Its leading coefficient has absolute value at least
+one, while
+
+  sum_(j=0)^(D-1) C_0 X^j
+    =C_0(X^D-1)/(X-1)<X^D,
+
+because X-1=C_0+1. Its leading term therefore dominates ALL lower
+terms, including any missing exponents. Hence R(X)!=0. Since R(X)
+is an integer, |R(X)|>=1. Equation (8) proves the uniform bound
+
+  |x^T Tbar x|>=mu,
+  mu:=2/[d(m-q)||zc||^2]>0.                             (9)
+
+The scale mu can be extremely small, and no practical separation or
+bit-complexity claim is made. Its positivity is sufficient for the
+relative-tail obstruction. Both x and mu are fully specified before
+any partition choice. The large integer powers only establish the
+existence of a fixed adversarial input; they are not a proposed AMM
+algorithm or charged preprocessing step of the balanced method.
+
+A nonconstructive version is shorter: each Tbar is a nonzero symmetric
+quadratic form on 1-perp; finitely many nonzero polynomial zero sets
+cannot cover that vector space. The integer construction above also
+supplies one common nonzero lower bound for all of them.
+
+4. RANK-ONE AND FULL-RANK FIXED INPUTS
+====================================
+The immediate zero-tail example is A=u x^T, B=x v^T for any fixed unit
+u,v in R^N. Then AB=u v^T has sigma_2=0, whereas
+
+  A Wbar B-AB=(x^T Tbar x)u v^T
+
+has norm at least mu. Thus every sketch fails (3) already on these
+rank-one factors. The following construction removes both rank
+deficiency and the zero-tail endpoint from the example.
+
+Let R_N be the N-by-m coordinate inclusion [I_m;0]. For a scalar
+0<tau<1 define
+
+  D_tau=tau I+(1-tau)xx^T,
+  A=R_N D_tau, B=D_tau R_N^T.
+
+Both factors have full latent rank m. Their operator norms are one,
+and their stable ranks are
+
+  sr(A)=sr(B)=1+(m-1)tau^2.                              (10)
+
+Since D_tau x=x and D_tau acts by tau on x-perp, the product is
+
+  AB=R_N[xx^T+tau^2(I-xx^T)]R_N^T.
+
+It has sigma_1=1 and sigma_2=tau^2, with the latter repeated m-1
+times. The rank-one approximation R_N xx^T R_N^T has error tau^2.
+For the unit vector u=R_N x, the direct sketch error satisfies
+
+  |u^T(A Wbar B-AB)u|
+   =|x^T D_tau Tbar D_tau x|
+   =|x^T Tbar x|>=mu.                                  (11)
+
+Therefore its operator norm is at least mu for every realization.
+For example, choose tau by
+
+  tau^2=min{1/4, mu/[2(1+theta)], (R-1)/[2(m-1)]}.      (12)
+
+Then (10) is at most R, while
+
+  (1+theta)sigma_2(AB)=(1+theta)tau^2<=mu/2<mu.
+
+Equations (11),(12) prove the full-rank statement (3) with failure
+probability one. The input is the same for all sketches with the fixed
+parameters. The stable ranks can be made arbitrarily close to one
+without changing the conclusion, by choosing R arbitrarily close to
+one or decreasing tau further.
+
+5. CONSEQUENCE FOR THE ORIGINAL MATRIX-PRODUCT TARGET
+====================================================
+The relative target in the matrix-product research asks for error
+(1+theta)sigma_(r+1)(AB) for every fixed factor pair, including thin
+full-rank inputs and arbitrary cancellation/spectral tails. Its rank-one
+case r=1 already includes the fixed inputs in Section 4. Padding by
+R_N allows any dimensions N>=m, including the original thin-factor
+regime N=m^(9/8+o(1)). The direct balanced estimator with ell<m cannot
+satisfy that target uniformly, regardless of how sharp its moment or
+concentration analysis becomes.
+
+In particular SG-11, SG-14 and SG-16 in spectral-gap/CLAIM_LEDGER.md
+bound the EXACT mixed permutation monomials in its trace expansion.
+Those valid estimates can support absolute/stable-rank error theorems
+or restricted input regimes. They cannot establish the false uniform
+relative-tail guarantee (3) for this unmodified estimator. The gap
+between epsilon||A||||B|| and (1+theta)sigma_2(AB) is a real algorithmic
+issue rather than an uncompleted manipulation of the same moments.
+
+The scope is precise. The proof does NOT prohibit adaptive subspace
+recovery, sketch-based preconditioners, residual correction, exact
+fallbacks, or algorithms returning an object other than A Wbar B.
+It does not prohibit processing the rank-one structure in the input
+to return its exact product. It also does not prove that every width
+ell<m sketch misses every input. The bad input was constructed for
+the fixed finite balanced-sketch family, independently of its draw.
+
+If the method takes the exact identity fallback whenever its parameter
+choice would give ell>=m, (1) no longer applies in that branch. The
+theorem specifically explains why the compressed direct branch alone
+cannot close the original relative-spectral target.
+
+6. STATUS AND CHECKABLE INGREDIENTS
+==================================
+This is a general exact proof, rather than an inference from numerical
+enumeration. Its dependencies are the already checked rank/row-sum
+identities of the balanced sketch, rational entry formula (5), uniqueness
+of binary-sum exponents, leading-term dominance, and the explicit
+eigenvalues of tau I+(1-tau)xx^T. The lower separation mu in (9) is
+conservative and is used only to choose a strictly positive tail.
+
+The basic zero-tail limitation is standard for direct oblivious
+compression. The added value here is an explicit single vector,
+uniform across ALL balanced partition draws at the chosen parameters,
+with a finite common separation and full-rank bounded-stable-rank
+inputs having strictly positive residual tail. No unrestricted sketch
+lower bound or first-discovery claim follows.

@@ -54,6 +54,15 @@ def exactGramAppendixLiftProgram
   let data ← exactGramAppendixLiftDataProgram kernels A B T out hr
   ArithmeticProgram.pure data.output
 
+theorem exactGramAppendixLiftProgram_eval
+    (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
+    {n m p k r : ℕ} (A : Matrix (Fin n) (Fin m) ℝ) (B : Matrix (Fin m) (Fin p) ℝ)
+    (T : Matrix (Fin m) (Fin k) ℝ) {K : Core k} (out : FiniteCongruenceDiagonal K)
+    (hr : out.negativeCount ≤ r) :
+    (exactGramAppendixLiftProgram kernels A B T out hr).eval =
+      (exactGramAppendixLiftDataProgram kernels A B T out hr).eval.output := by
+  rw [exactGramAppendixLiftProgram, eval_bind, eval_pure]
+
 theorem exactGramAppendixLiftDataProgram_admissible
     (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
     {n m p k r : ℕ} (A : Matrix (Fin n) (Fin m) ℝ) (B : Matrix (Fin m) (Fin p) ℝ)
@@ -79,6 +88,7 @@ theorem exactGramAppendixLiftProgram_error
     (out : FiniteCongruenceDiagonal (t • (1 : Core k)-Hc)) (hr : out.negativeCount ≤ r) :
     ‖A*B - (exactGramAppendixLiftProgram kernels A B T out hr).eval.product‖ ≤ Real.sqrt t := by
   let data := (exactGramAppendixLiftDataProgram kernels A B T out hr).eval
+  rw [exactGramAppendixLiftProgram_eval]
   change ‖A*B-data.output.product‖ ≤ Real.sqrt t
   rw [data.projection]
   apply projection_error_of_complement_bound (A*B) data.range.basis data.range.orthogonal

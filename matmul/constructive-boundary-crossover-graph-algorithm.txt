@@ -1,0 +1,397 @@
+CONSTRUCTIVE SHARP JOINT BOUNDARY LAW FOR ONE GRAPH EDGE UPDATE
+=============================================================
+
+Working theorem and proof, 2026-11-15 UTC. Independent proof review: PASS.
+See constructive-boundary-crossover-independent-audit.txt and the proof
+verification record for reviewed hashes, dependencies and scope.
+This note gives an actual thin-factor algorithm for the already proved
+fractional boundary crossover. It imports the audited graph SDD solver
+and positive scalar-window implementation, and supplies the uniform
+growing-projection and restoration arguments. Historical priority and
+finite-word stability are not asserted.
+
+1. INPUT, OUTPUT, AND UNIFORM WIDTH BOUND
+----------------------------------------
+
+Fix 0<alpha<1 and beta=1-alpha. Let K,K' be conductance Laplacians on
+N vertices with the same positive diagonal mass matrix H, held fixed.
+One existing edge conductance is increased by a positive amount. Put
+
+  A=H^-1/2 K H^-1/2, B=H^-1/2 K' H^-1/2,
+  E=B-A=ww^T, ||w||=1, D=B^alpha-A^alpha.
+
+The sparse vector w is computed from the changed edge and masses. The
+unit update norm is part of the normalization. Let M be the number of
+host edges, supply h in (0,1], and promise B<=(1+h)I. Given epsilon,
+delta in (0,1), there is a randomized algorithm returning real factors
+X,Y with
+
+  Pr{||XY^T-D||<=epsilon}>=1-delta,                    (1)
+
+in expected ~O_alpha(M+N) arithmetic, including every factor entry.
+Suppressed factors are logarithmic in N,1/epsilon,1/delta. No mass ratio,
+spectral gap, endpoint condition number or log(1/h) is suppressed.
+The factor product need not be exactly symmetric.
+
+Define, for s>=0 and b>=0,
+
+ Phi_alpha(s,b)=0,                         s<=alpha*b,
+   =(s-alpha*b)^2/(4*pi^2*alpha*beta),       alpha*b<=s<=b,
+   =(s^2/alpha-b^2)/(4*pi^2),              s>=b.        (2)
+
+The expressions coincide at both boundaries. With l=log(1/epsilon),
+the output width obeys, UNIFORMLY for all supplied h in (0,1],
+
+ width <= Phi_alpha(l,log(1/h))+O_alpha((l+1)^(15/8)). (3)
+
+The logarithms in (2),(3) describe the theorem; they are not primitives
+used by the algorithm. In particular, for every fixed tau>=0 and
+h=epsilon^tau,
+
+ width <= C_alpha(tau)*l^2+O_alpha((l+1)^(15/8)),       (4)
+
+where C_alpha(tau) is the exact piecewise coefficient proved in
+fractional-boundary-crossover.txt. The leading coefficient is therefore
+optimal already on connected paths with arbitrary positive vertex
+masses. For general h(epsilon) with log(h)/log(epsilon)->tau, (3)
+also gives the same leading coefficient, with an o(l^2) remainder.
+
+There is an additional terminal algorithm: if epsilon<=1/2 and
+h^alpha<=epsilon/2, width exactly ONE suffices with the same expected
+work. In particular this applies eventually to each fixed tau>1/alpha.
+No width-one algorithm at the equality tau=1/alpha is inferred here.
+
+All statements use exact real arithmetic, comparisons, positive square
+roots and discrete randomness, with fixed alpha available as a scalar
+constant. The scalar exponentials, Gaussian windows, pi, log(2), and
+sin(pi*alpha)/pi are approximated by the explicit series below. There
+is no exponential, Gaussian, general-power or best-rational oracle.
+Dense expansion of the returned product would cost extra quadratic work.
+
+2. A COMPUTABLE WORKING PRECISION AND CLIPPED h LOCALIZATION
+-----------------------------------------------------------
+
+Let m_e be the least nonnegative integer with 2^(-m_e)<=epsilon,
+found by halving. Approximate log(2) from above and below to absolute
+error 2^(-C_alpha*(m_e+1)), using its convergent rational series as
+in the existing scalar construction. Write the bounds lambda_+,lambda_-;
+ensure 1/2<=lambda_-<=log(2)<=lambda_+<=1.
+
+Take a working parameter
+
+  S=max(S0, m_e*lambda_+ + C0),                       (5)
+
+where S0,C0 are sufficiently large computable constants depending only
+on alpha. Then S=l+O_alpha(1), and e^(-S)<=epsilon/256. The constants
+also cover the fixed small-precision range of the later estimates.
+
+Let J=ceil(16*(S+1)/alpha). Starting at 1, halve while the next halved
+number is >=h, but stop after J halvings. Let j_h be the number of
+completed halvings and set
+
+  b=j_h*lambda_-.                                    (6)
+
+Thus h<=2^(-j_h)<=e^(-b). If the cap is not reached, then
+b=log(1/h)+O_alpha(1). If the cap is reached, b>=8*(S+1)/alpha,
+while log(1/h)>=j_h*log(2)>=b. Both the true and the clipped phase
+areas in (2) then vanish. This loop has O_alpha(S+1) iterations even
+when h is arbitrarily smaller than epsilon. Computing epsilon^tau is
+unnecessary: the algorithm accepts the supplied h.
+
+Let p be the least power of two with p^8>=S, so
+S^(1/8)<=p<2*S^(1/8). Compute an exact orthonormal basis V of
+
+  K_p=span{w,Aw,...,A^(p-1)w}, dim(K_p)=r<=min(p,N).
+
+Generate the powers by sparse multiplication and apply Gram--Schmidt,
+discarding an exactly zero residual; comparisons and square roots are
+allowed. Early Krylov dependence causes no problem. Put P=VV^T and
+Q=I-P, and apply these projectors through V without forming N-by-N
+matrices. The basis costs O((M+N)p+Np^2) arithmetic and O(Np) storage.
+No lower bound on a nonzero Gram--Schmidt residual is required in this
+exact-arithmetic model.
+
+3. PROJECTED ENVELOPE WITH EXPLICIT p DEPENDENCE
+-----------------------------------------------
+
+For z off the negative real axis, write
+
+  D_z=(A+zI)^-1-(B+zI)^-1,
+  F_p(y)=c_alpha*exp((alpha+1)y)*Q D_(exp(y)) Q,
+  c_alpha=sin(pi*alpha)/pi.
+
+The integral of F_p on the real line is QDQ. At every real node it is
+PSD of rank at most one. Set c_d=cos(d/2), for 0<d<pi. The proof in
+fractional-boundary-crossover.txt, Section 3, gives the following bounds;
+here their p dependence is explicit:
+
+  ||D_z||<=2/(c_d*t),
+  ||Q D_z Q||<=C*c_d^(-3)*h/t^2,
+  ||Q D_z Q||<=C*4^p*c_d^(-3)*h/t^(2p+2),             (7)
+
+where |z|=t and C is absolute. Indeed the rotated Woodbury denominator
+is >=c_d*(1+m(t)), m(t)>=1/(a+t), a=w^TAw<=h. The projected numerator
+is <=a/(4*c_d^2*t^3); baseline resolvents cover t<a. The last bound
+uses Q A^j w=0 for j<p and ||A^p w||^2<=2^(2p-1)*h, because A<=2I.
+
+Consequently, on |Im y|<=d,
+
+  ||F_p(x+i theta)||<=M_(p,d)*exp(-g(x)),
+  g(x)=max{-alpha*x, b+beta*x, b+(2p+beta)*x},
+  M_(p,d)<=C_alpha*4^p*c_d^(-3).                     (8)
+
+Replacing h by the larger e^(-b) only weakens (7). The breakpoints are
+-b and 0; the minimum is alpha*b; g>=0; and its largest absolute slope
+is <=2p+1. These bounds are independent of the graph and its masses.
+
+For actual scalar-node perturbations a simpler real estimate is useful.
+Using D_t=(A+tI)^-1 ww^T(B+tI)^-1 gives
+||D_t||<=min(t^(-1),t^(-2)); also
+D_t'=-(A+tI)^-1 D_t-D_t(B+tI)^-1, so t||D_t'||<=2||D_t||.
+Thus both ||F_p(x)|| and ||F_p'(x)|| are bounded by C_alpha on the
+entire real line, INDEPENDENTLY of p. Q is fixed while x varies.
+
+4. CONSTRUCTIVE GAUSSIAN RULE AND UNIFORM PHASE-AREA COUNT
+---------------------------------------------------------
+
+Approximate pi from below with certified absolute error exp(-C_alpha*S)
+by its convergent series, writing pi_-. Take
+
+  ell=S^(3/4), d=pi_- - S^(-1/4), B0=4*sqrt(S+1).
+
+All fractional powers of S here require only square roots. For the
+fixed threshold S0, d>pi/2 and c_d>=S^(-1/4)/4. Use intervals
+I_j=[j*ell,(j+1)*ell] and the entire Gaussian windows
+
+  phi_j(z)=pi^(-1/2) int_(I_j) exp(-(z-u)^2)du.
+
+Retain the intervals meeting {x:g(x)<=S+ell}. This is empty if
+alpha*b>S+ell. Otherwise it is a single interval, whose left endpoint
+is -(S+ell)/alpha and whose right endpoint is
+
+  (S+ell-b)/beta,           S+ell<=b,
+  (S+ell-b)/(2p+beta),      S+ell>=b.
+
+These endpoints and each m_j=min_(I_j)g are computable by arithmetic
+and comparisons: the interval minimum is at the point nearest -b.
+For each retained interval take
+
+  H_j=max(ell,S-m_j+3ell), a_jstep=2*pi_-*d/H_j.
+
+Keep lattice points x=n*a_jstep in I_j+[-B0,B0]. The ideal weight is
+a_jstep*phi_j(x)>=0. Repeated occurrences of a node may be kept as
+separate columns. No rank-p multiplicity is assigned to a projected node.
+
+The moving-strip proof remains uniform while p grows. Gaussian
+convolution with a (2p+1)-Lipschitz envelope costs at most
+2*exp((2p+1)^2/4); evaluating boundary windows adds exp(d^2). Hence
+the logarithm of the complete boundary prefactor is
+
+  O_alpha(p+log(S+1)+p^2)=o(ell).                    (9)
+
+The fixed S0 can be selected by elementary power comparisons to make
+this at most ell/4. The estimate is not a fixed-p hidden constant.
+Omitted windows contribute poly(S)*exp(-S-ell+o(ell)); trapezoid
+errors sum to poly(S)*exp(-S-3ell+o(ell)), since m_j+H_j>=S+3ell.
+Gaussian lattice tails contribute poly(S)*exp(-2S). If the retained
+set is empty the omitted-window estimate controls the entire integral.
+The total ideal quadrature error is at most exp(-S) after increasing S0.
+
+For clarity the growing-slope node count is also explicit. On each
+linear piece, the rectangle-minimum error relative to int(S-g)_+ is
+O_alpha(S*ell); intervals crossing a breakpoint cost O_alpha(p*ell^2).
+Spacing buffers add O_alpha(S*ell+ell^2). Enlarging lattice intervals
+adds O_alpha(sqrt(S)*(S^2/ell+p*ell)); integer rounding costs
+O_alpha(S/ell+1). These estimates are uniform for all b from (6).
+Therefore the number q of retained lattice nodes satisfies
+
+  q<= [1/(2*pi_-*d)]int_R(S-g(x))_+dx+O_alpha(S^(7/4)). (10)
+
+Direct integration gives, with A_p(S,b) denoting this integral,
+
+  A_p=0,                            S<=alpha*b,
+     =(S-alpha*b)^2/(2*alpha*beta),  alpha*b<=S<=b,
+     =S^2/(2*alpha)-b^2/2
+        +(S-b)^2/[2*(2p+beta)],      S>=b.            (11)
+
+Since 1/(pi_-*d)=1/pi^2+O(S^(-1/4)), the extra high-energy triangle
+is O_alpha(S^2/p), and p>=S^(1/8), (10),(11) imply
+
+  q<=Phi_alpha(S,b)+O_alpha(S^(15/8)).                (12)
+
+All retained |x| are O_alpha(S+1), the total retained interval length
+is O_alpha(S+1), and the step sizes are <1. The elementary Gaussian
+lattice bound h*sum_n exp(-(nh-u)^2)<=C for h<=1 gives total ideal
+coefficient mass O_alpha(S+1). Actual coefficients below have the same
+bound. There is no h-dependent constant in these statements.
+
+5. ACTUAL SCALAR CONSTRUCTION AND SHIFTED SOLVE ACCUMULATION
+------------------------------------------------------------
+
+Use the positive polynomial-square scalar implementation already proved
+in sharp-matrix-function-updates.tex, Lemma constructive. For each
+window evaluation substitute v=u-x and clip to [-B0,B0]. Approximate
+exp(-v^2/2) by a Taylor polynomial of degree O_alpha(S+1), square
+that polynomial, and integrate its polynomial primitive at the clipped
+endpoints. Its value is nonnegative because it integrates a polynomial
+square. The fixed clipping error is O(exp(-16*(S+1))). The Taylor error
+can be made exp(-C_alpha*S) by increasing the degree constant. The common
+primitive is prepared once; evaluation costs O_alpha(S+1) per node.
+
+Approximate exp(x) to positive relative error exp(-C_alpha*S) by scaled
+Taylor approximation on |x|/2^m<=1 followed by m squarings. Here
+m=O_alpha(log(S+2)), and the total cost per node is O_alpha(S+1).
+The same routine approximates exp((alpha+1)*x). Thus the physical
+weight omega is computed as a_hat*c_hat_alpha*exp_hat((alpha+1)*x),
+rather than invoking a node-dependent power of an arbitrary real input.
+The fixed positive c_alpha, pi and log(2) are obtained to relative or
+absolute budgeted precision by convergent series and square roots.
+The ordinary normalized graph algorithm used in Section 6 may use this
+same replacement for its node powers; its intrinsic scale is one and
+its bounded normalization T=2 is a fixed constant.
+
+The real bounds after (8) make the absolute window clipping errors
+harmless: their sum is O_alpha(q*exp(-16*(S+1))) on uniformly bounded
+normalized samples. The derivative bound similarly controls node changes.
+Together with coefficient mass O_alpha(S+1), polynomially many nodes,
+and |x|=O_alpha(S+1), the remaining budgeted scalar perturbations give
+total scalar error at most exp(-S), with a large fixed degree constant.
+All scalar preparation is O_alpha((S+1)^3). No Gaussian integral,
+transcendental node, gamma or general-power oracle is charged as free.
+
+For each actual t>0 compute approximate shifted actions
+
+  v_t=(A+tI)^-1 w, z_t=(B+tI)^-1 w.
+
+The exact projected node is (Qv_t)(Qz_t)^T. If both shifted solves have
+relative energy error at most eta<=1, the same argument as the audited
+graph update construction gives
+
+  ||(Qv_hat)(Qz_hat)^T-Q D_t Q||<=3*eta/t^2.          (13)
+
+Projectors have norm one, so they do not amplify this estimate. The
+physical weights and logarithmic node bound |log t|<=B_*=C_alpha(S+1)
+give accumulated solve error at most
+
+  C_alpha*eta*(S+1)*exp(beta*B_*).                     (14)
+
+Choose eta by halving with log(1/eta)=O_alpha(S+1) to make (14)<=exp(-S).
+For example eta=2^(-ceil(4*(S+B_*+1)))/(C_alpha*(S+1)) suffices
+after a fixed increase of C_alpha. No logarithm of a graph magnitude
+or mass ratio is needed.
+
+Shifted actions use the SDD systems K+tH and K'+tH. The identity
+(A+tI)^-1 w=H^1/2(K+tH)^-1 H^1/2w transports the inner energy error
+exactly, as in sharp-graph-fractional-updates.txt. Approximate solve
+maps need not be linear, common, or symmetric. Combining ideal-rule,
+scalar and solve errors gives a factorized approximation Z of QDQ with
+
+  rank-factor width <=q, ||Z-QDQ||<=3*exp(-S).         (15)
+
+6. THIN RESTORATION OF THE OMITTED KRYLOV DIRECTIONS
+---------------------------------------------------
+
+Apply the existing bounded graph algorithm with R=2, k=1, tolerance
+epsilon/16 and failure delta/2. This produces general factors X0,Y0
+for D_tilde=X0 Y0^T satisfying ||D_tilde-D||<=epsilon/16 on success,
+width q0=O_alpha((S+1)^2), and expected ~O_alpha(M+N) work. Its R=2
+promise holds because B<=(1+h)I<=2I. The scalar clarification in
+Section 5 supplies a charged implementation at general fixed alpha.
+
+Restore only the omitted rows and columns, using the factors
+
+  X_rest=[V, Q D_tilde V],
+  Y_rest=[D_tilde^T V, V].                             (16)
+
+Their product is P D_tilde+Q D_tilde P
+=D_tilde-Q D_tilde Q, and its width is at most 2r<=2p.
+The corresponding exact expression is D-QDQ. Hence the restoration
+error is at most 2||D_tilde-D||, and in particular <=3*epsilon/16.
+No symmetry of D_tilde is needed.
+
+Both D_tilde V=X0(Y0^T V) and D_tilde^T V=Y0(X0^T V) cost O(Nq0r).
+Applying Q costs O(Nr^2). Neither operation expands an N-by-N matrix.
+Concatenating (16) with the q projected node factors yields width q+2r.
+By (5),(15), with the fixed budget constants, its error is <=epsilon.
+
+The function Phi is continuous and, on 0<=b<=C_alpha(S+1), has changes
+bounded by C_alpha(S+1) times the change in either argument. Using
+S=l+O_alpha(1), the uncapped relation b=log(1/h)+O_alpha(1), and the
+vanishing of both areas in the capped case, (12) proves (3). The
+additional 2p=O(S^(1/8)) width is absorbed by its remainder.
+
+7. COMPLETE WORK, CONFIDENCE, AND MATCHING LOWER
+-----------------------------------------------
+
+There are two projected shifted solves per retained node. Their total
+expected SDD work is ~O_alpha((M+N)q*log(1/eta)); factor projection
+adds O(Npq). Basis preparation, restoration actions and scalar work
+cost O((M+N)p+Np^2+Nq0p+(S+1)^3). All p,q,q0 and precision parameters
+are polynomial in S=log(1/epsilon)+O_alpha(1), establishing the stated
+expected ~O_alpha(M+N) bound, including thin-factor entries.
+
+Use the already audited constant-success energy solver and median
+pairwise energy-distance amplification. Allocate failure delta/2 to
+the ordinary D_tilde and delta/(4q) to each of the 2q projected column
+solves when q>0, then use a union bound. The energy distances use the
+sparse shifted systems and add only logarithmic factors in N,q,1/delta.
+If q=0 no projected solve is required. The bound suppresses no condition
+or mass parameter. This is expected work, without a deterministic cap.
+
+The audited joint boundary theorem supplies matching strict counts
+C_alpha(tau)*log^2(1/epsilon)+o(log^2(1/epsilon)) already for one-edge
+increases on connected fixed-mass paths. Rank below that count cannot
+attain operator error <=epsilon on the fixed witness, regardless of
+randomization. Thus (4) attains the optimal leading output width. This
+does not give a runtime lower bound or ordinary-unit-mass sharpness.
+
+8. A WIDTH-ONE ALGORITHM STRICTLY INSIDE THE TERMINAL REGION
+-----------------------------------------------------------
+
+Assume additionally epsilon<=1/2 and h^alpha<=epsilon/2. The classical
+nuclear bound gives a positive rank-one F=(Dw)(Dw)^T/d0 with
+||D-F||<=h^alpha, while d0=w^TDw>=1-h^alpha>=3/4. Also ||D||<=1.
+Use the ordinary graph algorithm alone with tolerance epsilon/128,
+failure delta; compute y_hat=D_tilde w, d_hat=w^T y_hat, and return
+
+  F_hat=y_hat y_hat^T/d_hat.                           (17)
+
+If d_hat<=0, return zero instead; this case never occurs on the success
+event below and makes the algorithm defined on failed solves as well.
+On success ||y_hat-Dw||<=u=epsilon/128, d_hat>=3/4-u>1/2, and
+||Dw||<=1. Expanding numerator and denominator in (17) gives
+
+  ||F_hat-F||
+    <=(2+u)*u/(1/2)+u/[(3/4)*(1/2)]<7u.
+
+Thus ||F_hat-D||<=epsilon/2+7*epsilon/128<epsilon.
+It is a genuine PSD rank-one factor, computed with one scalar square
+root and a thin factor action. This branch uses the supplied stronger
+promise; it need not decide an exact irrational-power equality. At
+alpha=1/2 the sufficient test is the ordinary comparison h<=epsilon^2/4.
+For other fixed alpha any desired certified sufficient test can use
+the same bracketed-log/exponential routines. The finite promise itself
+is enough for the stated corollary. Since ||D||>=d0>=3/4>epsilon, zero
+width cannot succeed there. Equality h^alpha=epsilon has no error slack
+and is not assigned an actual width-one guarantee by this argument.
+
+9. DEPENDENCIES AND LIMITS
+--------------------------
+
+The exact source dependencies to be frozen for independent review are:
+  fractional-boundary-crossover.txt: projected envelope, exact joint
+    count lower and connected-path transfer; classical tail attribution.
+  bounded-spectrum-graph-algorithm.txt: charged R=2 ordinary correction,
+    uniform growing-order Gaussian analysis and shifted solve budget.
+  sharp-matrix-function-updates.tex, Lemma constructive: positive
+    polynomial-square Gaussian weights and scaled Taylor node routine.
+  sharp-graph-fractional-updates.txt and graph-fractional-solver-audit.txt:
+    mass-independent shifted SDD energy solves and confidence amplification.
+
+The proof adds the explicitly uniform moving three-line construction,
+thin rank-2r restoration from a standard correction, clipped h localization,
+and the terminal constructive rank-one corollary. Classical nuclear-tail,
+rational-update and scalar approximation mechanisms are not claimed new.
+The arithmetic theorem excludes finite-word conditioning and storage-bit
+bounds; exact Gram--Schmidt and polynomial primitives can be ill-conditioned.
+No general quadratic matrix multiplication conclusion follows.

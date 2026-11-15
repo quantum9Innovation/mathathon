@@ -1,5 +1,7 @@
 import HierarchicalAbsoluteSpectral.MainStatementsProbability
 import HierarchicalAbsoluteSpectral.MainExplicitOutputCost
+import HierarchicalAbsoluteSpectral.BaseFixedPaperTotal
+import HierarchicalAbsoluteSpectral.BaseFixedPolylog
 
 /-!
 Original-input finite guarantees for the literal prepared arithmetic program.
@@ -10,10 +12,11 @@ probability and finite accuracy schedule, with their original inequalities.
 The returned `product` is the explicitly computed dense matrix C, and
 `product_eq` states C = U V for the two returned factors.
 
-The theorem below is an exact finite-budget guarantee. Its budget is a finite
+The first theorem is an exact finite-budget guarantee. Its budget is a finite
 maximum over the preprocessing signs and sampled row sets, so it is uniform
-over every Gaussian tape. It does not assert the manuscript's simplified
-soft-O expression; that requires the separate analytic cost bounds.
+over every Gaussian tape. The final `fixed_depth_tradeoff` and its narrow
+corollary display the manuscript's cost terms. Every fixed-depth logarithmic
+coefficient is exposed by `fixedPaperExplicitPrefactor`.
 -/
 
 namespace HierarchicalAbsoluteSpectral
@@ -128,6 +131,135 @@ theorem fixed_depth_exact_budget_guarantee
     (preparedFixedDepthProgram kernels I g).eval.product_eq,
     (preparedFixedDepthProgram kernels I g).eval.rank_le,
     preparedFixedDepthExplicitWork_uniform_bound kernels hClassical Ck exponent hC hexponent hK I g⟩
+
+/-- The fixed-depth main guarantee for the literal prepared program.
+Here `exponent` is any genuine feasible core exponent, e.g. omega+zeta.
+The displayed terms are I, G_(h0), the core power, the original-factor
+action, the h_j-weighted fine actions, np, and explicit product formation.
+`fixedFineProductCost ... j` uses accuracy h_(j+1), so its coefficient is
+h_j, exactly the h_(j-1) coefficient of the manuscript's one-based sum.
+The last conditional is zero in the cheap-width regime and m*w_K^2 otherwise.
+The prefactor is independent of matrix entries, singular values and all
+random thresholds. The event is constructed, not a theorem hypothesis. -/
+theorem fixed_depth_tradeoff
+    (K : ∀ a b c : ℕ, ArithmeticKernel a b c)
+    (hClassical : ∀ a b c : ℕ, (K a b c).cost ≤ 2*a*b*c)
+    (Ck exponent : ℝ) (hC : 0 < Ck) (hexponent : 2 ≤ exponent)
+    (hK : ∀ a b c N : ℕ, 1 ≤ N → a ≤ N → b ≤ N → c ≤ N →
+      ((K a b c).cost:ℝ) ≤ Ck*(N:ℝ)^exponent)
+    (I : FixedProblem n m p r L) :
+    (∀ g : MainRandomTape I,
+      (preparedFixedDepthProgram K I g).admissible ∧
+      (preparedFixedDepthProgram K I g).eval.width ≤ r ∧
+      (preparedFixedDepthProgram K I g).eval.product =
+        (preparedFixedDepthProgram K I g).eval.left*(preparedFixedDepthProgram K I g).eval.right ∧
+      (preparedFixedDepthProgram K I g).eval.product.rank ≤ r ∧
+      (preparedFixedDepthExplicitWork K I g:ℝ) ≤ fixedPaperExplicitPrefactor Ck I*
+        ((m*(n+p):ℕ)+(fixedCoarseProductCost K I:ℝ)+(m:ℝ)^exponent+
+          Real.sqrt (I.accuracy L/I.theta)*(mainInputProductCost K n m p (r+1):ℝ)+
+          fixedPaperFineSum K I (r+1)/Real.sqrt (I.accuracy L*I.theta)+
+          (n*p:ℕ)+(matrixProductCost K n r p:ℝ)+
+          (if fixedKrylovRawWidth I ≤ m then 0 else (m:ℝ)*(fixedKrylovRawWidth I:ℝ)^2))) ∧
+    ∃ E : Set (MainRandomTape I), MeasurableSet E ∧ (mainRandomLaw I).real E ≥ 1-I.delta ∧
+      ∀ g ∈ E, ‖I.A*I.B-(preparedFixedDepthProgram K I g).eval.product‖ ≤
+        (1+I.theta)*tailSingularValue (I.A*I.B) r := by
+  refine ⟨?_,preparedFixedDepthProgram_good_event K I⟩
+  intro g
+  refine ⟨preparedFixedDepthProgram_admissible K I g,
+    (preparedFixedDepthProgram K I g).eval.width_le,
+    (preparedFixedDepthProgram K I g).eval.product_eq,
+    (preparedFixedDepthProgram K I g).eval.rank_le,?_⟩
+  simpa only [fixedPaperMainTerm,fixedPaperWidePenalty] using
+    preparedFixedDepthExplicitWork_paper_bound K hClassical Ck exponent hC hexponent hK I g
+
+/-- Equation (fixedcost), with every hidden logarithmic coefficient explicit.
+The sufficient per-run cap is q=`fixedOuterDegreeCap I`, and
+`fixedKrylovRawWidth I` is exactly (2*q+1)*(r+1). -/
+theorem fixed_depth_tradeoff_narrow
+    (K : ∀ a b c : ℕ, ArithmeticKernel a b c)
+    (hClassical : ∀ a b c : ℕ, (K a b c).cost ≤ 2*a*b*c)
+    (Ck exponent : ℝ) (hC : 0 < Ck) (hexponent : 2 ≤ exponent)
+    (hK : ∀ a b c N : ℕ, 1 ≤ N → a ≤ N → b ≤ N → c ≤ N →
+      ((K a b c).cost:ℝ) ≤ Ck*(N:ℝ)^exponent)
+    (I : FixedProblem n m p r L) (hwidth : fixedKrylovRawWidth I ≤ m) :
+    (∀ g : MainRandomTape I,
+      (preparedFixedDepthProgram K I g).admissible ∧
+      (preparedFixedDepthProgram K I g).eval.width ≤ r ∧
+      (preparedFixedDepthProgram K I g).eval.product =
+        (preparedFixedDepthProgram K I g).eval.left*(preparedFixedDepthProgram K I g).eval.right ∧
+      (preparedFixedDepthProgram K I g).eval.product.rank ≤ r ∧
+      (preparedFixedDepthExplicitWork K I g:ℝ) ≤ fixedPaperExplicitPrefactor Ck I*
+        ((m*(n+p):ℕ)+(fixedCoarseProductCost K I:ℝ)+(m:ℝ)^exponent+
+          Real.sqrt (I.accuracy L/I.theta)*(mainInputProductCost K n m p (r+1):ℝ)+
+          fixedPaperFineSum K I (r+1)/Real.sqrt (I.accuracy L*I.theta)+
+          (n*p:ℕ)+(matrixProductCost K n r p:ℝ))) ∧
+    ∃ E : Set (MainRandomTape I), MeasurableSet E ∧ (mainRandomLaw I).real E ≥ 1-I.delta ∧
+      ∀ g ∈ E, ‖I.A*I.B-(preparedFixedDepthProgram K I g).eval.product‖ ≤
+        (1+I.theta)*tailSingularValue (I.A*I.B) r := by
+  simpa only [if_pos hwidth,add_zero] using
+    fixed_depth_tradeoff K hClassical Ck exponent hC hexponent hK I
+
+/-- The fixed-depth tilde overhead is proved, not an assumed runtime profile.
+`fixedPolylogDepthConstant L` depends only on the fixed depth. The gauge is
+1+log n+log p+log m+log(1/theta)+log(1/delta)+sum_j log(1/h_j), with no
+matrix-entry, spectral-gap, condition-number, or random-threshold logarithm.
+`fixedPaperMainTerm` is exactly the cost expression displayed above, including
+the conditional m*w_K^2 fallback. All operations and output entries are charged. -/
+theorem fixed_depth_tradeoff_polylog
+    (K : ∀ a b c : ℕ, ArithmeticKernel a b c)
+    (hClassical : ∀ a b c : ℕ, (K a b c).cost ≤ 2*a*b*c)
+    (Ck exponent : ℝ) (hC : 0 < Ck) (hexponent : 2 ≤ exponent)
+    (hK : ∀ a b c N : ℕ, 1 ≤ N → a ≤ N → b ≤ N → c ≤ N →
+      ((K a b c).cost:ℝ) ≤ Ck*(N:ℝ)^exponent)
+    (I : FixedProblem n m p r L) :
+    (∀ g : MainRandomTape I,
+      (preparedFixedDepthProgram K I g).admissible ∧
+      (preparedFixedDepthProgram K I g).eval.width ≤ r ∧
+      (preparedFixedDepthProgram K I g).eval.product =
+        (preparedFixedDepthProgram K I g).eval.left*(preparedFixedDepthProgram K I g).eval.right ∧
+      (preparedFixedDepthProgram K I g).eval.product.rank ≤ r ∧
+      (preparedFixedDepthExplicitWork K I g:ℝ) ≤
+        (Ck+1)*fixedPolylogDepthConstant L*(fixedPolylogGauge I)^(2*L+4)*
+          fixedPaperMainTerm K exponent I) ∧
+    ∃ E : Set (MainRandomTape I), MeasurableSet E ∧ (mainRandomLaw I).real E ≥ 1-I.delta ∧
+      ∀ g ∈ E, ‖I.A*I.B-(preparedFixedDepthProgram K I g).eval.product‖ ≤
+        (1+I.theta)*tailSingularValue (I.A*I.B) r := by
+  refine ⟨?_,preparedFixedDepthProgram_good_event K I⟩
+  intro g
+  refine ⟨preparedFixedDepthProgram_admissible K I g,
+    (preparedFixedDepthProgram K I g).eval.width_le,
+    (preparedFixedDepthProgram K I g).eval.product_eq,
+    (preparedFixedDepthProgram K I g).eval.rank_le,?_⟩
+  have hwork := preparedFixedDepthExplicitWork_paper_bound K hClassical Ck exponent hC hexponent hK I g
+  have hpoly := fixedPaperExplicitPrefactor_polylog_bound Ck hC.le I
+  exact hwork.trans (mul_le_mul_of_nonneg_right hpoly (fixedPaperMainTerm_components K exponent I).1)
+
+/-- The manuscript's cheap-width fixed-depth tradeoff with a formally bounded
+polylogarithmic overhead, displayed together with its literal output and error. -/
+theorem fixed_depth_tradeoff_narrow_polylog
+    (K : ∀ a b c : ℕ, ArithmeticKernel a b c)
+    (hClassical : ∀ a b c : ℕ, (K a b c).cost ≤ 2*a*b*c)
+    (Ck exponent : ℝ) (hC : 0 < Ck) (hexponent : 2 ≤ exponent)
+    (hK : ∀ a b c N : ℕ, 1 ≤ N → a ≤ N → b ≤ N → c ≤ N →
+      ((K a b c).cost:ℝ) ≤ Ck*(N:ℝ)^exponent)
+    (I : FixedProblem n m p r L) (hwidth : fixedKrylovRawWidth I ≤ m) :
+    (∀ g : MainRandomTape I,
+      (preparedFixedDepthProgram K I g).admissible ∧
+      (preparedFixedDepthProgram K I g).eval.width ≤ r ∧
+      (preparedFixedDepthProgram K I g).eval.product =
+        (preparedFixedDepthProgram K I g).eval.left*(preparedFixedDepthProgram K I g).eval.right ∧
+      (preparedFixedDepthProgram K I g).eval.product.rank ≤ r ∧
+      (preparedFixedDepthExplicitWork K I g:ℝ) ≤
+        (Ck+1)*fixedPolylogDepthConstant L*(fixedPolylogGauge I)^(2*L+4)*
+          ((m*(n+p):ℕ)+(fixedCoarseProductCost K I:ℝ)+(m:ℝ)^exponent+
+            Real.sqrt (I.accuracy L/I.theta)*(mainInputProductCost K n m p (r+1):ℝ)+
+            fixedPaperFineSum K I (r+1)/Real.sqrt (I.accuracy L*I.theta)+
+            (n*p:ℕ)+(matrixProductCost K n r p:ℝ))) ∧
+    ∃ E : Set (MainRandomTape I), MeasurableSet E ∧ (mainRandomLaw I).real E ≥ 1-I.delta ∧
+      ∀ g ∈ E, ‖I.A*I.B-(preparedFixedDepthProgram K I g).eval.product‖ ≤
+        (1+I.theta)*tailSingularValue (I.A*I.B) r := by
+  simpa only [fixedPaperMainTerm_narrow K exponent I hwidth] using
+    fixed_depth_tradeoff_polylog K hClassical Ck exponent hC hexponent hK I
 
 end
 end HierarchicalAbsoluteSpectral

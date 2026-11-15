@@ -1,0 +1,104 @@
+SHARED NEAR-REAL COUPLING SERIES: VERIFICATION RECORD
+====================================================
+
+Main source:
+  near-real-shared-coupling-series.txt
+Current source SHA256:
+  913f2e86b3b27bb4c0e9882c7ad29845e2bca6e2d2d553ce3d5bedb40243628a
+The independent review used source
+  28dd59d9afcb95e838d903d61010bfd51e7b7b3f40c2c8f9500a6ac748775023.
+Only the opening review status and two record references changed.
+
+Author: bounded_algorithm. Root independently read and reconstructed
+the whole proof. The matrix_frontier agent separately reviewed the exact
+source and reran the retained diagnostic. Its full PASS is recorded in
+near-real-shared-coupling-independent-audit.txt. These are informal
+internal reviews, not formal or external peer review or a priority claim.
+
+Concrete algorithmic improvement
+--------------------------------
+In supported raw coordinates S=ZKZ*, ||Z*Z-I||<=1/8, supply a certified
+coarse split for B=tK^-1 with spec(B_QQ) outside [1/2,2] and
+||B_PQ||<=1/16. Let k be the selected dimension. For q supplied poles
+t+i*y_j and their supplied RHS columns, put mu=max|w_j|/|y_j| and
+J,L=O(log(2mu/epsilon)). The raw batch width is
+  R=q+kJ,
+rather than the old q(k+1). For R<=m, total work is
+
+  C_split + ~O(m^omega) + O(Nm*R^(omega-2)*L)
+    + O(mk^2 J+qk^2 J+mkq J+qk^omega).
+
+Every normalized action has error <=epsilon||h_j||. Per-column bounds
+give a Frobenius-relative block bound; spectral action on an orthonormal
+q-column basis needs epsilon/sqrt(q), adding only logarithms.
+
+The certified-buffered-coarse-split.txt theorem, separately reviewed at
+SHA256 6e114f90aba4d736ee17cb97b7c8de2c01232fbf8b0c6bb2b1963e1b6b579ef9,
+now supplies that split at expected m^(omega+o(1)) work, with k bounded
+by the genuine coarse count in [t/3,3t]. This is a separate composition;
+the shared-series proof does not hide an exact eigensystem oracle.
+
+Proof checks that matter
+-----------------------
+On the OUTER analytic disk |u|<=1/3, u=(w-t)/t, the safe coarse inverse
+has norm <=3, contraction <=3/8, and true safe inverse norm <=24/5.
+The two affine offblocks Gamma(u),Lambda(u) have norm <=1/4. At complex
+u, Lambda(u) is NOT Gamma(u)*. Their analytic coefficient families are
+kept separate throughout.
+
+Formal-series Richardson computes exactly the first J coefficients of
+R_L(u)Lambda(u). Cauchy's bound on the outer disk controls its evaluation
+on |u|<=1/4. Coupling error <=zeta*delta and independently obtained RHS
+error <=delta||b|| suffice. The proof correctly reuses the SAME approximate
+coupling in the small Schur core and the final Q reconstruction; it does
+not require both approximations to arise from one common approximate
+inverse. The supported error constant is 279/32<9; physical error is
+<11mu^2*delta. The chosen delta=epsilon/(100mu^2) leaves slack.
+
+One coarse Frobenius preparation handles both polynomial coefficients
+and pointwise shifted columns. Companion series recurrences and scalar
+convolutions cost ~O(mkJ), while dense basis maps batch all kJ coefficient
+columns. This avoids an uncharged sequence of J dense matrix-vector
+actions. Actual raw iterations batch the q RHS and kJ coefficient
+columns already available at each step; no later adaptive query is
+retroactively included.
+
+Schur coefficient products are precomputed ONCE. Their degree-J terminal
+coefficient is retained, and q small cores are evaluated by Horner.
+Final coupling reconstruction uses shared coefficient matrices and q
+small vectors. Consequently there is NO hidden O(qmk^2) preparation.
+Far poles use the ordinary fixed-cone resolver with one additional
+shared coarse preparation and contraction <3/5.
+
+At q,k<=~sqrt(m), N=m^(9/8) and the research direction's feasible
+omega=9/4 convention, postprocessing is at most ~m^2 and raw/core
+work fits m^(9/4+o(1)). This proves a larger-band RESOLVER regime;
+it does not prove a new multiplication exponent or final LRA theorem.
+
+Reproducible diagnostics
+------------------------
+  scripts/check_shared_coupling_series.py
+    9fc03b2e94605ac15feea4dc2d446f3961ab28c72b71656a094b4df1c6088607
+  shared-coupling-series-checks.txt
+    f54fa677f2a110408139afcc2d133eec5f49800aae22021eccd3721a9c136155
+
+NumPy2.5.3, seed2026111511. Author, root and independent reviewer reran
+the same script; root and reviewer matched the retained output byte for
+byte. All assertions PASS for six metrics, 48 near poles, 18 far poles
+and 96 outer-boundary points, with genuinely complex unitary coordinates.
+Largest shared Schur identity error: 1.84e-18.
+Largest shared reconstruction discrepancy: 6.10e-15.
+Largest physical identity relative error: 2.82e-13.
+The analytic coupling differs nontrivially from the erroneous pointwise
+adjoint, so that distinction is exercised by the finite tests.
+
+The diagnostic uses dense coefficient recurrences only to verify algebra.
+It does not implement the fast Frobenius backend, certified split, or
+asymptotic runtime. Those claims rest on the complete proofs and paid
+component theorems. Finite-word stability remains outside the model.
+
+The large-band case k=Theta(m), final threshold/filter/extraction and the
+arbitrary-factor relative-spectral multiplication objective remain open.
+In particular this primitive alone establishes no LRA state-of-the-art
+advantage in a class where block Krylov already benefits from a small
+spectral band. Classical series, Schur and Frobenius tools are credited.

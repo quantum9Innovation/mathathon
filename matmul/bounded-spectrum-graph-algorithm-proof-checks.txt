@@ -1,0 +1,117 @@
+BOUNDED-SPECTRUM GRAPH ALGORITHM: VERIFICATION RECORD
+====================================================
+
+Deliverable and exact model
+--------------------------
+The full constructive proof is bounded-spectrum-graph-algorithm.txt.
+Current source SHA256:
+  090a29b528983acb3917803ee5cd8731ddff7c2112fe229e6c6434bbcd3fe311
+This copy includes the clarification that quadrature WEIGHTS are
+nonnegative integrals of polynomial squares. It makes no claim that
+all coefficients of the integrating polynomial are nonnegative.
+
+The inputs are two graph conductance Laplacians with a common positive
+diagonal vertex-mass matrix and k positive edge changes, with promise
+max(||A||,||B||)<=R||B-A|| for fixed R>1. The theorem returns factors
+for the correction B^alpha-A^alpha, at error epsilon||B-A||^alpha with
+probability at least 1-delta. Thin construction has expected work
+~O_(alpha,R)((M+N)k), and dense expansion is separately charged.
+
+At fixed k, the leading output width is
+  k/[4*pi^2*alpha] times log^2(1/epsilon),
+with explicit remainder O_(alpha,R)(k L^(15/8)) at
+L=log(1/epsilon)+O_(alpha,R)(log(2k)).
+The common-mass connected-path lower in the separately audited
+bounded-spectrum-fractional-counts.txt matches this coefficient.
+The theorem therefore realizes the optimal leading width rather than
+only proving existence of best rational approximants.
+
+Exact arithmetic and scalar square roots suffice at alpha=1/2.
+At general fixed alpha, scalar powers are supplied/charged explicitly.
+The algorithm uses no eigennorm, best-rational-pole, Gaussian integral,
+exponential, or error-function oracle. The endpoint bound is supplied
+as a promise, and its usable scale T=R||B-A||_F is computed sparsely.
+The expected-work guarantee invokes the existing shifted-SDD solver.
+No deterministic runtime cap or finite-word stability is asserted.
+
+Proof coverage
+--------------
+The key global collection identity leaves q ORIGINAL rank-k resolvent
+nodes and ONE polynomial difference of degree p-1. Its total width is
+k(q+p-1), rather than the incorrect product kpq. The polynomial part
+has explicit forward-power and backward-Horner factors and all its
+scalar coefficients use binomial recurrence and the actual node values.
+
+The moving-strip calculation is uniform for p equal to the least power
+of two with p^8>=L. Its growing-slope envelope has logarithmic amplitude
+O(p log(L+1)+p^2)=o(L^(3/4)). The Gaussian localization error budget
+absorbs this growth. The explicit variable-slope Riemann error is
+O(L*ell+p*ell^2), ell=L^(3/4), so no fixed-p hidden constant is used.
+This gives q<=L^2/(4*pi^2*alpha)+O(L^(15/8)).
+
+The constructive scalar window/node procedure remains polynomial in L.
+The approximate ORIGINAL node errors are accumulated after global
+polynomial compensation, not bounded as independent p-rank remainder
+nodes. The required solve precision has logarithm O(L+log(2k)).
+Positive updates give chi=tr(E)/||E||_F<=sqrt(k) even with arbitrary
+mass ratios. Expected solver work and confidence amplification are
+charged, including all 2kq column solves and all factor entries.
+
+The author wrote the derivation. Root separately reconstructed its
+mathematical sections and the growing-slope count, and requested the
+local nonnegative-weight wording clarification now applied. The complete
+root reconstruction passed at the current source hash, as recorded in
+bounded-spectrum-graph-algorithm-independent-audit.txt. The final header
+only records this completed review. No external review is implied.
+
+Reproducible diagnostics
+------------------------
+Script:
+  scripts/check_bounded_spectrum_graph_algorithm.py
+  SHA256 d7c6705d8b02e29a1485fccbf3f95b422ff18eaff1e51cd7dc5a94c869669055
+Retained output:
+  matmul/bounded-spectrum-graph-algorithm-checks.txt
+Run used NumPy2.5.3 with seed2026111508.
+
+All final assertions pass on six common-mass positive graph update pairs:
+  96 finite geometric identities,
+  72 collected quadratures at alpha=0.3,0.5,0.7 and p=2,3,4,8.
+Maximum scaled errors:
+  geometric identity          2.59e-15,
+  polynomial Horner factors   6.84e-17,
+  globally collected rule     2.56e-16.
+Uniform-grid quadrature error was below 0.000127 times the requested
+T^alpha exp(-L) budget.
+
+The diagnostic removes the known common graph kernel and computes a
+dense safe endpoint norm solely for stable finite checks. The actual
+algorithm needs neither operation. The first diagnostic version exposed
+a NumPy aliasing issue in an in-place difference of matrix_power(M,1).
+The final script uses non-in-place differences, and all assertions were
+rerun successfully. This was a diagnostic implementation issue, not a
+repair of the displayed mathematical identities.
+
+These checks test noncommutative order, signs, factor collection and the
+ordinary-grid realization. They do not numerically prove the optimized
+Gaussian leading constant or implement the sparse SDD backend. Those
+claims rest on the complete analytic argument and component theorems.
+Root independently reran the script and matched the retained output
+byte for byte before the reviewed result was committed.
+
+Priority and scope
+------------------
+Polynomial subtraction, rational function updates, tapered scalar poles,
+pole-plus-polynomial approximation, Gaussian localization, and SDD solvers
+have established prior literature. The particular theorem here accounts
+for their graph implementation, uniform growing subtraction degree and
+matching restricted matrix/graph lower bound. Historical priority is not
+certified by internal proof review. The original arbitrary-factor AMM
+and general quadratic matrix multiplication goals remain open.
+
+The subsequent bounded-graph-priority-audit.txt records precise primary
+antecedents. Established optimal lightning-plus-polynomial rates already
+imply the sharp leading width UPPER when composed with the classical
+rational-update rank identity. The present note supplies its explicitly
+charged graph implementation and ties it to the reviewed lower bound.
+No inspected source matched that entire theorem, but routine-composition
+risk remains. This narrows attribution without changing the proof.

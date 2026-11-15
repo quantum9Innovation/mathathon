@@ -31,6 +31,14 @@ quadrature, scalar construction and all shifted graph solves. Its
 [verification record](matmul/bounded-spectrum-graph-algorithm-proof-checks.txt)
 contains the complete proof review and reproducible algebra checks.
 
+The [joint boundary law](matmul/fractional-boundary-crossover.txt) now
+determines the exact compression coefficient when the endpoint ratio
+approaches one as the tolerance decreases. It proves two transitions and
+an exact one-rank region, with matching single-edge path examples.
+The [coefficient plot](matmul/fractional-boundary-crossover.png) shows
+the proved law; the [verification record](matmul/fractional-boundary-crossover-proof-checks.txt)
+records the independent proof reviews and finite algebra checks.
+
 The [graph connection manuscript](matmul/graph-fractional-updates.pdf)
 ([source](matmul/graph-fractional-updates.tex)) constructs corrections to
 fractional graph Laplacians after k edge changes in expected

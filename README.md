@@ -45,6 +45,15 @@ The [boundary-law priority audit](matmul/fractional-boundary-crossover-priority-
 identifies the tail estimate and terminal cutoff as classical corollaries;
 priority of the full joint law remains unverified.
 
+The [constructive boundary algorithm](matmul/constructive-boundary-crossover-graph-algorithm.txt)
+attains that leading width at expected nearly linear thin-factor cost,
+and returns a rank-one correction strictly beyond the terminal transition.
+Its [verification record](matmul/constructive-boundary-crossover-proof-checks.txt)
+includes independent source and factor-algebra reviews.
+The [rank-r corollaries](matmul/fractional-boundary-rank-r.txt) show how
+the transition depends on the update spectrum, with matching connected
+weighted-path examples and a separate [proof review](matmul/fractional-boundary-rank-r-proof-checks.txt).
+
 The [graph connection manuscript](matmul/graph-fractional-updates.pdf)
 ([source](matmul/graph-fractional-updates.tex)) constructs corrections to
 fractional graph Laplacians after k edge changes in expected

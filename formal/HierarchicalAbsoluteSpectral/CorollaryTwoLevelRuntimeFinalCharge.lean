@@ -111,7 +111,7 @@ theorem twoLevelRuntimeFinalCoreCharge_power (c C : ℝ) (hc : 0 ≤ c) (hC : 0 
   have hall := (hqr.const_mul 1000 (by norm_num)).mul hsum
     (Eventually.of_forall (fun m => by positivity))
   simpa only [twoLevelRuntimeFinalCoreCharge,Nat.cast_mul,Nat.cast_add,Nat.cast_one,Nat.cast_ofNat,
-    zero_add,add_zero,twoLevelRuntimeCoreExponent] using hall
+    zero_add,add_zero,twoLevelRuntimeCoreExponent,mul_assoc] using hall
 
 theorem twoLevelRuntimeFinalCoreCharge_eventually (c C : ℝ) (hc : 0 ≤ c) (hC : 0 < C) :
     ∀ᶠ m : ℕ in atTop, (twoLevelRuntimeFinalCoreCharge c C m:ℝ) ≤ (m:ℝ)^(3362/1425:ℝ) := by

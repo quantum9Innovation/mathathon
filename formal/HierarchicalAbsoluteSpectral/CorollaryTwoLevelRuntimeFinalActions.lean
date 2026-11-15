@@ -244,7 +244,10 @@ theorem twoLevelRuntime_actions_eventually (c η : ℝ) (hc : 0 ≤ c) (hη : 0 
       42*fixedFineLog I.fixed*fixedRefinementCostMultiplier I.fixed*
         (I.fixed.accuracy 0/I.fixed.accuracy 1)*mainFineProductCost (twoLevelRuntimeFinalKernels m) S 0 b := by
     apply le_of_mul_le_mul_left _ hAcc1
-    convert hFactorCost using 1 <;> field_simp [hAcc1.ne'] <;> ring
+    calc
+      _ ≤ 42*fixedFineLog I.fixed*fixedRefinementCostMultiplier I.fixed*
+          (I.fixed.accuracy 0*mainFineProductCost (twoLevelRuntimeFinalKernels m) S 0 b) := hFactorCost
+      _ = _ := by field_simp [hAcc1.ne'] <;> ring
   have hFixedFineNonneg : 0 ≤ fixedFineLog I.fixed := (by norm_num : (0:ℝ) ≤ 1).trans (fixedFineLog_ge_one _)
   have hMultNonneg : 0 ≤ fixedRefinementCostMultiplier I.fixed :=
     (by norm_num : (0:ℝ) ≤ 1).trans (fixedRefinementCostMultiplier_ge_one _)

@@ -132,7 +132,8 @@ theorem comparator_actual_core_envelope
     have hh := comparator_factor_action_cost (b:=b) kernels χ hχ hEnv.row I haccuracy S C hm1 hNm (hb.trans hb0)
     have hle := hA comparatorFactorConstant hDfactor
     dsimp [X] at hle
-    exact_mod_cast hh.trans (by convert hle using 1 <;> ring)
+    exact_mod_cast (show (mainFactorActionCost kernels I S C b 1:ℝ) ≤
+      (comparatorActionCharge I χ:ℝ) from hh.trans (by simpa only [mul_assoc] using hle))
   · intro b hb
     have hh := comparator_stored_pencil_cost (b:=b) kernels χ hχ hEnv.row I.A I.Bᵀ
       C.pair.factor C.pair.leftInverseᵀ 0 I.massAccuracy I.final_budget.mass_positive
@@ -140,7 +141,8 @@ theorem comparator_actual_core_envelope
     have hle := hA (2048*(neumannCount I.massAccuracy I.final_budget.mass_positive:ℝ)) hDtrue
     change (mainTrueActionCost kernels I S C b:ℝ) ≤ _ at hh
     dsimp [X] at hle
-    exact_mod_cast hh.trans (by convert hle using 1 <;> ring)
+    exact_mod_cast (show (mainTrueActionCost kernels I S C b:ℝ) ≤
+      (comparatorActionCharge I χ:ℝ) from hh.trans (by simpa only [mul_assoc] using hle))
   · intro b hb
     exact_mod_cast (hforward _ _ _ (hk.trans hNm) hk hb).trans (hA 16 (by linarith))
   · exact_mod_cast hblock.trans (hA 2 (by linarith))
@@ -153,15 +155,17 @@ theorem comparator_actual_core_envelope
       nlinarith
     have hle := hB (100*(baseNewtonSteps (1/1024) (by norm_num)+1:ℕ)) hcoeff
     dsimp [Y] at hle
-    have hh' := hh.trans (by convert hle using 1 <;> ring)
+    have hh' : (baseConstructionCost kernels C.pair.dimension (1/1024) (by norm_num):ℝ) ≤
+        (comparatorCoreCharge Ck ζ m:ℝ) := hh.trans (by simpa only [mul_assoc] using hle)
     simpa only [haccuracy,comparatorAccuracy_zero] using (show baseConstructionCost kernels C.pair.dimension (1/1024) (by norm_num) ≤ comparatorCoreCharge Ck ζ m by exact_mod_cast hh')
   · have hh := comparator_kernel_envelope_ambient kernels Ck (9/4+ζ) hC hEnv.core hm1 hk
     have hCY : Ck*(m:ℝ)^(9/4+ζ) ≤ Y := by
       dsimp [Y]
       nlinarith [show 0 ≤ (m:ℝ)^(9/4+ζ) by positivity]
     exact_mod_cast hh.trans (hCY.trans hYB)
-  · exact_mod_cast (comparator_psd_cost_ambient kernels Ck (9/4+ζ) hC hE hEnv.core hm1 I.rank_le_core).trans
-      (by simpa only [Y] using hB 9 (by linarith))
+  · exact_mod_cast (show (psdGramCost kernels r:ℝ) ≤ (comparatorCoreCharge Ck ζ m:ℝ) from
+      (comparator_psd_cost_ambient kernels Ck (9/4+ζ) hC hE hEnv.core hm1 I.rank_le_core).trans
+        (by simpa only [Y,mul_assoc] using hB 9 (by linarith)))
   · have hh := mul_le_mul (by exact_mod_cast hk : (C.pair.dimension:ℝ) ≤ m)
       (by exact_mod_cast hk : (C.pair.dimension:ℝ) ≤ m) (by positivity) (Nat.cast_nonneg m)
     have hp : (m:ℝ)*(m:ℝ) ≤ (m:ℝ)^(9/4+ζ) := by
@@ -171,13 +175,19 @@ theorem comparator_actual_core_envelope
       simpa only [Real.rpow_one] using Real.rpow_le_rpow_of_exponent_le hmr (show (1:ℝ) ≤ 9/4+ζ by linarith)
     exact_mod_cast (show (C.pair.dimension:ℝ) ≤ m by exact_mod_cast hk).trans (hp.trans (hYP.trans hYB))
   · have hh := comparator_exact_output_cap kernels χ χOut Ck (9/4+ζ) hχ hEnv.row hEnv.output hC hE hEnv.core I S C hm1 hNm hrR
-    exact_mod_cast hh.trans (by simpa only [X,Y,Z] using hO)
+    exact_mod_cast (show (mainExactOutputWorkCap kernels I S C:ℝ) ≤
+      (comparatorOutputCharge χ χOut Ck ζ N m:ℝ) from
+        hh.trans (by simpa only [X,Y,Z,mul_assoc] using hO))
   · have hh := comparator_exact_range_cap kernels χ Ck (9/4+ζ) hχ hEnv.row hC hE hEnv.core hm1 hNm hrR
     have hle : 32*X+9*Y ≤ (comparatorOutputCharge χ χOut Ck ζ N m:ℝ) := by nlinarith
-    exact_mod_cast hh.trans (by simpa only [X,Y] using hle)
+    exact_mod_cast (show (exactRangeWorkCap kernels N r:ℝ) ≤
+      (comparatorOutputCharge χ χOut Ck ζ N m:ℝ) from
+        hh.trans (by simpa only [X,Y,mul_assoc] using hle))
   · have hh := comparator_projection_cap kernels χ χOut hχ hEnv.row hEnv.output hm1 hNm hrR
     have hle : 32*X+Z ≤ (comparatorOutputCharge χ χOut Ck ζ N m:ℝ) := by nlinarith
-    exact_mod_cast hh.trans (by simpa only [X,Z] using hle)
+    exact_mod_cast (show (projectionOutputWorkCap kernels N m N r:ℝ) ≤
+      (comparatorOutputCharge χ χOut Ck ζ N m:ℝ) from
+        hh.trans (by simpa only [X,Z,mul_assoc] using hle))
   · exact_mod_cast (hforward N m r le_rfl le_rfl (by omega)).trans (hA 16 (by linarith))
   · exact_mod_cast (hforward m C.pair.dimension r hNm hk (by omega)).trans (hA 16 (by linarith))
   · intro hrc
@@ -188,9 +198,11 @@ theorem comparator_actual_core_envelope
       (Nat.mul_le_mul_right (r+1) (Nat.succ_le_succ hq)).trans hraw
     have hh := comparator_range_algebra_ambient kernels Ck (9/4+ζ) hC hE hEnv.core hm1 hk hw
     change (mainQueryRangeCap kernels I S C hrc:ℝ) ≤ _ at hh
-    exact_mod_cast hh.trans (by simpa only [Y] using hB 11 (by linarith))
+    exact_mod_cast (show (mainQueryRangeCap kernels I S C hrc:ℝ) ≤ (comparatorCoreCharge Ck ζ m:ℝ) from
+      hh.trans (by simpa only [Y,mul_assoc] using hB 11 (by linarith)))
   · have hh := comparator_inertia_ceiling_ambient Ck (9/4+ζ) hC hE hm1 hk
-    exact_mod_cast hh.trans (by simpa only [Y] using hB 213 (by linarith))
+    exact_mod_cast (show (⌈212*(Ck+1)*(C.pair.dimension:ℝ)^(9/4+ζ)⌉₊:ℝ) ≤
+      (comparatorCoreCharge Ck ζ m:ℝ) from hh.trans (by simpa only [Y,mul_assoc] using hB 213 (by linarith)))
   · intro hkc
     exact mainStrongDegree_comparator_cap I S C hm hkc
 

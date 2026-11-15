@@ -4,6 +4,10 @@ No third-party packages. Decimal exp, ln, and sqrt are correctly rounded;
 we expand each result by one adjacent representable number. All algebraic
 operations use directed rounding. Pi is bounded by exact rational Machin
 series with alternating-series remainders, not a decimal literal.
+
+Arithmetic contract: https://docs.python.org/3.14/library/decimal.html
+This is a reproducible interval certificate, not formal verification of
+Python or its decimal implementation. Run normally, without Python -O.
 """
 
 from decimal import Context, Decimal, ROUND_FLOOR, ROUND_CEILING, ROUND_HALF_EVEN
@@ -150,7 +154,8 @@ def run(n=12,target_e='0.0000005',tail_u=-30):
     print('visited cells:',visited,'accepted cells:',accepted,'max depth:',maxdepth)
     print('partition SHA256:',partition.hexdigest())
     print('CERTIFIED: e_m <=',target)
-    print('CERTIFIED: eta_m=2 e_m/(1+e_m) < 0.000001')
+    eta_upper=UP.divide(UP.multiply(D(2),target),DOWN.add(ONE,target))
+    print('CERTIFIED: choose e =',target,'; eta=2e/(1+e) <=',eta_upper)
     print('seconds:',round(time.monotonic()-started,3))
 
 

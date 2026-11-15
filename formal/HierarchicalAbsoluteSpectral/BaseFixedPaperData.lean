@@ -80,7 +80,7 @@ theorem mainSketchProgram_work_input_log_bound (I : FixedProblem n m p r L) (g :
       (128*D+V)*(m*(n+p)) := by dsimp [V] at hv ⊢; nlinarith
   have hs' := Nat.mul_le_mul_left (L+1) hs
   apply (mainSketchProgram_work_le I g).trans
-  simpa only [fixedSketchLogFactor,D,V,Nat.mul_assoc] using hs'
+  simpa only [fixedSketchLogFactor,D,V,Nat.mul_assoc,Nat.add_assoc] using hs'
 
 def fixedPaperPreparationCoefficient (Ck : ℝ) (I : FixedProblem n m p r L) : ℝ :=
   1+(fixedSketchLogFactor I:ℝ)+6*(L+1:ℕ)+

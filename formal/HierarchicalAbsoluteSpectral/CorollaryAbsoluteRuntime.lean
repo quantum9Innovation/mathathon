@@ -13,6 +13,7 @@ set_option backward.isDefEq.respectTransparency false
 noncomputable section
 open Matrix
 open ArithmeticProgram hiding pure
+open scoped Matrix.Norms.L2Operator
 variable {n m p L : ℕ}
 
 def absoluteUniformAttemptWorkCap (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)
@@ -43,6 +44,8 @@ theorem absoluteCoreProgram_small_accounted_work
     (absoluteCoreProgram kernels I S C ⟨absoluteThreshold I,absoluteThreshold_positive I⟩ z).work+
       absoluteCoreGaussianDrawCount kernels I S C z ≤
         (Nat.log 2 m+2)*absoluteUniformAttemptWorkCap kernels I S C (2*I.slackRank) Ck p0 := by
+  unfold absoluteCoreProgram absoluteDoublingProgram absoluteCoreGaussianDrawCount
+  dsimp only
   apply absoluteDoublingLoop_small_accounted_work
   · intro s hslack hsm
     rw [dif_pos hsm.le]
@@ -78,6 +81,8 @@ theorem absoluteCoreProgram_all_outcome_accounted_cap
       absoluteCoreGaussianDrawCount kernels I S C z ≤
         (Nat.log 2 m+2)*absoluteUniformAttemptWorkCap kernels I S C m Ck p0+(kernels n m p).cost := by
   rw [← absoluteFullProductProgram_work kernels I.A I.B]
+  unfold absoluteCoreProgram absoluteDoublingProgram absoluteCoreGaussianDrawCount
+  dsimp only
   apply absoluteDoublingLoop_accounted_work_cap
   intro s hsm
   rw [dif_pos hsm.le,dif_pos hsm.le]
@@ -108,12 +113,17 @@ theorem absoluteAlgorithmProgram_work
     (absoluteAlgorithmProgram kernels I g).work=4+(mainSketchProgram I.seed g.1).work+
       (coarseSupportProgram kernels S.initialA S.initialB).work+
       (absoluteCoreProgram kernels I S C ⟨absoluteThreshold I,absoluteThreshold_positive I⟩ g.2).work := by
+  let S := (mainSketchProgram I.seed g.1).eval
+  let C := (coarseSupportProgram kernels S.initialA S.initialB).eval
   have ht : (absoluteThresholdProgram I).certify.eval=
       ⟨absoluteThreshold I,(absoluteThresholdProgram_eval I).symm⟩ :=
     Subtype.ext ((certify_eval _).trans (absoluteThresholdProgram_eval I))
   unfold absoluteAlgorithmProgram
   simp only [work_bind,certify_work,absoluteThresholdProgram_work]
   erw [ht]
+  change 4+((mainSketchProgram I.seed g.1).work+
+    ((coarseSupportProgram kernels S.initialA S.initialB).work+
+      (absoluteCoreProgram kernels I S C ⟨absoluteThreshold I,absoluteThreshold_positive I⟩ g.2).work)) = _
   omega
 
 def absolutePreprocessingWorkCap (kernels : ∀ a b c : ℕ, ArithmeticKernel a b c)

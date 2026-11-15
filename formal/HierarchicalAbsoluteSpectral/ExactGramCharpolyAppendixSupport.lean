@@ -90,17 +90,22 @@ def exactGramAppendixSupportOfSmall {n m p : ℕ}
     product := ?_
     gram := ?_ }
   · rw [hT]
-    change (Z₀*support.basis)ᵀ*(Z₀*support.basis) = 1
-    simp only [Matrix.transpose_mul, Matrix.mul_assoc, ← hZ₀,
-      show support.basisᵀ*Z₀ᵀ*(Z₀*support.basis) =
-        support.basisᵀ*(Z₀ᵀ*Z₀)*support.basis by simp only [Matrix.mul_assoc],
-      hZ₀, Matrix.mul_one, support.basis_orthogonal]
+    calc
+      _ = support.basisᵀ*(Z₀ᵀ*Z₀)*support.basis := by
+        simp only [Z₀, Matrix.transpose_mul, Matrix.mul_assoc]
+      _ = 1 := by rw [hZ₀, Matrix.mul_one, support.basis_orthogonal]
   · calc
-      A*B = Z₀*D := by rw [hA]; simp only [D, Matrix.mul_assoc]
+      A*B = Z₀*D := by
+        simpa only [D, Matrix.mul_assoc] using congrArg (·*B) hA
       _ = Z₀*(support.basis*(support.basisᵀ*D)) := congrArg (Z₀*·) hD
       _ = (A*T)*(R*B) := by rw [hT,hR]; simp only [Z₀,D,Matrix.mul_assoc]
-  · rw [hR, support.compressed_eq, ← hDD]
-    simp only [D, Matrix.transpose_mul, Matrix.transpose_transpose, Matrix.mul_assoc]
+  · calc
+      support.compressed = support.basisᵀ*K*support.basis := support.compressed_eq
+      _ = support.basisᵀ*(D*Dᵀ)*support.basis :=
+        congrArg (fun M => support.basisᵀ*M*support.basis) hDD.symm
+      _ = (R*B)*(R*B)ᵀ := by
+        rw [hR]
+        simp only [D, Matrix.transpose_mul, Matrix.transpose_transpose, Matrix.mul_assoc]
 
 def exactGramAppendixEmptySupport (D : Core 0) : InertiaSupport D where
   dimension := 0

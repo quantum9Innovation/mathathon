@@ -1,0 +1,316 @@
+SHARP LEADING WIDTH FOR NEARLY-LINEAR FRACTIONAL GRAPH UPDATES
+===========================================================
+
+This note upgrades the two-endpoint graph construction using the
+completed constructive quadrature in sharp-matrix-function-updates.tex.
+The graph-path realization then supplies its matching worst-case width
+coefficient. The algorithmic inputs, scalar quadrature and graph lower
+bound are separate results; their synthesis is proved explicitly here.
+No new historical-priority certificate is asserted.
+
+1. AUTHORITATIVE INPUT AND SCOPE
+===============================
+The exact imported source checked for this deduction is
+
+  docs/sharp-matrix-function-updates.tex
+  SHA256 334b439ea2dd72c09e8d6024582e74862590c6cf192e5d48a9e7a43f1f63b3e6.
+
+Its Lemma "Constructive moving strip" (label lem:constructive) and
+equation eq:movingCount are the scalar input below. That source includes
+an explicit O_alpha(L^3) positive scalar realization, with no exponential,
+Gaussian-integral or error-function oracle. The lemma's proof and
+actual-source audit remain the source of that scalar construction.
+
+Fix 0<alpha<1, beta=1-alpha. Let K,K' be combinatorial Laplacians of
+weighted undirected graphs on the same N vertices, and let H>0 be a
+common positive diagonal vertex-mass matrix, held fixed across the
+update. Set
+
+  A=H^-1/2 K H^-1/2, B=H^-1/2 K' H^-1/2.
+
+Masses are arbitrary; H need not equal a degree matrix. Suppose K' is
+obtained from K by increasing k>=1 distinct non-loop edge conductances
+by amounts d_e>0. Let M count edges in the union of the endpoint graphs.
+There is a randomized algorithm returning general real factors P,Q with
+
+  ||PQ^T-(B^alpha-A^alpha)|| <=epsilon||B-A||^alpha       (1)
+
+with probability >=1-delta, in expected
+
+  ~O_alpha((M+N)k)                                     (2)
+
+arithmetic operations. Suppressed factors are logarithmic in dimensions,
+k,1/epsilon,1/delta. No mass-ratio, spectral-gap, endpoint norm, or
+condition-number logarithm is suppressed. Endpoints may be singular
+or disconnected, and additions may change their connected components.
+
+The factor width is O_alpha(k log^2(2k/epsilon)). For each fixed k,
+uniformly over all endpoint graphs, dimensions, conductances and masses,
+as epsilon decreases to zero it is at most
+
+  [k/(4 pi^2 alpha(1-alpha))+o_k(1)] log^2(1/epsilon).   (3)
+
+The output is a correction and requires no base matrix function.
+Dense expansion adds O(N^2 times width). The approximation PQ^T need
+not be exactly symmetric. An exactly symmetric signed factor follows
+by symmetrization with at most twice the width and the same work order;
+no sharp leading coefficient for that symmetric implementation is
+claimed here. The lower bound in Section 7 applies to ALL approximating
+matrices, so the leading constant in (3) is sharp for general factors.
+
+At alpha=1/2 the algorithm uses real arithmetic, comparisons, scalar
+square roots and discrete randomness. General fixed alpha needs its
+node-dependent scalar power evaluations charged as in the imported
+source. This is an exact-arithmetic theorem with expected work, not a
+finite-word stability theorem or deterministic runtime cap.
+
+2. THE POSITIVE UPDATE'S INTRINSIC SCALE IS MASS-INDEPENDENT
+=========================================================
+For e={u,v}, write b_e=e_u-e_v and
+
+  U_e=sqrt(d_e) H^-1/2 b_e, E=B-A=UU^T,
+  a=||E||_F, b=||U||_F^2=tr E, chi=b/a.
+
+All are computable sparsely after merging parallel changes. Explicitly,
+if h_v is the mass at v and c_v=sum_(e incident v)d_e, then
+
+  a^2=sum_v(c_v/h_v)^2+2 sum_e d_e^2/(h_u h_v),
+  b=sum_e d_e(1/h_u+1/h_v).
+
+Because E>=0 and rank E<=k, its nonnegative eigenvalues give
+
+  ||E||<=a<=sqrt(k)||E||,  1<=chi<=sqrt(k).             (4)
+
+This bound holds for arbitrarily unequal masses. It relies on positivity;
+the corresponding bound for arbitrary signed mass-weighted updates
+cannot be inferred from the unweighted-vertex-mass case.
+
+3. EXACT AND INEXACT TWO-ENDPOINT NODES
+=====================================
+For t>0 set R_t=(A+tI)^-1, S_t=(B+tI)^-1,
+V_t=R_t U, W_t=S_t U. The exact resolvent identity gives
+
+  D_t=R_t-S_t=V_t W_t^T,
+  ||D_t||<=min(1/t,a/t^2).                             (5)
+
+For the normalized fractional difference,
+
+  B^alpha-A^alpha=c_alpha int_0^infinity t^alpha D_t dt,
+  c_alpha=sin(pi alpha)/pi.
+
+With t=a exp(y), divide its logarithmic integrand by a^alpha. It has
+the PSD strip envelope of the imported lemma, analytic for |Im y|<pi.
+Indeed |lambda+t exp(i theta)|>=cos(d/2)(lambda+t) for
+lambda,t>=0 and |theta|<=d<pi. Both endpoint resolvent estimates and
+the difference identity give envelope
+
+  ||F(x+i theta)||<=C_(alpha,d) min(exp(alpha x),exp(-beta x)),
+
+uniformly in all graph data. The real-line value and derivative bounds
+used by the constructive scalar lemma transfer for the same reason.
+
+Suppose each column solve producing Vhat_t,What_t has relative energy
+error <=eta at its respective shifted endpoint. Then
+
+  ||Vhat-V||_F,||What-W||_F <=eta sqrt(b)/t,
+  ||V||,||W||<=sqrt(b)/t.
+
+This follows because for C>=tI and x=C^-1u,
+
+  ||xhat-x||_2<=t^-1/2||xhat-x||_C
+             <=eta t^-1/2 sqrt(u^TC^-1u)<=eta||u||/t.
+
+No common, linear or symmetric approximate inverse map is assumed.
+For eta<=1, the cross node obeys
+
+  ||Vhat_t What_t^T-D_t||<=(2eta+eta^2)b/t^2
+                        <=3eta b/t^2.                (6)
+
+The inner SDD system implementing a mass-normalized shifted action is
+
+  (A+tI)^-1u=H^1/2 (K+tH)^-1 H^1/2u.                (7)
+
+The same formula holds at the second endpoint. The matrix K+tH is
+SDD positive definite. Energy norms transport exactly: if xhat,x are
+inner solutions, then
+
+  ||H^1/2(xhat-x)||_(A+tI)=||xhat-x||_(K+tH).
+
+Thus a relative energy solver for the sparse inner system supplies
+exactly the physical error statement used in (6). Sparse matvecs and
+the two diagonal scalings cost O(M+N). No polynomial or logarithmic
+factor in mass ratios enters this exact-arithmetic transfer.
+
+4. ACTUAL SHARP NODES AND THE SOLVE-ACCURACY BUDGET
+=================================================
+Apply the imported constructive lemma with d_0=pi. After its fixed
+constant budget adjustments, the actual nodes s_j>0 and nonnegative
+coefficients a_j satisfy
+
+  q<=L^2/(4 pi^2 alpha beta)+O_alpha(L^(7/4)),
+  |log s_j|<=B_0=C_alpha(L+1),
+  sum_j a_j<=C_alpha(L+1),                             (8)
+
+and the exact-resolvent quadrature error is O_alpha(a^alpha exp(-L)).
+Here B_0 denotes a computable bound from the retained pre-rounded
+log-node locations and their rounding allowance, as in the imported
+source; no logarithm of an input scale is used to compute it.
+
+Set t_j=a s_j and positive physical weights
+
+  omega_j=a_j c_alpha t_j^(alpha+1).
+
+Equation (6), with the SAME eta for every node, gives
+
+  sum_j omega_j ||Vhat_j What_j^T-D_(t_j)||
+   <=3c_alpha eta b sum_j a_j t_j^(alpha-1)
+   = 3c_alpha eta chi a^alpha sum_j a_j s_j^(-beta)
+   <=C_alpha eta chi a^alpha(L+1)exp(beta B_0).         (9)
+
+Consequently it suffices to choose
+
+  eta<=c_alpha' exp(-L-beta B_0)/[chi(L+1)].            (10)
+
+Its logarithmic precision is
+
+  log(1/eta)=O_alpha(L+log chi)=O_alpha(L+log(2k)).      (11)
+
+This is an analysis-only logarithm and exponential. For an actual
+scalar realization, choose an integer m>=2(L+B_0+1), produce 2^-m by
+halving, and take eta=2^-m/[C_alpha chi(L+1)]. Since 2 log2>1 and
+beta<1, a large enough fixed C_alpha makes this at most (10).
+Integer comparisons/halving cost O_alpha(L+1) operations.
+
+Choose L by repeated halving as in the imported source, so that
+
+  exp(-L)<=epsilon/[C_alpha(k+1)],
+  L=log(1/epsilon)+O_alpha(log(2k)).                    (12)
+
+Combining the quadrature error, (9),(10), and
+a^alpha<=k^(alpha/2)||E||^alpha proves (1), with slack for the fixed
+constant and scalar weight errors. As in the imported lemma, fixed
+c_alpha and node-dependent powers are evaluated to the error budget;
+its positive actual scalar construction already includes the relevant
+rounding/constant estimates. The resulting q from (8),(12) proves (3).
+
+In particular for fixed k the O(L^(7/4)) node-count remainder is o(L^2),
+and the O(log(2k)) shift in L does not change the leading coefficient.
+No free Gaussian quadrature or exact transcendental node oracle is
+being invoked.
+
+5. FACTORS, WORK, AND CONFIDENCE
+==============================
+Concatenate P_j=sqrt(omega_j)Vhat_j and
+Q_j=sqrt(omega_j)What_j. Each has k columns. There are 2kq column
+solves, O(Nkq) factor entries, O(N+k) sparse normalization arithmetic
+apart from deterministic sorting, and O_alpha(L^3) scalar construction
+work. Equation (11) and the standard nearly-linear SDD energy solver
+give expected total work
+
+  ~O_alpha((M+N)kq log(1/eta)+L^3)
+   =~O_alpha((M+N)k).                                 (13)
+
+The suppressed logs include only the parameters specified in Section 1.
+For arbitrary desired confidence delta, use the constant-success energy
+solvers and median pairwise energy-distance amplification in
+graph-fractional-solver-audit.txt, Section 8. With
+s=O(log(2kq/delta)) independent candidates at eta/3, choose the one
+minimizing its median pairwise inner-system energy distance. A strict
+majority of good candidates implies selected energy error <=eta times
+the true solution energy norm. Pairwise distances use sparse K+tH and
+cost O((M+N)s^2) per column, only logarithmic overhead. A union bound
+then gives simultaneous accuracy of all 2kq solves. This does not
+assume a common linear solver map, and it preserves expected work.
+
+Primary solver: Koutis--Miller--Peng, arXiv:1102.4842v4,
+https://arxiv.org/pdf/1102.4842
+Theorem 4.6 (expected energy-accuracy runtime), Lemma 4.3 (nonnegative
+diagonal shifts), and Lemma 4.5 (constant-success preconditioning chain)
+are the same inputs audited in graph-fractional-solver-audit.txt.
+
+For an exactly symmetric output, replace each cross node by its symmetric
+part. The factor identity
+
+  (VW^T+WV^T)/2
+   =[V+W,V-W] diag(I_k/4,-I_k/4)[V+W,V-W]^T
+
+gives a signed factor with width at most 2kq and O(Nkq) construction
+arithmetic. Symmetrization cannot increase error to the symmetric target.
+The sharpness assertion (3) concerns the original general factors only.
+
+6. OTHER GRAPH UPDATE CLASSES COVERED BY THE SAME UPGRADE
+======================================================
+For unit vertex masses, the same sharp quadrature and solve budget work
+for arbitrary SIGNED changes, using U_e=sqrt(|d_e|)b_e and signature J.
+Then b/a<=sqrt(2k), by the off-diagonal cancellation bound proved in
+graph-fractional-solver-audit.txt. Replace cross nodes by Vhat J What^T.
+The upper coefficient (3) is still valid, with no gap or connectivity
+promise. A matching lower coefficient restricted to this ordinary
+unit-mass graph class has not been established here.
+
+For arbitrary common masses and signed edits, the upper algorithm still
+works with chi=||U||_F^2/||E||_F, but the work includes log chi through
+the solve precision. One may not silently suppress that parameter.
+For changes of a single sign, chi<=sqrt(k) as in Section 2; the same
+parameter-free construction therefore also covers all-negative edits
+with both endpoints nonnegative-weight graph Laplacians. Swap the two
+endpoints if necessary to reduce to the positive case.
+
+7. MATCHING LOWER BOUND FROM CONNECTED MASS-WEIGHTED PATHS
+=======================================================
+The separate graph realization in graph-path-realization.txt proves
+that every positive rank-one fractional matrix correction is approximable,
+in the strict singular-value-count sense, by increasing one existing
+edge on a connected weighted path with fixed positive vertex masses.
+It normalizes the update norm EXACTLY to one. Connecting k such path
+witnesses by arbitrarily weak unchanged edges yields a connected path
+with k increased edges, positive rank-k perturbation of norm one, and
+the same strict counts in the limit. The statement concerns suprema
+over all finite dimensions, masses and conductances; these may depend
+on epsilon. It is not a lower bound on a fixed graph as epsilon varies.
+
+The companion positive-matrix count theorem therefore gives
+
+  sup N_epsilon(B^alpha-A^alpha)
+   =[k/(4 pi^2 alpha beta)+o_k(1)]log^2(1/epsilon),      (14)
+
+where the supremum ranges already over those connected mass-weighted
+paths and norm-one positive k-edge updates. N_epsilon counts singular
+values STRICTLY greater than epsilon. The same expression is a generic
+PSD upper bound, so there is no gap between the two classes at leading
+order. The matrix theorem's matching lower uses positive rank-one
+witnesses and direct sums, exactly the sign class realized by the paths.
+
+For any matrix T, a rank-l approximation with operator error <=epsilon
+requires l>=N_epsilon(T), by the singular-value min--max principle.
+Thus (14) forces the coefficient in (3) for every algorithm, including
+randomized algorithms that succeed with any positive probability on
+each fixed input. The realized paths are within the mass-positive-update
+algorithm's class, and (4) prevents any extra mass-ratio precision cost.
+Consequently (3),(13),(14) give an actual near-linear thin-construction
+algorithm with SHARP leading worst-case width on this graph class.
+
+This is width optimality, not a runtime lower bound. It makes no
+statement that a fixed graph, prescribed mass range, ordinary degree
+normalization, or unit-mass paths attain the same coefficient.
+
+8. CONTRIBUTION AND PRIORITY BOUNDARY
+===================================
+The scalar quadrature, universal matrix compression constants, graph
+path realization, sparse shifted solves, and resolvent identity all have
+their own sources and audits. This note proves that their actual
+implementations fit together without losing the leading width, invoking
+an uncharged scalar oracle, or introducing a hidden mass/condition
+parameter in the positive graph class. It yields both (13) and the
+sharp coefficient (3), with (14) providing the graph-restricted lower.
+
+Rational matrix-function updates are established prior work:
+https://arxiv.org/abs/1707.03045
+https://arxiv.org/abs/2008.11501
+Graph fractional functions and shifted rational methods are also prior:
+https://arxiv.org/abs/2012.08389
+The bounded comparison in graph-fractional-solver-audit.txt remains
+applicable. No exhaustive priority or external review is claimed for
+the specific sharp graph synthesis merely because its component proofs
+were independently checked. General quadratic matrix multiplication
+remains a separate open objective.

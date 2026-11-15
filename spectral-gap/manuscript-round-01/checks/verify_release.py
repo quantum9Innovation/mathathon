@@ -86,6 +86,14 @@ def main():
             checks.append({"script": script, "result": "matches saved finite-check report"})
         report["finite_check_replays"] = checks
 
+        delta_script = "../extension-round-02/reviews/assembled-v9-v10-checks.py"
+        delta_reference = work / "../extension-round-02/reviews/assembled-v9-v10-check-results.json"
+        delta_output = staging / "assembled-delta-replay"
+        run([sys.executable, delta_script, "--output-root", str(delta_output)], work)
+        delta_replay = json.loads((delta_output / "assembled-v9-v10-check-results.json").read_text())
+        assert delta_replay == json.loads(delta_reference.read_text())
+        report["assembled_delta_replay"] = "matches saved v9 and v10 algebra, statement, build and render checks"
+
         run([sys.executable, "build_artifacts.py"], work)
         final = max(work.glob("frozen-manuscript-v*"),
                     key=lambda p: int(p.name.rsplit("v", 1)[1]))

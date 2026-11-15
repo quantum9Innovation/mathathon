@@ -29,7 +29,7 @@ $$
 
 The initial values are mu_0=1 and mu_1=r/(N-r), with only the empty product used at full depletion. Every coefficient is nonnegative. The recurrence keeps the cancellation while turning the final bound into a positive calculation.
 
-This proves Bordenave's requested product estimate. The exact positive calculation does more: it identifies the largest possible expectation for fixed support and singleton counts when there are zero, one or two conflicting centered singletons. The guide shows simple patterns attaining both maxima. Repeated powers and additional independent permutation colors do not exceed those values.
+This proves Bordenave's requested product estimate. The exact positive calculation does more: it identifies the largest possible expectation for fixed support and singleton counts when there are zero, one or two conflicting centered singletons. The guide shows simple patterns attaining all three maxima. Repeated powers and additional independent permutation colors do not exceed those values.
 
 ## Why the first transition is cubic
 

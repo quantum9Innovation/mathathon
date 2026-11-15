@@ -9,6 +9,7 @@ import json
 import re
 import shutil
 import subprocess
+import argparse
 
 from PIL import Image, ImageDraw
 
@@ -16,6 +17,11 @@ from PIL import Image, ImageDraw
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 SNAPSHOTS = ROOT / "manuscript-round-01"
+parser = argparse.ArgumentParser()
+parser.add_argument("--output-root", type=Path, required=True)
+args = parser.parse_args()
+OUTPUT = args.output_root.resolve()
+OUTPUT.mkdir(parents=True, exist_ok=True)
 
 
 def sha(path):
@@ -94,9 +100,9 @@ def build_and_render(version):
         actual = sha(snapshot / entry["path"])
         assert actual == entry["sha256"]
         manifest_checks.append({**entry, "matches": True})
-    build = HERE / (prefix + "-build")
+    build = OUTPUT / (prefix + "-build")
     shutil.copytree(snapshot, build, dirs_exist_ok=True)
-    rendering = HERE / (prefix + "-pages")
+    rendering = OUTPUT / (prefix + "-pages")
     rendering.mkdir(exist_ok=True)
     documents = []
     for kind, source, pdf_name in [
@@ -106,13 +112,13 @@ def build_and_render(version):
         local = build / source
         for iteration in range(3):
             output = run(["pdflatex", "-interaction=nonstopmode", "-halt-on-error", local.name], cwd=local.parent)
-            (HERE / (prefix + "-" + kind + "-pass" + str(iteration + 1) + ".txt")).write_text(output)
+            (OUTPUT / (prefix + "-" + kind + "-pass" + str(iteration + 1) + ".txt")).write_text(output)
         frozen_pdf = snapshot / "output/pdf" / pdf_name
         rebuilt_pdf = local.with_suffix(".pdf")
         frozen_text = run(["pdftotext", "-layout", str(frozen_pdf), "-"])
         rebuilt_text = run(["pdftotext", "-layout", str(rebuilt_pdf), "-"])
         assert frozen_text == rebuilt_text, (version, kind)
-        (HERE / (prefix + "-" + kind + "-text.txt")).write_text(frozen_text)
+        (OUTPUT / (prefix + "-" + kind + "-text.txt")).write_text(frozen_text)
         final_log = local.with_suffix(".log").read_text()
         warning_lines = [line for line in final_log.splitlines() if any(term in line for term in ["Warning", "Overfull", "Underfull", "undefined", "multiply defined"])]
         assert not warning_lines, (version, kind, warning_lines)
@@ -137,7 +143,7 @@ def build_and_render(version):
                     draw.text(((index % 3) * 400 + 10, (index // 3) * 565 + 5), kind + " page " + str(offset + index + 1), fill="black")
             contact = rendering / (kind + "-contact-" + str(offset // 9 + 1) + ".png")
             sheet.save(contact)
-            contacts.append(str(contact.relative_to(HERE)))
+            contacts.append(str(contact.relative_to(OUTPUT)))
         documents.append({
             "kind": kind,
             "frozen_pdf_sha256": sha(frozen_pdf),
@@ -173,8 +179,8 @@ assert source_blocks[9] == source_blocks[10]
 checks = [build_and_render(version) for version in [9, 10]]
 changed_rasters = {}
 for kind in ["main", "guide"]:
-    old = HERE / "assembled-v9-pages" / kind
-    new = HERE / "assembled-v10-pages" / kind
+    old = OUTPUT / "assembled-v9-pages" / kind
+    new = OUTPUT / "assembled-v10-pages" / kind
     changed_rasters[kind] = [int(path.stem.split("-")[-1]) for path in old.glob("page-*.png") if path.read_bytes() != (new / path.name).read_bytes()]
 result = {
     "status": "all automated checks passed",
@@ -185,5 +191,5 @@ result = {
     "v9_v10_changed_page_rasters": changed_rasters,
     "revisions": checks,
 }
-(HERE / "assembled-v9-v10-check-results.json").write_text(json.dumps(result, indent=2) + "\n")
+(OUTPUT / "assembled-v9-v10-check-results.json").write_text(json.dumps(result, indent=2) + "\n")
 print(json.dumps({key: value for key, value in result.items() if key != "revisions"}, indent=2))

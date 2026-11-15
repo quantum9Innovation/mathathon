@@ -16,7 +16,7 @@ Classical overlap is substantive. The raw factorial bound is credited to Bordena
 
 ## Preservation and reproduction
 
-Never modify an existing frozen proof, review or manuscript directory. The current source may be edited, then frozen under a new numbered revision and reviewed against the prior version. The revision-8 review found wording and first-page layout issues, tracked separately from the valid mathematical statements. Later revisions close those findings without rewriting the frozen evidence.
+Never modify an existing frozen proof, review or manuscript directory. The current source may be edited, then frozen under a new numbered revision and reviewed against the prior version. The revision-8 review found wording and first-page layout issues, tracked separately from the valid mathematical statements. The [final assembled review](../extension-round-02/reviews/assembled-v10-review.md) closes those findings in revision 10 without rewriting frozen evidence. The final manuscript has 41 pages and the guide has eight.
 
 The archive is `output/centered-permutation-final-package.zip`. Its exact identity and portable replay result are recorded separately in `checks/release-verification.json`. Reproduction must work from the extracted package, without the broader workspace. The archived check adapter preserves a historical script with an absolute path while providing an equivalent portable entry point.
 

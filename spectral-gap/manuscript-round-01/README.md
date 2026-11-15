@@ -20,11 +20,11 @@ Classical overlap is substantial. The recurrence and leading terms, elementary f
 
 The [extension index](../extension-round-02/README.md) links the written proofs and separate reviews. The [verification record](VERIFICATION.md) distinguishes proof review, finite corroboration, source inspection and document integrity. The [handoff](HANDOFF.md) records continuation boundaries.
 
-Earlier frozen inputs, manuscript revisions, reviews and manifests remain unchanged. A correction receives a later revision or separate addendum. The latest frozen manuscript manifest identifies the reading copies exactly. Accepted scope is recorded in the ledger, not inferred merely from the existence of a PDF.
+Earlier frozen inputs, manuscript revisions, reviews and manifests remain unchanged. A correction receives a later revision or separate addendum. The [final revision-10 manifest](frozen-manuscript-v10/MANIFEST.json) identifies the 41-page manuscript and eight-page guide exactly. The [final assembled review](../extension-round-02/reviews/assembled-v10-review.md) accepts these exact reading copies. Accepted scope is recorded in the ledger, not inferred merely from the existence of a PDF.
 
 ## Rebuild and portable checks
 
-Requirements are Python 3 with matplotlib, numpy, mpmath and sympy, a standard pdflatex installation with the packages in the source preambles, and Poppler for text and page comparisons. No network is required for the build or checks.
+Requirements are Python 3 with matplotlib, numpy, mpmath, sympy and Pillow, a standard pdflatex installation with the packages in the source preambles, and Poppler for text and page comparisons. No network is required for the build or checks.
 
 From this directory:
 

@@ -1,0 +1,216 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[margin=0.83in,headheight=15pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,amsmath,amssymb,mathtools,booktabs,array,xurl,hyperref,tikz,fancyhdr,microtype}
+\usetikzlibrary{arrows.meta,positioning}
+\hypersetup{colorlinks=true,urlcolor=blue,linkcolor=black}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlength{\emergencystretch}{3em}
+\renewcommand{\arraystretch}{1.3}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Mathathon Round 1 decision guide}
+\fancyhead[R]{\small Problem 21}
+\fancyfoot[C]{\small \thepage}
+\renewcommand{\headrulewidth}{0pt}
+\newcommand{\Page}[1]{\clearpage\section*{#1}}
+\newcommand{\Sub}[1]{\subsection*{#1}}
+\newcommand{\R}{\mathbb R}
+\newcommand{\Q}{\mathbb Q}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Ann}{\operatorname{Ann}}
+\newcommand{\Tor}{\operatorname{Tor}}
+\newcommand{\reg}{\operatorname{reg}}
+\newcommand{\Ext}{\operatorname{Ext}}
+\newcommand{\source}[2]{\item \href{#1}{#2}}
+\begin{document}
+{\LARGE\bfseries Understanding the spectral gap proof bottleneck\par}
+\vspace{0.4em}
+{\large A draft topic and deliverable guide for the team\par}
+13 November 2026\par
+{\small Problem selection locks on 14 November at 11:59 PM Pacific Time.\\
+The report and slides are due on 15 November at noon Pacific Time.\par}
+\vspace{0.6em}
+
+\section*{The decision in five minutes}
+\textbf{The question.} A random regular graph usually has an excellent spectral gap. Existing proofs establish this through non-backtracking walks and delicate estimates for dependent random entries. Can we make one of those estimates intuitive and reusable?
+
+\textbf{Why this fits us.} Random matrix theory, probability, combinatorics, and algorithms all appear directly. This may be the team's best subject match from a fresh start. The numerical linear algebra is useful for examples, but the core task is a probabilistic estimate.
+
+\textbf{The official target.} Problem 21 singles out Proposition 28 in Bordenave's paper and its role in the Brito, Dumitriu and Harris proof. The project is about this bottleneck, not a generic introduction to eigenvalues or expanders.
+
+\textbf{Draft deliverable.} Give a dependency-aware explanation of the estimate, an exact small-example laboratory, and a proof of a meaningful restricted pattern family or a genuine simplification of a proof step. Explain exactly how the estimate feeds the spectral argument.
+
+\textbf{A useful fallback.} Provide a rigorous account of one cancellation mechanism, complete exact finite-permutation examples, and a precise map of the remaining general argument. Exhaustive checks should be described as finite checks, not a proof for all sizes.
+
+\textbf{What we have prepared.} The team has relevant expertise and a scoped target. This guide includes elementary calculations explaining the dependence. It does not establish a new proof of Proposition 28 or a new spectral gap theorem.
+
+\textbf{Choose this if} the probability and random-matrix members can identify a specific step of the cited proof to improve after an initial close reading. There should be a theorem-sized target smaller than the entire Friedman theorem.
+
+\textbf{The main risk.} We may spend the event constructing beautiful eigenvalue plots while leaving the actual moment estimate untouched. The desired contribution is an explanation or proof of the dependent-entry mechanism.
+
+\Page{What the spectral gap measures}
+For a simple $d$-regular graph on $n$ vertices, its adjacency matrix $A$ is symmetric and satisfies $A\mathbf1=d\mathbf1$. The constant vector is a trivial eigenvector. On its orthogonal complement, the remaining eigenvalues control expansion and mixing.
+
+For a connected nonbipartite graph, write
+\[
+ \eta=\max\{|\lambda|:\lambda\text{ is an eigenvalue of }A
+                 \text{ outside the constant eigenspace}\}.
+\]
+A small ratio $\eta/d$ means nonconstant signals are strongly contracted by the random-walk matrix $A/d$. Bipartite graphs also have a trivial eigenvalue $-d$ and require that convention to be handled separately.
+
+For fixed $d\geq3$, Friedman's theorem says that a uniformly random simple $d$-regular graph has nontrivial eigenvalues at most
+\[
+ 2\sqrt{d-1}+o(1)
+\]
+in absolute value with probability tending to one. This is the familiar near-Ramanujan scale. The expression is a large-$n$ result for a specified random graph model, not an inequality for every finite graph.
+
+\Sub{Why matrix powers are useful}
+An entry of $A^k$ counts walks of length $k$. Thus traces and moments turn spectral questions into counts of combinatorial patterns. For a symmetric matrix $M$,
+\[
+ \|M\|^{2m}\leq\operatorname{tr}(M^{2m}).
+\]
+Taking expectations and applying Markov's inequality can turn a moment bound into a high-probability norm bound.
+
+However, a naive large-moment argument is vulnerable to rare graphs containing dense local structures. Those events may be unlikely but contribute enormously to a high power. They can dominate an expectation even when typical graphs have good eigenvalues.
+
+This is an important distinction: typical behavior and the expectation of a very high power are different objects. The proof needs a way to separate the troublesome local structures while preserving enough cancellation to obtain the sharp spectral scale.
+
+\Page{Why use nonbacktracking walks}
+\Sub{The operator remembers the last edge}
+Index a matrix $B$ by directed edges. Set
+\[
+ B_{(u,v),(v,w)}=1\quad\hbox{when }w\ne u,
+\]
+and set all other entries to zero. The matrix moves along an edge but forbids immediately reversing it. On a $d$-regular graph it has row sum $d-1$.
+
+This removes the simplest redundant walk excursions and makes the combinatorics more suitable for the proof. It also connects to the adjacency spectrum.
+
+Suppose $Af=\mu f$ and consider $g(u,v)=f(v)-\lambda^{-1}f(u)$. Then
+\begin{align*}
+ (Bg)(u,v)&=\sum_{w\sim v,\ w\ne u}
+                  \big(f(w)-\lambda^{-1}f(v)\big)\\
+ &=\big(\mu-(d-1)/\lambda\big)f(v)-f(u).
+\end{align*}
+Whenever $\lambda\ne0$, $g$ is nonzero, and
+\[
+ \lambda^2-\mu\lambda+(d-1)=0,
+\]
+this equals $\lambda g(u,v)$. The quadratic relation is the essential spectral bridge. The full Ihara-Bass identity handles multiplicities and exceptional cases.
+
+If $|\mu|\leq2\sqrt{d-1}$, the two roots lie on the circle of radius $\sqrt{d-1}$. This explains why a non-backtracking bound near that radius corresponds to the sharp adjacency scale.
+
+\Sub{The proof still needs care}
+The matrix $B$ is usually not symmetric and can be nonnormal. Its spectral radius is bounded by its operator norm, but they are not generally equal. Norm estimates use positive Gram-type moments such as
+\[
+ \operatorname{tr}\big((MM^*)^m\big),
+\]
+for appropriate projected or truncated operators $M$.
+
+A tangle-free restriction controls problematic local patterns. Centering removes a trivial average component. The resulting entries are dependent, and their products contain cancellations. Understanding those products is the proposed core of our project.
+
+\Page{A small exact example of the dependence}
+Let $\sigma$ be a uniform permutation of $\{1,\ldots,n\}$ and let
+\[
+ P_{ij}=\mathbf1\{\sigma(i)=j\},\qquad
+ X_{ij}=P_{ij}-1/n.
+\]
+Every $X_{ij}$ has mean zero. Nevertheless their products need not have mean zero.
+
+\Sub{Different rows and different columns}
+For $i\ne k$ and $j\ne l$,
+\[
+ \E[P_{ij}P_{kl}]=\frac{(n-2)!}{n!}
+                 =\frac{1}{n(n-1)}.
+\]
+There are $(n-2)!$ permutations obeying both prescribed assignments. Expanding the centered product gives
+\[
+ \E[X_{ij}X_{kl}]=\frac{1}{n(n-1)}-\frac{1}{n^2}
+                 =\frac{1}{n^2(n-1)}>0.
+\]
+
+\Sub{The same row and different columns}
+If $j\ne l$, a permutation cannot send $i$ to both columns. Hence
+\[
+ \E[P_{ij}P_{il}]=0,\qquad
+ \E[X_{ij}X_{il}]=-\frac{1}{n^2}.
+\]
+For $n=4$ the two centered expectations are $1/48$ and $-1/16$. They have different signs and different magnitudes. Treating the entries as independent would incorrectly predict zero in both cases.
+
+\Sub{A useful exact counting rule}
+For $a$ distinct consistent assignments using distinct rows and columns,
+\[
+ \Pr(\sigma(i_s)=j_s\text{ for all }s)
+ =\frac{1}{(n)_a},\qquad (n)_a=n(n-1)\cdots(n-a+1).
+\]
+Conflicting assignments have probability zero. Repeated identical raw indicator factors collapse because $P_{ij}^r=P_{ij}$ for $r\geq1$.
+
+Expand a centered product by choosing either the indicator or $-1/n$ from each centered factor. Evaluate every resulting raw event by this counting rule. This gives a rational, independently checkable answer for each finite pattern. The difficult theorem bounds a large family uniformly without enumerating every permutation or every expanded term.
+
+\Page{Where Proposition 28 enters}
+\Sub{Random lifts create permutation blocks}
+In a random lift of a fixed base graph, each base vertex is replaced by $n$ copies. A base edge connects its two fibers by a random permutation, with the reverse edge using the inverse permutation. Different unoriented base edges have independent permutations.
+
+In Brito, Dumitriu and Harris Lemma 7, the bipartite matching block is a uniform permutation between the two half-edge classes. It can be viewed as the permutation block of a lift of a single base edge. This is the concrete link between the two estimates.
+
+After expanding a non-backtracking moment, the terms prescribe assignments in these permutations. Some factors are centered. Repetitions and row or column conflicts determine which cancellations survive.
+
+Bordenave's Proposition 28 bounds these mixed products. Its pattern parameters include the total number $k$ of factors, the number $a$ of distinct prescribed edges, consistent singleton factors $a_1$, and inconsistent singleton occurrences $b$ among the centered factors. In its stated range, including $k\leq\sqrt n$, the bound has the shape
+\[
+ |\E[\text{mixed product}]|
+ \leq C\,2^b n^{-a}\left(\frac{3k}{\sqrt n}\right)^{a_1}.
+\]
+Here $C$ is a universal constant. The complete definitions and compatibility hypotheses are those of the proposition. We should copy them into the eventual report only after fixing the source version and checking the notation.
+
+The factor associated with a consistent singleton quantifies extra cancellation. It is a gain when $3k/\sqrt n<1$, not automatically over the whole permitted range. The proof exposes part of a permutation and studies the remaining conditional distribution.
+
+\Sub{Our proposed mathematical target}
+Find a pattern family broad enough to reveal the mechanism but narrow enough for a transparent proof. Examples include distinct-row and distinct-column singleton patterns, a specified class of collisions, or a conditional exposure step in the existing proof. Prove a uniform estimate for that family and explain how it interfaces with the full moment argument.
+
+An exact pattern laboratory should show raw moments, centered moments, collision types, and the cancellation lost by an absolute-value bound. An annotated dependency map should distinguish the permutation estimate, path counting, tangle-free event, and final norm bound.
+
+Do not silently replace the graph model: the regular configuration model, random lifts, and bipartite biregular graphs use related but distinct constructions. Matching the correct proposition to the correct application is itself part of the exposition.
+
+\Page{The draft deliverable and team workflow}
+\Sub{The package}
+The report would contain the random model, a short spectral motivation, exact two-factor examples, the chosen pattern-family theorem, its proof, and a map locating it in the cited spectral-gap argument. Supplementary code would reproduce finite rational expectations and any visualizations.
+
+For finite tests, include all permutations at a few small $n$, then compare that enumeration against an independent constraint-based moment calculation. Label the maximum tested size. Monte Carlo is useful for discovery but is unnecessary for the smallest exact examples.
+
+\Sub{Roles}
+The random-matrix member owns the spectral reduction and the chosen positive moment. The probability member owns the conditional distribution and uniform estimate. The combinatorics member classifies assignment patterns and path shapes. The algorithms member builds exact enumeration and a verifier of the finite examples. Everyone should understand the two-factor calculation on page 4.
+
+\Sub{Commitment checkpoints}
+First reconcile Proposition 28 with the application in Brito, Dumitriu and Harris, including versions and graph models. Then identify one proof step the team can explain better. If the only concrete output is a histogram of eigenvalues, the project has not yet found its core.
+
+The fallback is a rigorous restricted-pattern result and a faithful explanation of the remaining general proof. The stretch target is a genuine simplification of Proposition 28, or a useful quantitative refinement in a stated range. Finite experimentation alone cannot establish either claim.
+
+\Sub{The twenty minute talk}
+Spend four minutes on the spectral question, four on non-backtracking walks and the moment bridge, four on exact dependent-entry examples, five on the new restricted result or simplification, and three on how it repairs a gap in understanding.
+
+A useful audience question is: ``If the centered factors have mean zero, why does their product not vanish?'' Answer it explicitly. Another is: ``Which part is proved for every $n$ and which part was only checked by enumeration?'' The report and slides should give the same answer.
+
+\Page{Questions and a reading route}
+\textbf{Does numerical agreement with the spectral law prove the lemma?} No. The lemma controls many dependent products uniformly, including unusual patterns that a typical simulation may not expose.
+
+\textbf{Why not replace the entries by independent Bernoulli variables?} The permutation constraints impose exactly one image per row and column. Those dependencies create both negative correlations and delicate cancellations.
+
+\textbf{What makes a restricted theorem useful?} It should isolate a mechanism in the full proof or cover a family that appears naturally in the moment expansion, rather than just a few arbitrary examples.
+
+\textbf{What would count as an honest partial outcome?} A complete proof for a stated pattern family, exact checks, and a precise account of the hypotheses still needed for the general proposition.
+
+\Sub{Read in this order}
+\begin{enumerate}
+\source{https://competition.sair.foundation/competitions/mathathon/problems/21}{Official problem 21 and its specific exposition target.}
+\source{https://arxiv.org/abs/1502.04482}{Charles Bordenave, A new proof of Friedman's second eigenvalue theorem and its extension to random lifts. Read the proof overview, the relevant permutation definitions, and Proposition 28 in version 4.}
+\source{https://arxiv.org/abs/1804.07808}{Brito, Dumitriu and Harris, Spectral gap in random bipartite biregular graphs and applications. Identify the imported estimate and its role in the model.}
+\source{https://arxiv.org/abs/cs/0405020}{Joel Friedman, A proof of Alon's second eigenvalue conjecture and related problems. Historical and structural context.}
+\source{https://arxiv.org/abs/1403.3462}{Friedman and Kohler, On the relativized Alon second eigenvalue conjecture. Further comparison for random lifts.}
+\source{https://competition.sair.foundation/competitions/mathathon/judge-rules}{Judging criteria. A clear restricted proof can be more valuable than a broad but superficial survey.}
+\end{enumerate}
+The permutation calculations in this guide are elementary derivations for teaching the dependence. They are not claimed to be new probability results. The proposition summary is a source-based orientation, not a substitute for its full statement.
+
+\textbf{Decision test.} Choose this topic if the team can formulate a specific uniform estimate to prove or a concrete existing argument to simplify, and can explain how that result changes a reader's understanding of the spectral proof.
+
+\end{document}

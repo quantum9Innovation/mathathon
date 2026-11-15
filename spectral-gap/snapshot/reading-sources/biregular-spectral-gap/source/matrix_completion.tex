@@ -1,0 +1,381 @@
+\section{Application: Matrix completion}
+\label{sec:matrix_completion}
+
+Assume we have some matrix $Y \in \R^{n \times m}$ 
+which has low ``complexity.'' 
+Perhaps it is low-rank or simple by some other measure.
+If we observe $Y_{ij}$ for a limited set of entries
+$(i,j) \in E \subset [n] \times [m]$,
+then {\it matrix completion} is any method which
+constructs a matrix $\hat{Y}$
+so that $\| \hat{Y} - Y\|$ is small, or even zero.
+Matrix completion has attracted significant attention in recent years as a tractable
+algorithm for making recommendations to users of online systems based on the
+tastes of other users (a.k.a.\ the Netflix problem).
+We can think of it as the matrix version of 
+compressed sensing (\citet*{candes2010, candes2010a}).
+
+Recently, a number of authors have studied the performance of 
+matrix completion algorithms where the index set $E$ is the edge
+set of a regular random graph 
+(\citet*{heiman2014, bhojanapalli2014,gamarnik2017}).
+\citet*{heiman2014} describe a 
+{\it deterministic} method of matrix completion,
+where they can give performance guarantees for a fixed observation set $E$ 
+over many input matrices $Y$.
+The error of their reconstruction depends on the spectral gap of the graph.
+We expand upon the result of \citet*{heiman2014}, 
+extending it to rectangular matrix and improving their bounds in the process.
+
+\subsection{Matrix norms as measures of complexity and their relationships}
+
+We will employ a number of different matrix and vector norms in this Section.
+These are all related by the properties of the underlying Banach spaces.
+The complexity of $Y$ 
+is measured using a factorization norm (also called the max-norm):
+\[
+	\gamma_2 (Y) = \min_{UV^* = Y} \|U\|_{\ell_2 \to \ell_\infty^n} \|V\|_{\ell_2 \to \ell_\infty^m}.
+\]
+The minimum is taken over all possible factorizations of $Y = UV^*$, 
+and the norm 
+% $\| \cdot \|_{\ell_2 \to \ell_\infty^n}$
+$\| X \|_{\ell_2 \to \ell_\infty^n} = \max_i \sqrt{\sum_j X^2_{ij}}$
+returns the largest $\ell_2$ norm of a row.
+So, equivalently,
+\[
+	\gamma_2 (Y) = \min_{U V^* = Y} \max_{i,j} \|u_i \|_2 \, \|v_j \|_2 ,
+\]
+where $u_i$ and $v_i$ are the rows of $U$ and $V$.
+See \citet*{linial2007} for a number of results about the norm $\gamma_2$.
+In particular, note that
+\begin{align}
+\gamma_2(A \circ B) \leq \gamma_2(A) \gamma_2(B) \label{eq:submultiplicative} \\
+  \label{eq:trace_norm_equiv}
+  \frac{1}{\sqrt{n m}} \| Y \|_{\rm Tr} \leq \gamma_2(Y) \\ % \leq \| Y \|_{\rm Tr} \\
+  \label{eq:rank_equiv}
+  \gamma_2(Y) \leq \sqrt{\mathrm{rank} (Y) } \| Y \|_{\infty}.
+\end{align}
+Property \eqref{eq:submultiplicative} says that $\gamma_2$
+is sub-multiplicative under the Hadamard product \citep*{lee2008,heiman2014} and will be used in our proof.
+Properties \eqref{eq:trace_norm_equiv} and \eqref{eq:rank_equiv}
+relate $\gamma_2$ to two common complexity measures of matrices,
+the trace norm (sum of singular values, i.e.\ the $\ell^m_2 \to \ell^n_2$ nuclear norm) 
+and rank.
+Note also the well-known fact that
+\[
+\| Y \|_{\rm Tr} = \min_{UV^* = Y} \| U \|_F \|V \|_F ,
+\]
+where 
+% $\| X \|_F = \sqrt{\sum_{i=1}^n \sum_{j=1}^m X_{ij}^2}$ 
+$\| X \|_F = \sqrt{\sum_{ij} X_{ij}^2}$ 
+is the Frobenius norm.
+We see that the trace norm constrains factors $U$ and $V$ to be small on average
+via $\| \cdot \|_F$,
+whereas the norm $\gamma_2$ is similar but constrains factors uniformly
+via $\| \cdot \|_{\ell_2 \to \ell_\infty^n}$.
+However, we should note that computing $\gamma_2(Y)$ is more costly than the
+trace norm, which can be performed with just the singular value decomposition,
+although still possible in polynomial time with convex programming \citep*{heiman2014}.
+
+% There is one last norm we must introduce.
+% \todo{talk about ``nuclear norm'' $\nu$}
+
+\subsection{Matrix completion generalization bounds}
+
+The method of matrix completion that we study
+is to return the matrix $X$ which is the solution to:
+\begin{equation}
+\label{matrix_completion}
+\begin{aligned}
+& \underset{X}{\text{minimize}}
+& & \gamma_2(X) \\
+& \text{subject to}
+& & X_{ij} = Y_{ij}, \; (i,j) \in E .
+\end{aligned}
+\end{equation}
+The $\gamma_2$ norm was first proposed by
+\citet*{srebro2005,srebro2005a} 
+as a robust complexity measure,
+and it was shown to be an effective and practical regularization
+on real datasets \citep*{lee2010a,recht2013}.
+
+\citet*{heiman2014} analyze the performance
+of the convex program \eqref{matrix_completion} 
+for a square matrix $Y$
+using an expander argument,
+assuming that $E$ is the edge set of a $d$-regular graph 
+with second eigenvalue $\eta$.
+They obtain the following theorem:
+\begin{theorem}[\citet*{heiman2014}]
+\label{thm:square_MSE}
+Let $E$ be the set of edges of a $d$-regular graph with second eigenvalue bound $\eta$.
+For every $Y \in \R^{n \times n}$, if $\hat{Y}$ is the output of the optimization problem 
+\eqref{matrix_completion}, then 
+\[
+	\frac{1}{n^2} \| \hat{Y} - Y \|_F^2 \leq c \gamma_2(Y)^2 \frac{\eta}{d},
+\]
+where $c = 8 K_G \leq 14.3$ is a universal constant and $\| \cdot \|_F$ is the Frobenius norm.
+\end{theorem}
+
+Considering sampling following the biadjacency matrix of a bipartite graph,
+we find a similar result which also applies to rectangular matrices. 
+If $n=m$ and $d_1 = d_2 = d$, our bound is equivalent to that of Theorem~\ref{thm:square_MSE},
+but with constants improved by a factor of two due to stronger mixing in bipartite graphs.
+Intuitively, using a biadjacency matrix is a ``more random'' way of sampling 
+than using an adjacency matrix, since it is not symmetric.
+
+\begin{theorem}
+\label{thm:rect_MSE}
+Let $E$ be the set of edges of a $(d_1, d_2)$-regular graph
+with second eigenvalue bound $\eta$.
+For every $Y \in \R^{n \times m}$, if $\hat{Y}$ is the output of the optimization problem 
+\eqref{matrix_completion}, then 
+\[
+	\frac{1}{n m} \| \hat{Y} - Y \|_F^2 \leq 
+      c \gamma_2(Y)^2 \frac{\eta}{\sqrt{d_1 d_2}} ,
+\]
+where $c = 4 K_G \leq 7.13$.
+\end{theorem}
+\begin{proof}
+We start by considering a rank-1 sign matrix $S=u v^*$, where $u,v \in \{-1,1 \}^{n \times m}$.
+Let $S' = \frac{1}{2} (S + J)$, where $J$ is the all-ones matrix, 
+so that $S'$ has the entries of -1 in $S$ replaced by zeros.
+Then
+$S' = 1_A 1_B^* + 1_{A^c} 1_{B^c}^*$ for subsets 
+$A \subset V_1 = [n]$ and $B \subset V_2 = [m]$,
+where $A = \{ i: u_i = 1 \} $ and $B = \{ j : v_j = 1 \}$.
+Consider the expression
+\begin{align*}
+\left| \frac{1}{n m} \sum_{i,j} s_{ij} - 
+\frac{1}{|E|} \sum_{(i,j) \in E} s_{ij} \right|
+&= 
+\left| \frac{1}{n m} \sum_{i,j} (2 s'_{ij} - 1) - 
+\frac{1}{|E|} \sum_{(i,j) \in E} (2 s'_{ij} - 1) \right| \\
+&= 
+2 \left| \frac{1}{n m} \sum_{i,j} s'_{ij} - 
+\frac{1}{|E|} \sum_{(i,j) \in E} s'_{ij} \right| \\
+&= 2 \left| \frac{|A||B| + |A^c| |B^c|}{n m}  - 
+\frac{E(A,B) + E(A^c, B^c)}{|E|} \right| \\
+&\leq 2 \left| \frac{|A||B|}{nm} - \frac{E(A,B)}{|E|} \right|
++ 
+2 \left| \frac{|A^c| |B^c|}{n m}  - 
+\frac{E(A^c, B^c)}{|E|} \right|.
+\end{align*}
+% Using a version of the expander mixing lemma, \citep*{janwa},
+% \[
+% \left| \frac{E(A,B)}{|E|} - \frac{|A||B|}{n m} \right|
+% \leq \frac{\eta}{2 |E|} 
+%    \left( |A| + |B| - \frac{|A|^2}{n} - \frac{|B|^2}{m} \right),
+% \]
+% \todo{does the last inequality really hold??}
+% we obtain that
+% \begin{align*}
+% \left| \frac{1}{n m} \sum_{i,j} s_{ij} - 
+% \frac{1}{|E|} \sum_{(i,j) \in E} s_{ij} \right|
+% & \leq \frac{\eta}{|E|} 
+% \left(  
+% |A| + |B| - \frac{|A|^2}{n} - \frac{|B|^2}{m} 
+%  +
+%  |A^c| + |B^c| - \frac{|A^c|^2}{n} - \frac{|B^c|^2}{m}
+% \right)\\
+% & \leq \frac{\eta}{|E|} 
+% \left( 
+% n + m - \frac{|A|^2 + |A^c|^2}{n} - \frac{|B|^2 + |B^c|^2}{m}
+% \right) \\
+% &\leq \frac{\eta}{|E|} 
+% \left( 
+% n + m - n (x^2 + (1-x)^2) - m (y^2 + (1-y)^2)
+% \right) \\
+% &\leq 
+% \frac{\eta}{2 |E|} (n + m) = 
+% \frac{\eta}{2} \left( \frac{d_1 + d_2}{d_1 d_2} \right), 
+% \end{align*}
+% since $\frac{1}{2} \leq x^2 + (1-x)^2 \leq 1$ for $x \in [0,1]$.
+The following is a bipartite version of the expander mixing lemma 
+\citep*{dewinter2012}:
+\[
+\left| \frac{E(A,B)}{|E|} - \frac{|A||B|}{n m} \right|
+\leq 
+\frac{\eta}{\sqrt{d_1 d_2}} 
+\sqrt{\frac{|A||B|}{nm} 
+\left(1- \frac{|A|}{n} \right) \left( 1- \frac{|B|}{m} \right) } \\
+= 
+\frac{\eta}{\sqrt{d_1 d_2}} 
+\sqrt{\frac{|A||B||A^c||B^c|}{(nm)^2}} .
+\]
+We find that
+\begin{align*}
+\left| \frac{1}{n m} \sum_{i,j} s_{ij} - 
+\frac{1}{|E|} \sum_{(i,j) \in E} s_{ij} \right|
+& \leq 
+\frac{4 \eta}{\sqrt{d_1 d_2}}
+\sqrt{\frac{|A||B||A^c||B^c|}{(nm)^2}}
+\\
+& = \frac{4 \eta}{\sqrt{d_1 d_2}}
+\sqrt{ x y (1-x) (1-y) }\\
+& \leq \frac{\eta}{\sqrt{d_1 d_2}},
+\end{align*}
+since $x y (1-x) (1-y)$ attains a maximal value of $2^{-4}$ 
+for $0 \leq x,y \leq 1$.
+
+The rest of the proof develops identical to the results of \citet*{heiman2014},
+which we include for completeness.
+We apply the result for rank-1 sign matrices to any matrix $R$.
+Let $R = \sum_i \alpha_i S^i$, where $S^i$ is a rank-1 sign matrix and $\alpha_i \in \R$.
+For a general matrix $R$, this might require many rank-1 sign matrices.
+Define the sign nuclear norm $\nu (R) = \sum_i |\alpha_i|$. 
+Then,
+\[
+\left| \frac{1}{n m} \sum_{i,j} r_{ij} - 
+\frac{1}{|E|} \sum_{(i,j) \in E} r_{ij} \right|
+\leq
+\nu(R) \frac{\eta}{\sqrt{d_1 d_2}} .
+\]
+It is a consequence of Grothendieck's inequality,
+a well-known theorem in functional analysis,
+that there exists a universal constant 
+$1.5 \leq K_G \leq 1.8$ 
+so that
+$\gamma_2 (X) \leq \nu(X) \leq K_G \gamma_2(X)$
+for any real matrix $X$; see \citet*{heiman2014}.
+
+Now, let the matrix of residuals 
+$R = (\hat{Y}-Y) \circ (\hat{Y} - Y)$, where $\circ$ is the 
+Hadamard entry-wise product of two matrices,
+so that $R_{ij} = (\hat{Y}_{ij} - Y_{ij})^2$.
+Since 
+\[
+\frac{1}{|E|} \sum_{(i,j) \in E} r_{ij} = 0 ,
+\]
+we conclude that 
+\[
+\frac{1}{n m} \sum_{i,j} r_{ij} 
+\leq
+\nu(R) \frac{\eta}{\sqrt{d_1 d_2}} 
+\leq 
+K_G \gamma_2(R) \frac{\eta}{\sqrt{d_1 d_2}}.
+\]
+Furthermore, $\gamma_2 (R) \leq \gamma_2 (\hat{Y}-Y)^2 \leq ( \gamma_2(\hat{Y}) + \gamma_2(Y) ) ^2 $
+by \eqref{eq:submultiplicative} and the triangle inequality.
+Since $\hat{Y}$ is the output of the algorithm and $Y$ is a feasible solution,
+$\gamma_2 (\hat{Y}) \leq \gamma_2 (Y)$.
+Thus, $\gamma_2(R) \leq 4 \gamma_2(Y)^2$ and the proof is finished.
+\end{proof}
+
+% \begin{remark}
+% If we minimize the trace norm of the solution, 
+% which is a more practical method than working with $\gamma_2$,
+% the same bounds hold in terms of $\| Y \|_{\rm Tr}$.
+% This is because $\gamma_2 (Y) \leq \| Y \|_{\rm Tr}$. 
+% We only need to modify the final part of the proof.
+% \end{remark}
+
+\subsection{Noisy matrix completion bounds}
+
+Furthermore, our analysis easily extends to the case where
+the matrix we observe is corrupted with noise. 
+As mentioned in the above remark, similar results will hold for the trace norm.
+In the noisy case, we solve the problem
+\begin{equation}
+\label{matrix_completion_2}
+\begin{aligned}
+& \underset{X}{\text{minimize}}
+& & \gamma_2(X) \\
+& \text{subject to}
+& & \frac{1}{|E|} \sum_{(i,j) \in E} ( X_{ij} - Z_{ij})^2 \leq \delta^2
+\end{aligned}
+\end{equation}
+and obtain the following theorem:
+\begin{theorem}
+Suppose we observe $Z_{ij} = Y_{ij} + \epsilon_{ij}$ with bounded error
+\[
+ \frac{1}{|E|} \sum_{(i,j) \in E} \epsilon_{ij}^2 \leq \delta^2 .
+\]
+Then solving the optimization problem \eqref{matrix_completion_2}
+will yield a bound of
+\[
+\frac{1}{n m} \| \hat{Y} - Y \|_F^2 \leq 
+      c \gamma_2(Y)^2 \frac{\eta}{\sqrt{d_1 d_2}} + 4 \delta^2,
+\]
+where $c = 4 K_G \leq 7.13$.
+\end{theorem}
+\begin{proof}
+Denote $\hat{Y}$ the solution to 
+P\ref{matrix_completion_2}.
+It will be useful to introduce the sampling operator
+$\mathcal{P}_E : \R^{n \times m} \to \R^{n \times m}$,
+where
+$(\mathcal{P}_E (X) )_{ij} = X_{ij}$
+if $(i,j) \in E$ and 0 otherwise.
+Again let $R = (\hat{Y} - Y) \circ (\hat{Y} - Y)$
+be the matrix of squared errors,
+then 
+\begin{align*}
+\left| 
+\frac{1}{nm} \| \hat{Y} - Y \|_F^2 - 
+\frac{1}{|E|} \| \mathcal{P}_E (\hat{Y} - Y) \|_F^2 
+\right| 
+&=
+\left| \frac{1}{n m} \sum_{i,j} (\hat{Y}_{ij} - Y_{ij})^2 - 
+\frac{1}{|E|} \sum_{(i,j) \in E} (\hat{Y}_{ij} - Y_{ij})^2 \right| \\
+& \leq K_G \gamma_2(R) \frac{\eta}{\sqrt{d_1 d_2}}.
+\end{align*}
+However, since $Y$ is a feasible solution to
+P\ref{matrix_completion_2}, we have
+\[
+\gamma_2 (\hat{Y}) \leq \gamma_2 (Y).
+\]
+Applying \eqref{eq:submultiplicative} and the triangle inequality, 
+\[
+\gamma_2 (R) \leq \left( \gamma_2(\hat{Y} - Y) \right)^2
+\leq \left( \gamma_2(\hat{Y}) + \gamma_2(Y) \right)^2
+\leq 4 \gamma_2(Y)^2 .
+\]
+Using the triangle inequality again gives
+\[
+\| \mathcal{P}_E (\hat{Y} - Y) \|_F
+\leq
+\| \mathcal{P}_E (\hat{Y} - Z) \|_F
++
+\| \mathcal{P}_E (Z - Y) \|_F
+\leq 2 \delta \sqrt{|E|},
+\]
+taking into account the bound on the observation errors.
+Because
+\[
+\frac{1}{nm} \| \hat{Y} - Y \|_F^2
+\leq
+\left| 
+ \frac{1}{nm} \| \hat{Y} - Y \|_F^2 - 
+ \frac{1}{|E|} \| \mathcal{P}_E (\hat{Y} - Y) \|_F^2 
+\right| 
++
+\frac{1}{|E|} \| \mathcal{P}_E (\hat{Y} - Y) \|_F^2 
+\]
+we get the final bound
+\[
+\frac{1}{n m} \| \hat{Y} - Y \|_F^2
+\leq
+4 K_G \gamma_2(Y)^2 \frac{\eta}{\sqrt{d_1 d_2}} + 4 \delta^2.
+\]
+\end{proof}
+
+\subsection{Application of the spectral gap}
+
+Theorem~\ref{thm:rect_MSE} provides a bound on the mean squared error
+of the approximation $X$. 
+Directly applying Theorem~\ref{cor:gap_A}, 
+we obtain the following bound on 
+the generalization error of the algorithm using a 
+random biregular, bipartite graph:
+\begin{corollary}
+Let $E$ be sampled from a $\mathcal{G}(n,m, d_1, d_2)$ random graph.
+For every $Y \in \R^{n \times m}$, if $\hat{Y}$ is the output of the optimization problem 
+\eqref{matrix_completion}, then 
+\[
+	\frac{1}{n m} \| \hat{Y} - Y \|_F^2 \leq 
+      c \gamma_2(Y)^2 \frac{\sqrt{d_1 - 1} + \sqrt{d_2 - 1} + \epsilon_n }{\sqrt{d_1 d_2}} ,
+\]
+where $c = 4 K_G \leq 7.13$ is a universal constant.
+\end{corollary}
+

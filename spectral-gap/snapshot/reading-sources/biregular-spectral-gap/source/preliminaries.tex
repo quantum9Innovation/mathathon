@@ -1,0 +1,205 @@
+\section{Preliminaries}
+\label{sec:preliminaries}
+
+We describe the standard configuration model for 
+constructing such graphs.
+We then define the ``tangle-free'' property of random graphs.
+Since small enough neighborhoods are tangle-free with high probability, 
+we only need to count tangle-free paths when we eventually employ the trace
+method.
+
+\subsection{The configuration model}
+
+\label{sec:configuration_model}
+The configuration or permutation model is a practical procedure to sample 
+random graphs with a given degree distribution. 
+Let us recall its definition for bipartite biregular graphs. 
+Let $V_1=\{v_1,v_2,\dots,v_n\}$ and $V_2=\{w_1,w_2,\dots, w_m\}$ 
+be the vertices of the graph. 
+We define the set of \textit{half edges} out of $V_1$
+to be the collection of ordered pairs
+\[
+\vec{E}_1=\{(v_i,j)~\mbox{for $1\leq i\leq n$ and $1\leq j\leq d_1$}\}
+\]
+and analogously the set of half edges out of $V_2$:
+\[
+\vec{E}_2=\{(w_i,j)~\mbox{for $1\leq i\leq m$ and $1\leq j\leq d_2$}\},
+\]
+see Figure~\ref{fig:bipartite_schematic}.
+Note that $|\vec{E}_1|=|\vec{E}_2|=nd_1=md_2 = |E|$. 
+To sample a graph, we choose a random permutation $\pi$ of 
+$[n d_1]$. 
+We put an edge between $v_i$ and $w_j$ in the $G$ whenever 
+\[
+\pi((i-1)d_1+s)=(j-1)d_2+t
+\]
+for any pair of values $1\leq s\leq d_1$, $1\leq t\leq d_2$. 
+For {\em specific} half edges $e = (v_i, j)$ and $f = (w_s, t)$, 
+we use the notation $\pi(e) = f$ as shorthand for
+$\pi((i-1)d_1 + j) = (s-1)d_2 + t$ and say that
+``$e$ matches to $f$.''
+
+The graph obtained may not be simple, since multiple half edges may be matched 
+between any pair of vertices. 
+However, conditioning on a simple graph outcome, 
+the distribution is uniform in the set of all 
+simple bipartite biregular graphs. 
+Furthermore, for fixed $d_1, d_2$ and $n,m \to \infty$,
+the probability of getting a simple graph is bounded away from zero
+\citep*{bollobas2001}.
+
+%Since half edges may be identified with a particular ordering of the set of oriented edges ($\vec{E}_1 \cup \vec{E}_2$ and $\vec{E}$ are isomorphic), this allows to define the non-backtracking operator $B$ independent of the graph realization. 
+Consider the random 
+$B \in \R^{2 |E|\times 2 |E|}$ 
+whose first $|E|$ rows are indexed by the elements of $\vec{E}_1$ 
+and the last $|E|$ rows are indexed by those of $\vec{E}_2$, 
+in lexicographic order. 
+Columns are indexed in the same way. 
+Entry $B_{ef}$ with 
+$e=(v_i,j) \in \vec{E}_1$ and $f=(w_s,t) \in \vec{E}_2$ 
+is defined as
+\[
+B_{ef}=
+\begin{cases}
+  1,& \mbox{if $\pi(e) = f' = (w_s, t')$ and $t'\neq t$};\\
+  0,& \textrm{otherwise}.
+\end{cases}
+\]
+This defines the upper half of $B$. We define the lower half similarly, by putting
+\[
+B_{fe}=
+\begin{cases}
+  1,&\textrm{if $\pi^{-1}(f) = e' = (v_i, j')$ and $j'\neq j$};\\
+  0,& \textrm{otherwise}.
+\end{cases}
+\]
+This is the same definition used in \cite{bordenave2015}. 
+In words, it says that the directed edge given by $e$ 
+followed by the directed edge given by $f$ 
+are connected by some half edge $f' = (w_s, t')$,
+and the path they form does not backtrack.
+This is therefore the same matrix introduced in Section~\ref{sec2:B},
+ordered according to the half edges.
+Notice that the randomness comes from the matching only. 
+
+We consider two symmetric matrices $M = M(\pi)$ and $N$, 
+indexed the same as $B$, and defined by:
+\[
+M_{ef} = 1_{ \{ \pi(e) = f \} } 
+\mbox{ and }
+M_{fe} = 1_{ \{ \pi^{-1} (f) = e \} }
+~\mbox{ for $e\in \vec{E}_1$ and $f\in \vec{E}_2$}
+\]
+and
+\[
+N_{gh} = 1_{ \{u = v \mbox{ and } i\neq j \}}
+~\mbox{ for $g = (u,i), h = (v,j) \in \vec{E}_1 \cup \vec{E}_2$} .
+\]
+We see that a term like $M_{eg} N_{gf}$ corresponds to
+$M$ matching the directed edge $e$ to $g$ by $\pi$, 
+and $N$ taking us out of the vertex of $g$ along the directed edge $f$, 
+which is different from $g$.
+Thus the rule of matrix multiplication means that
+\begin{align}\label{eq:B=MN}
+B=MN.
+\end{align}
+This equality will be useful in Section~\ref{sec:matrix_decomp}
+when working with products of the matrix $B$.
+
+\subsection{Tangle-free paths}
+\label{sec:tangle_free}
+
+Sparse random graphs, including bipartite graphs,
+have the important property of being ``tree-like''
+in the neighborhood of a typical vertex. 
+Formally, consider a vertex $v \in V_1 \cup V_2$. 
+For a natural number $\ell$, 
+we define the ball of radius $\ell$ centered at $v$ to be:
+\[
+B_{\ell}(v) = \{w \in V_1 \cup V_2 : ~ d_{G}(v,w) \leq \ell\}
+\]
+where $d_G(\cdot,\cdot)$ is the graph distance.
+\begin{definition}
+A graph $G$ is \textit{$\ell$-tangle-free} if
+$B_{\ell}(v)$ contains at most one cycle for any vertex $v$.
+\end{definition}
+
+The next lemma says that most bipartite biregular graphs are $\ell$-tangle-free
+up to logarithmic sized neighborhoods.
+\begin{lemma}
+Let $G \sim \mathcal{G}(n,m,d_1,d_2)$ be a bipartite, biregular random graph. 
+Let $\ell < \frac{1}{8} \log_d (n)$, for $d=\max\{d_1, d_2\}$.
+%Fix a constant $c < 1/8$ and let $\ell=c\log_{d}(n)$.
+Then $G$ is $\ell$-tangle-free with probability at least $1-n^{-1/2}$.
+\end{lemma}
+\begin{proof} 
+This is essentially the proof given in \citet*{lubetzky2010}, Lemma 2.1.
+Fix a vertex $v$. 
+We will use the so called {\it exploration process} to discover the ball $B_{\ell}(v)$. More precisely, we order the set $\vec{E}_1$ lexicographically: 
+$(v_i,j) < (v_{i'},j')$ 
+if $i\leq i'$ and $j\leq j'$. 
+The exploration process reveals $\pi$ one edge at the time, by doing the following:
+\begin{itemize}
+\item A uniform element is chosen from $\vec{E}_2$ and it is declared equal to $\pi(1)$.
+\item A second element is chosen uniformly, now from the set 
+$\vec{E}_2\backslash\{\pi(1)\}$ and set equal to $\pi(2)$.
+\item Once we have determined $\pi(i)$ for $i\leq k$, we set $\pi(k+1)$ equal to a uniform element sampled from the set $\vec{E}_2\backslash\{\pi(1),\pi(2),\dots,\pi(k)\}$.
+\end{itemize}
+We use the final $\pi$ to output a graph as we did in the configuration model. 
+The law of these graphs is the same.
+With the exploration process, we expose first the neighbors of $v$, 
+then the neighbors of these vertices, and so on.
+This breadth-first search reveals all vertices in $B_k (v)$ before 
+any vertices in $B_{j > k} (v)$.
+Note that, although our bound is for the family $\mathcal{G}(n,m,d_1,d_2)$,
+the neighborhood sizes are bounded above by those of  
+the $d$-regular graph with $d=\max(d_1,d_2)$.
+% Observe that, when matching half edges of those vertices 
+% at distance $(2 t-1)$ from $v$, 
+% we are looking at $\pi^{-1}(w,j)$ for a given $(w,j)$. 
+% \todo{I have no idea why the previous sentence is relevant}
+
+Consider the matching of half edges attached to vertices in
+the ball $B_i(v)$ at depth $i$
+(thus revealing vertices at depth $i+1$).
+In this process,
+we match a maximum
+$m_i \leq d^{i+1}$ pairs of half edges total. 
+Let $\mathcal{F}_{i,k}$ be the filtration
+generated by matching up to the $k$th half edge
+in $B_i(v)$,
+for $1 \leq k \leq m_i$. 
+Denote by $A_{i,k}$ the event that the $k$th
+matching creates a cycle at the current depth.
+For this to happen, the matched vertex must have appeared 
+among the $k-1$ vertices already revealed at depth $i+1$.
+The number of unmatched half edges is at least $nd - 2 d^{i+1}$.
+We then have that:
+\[
+\mathbb{P}(A_{i,k}) 
+\leq \frac{(k-1) (d-1)}{nd - 2 d^{i+1}}
+\leq \frac{(d-1) m_i}{(1 - 2 d^{i+1} n^{-1}) nd}
+\leq \frac{m_i}{n}.
+\]
+So, we can stochastically dominate the sum
+\[
+\sum_{i=1}^{\ell-1}\sum_{k=1}^{m_i} A_{i,k}
+\]
+by $Z \sim \mathrm{Bin} \left( d^{\ell+1},\ n^{-1} d^{\ell} \right)$. 
+So the probability that 
+$B_{\ell}(v)$ is $\ell$-tangle-free has the bound:
+\[
+\mathbb{P} (
+	\mbox{$B_{\ell}(v)$ is not $\ell$-tangle-free}
+ ) =
+\mathbb{P} \left(
+  \sum_{i=1}^{\ell-1}\sum_{k=1}^{m_i} A_{i,k}> 1
+  \right)
+  \leq 
+\mathbb{P} (Z>1) = 
+O\left( \frac{d^{4\ell+1}}{n^2} \right) =
+O\left( n^{-3/2} \right) ,
+\]
+which follows using that $\ell = c \log_d n$ with $c < 1/8$. 
+The Lemma follows by taking a union bound over all vertices. 
+\end{proof}

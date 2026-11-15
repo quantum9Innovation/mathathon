@@ -1,0 +1,308 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[margin=0.83in,headheight=15pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,amsmath,amssymb,mathtools,booktabs,array,xurl,hyperref,tikz,fancyhdr,microtype}
+\usetikzlibrary{arrows.meta,positioning}
+\hypersetup{colorlinks=true,urlcolor=blue,linkcolor=black}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlength{\emergencystretch}{3em}
+\renewcommand{\arraystretch}{1.3}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Mathathon Round 1 decision guide}
+\fancyhead[R]{\small Problem 21}
+\fancyfoot[C]{\small \thepage}
+\renewcommand{\headrulewidth}{0pt}
+\newcommand{\Page}[1]{\clearpage\section*{#1}}
+\newcommand{\Sub}[1]{\subsection*{#1}}
+\newcommand{\R}{\mathbb R}
+\newcommand{\Q}{\mathbb Q}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Ann}{\operatorname{Ann}}
+\newcommand{\Tor}{\operatorname{Tor}}
+\newcommand{\reg}{\operatorname{reg}}
+\newcommand{\Ext}{\operatorname{Ext}}
+\newcommand{\source}[2]{\item \href{#1}{#2}}
+\begin{document}
+{\LARGE\bfseries Understanding the spectral gap proof bottleneck\par}
+\vspace{0.4em}
+{\large An ambitious research target and deliverable guide\par}
+13 November 2026\par
+{\small Problem selection locks on 14 November at 11:59 PM Pacific Time.\\
+The report and slides are due on 15 November at noon Pacific Time.\par}
+\vspace{0.6em}
+
+\section*{The revised decision}
+
+\textbf{The main ambition.} Develop a phase-sensitive finite-size spectral estimate for a specified family of random graph lifts, and turn that estimate into an explicit guarantee for solving Hermitian complex Laplacian systems. The explanatory target is to show which cancellations create the estimate and which algorithmic consequences they actually support.
+
+This is a research project. An annotated lemma and a few small examples are the foundation. The intended centerpiece is a proved inequality, a new restricted theorem, or a precise obstruction to an initially plausible improvement.
+
+\textbf{Why our team should aim here.} Our experience in SDDM algorithms, complex-valued Laplacians, random matrices, probability, and numerical linear algebra gives us a concrete application and several routes into the mathematics. The first version did not use that advantage enough.
+
+\textbf{A precise starting family.} Use random $n$-lifts of $K_4$, with unit edge weights and one variable base-edge phase. Study the fiber-mean-zero subspace separately from the four-dimensional old sector. This fixes a real model before considering arbitrary weighted bases or matrix-valued connections.
+
+\textbf{The research question.} Can grouping walk patterns by their phase and permutation constraints give a provably sharper finite-size tail estimate than taking absolute values term by term? If so, which phase choices and motif families create the gain? If not, what forces the phase-blind bound to remain sharp?
+
+\textbf{The literature baseline.} Matrix-coefficient random-lift convergence is already covered by Bordenave and Collins. Newer work gives shorter proofs and quantitative rates. Simply allowing complex coefficients or stating a high-probability gap would not establish novelty.
+
+\textbf{The draft deliverable.} A self-contained theorem for the chosen family or an important moment class, an independently checkable finite-pattern certificate, a demonstrated consequence for conditioning or iterative solves, and an exact comparison with the modern baseline. The proposed phase-dependent improvement is unproved.
+
+\textbf{Stretch.} Obtain a useful bound for a broader weighted family or unitary block connections. The aim is a transferable mechanism with a serious first application, not a generic simulation platform.
+
+Pages 2 to 4 build the original spectral-gap background. Pages 5 to 8 state the strengthened research program. Page 9 gives the source comparison and the decision test.
+
+\Page{What the spectral gap measures}
+
+For a simple $d$-regular graph on $n$ vertices, its adjacency matrix $A$ is symmetric and satisfies $A\mathbf1=d\mathbf1$. The constant vector is a trivial eigenvector. On its orthogonal complement, the remaining eigenvalues control expansion and mixing.
+
+For a connected nonbipartite graph, write
+\[
+ \eta=\max\{|\lambda|:\lambda\text{ is an eigenvalue of }A
+                 \text{ outside the constant eigenspace}\}.
+\]
+A small ratio $\eta/d$ means nonconstant signals are strongly contracted by the random-walk matrix $A/d$. Bipartite graphs also have a trivial eigenvalue $-d$ and require that convention to be handled separately.
+
+For fixed $d\geq3$, Friedman's theorem says that a uniformly random simple $d$-regular graph has nontrivial eigenvalues at most
+\[
+ 2\sqrt{d-1}+o(1)
+\]
+in absolute value with probability tending to one. This is the familiar near-Ramanujan scale. The expression is a large-$n$ result for a specified random graph model, not an inequality for every finite graph.
+
+\Sub{Why matrix powers are useful}
+An entry of $A^k$ counts walks of length $k$. Thus traces and moments turn spectral questions into counts of combinatorial patterns. For a symmetric matrix $M$,
+\[
+ \|M\|^{2m}\leq\operatorname{tr}(M^{2m}).
+\]
+Taking expectations and applying Markov's inequality can turn a moment bound into a high-probability norm bound.
+
+However, a naive large-moment argument is vulnerable to rare graphs containing dense local structures. Those events may be unlikely but contribute enormously to a high power. They can dominate an expectation even when typical graphs have good eigenvalues.
+
+This is an important distinction: typical behavior and the expectation of a very high power are different objects. The proof needs a way to separate the troublesome local structures while preserving enough cancellation to obtain the sharp spectral scale.
+
+
+\Page{Why use nonbacktracking walks}
+
+\Sub{The operator remembers the last edge}
+Index a matrix $B$ by directed edges. Set
+\[
+ B_{(u,v),(v,w)}=1\quad\hbox{when }w\ne u,
+\]
+and set all other entries to zero. The matrix moves along an edge but forbids immediately reversing it. On a $d$-regular graph it has row sum $d-1$.
+
+This removes the simplest redundant walk excursions and makes the combinatorics more suitable for the proof. It also connects to the adjacency spectrum.
+
+Suppose $Af=\mu f$ and consider $g(u,v)=f(v)-\lambda^{-1}f(u)$. Then
+\begin{align*}
+ (Bg)(u,v)&=\sum_{w\sim v,\ w\ne u}
+                  \big(f(w)-\lambda^{-1}f(v)\big)\\
+ &=\big(\mu-(d-1)/\lambda\big)f(v)-f(u).
+\end{align*}
+Whenever $\lambda\ne0$, $g$ is nonzero, and
+\[
+ \lambda^2-\mu\lambda+(d-1)=0,
+\]
+this equals $\lambda g(u,v)$. The quadratic relation is the essential spectral bridge. The full Ihara-Bass identity handles multiplicities and exceptional cases.
+
+If $|\mu|\leq2\sqrt{d-1}$, the two roots lie on the circle of radius $\sqrt{d-1}$. This explains why a non-backtracking bound near that radius corresponds to the sharp adjacency scale.
+
+\Sub{The proof still needs care}
+The matrix $B$ is usually not symmetric and can be nonnormal. Its spectral radius is bounded by its operator norm, but they are not generally equal. Norm estimates use positive Gram-type moments such as
+\[
+ \operatorname{tr}\big((MM^*)^m\big),
+\]
+for appropriate projected or truncated operators $M$.
+
+A tangle-free restriction controls problematic local patterns. Centering removes a trivial average component. The resulting entries are dependent, and their products contain cancellations. Understanding those products is the proposed core of our project.
+
+
+\Page{A small exact example of the dependence}
+
+Let $\sigma$ be a uniform permutation of $\{1,\ldots,n\}$ and let
+\[
+ P_{ij}=\mathbf1\{\sigma(i)=j\},\qquad
+ X_{ij}=P_{ij}-1/n.
+\]
+Every $X_{ij}$ has mean zero. Nevertheless their products need not have mean zero.
+
+\Sub{Different rows and different columns}
+For $i\ne k$ and $j\ne l$,
+\[
+ \E[P_{ij}P_{kl}]=\frac{(n-2)!}{n!}
+                 =\frac{1}{n(n-1)}.
+\]
+There are $(n-2)!$ permutations obeying both prescribed assignments. Expanding the centered product gives
+\[
+ \E[X_{ij}X_{kl}]=\frac{1}{n(n-1)}-\frac{1}{n^2}
+                 =\frac{1}{n^2(n-1)}>0.
+\]
+
+\Sub{The same row and different columns}
+If $j\ne l$, a permutation cannot send $i$ to both columns. Hence
+\[
+ \E[P_{ij}P_{il}]=0,\qquad
+ \E[X_{ij}X_{il}]=-\frac{1}{n^2}.
+\]
+For $n=4$ the two centered expectations are $1/48$ and $-1/16$. They have different signs and different magnitudes. Treating the entries as independent would incorrectly predict zero in both cases.
+
+\Sub{A useful exact counting rule}
+For $a$ distinct consistent assignments using distinct rows and columns,
+\[
+ \Pr(\sigma(i_s)=j_s\text{ for all }s)
+ =\frac{1}{(n)_a},\qquad (n)_a=n(n-1)\cdots(n-a+1).
+\]
+Conflicting assignments have probability zero. Repeated identical raw indicator factors collapse because $P_{ij}^r=P_{ij}$ for $r\geq1$.
+
+Expand a centered product by choosing either the indicator or $-1/n$ from each centered factor. Evaluate every resulting raw event by this counting rule. This gives a rational, independently checkable answer for each finite pattern. The difficult theorem bounds a large family uniformly without enumerating every permutation or every expanded term.
+
+
+\Page{Complex Laplacians give the problem an algorithmic target}
+
+\Sub{The complex Laplacian and its energy}
+Choose an orientation for each base edge $e=(u,v)$, a positive weight $w_e$, and a phase $\zeta_e$ with $|\zeta_e|=1$. Define the incidence operator by
+\[
+ (C_\zeta x)_e=x_u-\zeta_e x_v,
+ \qquad L_\zeta=C_\zeta^*WC_\zeta,
+ \qquad W=\operatorname{diag}(w_e).
+\]
+Its energy is
+\[
+ x^*L_\zeta x=\sum_{e=(u,v)}w_e|x_u-\zeta_e x_v|^2\geq0.
+\]
+Thus this is a Hermitian positive-semidefinite, diagonally dominant complex analogue of a graph Laplacian. Arbitrary non-Hermitian complex Laplacians are outside this proposed scope.
+
+Let $D$ contain the weighted degrees and write $L_\zeta=D-A_\zeta$. The normalized operators are
+\[
+ \mathcal A_\zeta=D^{-1/2}A_\zeta D^{-1/2},
+ \qquad \mathcal L_\zeta=I-\mathcal A_\zeta.
+\]
+On a random lift, each base edge is replaced by a random permutation between its fibers. Its phase and weight are fixed by the base edge, while reverse orientation uses conjugate phase and inverse permutation. This convention makes the operator Hermitian and preserves the sector decomposition below.
+
+\Sub{Old and new sectors have different jobs}
+The old sector consists of vectors constant within each fiber. On it, the lifted operator is the base operator. Its orthogonal complement is
+\[
+ \mathcal H_{\rm new}=\{x:\sum_{a=1}^n x_{v,a}=0
+                       \text{ for every base vertex }v\}.
+\]
+Both sectors are invariant. A new-sector spectral gap says nothing by itself about a small eigenvalue in the old sector. A solver can project onto the two sectors, solve the small base problem directly, and iterate on the large new sector.
+
+If phases vary independently on individual lifted edges, this invariance need not hold. That is a different model and would require a different theorem.
+
+\Sub{Gauge is a constraint on plausible claims}
+A diagonal unitary change of variables changes edge phases without changing the spectrum. On a tree all scalar phases can be removed recursively. The lifted universal covering tree therefore has the same spectral edge as its phase-free counterpart with the same weights. A fixed base phase does not create a better asymptotic tree edge. A genuine phase advantage would concern finite-size corrections, outliers, or the old sector.
+
+\Page{The target theorem and its solver consequence}
+
+\Sub{A theorem shaped target rather than a wish for a better gap}
+For the chosen base graph and phases, let $\rho_\infty$ be the normalized universal-cover norm. Seek an explicit function $F_{G,\zeta}(n,\varepsilon)$ such that
+\[
+ \Pr\left\{\left\|\mathcal A_{\zeta,n}|_{\mathcal H_{\rm new}}\right\|
+       >\rho_\infty+\varepsilon\right\}
+ \leq F_{G,\zeta}(n,\varepsilon).
+\]
+The theorem must specify the random model, parameter range, all constants claimed to be computable, and its comparison with an existing bound. A genuinely sharper phase-dependent estimate on a stated family is an ambitious target. Merely specializing an existing quantitative theorem is a baseline calculation.
+
+For the unit-weight $K_4$ family, the universal cover is the $3$-regular tree, so
+\[
+ \rho_\infty=\frac{2\sqrt2}{3}<1.
+\]
+Set $\beta=\rho_\infty+\varepsilon<1$. On the event in which the norm is at most $\beta$,
+\[
+ (1-\beta)I\preceq\mathcal L_{\zeta,n}|_{\mathcal H_{\rm new}}
+        \preceq(1+\beta)I.
+\]
+This gives a positive new-sector lower bound without pretending that the whole magnetic Laplacian has that lower bound.
+
+\Sub{The algorithmic consequence is completely explicit}
+The normalized new-sector condition number satisfies
+\[
+ \kappa_{\rm new}\leq\frac{1+\beta}{1-\beta}.
+\]
+For conjugate gradient on this Hermitian positive-definite sector,
+\[
+ \|e_k\|_{\mathcal L}\leq
+ 2\left(\frac{\sqrt\kappa-1}{\sqrt\kappa+1}\right)^k
+ \|e_0\|_{\mathcal L}.
+\]
+This deterministic implication is standard. The new contribution would lie in the sharper probabilistic input or a useful certified connection between it and an explicit solver regime. State the cost of projection, matrix-vector products, the base solve, and any singular old-sector handling.
+
+For a right-hand side with an old-sector nullspace component, the original singular system needs a compatibility condition. If solving a pseudoinverse problem, say so. Magnetic frustration can remove the kernel, but a small phase can still leave the old sector ill-conditioned.
+
+The theorem is therefore a proposed chain from a concrete walk estimate to a spectral tail, then to a precise computational guarantee. Every arrow must have stated hypotheses.
+
+\Page{A phase aware moment mechanism to investigate}
+
+\Sub{The proposed new ingredient}
+A trace expansion combines a coefficient from the base geometry with an expectation involving random permutation entries. A phase-blind estimate takes an absolute value early. Our research target is to group patterns with the same probabilistic constraint before that step and retain exact phase factors.
+
+The proof obligations are substantial: identify a closed pattern family, derive its exact coefficient, control repetitions and collisions, and show that the retained cancellation survives the sum needed for a positive spectral moment. Cancellation of one term is not yet a tail estimate.
+
+\Sub{A seed calculation that is already understandable}
+Take an oriented triangle in the base graph. The product $U$ of its three independent lift permutations is uniform on $S_n$. Let its phase product be $e^{i\phi}$. For $n\geq2$,
+\[
+ \E\operatorname{Tr}(U^2)=2,
+ \qquad
+ \E\operatorname{Tr}\big(U^2|_{\mathbf1^\perp}\big)=1.
+\]
+To verify the first identity, count fixed points of the squared permutation. Fixed points of $U$ contribute expected value one. Its $2$-cycles contribute two points each and have expected number $1/2$. The old constant mode contributes one, giving the second identity.
+
+A twice-around triangle and its reverse therefore carry the combined new-sector expected coefficient
+\[
+ e^{2i\phi}+e^{-2i\phi}=2\cos(2\phi),
+\]
+before common geometric weights and multiplicities are inserted. It equals zero at $\phi=\pi/4$ and equals two at $\phi=0$. This is an exact all-$n$ identity for a motif contribution, not a new spectral theorem or a novelty claim.
+
+\Sub{What the hard step becomes}
+Other walks contribute to the same even moment. Some are phase-independent. Some can create outliers. We must either prove that a family of phase-sensitive cancellations improves an actual bound, or prove that a dominant phase-insensitive family prevents that improvement in the chosen regime.
+
+The original centered-entry estimate remains relevant for collision patterns. Modern rational-moment and strong-convergence methods provide another route. Comparing the two at one precisely identified class of words could itself reveal a useful structural simplification. We should not assume that the older proof route is the only available one.
+
+\Page{The research deliverable and the two day plan}
+
+\Sub{What would make the project substantial}
+The desired centerpiece is one of the following, with the first as the main ambition:
+\begin{enumerate}
+\item A new phase-sensitive finite-size spectral tail estimate for the fixed $K_4$ lift family, with a strict comparison on a nonempty stated parameter range.
+\item A new uniform moment estimate for a significant family of collision or repeated-cycle patterns, plus a proved spectral consequence at its actual scope.
+\item A structural obstruction theorem showing why the proposed phase mechanism cannot improve a specified phase-blind estimate, with the precise missing ingredient identified.
+\end{enumerate}
+A numerical study supports these targets. It should compare analytic bounds, measured extremal eigenvalues, old-sector eigenvalues, and iterative convergence. It must not replace the proved centerpiece.
+
+\Sub{What we hand in}
+Submit the theorem and proof, the exact pattern or coefficient certificate, a reproducible matrix experiment, a solver corollary with costs and assumptions, and a source comparison stating the contribution beyond the closest theorem. The explainer should let another researcher reuse the mechanism on a different small base graph.
+
+\Sub{How to use the two days}
+In the opening block, fix the model and audit the modern baseline. Reproduce the gauge and sector identities and the repeated-triangle calculation. These are starting checks, not the intended finish.
+
+Next divide the difficult work. The probability and combinatorics members own the uniform moment estimate. The random-matrix member owns its conversion into a spectral statement. The SDDM and linear-algebra expertise owns the operator normalization, solver consequences, and experiments. These roles should cross-check each other's hypotheses.
+
+By the middle of the event, choose the proof route with the strongest evidence. If the proposed tail improvement is unsupported, move to a precise obstruction or new restricted theorem. Spend the remaining work on the proof, independent replay, and a clear account of the actual result.
+
+\Sub{The twenty minute story}
+Explain the complex energy and the old/new split in four minutes. Use four minutes for the original moment bottleneck and the phase mechanism. Give the new theorem and its key argument eight minutes. Use the final four for the solver consequence, comparisons, and limitations.
+
+\textbf{Stretch.} Extend to a family of base graphs, nonuniform weights, or unitary block connections. Those extensions must be proved. General matrix coefficients are already part of the literature, so broad notation by itself is not a new result.
+
+\Page{Sources and the commitment decision}
+
+\Sub{What the literature check changes}
+Bordenave and Collins already treat complex matrix coefficients in random permutation operators. Chen, Garza-Vargas, Tropp and van Handel provide a newer short proof strategy and quantitative estimates. Later work further develops rates. The original problem's request for clearer understanding should be evaluated against these developments.
+
+The research opportunity is therefore a precise improvement, a useful certified specialization with an additional mathematical insight, or a new explanation of how a particular cancellation mechanism reaches an algorithmic guarantee. We do not claim that phase-weighted spectral convergence is absent from the literature.
+
+\begin{enumerate}
+\source{https://competition.sair.foundation/competitions/mathathon/problems/21}{Official problem 21. Keep its proof bottleneck and mathematical understanding goal visible.}
+\source{https://arxiv.org/abs/1502.04482}{Bordenave, A new proof of Friedman's second eigenvalue theorem and its extension to random lifts. Proposition 28 is the original local target.}
+\source{https://arxiv.org/abs/1804.07808}{Brito, Dumitriu and Harris, Spectral gap in random bipartite biregular graphs and applications. Lemma 7 locates the related matching estimate.}
+\source{https://arxiv.org/abs/1801.00876}{Bordenave and Collins, Eigenvalues of random lifts and polynomials of random permutation matrices. The weighted matrix-coefficient and invariant-sector baseline.}
+\source{https://arxiv.org/abs/2405.16026}{Chen, Garza-Vargas, Tropp and van Handel, A new approach to strong convergence. Read the effective Friedman and quantitative polynomial results.}
+\source{https://arxiv.org/abs/2412.00593}{Chen, Garza-Vargas and van Handel, A new approach to strong convergence II. The classical ensembles. Compare the later rate improvements.}
+\source{https://arxiv.org/abs/2304.05714}{Bordenave and Collins, Norm of matrix-valued polynomials in random unitaries and permutations. Further scope comparison.}
+\end{enumerate}
+\Sub{Questions before locking in}
+Can we write the exact random model and the competing bound? What is the proposed new inequality? Which phase-sensitive terms survive the old-sector subtraction? Does the claimed improvement concern finite-size tails, the old sector, or a solver cost? Which theorem links our moment calculation to that claim?
+
+\textbf{Decision test.} Choose this topic if we can identify one proof-sized mechanism with a concrete comparison target and use our algorithmic background to make its consequence meaningful. A demanding theorem is the aim. Honest partial results remain a fallback, not the ceiling.
+
+\end{document}
